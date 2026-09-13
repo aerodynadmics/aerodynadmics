@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "C:\\Users\\Nad\\OneDrive\\Documents\\aerodynadmics\\live website",
+    "public": ".",
     "ignore": [
       "firebase.json",
       "**/.*",
