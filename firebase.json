@@ -1,0 +1,16 @@
+{
+  "hosting": {
+    "public": "C:\\Users\\Nad\\OneDrive\\Documents\\aerodynadmics\\live website",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
