@@ -615,6 +615,37 @@
   .avatar-lock-error.visible { display: block; }
   .avatar-lock-error.success { color: var(--green); font-weight: 600; }
 
+  /* ---- admin-only: upload a custom image avatar (see
+     admin-avatar-upload-wrap in the change-avatar modal) ---- */
+  .admin-avatar-upload-wrap { display: none; margin-top: 4px; }
+  .admin-avatar-upload-wrap.visible { display: block; }
+  .admin-avatar-upload-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .admin-avatar-upload-row .avatar-circle { width: 40px; height: 40px; font-size: 20px; }
+  .admin-avatar-upload-btn {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--paper);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    padding: 8px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .admin-avatar-upload-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .admin-avatar-upload-hint {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--rivet);
+    line-height: 1.5;
+    margin: 8px 0 0;
+  }
+
   .ai-note-link {
     display: inline-block;
     margin-top: 26px;
@@ -5806,6 +5837,8 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" defer></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js" defer></script>
 </head>
 <body class="gate-active">
 
@@ -6105,6 +6138,22 @@
         <div style="padding: 0 16px 2px;">
           <p class="avatar-label">Pick a new avatar</p>
           <div class="avatar-grid" id="avatar-change-grid"></div>
+
+          <!-- Upload a custom image instead of picking an emoji. Every
+               signed-in user can use this (see handleAvatarImageUpload) —
+               the actual file goes to Firebase Storage under
+               avatars/{uid}.jpg, scoped per-visitor by an anonymous auth
+               uid (see ensureAnonymousAuth above), not tied to their
+               nickname/account. -->
+          <div class="admin-avatar-upload-wrap visible" id="admin-avatar-upload-wrap">
+            <p class="avatar-label" style="margin-top: 14px;">Or upload your own image</p>
+            <div class="admin-avatar-upload-row">
+              <span class="avatar-circle" id="admin-avatar-upload-preview"></span>
+              <button type="button" class="admin-avatar-upload-btn" onclick="document.getElementById('admin-avatar-upload-input').click()">Choose Image</button>
+              <input type="file" id="admin-avatar-upload-input" accept="image/*" style="display:none;" onchange="handleAvatarImageUpload(event)">
+            </div>
+            <p class="admin-avatar-upload-hint" id="admin-avatar-upload-hint"></p>
+          </div>
 
           <div class="avatar-lock" id="avatar-change-lock">
             <p class="avatar-lock-msg">🔒 To use the sakura avatar, you must know the password. Otherwise, choose another avatar.</p>
@@ -7336,6 +7385,46 @@
     // be read out of this file's source.
     let sakuraUnlocked = false;
 
+    // ---- image avatars (admin-only upload) ----
+    // A user's `avatar` field is normally one of the AVATAR_OPTIONS emoji,
+    // but the admin-only uploader (see openAvatarUploadPicker) can set it to
+    // a small base64 data: URL instead — a full image dropped into the same
+    // string field the backend already stores, so no new column/endpoint is
+    // needed. Every place that renders someone's avatar has to check which
+    // kind it is; these three helpers are the single source of truth for
+    // that check so all the render sites below stay consistent.
+    function isImageAvatar(avatar) {
+      return typeof avatar === 'string' && (avatar.startsWith('data:image') || avatar.startsWith('http://') || avatar.startsWith('https://'));
+    }
+    // What to put as the *text* inside an .avatar-circle span — empty for
+    // an image avatar (the image is applied as a background instead).
+    function avatarGlyph(avatar) {
+      return isImageAvatar(avatar) ? '' : (avatar || DEFAULT_AVATAR);
+    }
+    // An inline style="" attribute (including the leading space) to splice
+    // into an .avatar-circle span's opening tag — sets a cover background
+    // for an image avatar, or nothing for an emoji avatar.
+    function avatarStyleAttr(avatar) {
+      return isImageAvatar(avatar)
+        ? ` style="background-image:url('${avatar.replace(/'/g, "%27")}');background-size:cover;background-position:center;"`
+        : '';
+    }
+    // For the handful of spots that grab an element by id and set its
+    // avatar directly (rather than building an HTML string), this keeps
+    // the same image-vs-emoji logic in one place.
+    function setAvatarElContent(el, avatar) {
+      if (!el) return;
+      if (isImageAvatar(avatar)) {
+        el.style.backgroundImage = `url('${avatar.replace(/'/g, "%27")}')`;
+        el.style.backgroundSize = 'cover';
+        el.style.backgroundPosition = 'center';
+        el.textContent = '';
+      } else {
+        el.style.backgroundImage = '';
+        el.textContent = avatar || DEFAULT_AVATAR;
+      }
+    }
+
     function renderAvatarGrid() {
       const grid = document.getElementById('avatar-grid');
       if (!grid) return;
@@ -7529,11 +7618,104 @@
       const errorEl = document.getElementById('avatar-change-lock-error');
       errorEl.classList.remove('visible', 'success');
       selectAvatarChange(changeSelectedAvatar);
+
+      // Every signed-in user can use the custom-image uploader. Reset its
+      // file input and hint text each time the modal opens, and seed the
+      // small preview circle with whatever avatar is currently equipped
+      // (so re-opening the modal after an upload shows the image that's
+      // actually saved, not a blank circle).
+      const uploadInput = document.getElementById('admin-avatar-upload-input');
+      if (uploadInput) uploadInput.value = '';
+      const uploadHint = document.getElementById('admin-avatar-upload-hint');
+      if (uploadHint) uploadHint.textContent = '';
+      setAvatarElContent(document.getElementById('admin-avatar-upload-preview'), changeSelectedAvatar);
+
       document.getElementById('avatar-change-overlay').classList.add('visible');
     }
 
     function closeAvatarChangeModal() {
       document.getElementById('avatar-change-overlay').classList.remove('visible');
+    }
+
+    // Image upload for the "change avatar" modal — available to every
+    // signed-in user. The chosen image is resized/cropped to a square
+    // client-side (to keep uploads small and consistent), then uploaded to
+    // Firebase Storage at avatars/{anonUid}.jpg. The Storage security rules
+    // (set in the Firebase Console) require request.auth.uid == {anonUid},
+    // where that uid comes from ensureAnonymousAuth() above — a real but
+    // identity-less Firebase session created silently for every visitor,
+    // since this app has no Firebase Auth of its own to check against.
+    // Once the upload finishes we get back a public download URL and store
+    // THAT (not the image itself) in the same `avatar` field the backend
+    // already persists — saveAvatarChange() below needs no changes to pick
+    // this up, exactly like it didn't need changes for the emoji avatars.
+    const AVATAR_UPLOAD_MAX_DIMENSION = 256; // px, square
+    const AVATAR_UPLOAD_JPEG_QUALITY = 0.8;
+
+    function handleAvatarImageUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      const hint = document.getElementById('admin-avatar-upload-hint');
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        if (hint) hint.textContent = 'Please choose an image file.';
+        return;
+      }
+      if (hint) hint.textContent = 'Processing…';
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          // Crop to a centered square, then downscale to a consistent size.
+          const side = Math.min(img.width, img.height);
+          const sx = (img.width - side) / 2;
+          const sy = (img.height - side) / 2;
+          const canvas = document.createElement('canvas');
+          canvas.width = AVATAR_UPLOAD_MAX_DIMENSION;
+          canvas.height = AVATAR_UPLOAD_MAX_DIMENSION;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, sx, sy, side, side, 0, 0, AVATAR_UPLOAD_MAX_DIMENSION, AVATAR_UPLOAD_MAX_DIMENSION);
+
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              if (hint) hint.textContent = 'Could not process that image — try a different file.';
+              return;
+            }
+            if (hint) hint.textContent = 'Uploading…';
+
+            if (!ensureFirebaseApp()) {
+              if (hint) hint.textContent = 'Could not connect right now — try again in a moment.';
+              return;
+            }
+
+            ensureAnonymousAuth().then((uid) => {
+              if (!uid) {
+                if (hint) hint.textContent = 'Could not start a session for uploading — try again in a moment.';
+                return;
+              }
+              const path = `avatars/${uid}.jpg`;
+              const storageRef = firebase.storage().ref(path);
+              storageRef.put(blob, { contentType: 'image/jpeg' }).then((snapshot) => {
+                return snapshot.ref.getDownloadURL();
+              }).then((downloadUrl) => {
+                changeSelectedAvatar = downloadUrl;
+                // Clear any highlighted emoji option — an uploaded image
+                // isn't one of the grid choices.
+                document.querySelectorAll('#avatar-change-grid .avatar-option').forEach(el => el.classList.remove('selected'));
+                setAvatarElContent(document.getElementById('admin-avatar-upload-preview'), downloadUrl);
+                if (hint) hint.textContent = 'Image ready — tap SAVE AVATAR below to apply it.';
+              }).catch((err) => {
+                console.error('Avatar upload error:', err);
+                if (hint) hint.textContent = 'Upload failed — try again or use a smaller image.';
+              });
+            });
+          }, 'image/jpeg', AVATAR_UPLOAD_JPEG_QUALITY);
+        };
+        img.onerror = () => { if (hint) hint.textContent = 'Could not read that image — try a different file.'; };
+        img.src = reader.result;
+      };
+      reader.onerror = () => { if (hint) hint.textContent = 'Could not read that file — try again.'; };
+      reader.readAsDataURL(file);
     }
 
     function saveAvatarChange() {
@@ -7557,7 +7739,7 @@
 
       currentChatUser = updatedUser;
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updatedUser));
-      document.getElementById('account-avatar').textContent = updatedUser.avatar;
+      setAvatarElContent(document.getElementById('account-avatar'), updatedUser.avatar);
       updateSidebarMeBar(updatedUser);
       if (profileCardOpenFor === updatedUser.nickname) {
         renderProfileCard(updatedUser.nickname, myProfile);
@@ -8367,7 +8549,7 @@
       // sidebar, separate from the scrollable list above it.
       const bar = document.getElementById('reviewees-sidebar-me');
       if (!bar || !user) return;
-      document.getElementById('sidebar-me-avatar').textContent = user.avatar || '✈️';
+      setAvatarElContent(document.getElementById('sidebar-me-avatar'), user.avatar || '✈️');
       document.getElementById('sidebar-me-name').textContent = user.nickname || user.name || '';
       bar.style.display = 'flex';
       applyOwnCosmeticsToBadge();
@@ -8469,7 +8651,7 @@
       document.body.classList.remove('gate-active');
       const badge = document.getElementById('account-badge');
       badge.style.display = 'flex';
-      document.getElementById('account-avatar').textContent = user.avatar || '✈️';
+      setAvatarElContent(document.getElementById('account-avatar'), user.avatar || '✈️');
       document.getElementById('account-name').textContent = user.nickname || user.name;
       updateSidebarMeBar(user);
       document.getElementById('admin-settings-wrap').style.display = isAdminUser(user) ? '' : 'none';
@@ -8795,6 +8977,7 @@
       authDomain: "aele-mock-exam-hub.firebaseapp.com",
       databaseURL: "https://aele-mock-exam-hub-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "aele-mock-exam-hub",
+      storageBucket: "aele-mock-exam-hub.firebasestorage.app",
       appId: "1:540939455616:web:998f9df3c55097e6e72a65"
     };
 
@@ -9221,7 +9404,38 @@
       if (!firebase.apps || !firebase.apps.length) {
         firebase.initializeApp(FIREBASE_CONFIG);
       }
+      ensureAnonymousAuth();
       return true;
+    }
+
+    // ---- anonymous auth (used only to scope Storage uploads — see
+    // avatars/{uid} in the Storage security rules) ----
+    // This app has no real Firebase Authentication of its own (Google
+    // Sign-In here is only used to read an email for the admin check, and
+    // everything else runs on the nickname/Flight Code system), so Storage
+    // rules have nothing to check requests against. Signing in anonymously
+    // gives every visitor a real (identity-less) Firebase uid in the
+    // background — invisible to them — so uploads can be scoped to
+    // "whoever actually holds this uid" instead of being wide open.
+    let anonymousAuthUid = null;
+    let anonymousAuthPromise = null;
+
+    function ensureAnonymousAuth() {
+      if (anonymousAuthUid) return Promise.resolve(anonymousAuthUid);
+      if (anonymousAuthPromise) return anonymousAuthPromise;
+      anonymousAuthPromise = new Promise((resolve) => {
+        firebase.auth().onAuthStateChanged((user) => {
+          if (user) {
+            anonymousAuthUid = user.uid;
+            resolve(user.uid);
+          }
+        });
+        firebase.auth().signInAnonymously().catch((err) => {
+          console.error('Anonymous auth error:', err);
+          resolve(null);
+        });
+      });
+      return anonymousAuthPromise;
     }
 
     function initChat() {
@@ -9920,7 +10134,7 @@
           <button class="profile-card-close" onclick="closeShopItemPreview()">&times;</button>
           <div class="profile-card-avatar-wrap">
             <span class="avatar-edit-wrap">
-              <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}">${avatar}</span>
+              <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}</span>
             </span>
           </div>
         </div>
@@ -11975,7 +12189,7 @@
         <li${classAttr} data-nickname="${escapeHtml(nick)}" onclick="openUserProfile(this.dataset.nickname)"${liInlineStyle}>
           ${coverImgHtml}
           ${coverOverlayHtml}
-          <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}">${avatar}<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span></span>
+          <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span></span>
           <span class="${animClass}" data-text="${escapeHtml(nick)}" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; padding:0 8px; margin:0 -8px;">${escapeHtml(nick)}</span>
         </li>
       `;
@@ -12360,7 +12574,7 @@
         const nickAttr = escapeHtml(nickname).replace(/'/g, "\\'");
         return `
           <div class="flight-alert-row">
-            <span class="avatar-circle">${avatar}</span>
+            <span class="avatar-circle"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}</span>
             <div class="flight-alert-info">
               <span class="flight-alert-name">${escapeHtml(nickname)}</span>
               <span class="flight-alert-sub">Wants to be your Crewmate</span>
@@ -12596,12 +12810,12 @@
           <div class="profile-card-avatar-wrap">
             ${isOwn ? `
             <span class="avatar-edit-wrap">
-              <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}">${avatar}</span>
+              <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}</span>
               <button type="button" class="avatar-edit-pencil" onclick="openAvatarChangeModal()" aria-label="Change avatar">&#9998;</button>
             </span>
             ` : `
             <span class="avatar-edit-wrap">
-              <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}">${avatar}</span>
+              <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}</span>
               ${renderCrewmateBtn(nickname)}
             </span>
             `}
