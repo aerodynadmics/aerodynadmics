@@ -7319,7 +7319,10 @@
     const AVATAR_OPTIONS = ['✈️', '🛩️', '🚁', '🛰️', '🚀', '🛫', '🛬', '🪂', '⚙️', '🧭', '🌸', '📐', '🎓', '👨‍🚀', '🛠️', '📡', '🌍', '⚡', '🔧', '🧮'];
     const DEFAULT_AVATAR = AVATAR_OPTIONS[0];
     const SAKURA_AVATAR = '🌸';
-    const SAKURA_PASSWORD = 'Mishka';
+    // The actual password lives only in the Apps Script backend
+    // (SAKURA_PASSWORD in the .gs file) and is checked there via the
+    // checkSakuraPassword action — never compared client-side, so it can't
+    // be read out of this file's source.
     let sakuraUnlocked = false;
 
     function renderAvatarGrid() {
@@ -7399,27 +7402,37 @@
 
     function checkAvatarLockPassword() {
       const input = document.getElementById('avatar-lock-password');
+      const submitBtn = document.getElementById('avatar-lock-submit');
       const errorEl = document.getElementById('avatar-lock-error');
-      if (input.value === SAKURA_PASSWORD) {
-        sakuraUnlocked = true;
-        errorEl.textContent = '✅ Correct password! Sakura unlocked.';
-        errorEl.classList.remove('success');
-        errorEl.classList.add('visible', 'success');
-        selectAvatar(SAKURA_AVATAR);
-      } else {
+      const pwValue = input.value;
+      if (!pwValue) {
         errorEl.textContent = 'Incorrect Password';
         errorEl.classList.remove('success');
         errorEl.classList.add('visible');
+        return;
       }
+      if (submitBtn) submitBtn.disabled = true;
+      jsonpRequest({ action: 'checkSakuraPassword', password: pwValue }, (result) => {
+        if (submitBtn) submitBtn.disabled = false;
+        if (result && result.unlocked) {
+          sakuraUnlocked = true;
+          errorEl.textContent = '✅ Correct password! Sakura unlocked.';
+          errorEl.classList.remove('success');
+          errorEl.classList.add('visible', 'success');
+          selectAvatar(SAKURA_AVATAR);
+        } else {
+          errorEl.textContent = 'Incorrect Password';
+          errorEl.classList.remove('success');
+          errorEl.classList.add('visible');
+        }
+      });
     }
 
     function handleAvatarLockBlur(e) {
-      const input = e.target;
-      const errorEl = document.getElementById('avatar-lock-error');
-      if (input.value && input.value !== SAKURA_PASSWORD && !sakuraUnlocked) {
-        errorEl.textContent = 'Incorrect Password';
-        errorEl.classList.add('visible');
-      }
+      // Verifying the password requires a round trip to the backend now,
+      // so there's no client-side value left to compare on blur — the
+      // submit button (checkAvatarLockPassword) is the only place this is
+      // checked.
     }
 
     // ---- change-avatar modal (lets a signed-in user swap avatars anytime) ----
@@ -7463,27 +7476,37 @@
 
     function checkAvatarChangeLockPassword() {
       const input = document.getElementById('avatar-change-lock-password');
+      const submitBtn = document.getElementById('avatar-change-lock-submit');
       const errorEl = document.getElementById('avatar-change-lock-error');
-      if (input.value === SAKURA_PASSWORD) {
-        changeSakuraUnlocked = true;
-        errorEl.textContent = '✅ Correct password! Sakura unlocked.';
-        errorEl.classList.remove('success');
-        errorEl.classList.add('visible', 'success');
-        selectAvatarChange(SAKURA_AVATAR);
-      } else {
+      const pwValue = input.value;
+      if (!pwValue) {
         errorEl.textContent = 'Incorrect Password';
         errorEl.classList.remove('success');
         errorEl.classList.add('visible');
+        return;
       }
+      if (submitBtn) submitBtn.disabled = true;
+      jsonpRequest({ action: 'checkSakuraPassword', password: pwValue }, (result) => {
+        if (submitBtn) submitBtn.disabled = false;
+        if (result && result.unlocked) {
+          changeSakuraUnlocked = true;
+          errorEl.textContent = '✅ Correct password! Sakura unlocked.';
+          errorEl.classList.remove('success');
+          errorEl.classList.add('visible', 'success');
+          selectAvatarChange(SAKURA_AVATAR);
+        } else {
+          errorEl.textContent = 'Incorrect Password';
+          errorEl.classList.remove('success');
+          errorEl.classList.add('visible');
+        }
+      });
     }
 
     function handleAvatarChangeLockBlur(e) {
-      const input = e.target;
-      const errorEl = document.getElementById('avatar-change-lock-error');
-      if (input.value && input.value !== SAKURA_PASSWORD && !changeSakuraUnlocked) {
-        errorEl.textContent = 'Incorrect Password';
-        errorEl.classList.add('visible');
-      }
+      // Verifying the password requires a round trip to the backend now,
+      // so there's no client-side value left to compare on blur — the
+      // submit button (checkAvatarChangeLockPassword) is the only place
+      // this is checked.
     }
 
     function openAvatarChangeModal() {
