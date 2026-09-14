@@ -7786,6 +7786,13 @@
       }
 
       refreshAllChatAvatarsInDom();
+      // The above only patches chat-message avatars — it never touches the
+      // "EVERYONE ELSE" reviewees list, including your own row in it, which
+      // is built by renderNicknameListFromCache() and otherwise wouldn't
+      // re-render until the next unrelated presence/list refresh (in
+      // practice: only on page reload). Force it here so the new avatar
+      // shows up there immediately too.
+      try { renderNicknameListFromCache(); } catch (err) { console.error('Nickname list refresh error:', err); }
       closeAvatarChangeModal();
     }
 
@@ -11712,7 +11719,7 @@
         : '';
 
       row.innerHTML = `
-        <div class="chat-msg-avatar profile-clickable${getLiveBorderClass(msg.nickname) ? ' ' + getLiveBorderClass(msg.nickname) : ''}" data-nickname="${escapeHtml(msg.nickname || '')}" onclick="openUserProfile(this.dataset.nickname)">${escapeHtml(getLiveAvatar(msg.nickname) || msg.avatar || '✈️')}<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span></div>
+        <div class="chat-msg-avatar profile-clickable${getLiveBorderClass(msg.nickname) ? ' ' + getLiveBorderClass(msg.nickname) : ''}" data-nickname="${escapeHtml(msg.nickname || '')}"${avatarStyleAttr(getLiveAvatar(msg.nickname) || msg.avatar || '✈️')} onclick="openUserProfile(this.dataset.nickname)">${escapeHtml(avatarGlyph(getLiveAvatar(msg.nickname) || msg.avatar || '✈️'))}<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span></div>
         <div class="chat-msg-body">
           <div class="chat-msg-meta"><span data-nickname-anim="${escapeHtml(msg.nickname || '')}" data-text="${escapeHtml(msg.nickname || '')}" class="profile-clickable ${getLiveNicknameAnimClass(msg.nickname) || ''}" onclick="openUserProfile('${(msg.nickname || '').replace(/[^a-z0-9]/gi, '')}')">${escapeHtml(msg.nickname || 'anon')}</span>${time ? ' · ' + time : ''}${replyBtnHtml}${banBtnHtml}${deleteBtnHtml}</div>
           ${replyQuoteHtml}
@@ -11910,10 +11917,24 @@
         const nick = el.getAttribute('data-nickname');
         const avatar = getLiveAvatar(nick);
         if (avatar) {
-          if (el.firstChild && el.firstChild.nodeType === Node.TEXT_NODE) {
-            el.firstChild.nodeValue = avatar;
+          // Image avatars (uploaded photos) must be applied as a CSS
+          // background, never as text — dumping the raw Firebase Storage
+          // URL into the DOM as a text node (the old behavior here) made
+          // the full URL show up as literal visible text in the chatbox.
+          if (isImageAvatar(avatar)) {
+            el.style.backgroundImage = `url('${avatar.replace(/'/g, "%27")}')`;
+            el.style.backgroundSize = 'cover';
+            el.style.backgroundPosition = 'center';
+            if (el.firstChild && el.firstChild.nodeType === Node.TEXT_NODE) {
+              el.firstChild.nodeValue = '';
+            }
           } else {
-            el.insertBefore(document.createTextNode(avatar), el.firstChild);
+            el.style.backgroundImage = '';
+            if (el.firstChild && el.firstChild.nodeType === Node.TEXT_NODE) {
+              el.firstChild.nodeValue = avatar;
+            } else {
+              el.insertBefore(document.createTextNode(avatar), el.firstChild);
+            }
           }
         }
         const borderClass = getLiveBorderClass(nick);
