@@ -6984,6 +6984,7 @@
       <button class="banned-list-close" onclick="adminModalCancel()">&times;</button>
       <p id="admin-modal-message" style="margin:0 0 14px; font-size:13.5px; line-height:1.55; color:var(--paper); white-space:pre-wrap;"></p>
       <input type="text" id="admin-modal-input" class="mockadmin-input" style="display:none;"
+        autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false"
         onkeydown="if(event.key==='Enter'){event.preventDefault();adminModalOk();}else if(event.key==='Escape'){adminModalCancel();}">
       <div class="mockadmin-editor-actions" style="margin-top:18px;">
         <button type="button" class="mockadmin-save-btn" id="admin-modal-cancel-btn" onclick="adminModalCancel()">CANCEL</button>
@@ -7120,7 +7121,9 @@
             } catch (err) { console.error('Live ban signal error:', err); }
           }
           adminAlert(`Banned "${nickname}".`);
-        } else if (result && result.message === 'Invalid admin secret.') {
+        } else if (result && result.message === 'Too many attempts. Please wait a few minutes and try again.') {
+          adminAlert('Too many admin secret attempts recently — please wait a few minutes and try again.');
+        } else if (result && result.message === 'Invalid Admin Secret') {
           adminAlert('Wrong admin secret — nothing was banned. Try again.');
         } else {
           adminAlert(`Could not ban "${nickname}": ${(result && result.message) || 'could not reach the server.'}`);
@@ -8840,7 +8843,9 @@
           // No manual reload needed — the banned-list modal (if open) is
           // watching 'banned'/'bannedMeta' live, so the .remove() calls
           // above already update it on their own.
-        } else if (result && result.message === 'Invalid admin secret.') {
+        } else if (result && result.message === 'Too many attempts. Please wait a few minutes and try again.') {
+          adminAlert('Too many admin secret attempts recently — please wait a few minutes and try again.');
+        } else if (result && result.message === 'Invalid Admin Secret') {
           adminAlert('Wrong admin secret — nothing was unbanned. Try again.');
         } else {
           adminAlert(`Could not unban "${email}": ${(result && result.message) || 'could not reach the server.'}`);
@@ -11887,6 +11892,16 @@
       if (!secret) return;
 
       jsonpRequest({ action: 'verifySecret', secret }, (result) => {
+        if (result && result.rateLimited) {
+          // The 'adminSecret' rate-limit bucket is shared across ban,
+          // unban, AND this delete-confirmation check — 5 wrong attempts
+          // across ANY of them within 5 minutes locks all three out, even
+          // with the correct secret, since the backend refuses to even
+          // compare it while locked out. Without this branch, a lockout
+          // looked identical to "you typed it wrong."
+          adminAlert('Too many admin secret attempts recently — please wait a few minutes and try again.');
+          return;
+        }
         if (!result || !result.valid) {
           adminAlert('Wrong admin secret — nothing was deleted. Try again.');
           return;
