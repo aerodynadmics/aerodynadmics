@@ -2211,13 +2211,13 @@
   .profile-aircraft-item:hover { border-color: var(--accent); }
   .profile-aircraft-thumb {
     display: block;
-    width: 100%;
+    width: 25%;
     aspect-ratio: 1;
     border-radius: 4px;
     background-size: cover;
     background-position: center;
     background-color: rgba(255,255,255,0.05);
-    margin-bottom: 4px;
+    margin: 0 auto 4px;
   }
   model-viewer.profile-aircraft-thumb {
     --poster-color: transparent;
@@ -4448,6 +4448,25 @@
        provides the single consistent border every item gets across all
        three categories; adding one here too gave backgrounds items a
        redundant "double box" look the other categories don't have. */
+  }
+  .shop-item-preview.model-preview {
+    /* Same footprint as .bg-preview so model cards line up with every
+       other category, but this renders an actual live model-viewer
+       instead of a flat background-image, since aircraft models don't
+       have a reliable static thumbnail. */
+    width: clamp(40px, 21.67cqh, 130px);
+    height: clamp(20px, 10.67cqh, 64px);
+    max-width: 100%;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.04);
+    overflow: hidden;
+    padding: 0;
+  }
+  .shop-item-preview.model-preview model-viewer {
+    width: 100%;
+    height: 100%;
+    --poster-color: transparent;
+    pointer-events: none;
   }
   html, body {
     transition: background-image 0.4s ease;
@@ -10483,6 +10502,15 @@
     function openShopItemPreview(category, id) {
       const item = effectiveShopItem(category, id);
       if (!item) return;
+      // Models don't equip onto the profile look like borders/animations/
+      // backgrounds do — previewing one should show the actual 3D model,
+      // not a mock "what would my profile look like" card. Reuses the same
+      // MiG 3D Viewer popup as the owned-aircraft viewer, just without the
+      // ownership gate, since this is a pre-purchase preview.
+      if (category === 'models' && item.modelSrc) {
+        openShopModelPreview(item);
+        return;
+      }
       const signedIn = !!currentChatUser;
       const avatar = (signedIn && currentChatUser.avatar) || '✈️';
       const nickname = signedIn ? currentChatUser.nickname : 'You';
@@ -11482,6 +11510,8 @@
           ? `<span class="shop-item-preview ${item.cssClass}">✈️</span>`
           : category === 'animations'
           ? `<span class="shop-item-preview"><span class="shop-anim-preview ${item.cssClass}">Callsign</span></span>`
+          : category === 'models' && item.modelSrc
+          ? `<span class="shop-item-preview model-preview"><model-viewer src="${item.modelSrc}" alt="${escapeHtml(item.name)}" auto-rotate rotation-per-second="25deg" disable-zoom interaction-prompt="none" shadow-intensity="0" exposure="1"></model-viewer></span>`
           : `<span class="shop-item-preview bg-preview" style="background-image:url('${item.imageUrl}')"></span>`;
 
         return `
@@ -11563,6 +11593,8 @@
           ? `<span class="shop-item-preview ${item.cssClass}">✈️</span>`
           : category === 'animations'
           ? `<span class="shop-item-preview"><span class="shop-anim-preview ${item.cssClass}">Callsign</span></span>`
+          : category === 'models' && item.modelSrc
+          ? `<span class="shop-item-preview model-preview"><model-viewer src="${item.modelSrc}" alt="${escapeHtml(item.name)}" auto-rotate rotation-per-second="25deg" disable-zoom interaction-prompt="none" shadow-intensity="0" exposure="1"></model-viewer></span>`
           : `<span class="shop-item-preview bg-preview" style="background-image:url('${item.imageUrl}')"></span>`;
 
         let actionsHtml;
@@ -17163,6 +17195,17 @@
         </div>
       `).join('');
       return `<div class="profile-aircraft-grid">${tiles}</div>`;
+    }
+
+    // Pre-purchase preview from the Flight Store / Hangar — same popup as
+    // openMigViewer() below, just without the ownership gate, since the
+    // point here is letting someone see the model before buying it.
+    function openShopModelPreview(item) {
+      const overlay = document.getElementById('mig-viewer-overlay');
+      const model = document.getElementById('mig-model');
+      model.setAttribute('src', item.modelSrc);
+      migModelLoaded = true;
+      overlay.classList.add('visible');
     }
 
     function openMigViewer() {
