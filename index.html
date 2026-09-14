@@ -2219,6 +2219,10 @@
     background-color: rgba(255,255,255,0.05);
     margin-bottom: 4px;
   }
+  model-viewer.profile-aircraft-thumb {
+    --poster-color: transparent;
+    pointer-events: none;
+  }
   .profile-aircraft-name {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 9.5px;
@@ -5987,9 +5991,9 @@
   #mig-viewer-overlay.visible { display: flex; }
   .mig-viewer-box {
     position: relative;
-    width: 90%;
-    max-width: 1100px;
-    height: 85vh;
+    width: 60%;
+    max-width: 600px;
+    height: 55vh;
     background: var(--blueprint-dark);
     border: 1px solid var(--line);
     border-radius: 10px;
@@ -6387,6 +6391,28 @@
     <div class="profile-card" id="shop-item-preview-body"></div>
   </div>
 
+  <!-- MiG 3D Viewer overlay — deliberately a sibling of the overlays above,
+       NOT nested inside .wrap. .wrap sets position:relative + z-index:1,
+       which creates its own stacking context, so a z-index set on anything
+       inside .wrap only wins against other things inside .wrap — it can
+       never outrank the profile card overlay (z-index 1700) above, which
+       sits outside .wrap. Keeping this overlay out here lets its z-index
+       (5000) actually apply against the whole page. -->
+  <div id="mig-viewer-overlay">
+    <div class="mig-viewer-box" id="mig-viewer-box">
+      <button class="mig-viewer-close-btn" onclick="closeMigViewer()">✕</button>
+      <model-viewer
+        id="mig-model"
+        alt="MiG 3D Model"
+        camera-controls
+        auto-rotate
+        shadow-intensity="1"
+        exposure="1"
+      ></model-viewer>
+      <div class="mig-viewer-hint">Drag to rotate · Scroll to zoom · Right-click drag to pan</div>
+    </div>
+  </div>
+
   <!-- ---- edit profile modal ---- -->
   <div class="nick-modal-overlay" id="profile-edit-overlay">
     <div class="nick-modal">
@@ -6508,7 +6534,6 @@
         <button class="daily-claim-btn" id="daily-claim-btn" onclick="openDailyRewardsModal()" style="display:none;">🎁 CLAIM</button>
         <button class="topbar-nav-btn" id="topbar-flight-store-btn" onclick="showFlightStore()">🛒 FLIGHT STORE</button>
         <button class="topbar-nav-btn" id="topbar-hangar-btn" onclick="showHangar()">📦 HANGAR</button>
-        <button class="topbar-nav-btn locked" id="topbar-3d-viewer-btn" onclick="openMigViewer()">🔒 3D VIEWER</button>
         <div class="admin-settings-wrap" id="admin-settings-wrap" style="display:none;">
           <button class="signout-btn" id="admin-settings-btn" onclick="toggleAdminSettingsMenu(event)">&#9881;&#65039; ADMIN</button>
           <div class="admin-settings-menu" id="admin-settings-menu">
@@ -6520,22 +6545,6 @@
           </div>
         </div>
         <button class="signout-btn signout-icon-btn" onclick="signOutUser()">🛫</button>
-      </div>
-    </div>
-
-    <!-- MiG 3D Viewer overlay -->
-    <div id="mig-viewer-overlay">
-      <div class="mig-viewer-box" id="mig-viewer-box">
-        <button class="mig-viewer-close-btn" onclick="closeMigViewer()">✕</button>
-        <model-viewer
-          id="mig-model"
-          alt="MiG 3D Model"
-          camera-controls
-          auto-rotate
-          shadow-intensity="1"
-          exposure="1"
-        ></model-viewer>
-        <div class="mig-viewer-hint">Drag to rotate · Scroll to zoom · Right-click drag to pan</div>
       </div>
     </div>
 
@@ -13264,14 +13273,14 @@
             </span>
             <span class="hours-chip-value" id="profile-card-flight-hours-value">${flightHours}</span>
           </span>
-          <div class="profile-card-divider"></div>
-          <p class="profile-card-section-label profile-card-bio-label">Bio</p>
-          <div class="profile-card-bio${bio ? '' : ' empty'}">${bio || (isOwn ? 'You haven\u2019t added a bio yet.' : 'This reviewee hasn\u2019t added a bio yet.')}</div>
           ${isOwn ? `
           <div class="profile-card-divider"></div>
           <p class="profile-card-section-label">Aircraft Collections</p>
           ${aircraftCollectionHtml}
           ` : ''}
+          <div class="profile-card-divider"></div>
+          <p class="profile-card-section-label profile-card-bio-label">Bio</p>
+          <div class="profile-card-bio${bio ? '' : ' empty'}">${bio || (isOwn ? 'You haven\u2019t added a bio yet.' : 'This reviewee hasn\u2019t added a bio yet.')}</div>
           ${showEditUi ? '<button type="button" class="profile-card-edit-btn" onclick="openEditProfile()">EDIT PROFILE</button>' : ''}
         </div>
       `;
@@ -17145,7 +17154,11 @@
       }
       const tiles = ownedItems.map((item) => `
         <div class="profile-aircraft-item" onclick="openMigViewer()">
+          ${item.modelSrc ? `
+          <model-viewer class="profile-aircraft-thumb" src="${item.modelSrc}" alt="${escapeHtml(item.name)}" auto-rotate rotation-per-second="25deg" disable-zoom interaction-prompt="none" shadow-intensity="0" exposure="1"></model-viewer>
+          ` : `
           <span class="profile-aircraft-thumb" style="background-image:url('${item.imageUrl}')"></span>
+          `}
           <span class="profile-aircraft-name">${escapeHtml(item.name)}</span>
         </div>
       `).join('');
