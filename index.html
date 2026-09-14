@@ -2194,6 +2194,47 @@
   .profile-card-bio-label {
     margin-bottom: 6px;
   }
+  .profile-aircraft-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .profile-aircraft-item {
+    cursor: pointer;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 6px;
+    text-align: center;
+    background: rgba(255,255,255,0.03);
+    transition: border-color 0.15s ease;
+  }
+  .profile-aircraft-item:hover { border-color: var(--accent); }
+  .profile-aircraft-thumb {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 4px;
+    background-size: cover;
+    background-position: center;
+    background-color: rgba(255,255,255,0.05);
+    margin-bottom: 4px;
+  }
+  .profile-aircraft-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.02em;
+    color: var(--paper);
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .profile-aircraft-empty {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    color: var(--rivet);
+    line-height: 1.6;
+  }
   .profile-card-divider {
     height: 1px;
     background: var(--line);
@@ -4171,6 +4212,8 @@
     transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
   }
   .topbar-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .topbar-nav-btn.locked { color: var(--rivet); opacity: 0.85; }
+  .topbar-nav-btn.locked:hover { border-color: var(--line); color: var(--rivet); }
   .wings-balance-card {
     display: flex;
     align-items: center;
@@ -6465,7 +6508,7 @@
         <button class="daily-claim-btn" id="daily-claim-btn" onclick="openDailyRewardsModal()" style="display:none;">🎁 CLAIM</button>
         <button class="topbar-nav-btn" id="topbar-flight-store-btn" onclick="showFlightStore()">🛒 FLIGHT STORE</button>
         <button class="topbar-nav-btn" id="topbar-hangar-btn" onclick="showHangar()">📦 HANGAR</button>
-        <button class="topbar-nav-btn" id="topbar-3d-viewer-btn" onclick="openMigViewer()">✈️ 3D VIEWER</button>
+        <button class="topbar-nav-btn locked" id="topbar-3d-viewer-btn" onclick="openMigViewer()">🔒 3D VIEWER</button>
         <div class="admin-settings-wrap" id="admin-settings-wrap" style="display:none;">
           <button class="signout-btn" id="admin-settings-btn" onclick="toggleAdminSettingsMenu(event)">&#9881;&#65039; ADMIN</button>
           <div class="admin-settings-menu" id="admin-settings-menu">
@@ -6975,6 +7018,7 @@
             <button class="store-subnav-btn active" id="shop-tab-borders" onclick="showShopTab('borders')">Avatar Decorations</button>
             <button class="store-subnav-btn" id="shop-tab-animations" onclick="showShopTab('animations')">Callsign Animations</button>
             <button class="store-subnav-btn" id="shop-tab-backgrounds" onclick="showShopTab('backgrounds')">Profile Backgrounds</button>
+            <button class="store-subnav-btn" id="shop-tab-models" onclick="showShopTab('models')">Aircraft Models</button>
           </div>
 
           <div id="shop-tab-panel-borders" class="shop-tab-panel">
@@ -6985,6 +7029,9 @@
           </div>
           <div id="shop-tab-panel-backgrounds" class="shop-tab-panel" style="display:none;">
             <div id="shop-backgrounds-grid"></div>
+          </div>
+          <div id="shop-tab-panel-models" class="shop-tab-panel" style="display:none;">
+            <div id="shop-models-grid"></div>
           </div>
         </div>
       </div>
@@ -9113,7 +9160,7 @@
       unreadChatCount = 0;
       updateUnreadBadge();
       resetChatForAccountSwitch();
-      userWallet = { wings: 0, ownedBorders: {}, ownedAnimations: {}, ownedBackgrounds: {}, equippedBorder: null, equippedAnimation: null, equippedBackground: null };
+      userWallet = { wings: 0, ownedBorders: {}, ownedAnimations: {}, ownedBackgrounds: {}, ownedModels: {}, equippedBorder: null, equippedAnimation: null, equippedBackground: null, equippedModel: null };
       walletLoaded = false;
       pendingDailyClaim = null;
       updateShopWingsBalanceDisplay();
@@ -10239,6 +10286,15 @@
         { id: 'bg-motion-24', name: 'Motion 24', priceWings: 1111, imageUrl: 'https://c.tenor.com/0d0l5WfxJ_AAAAAC/tenor.gif', tier: 'Supersonic' },
         { id: 'bg-motion-25', name: 'Motion 25', priceWings: 1111, imageUrl: 'https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExdGhwNHJxOTRwdnFrdnozbml5aDZpeDQwMDk0a3IzcWlpeG8yeG9scSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/qQgurUJnuefEtLBdp0/giphy.gif', tier: 'Supersonic' },
         { id: 'bg-motion-26', name: 'Motion 26', priceWings: 1111, imageUrl: 'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExc2tveTcxcWxmZTgwcDMzb3M5ZnNlY3IwOGRybTQ3OWs5YzhjMTFoZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/o3dftQFlgWBuhYnYZ8/giphy.gif', tier: 'Supersonic' }
+      ],
+      // ---- purchasable 3D aircraft models ----
+      // Bought once, then (a) unlocks the topbar "3D VIEWER" for that model
+      // and (b) shows up under "AIRCRAFT COLLECTIONS" on the owner's profile.
+      // Uses the same imageUrl-preview branch as `backgrounds` in
+      // renderShopGrid() (a thumbnail tile), so no new preview markup is
+      // needed there. modelSrc is the actual .gltf path the viewer loads.
+      models: [
+        { id: 'mig-21', name: 'MiG-21', priceWings: 1111, imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg/640px-Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg', tier: 'Supersonic', modelSrc: 'MiG_Project_1.42/MiG_Project_1.42.gltf' }
       ]
     };
 
@@ -10248,7 +10304,8 @@
     const TIER_PRICE_WINGS = {
       borders: { Sonic: 200, Supersonic: 500 },
       animations: { Sonic: 200, Supersonic: 1111 },
-      backgrounds: { Sonic: 200, Supersonic: 1111 }
+      backgrounds: { Sonic: 200, Supersonic: 1111 },
+      models: { Sonic: 200, Supersonic: 1111 }
     };
     // ---- admin shop overrides (adjust tier / permanently delete) ----
     // Lives in Firebase (shared, shared by every visitor) instead of just
@@ -10470,7 +10527,7 @@
 
     function getDeletedShopItems() {
       const out = [];
-      ['borders', 'animations', 'backgrounds'].forEach((category) => {
+      ['borders', 'animations', 'backgrounds', 'models'].forEach((category) => {
         const overrides = shopOverrides[category] || {};
         Object.keys(overrides).forEach((id) => {
           if (!overrides[id] || !overrides[id].deleted) return;
@@ -10560,7 +10617,7 @@
       return CREATE_WINGS_CHECKOUT_URL && !CREATE_WINGS_CHECKOUT_URL.startsWith('PASTE_');
     }
 
-    let userWallet = { wings: 0, ownedBorders: {}, ownedAnimations: {}, ownedBackgrounds: {}, equippedBorder: null, equippedAnimation: null, equippedBackground: null };
+    let userWallet = { wings: 0, ownedBorders: {}, ownedAnimations: {}, ownedBackgrounds: {}, ownedModels: {}, equippedBorder: null, equippedAnimation: null, equippedBackground: null, equippedModel: null };
     let walletLoaded = false;
     let walletListenerRef = null;
     // Tracks the last wings total we saw, so the realtime listener can tell
@@ -10778,7 +10835,8 @@
     const SHOP_CATEGORY_FIELDS = {
       borders: { ownedKey: 'ownedBorders', equippedKey: 'equippedBorder' },
       animations: { ownedKey: 'ownedAnimations', equippedKey: 'equippedAnimation' },
-      backgrounds: { ownedKey: 'ownedBackgrounds', equippedKey: 'equippedBackground' }
+      backgrounds: { ownedKey: 'ownedBackgrounds', equippedKey: 'equippedBackground' },
+      models: { ownedKey: 'ownedModels', equippedKey: 'equippedModel' }
     };
 
     // Items pulled from the store stay revoked for anyone who already
@@ -10838,9 +10896,11 @@
             ownedBorders: data.ownedBorders || {},
             ownedAnimations: data.ownedAnimations || {},
             ownedBackgrounds: data.ownedBackgrounds || {},
+            ownedModels: data.ownedModels || {},
             equippedBorder: data.equippedBorder || null,
             equippedAnimation: data.equippedAnimation || null,
             equippedBackground: data.equippedBackground || null,
+            equippedModel: data.equippedModel || null,
             lastLoginDate: data.lastLoginDate || null,
             loginStreak: data.loginStreak || 0
           };
@@ -10879,6 +10939,7 @@
           updateShopWingsBalanceDisplay();
           renderShopIfVisible();
           renderHangarIfVisible();
+          updateMigViewerLockState();
 
           // Persist the revocation so it's gone from Firebase for good,
           // not just hidden client-side until the next load.
@@ -11251,12 +11312,13 @@
       renderShopGrid('borders', 'shop-borders-grid');
       renderShopGrid('animations', 'shop-animations-grid');
       renderShopGrid('backgrounds', 'shop-backgrounds-grid');
+      renderShopGrid('models', 'shop-models-grid');
       updateShopWingsBalanceDisplay();
     }
 
     function showShopTab(tab) {
-      const panels = { borders: 'shop-tab-panel-borders', animations: 'shop-tab-panel-animations', backgrounds: 'shop-tab-panel-backgrounds' };
-      const tabs = { borders: 'shop-tab-borders', animations: 'shop-tab-animations', backgrounds: 'shop-tab-backgrounds' };
+      const panels = { borders: 'shop-tab-panel-borders', animations: 'shop-tab-panel-animations', backgrounds: 'shop-tab-panel-backgrounds', models: 'shop-tab-panel-models' };
+      const tabs = { borders: 'shop-tab-borders', animations: 'shop-tab-animations', backgrounds: 'shop-tab-backgrounds', models: 'shop-tab-models' };
       Object.keys(panels).forEach((key) => {
         const panel = document.getElementById(panels[key]);
         const tabBtn = document.getElementById(tabs[key]);
@@ -11471,8 +11533,8 @@
     // and get a small badge on each card, but no longer get their own
     // section/heading — the whole category is one flat, paginated 3x3 grid.
     const SHOP_TIER_ORDER = ['Subsonic', 'Sonic', 'Supersonic'];
-    const shopPage = { borders: 1, animations: 1, backgrounds: 1 };
-    const SHOP_GRID_IDS = { borders: 'shop-borders-grid', animations: 'shop-animations-grid', backgrounds: 'shop-backgrounds-grid' };
+    const shopPage = { borders: 1, animations: 1, backgrounds: 1, models: 1 };
+    const SHOP_GRID_IDS = { borders: 'shop-borders-grid', animations: 'shop-animations-grid', backgrounds: 'shop-backgrounds-grid', models: 'shop-models-grid' };
 
     function goToShopPage(category, page) {
       shopPage[category] = page;
@@ -11702,6 +11764,7 @@
       updateShopWingsBalanceDisplay();
       renderShopIfVisible();
       renderHangarIfVisible();
+      if (category === 'models') updateMigViewerLockState();
       // Buying a background auto-equips it, and myProfile.background is
       // already updated above — but nothing was telling the reviewees list
       // to re-render after a purchase (only toggleEquipCosmetic() did
@@ -13164,6 +13227,14 @@
         applySidebarMeCover(profile && profile.background);
       }
 
+      // Only the owner's own profile shows this — it reads live from the
+      // wallet (userWallet.ownedModels), which currently only exists for
+      // whoever's signed-in wallet is loaded. Showing this on OTHER users'
+      // profiles too would need each owner's ownedModels synced to presence
+      // the way equippedBorder/equippedAnimation already are — left for a
+      // follow-up since it touches presence data, not just this card.
+      const aircraftCollectionHtml = isOwn ? renderAircraftCollectionHtml() : '';
+
       document.getElementById('profile-card-body').innerHTML = `
         <div class="profile-card-banner" style="background:${bannerCss};">
           <button class="profile-card-close" onclick="closeUserProfile()">&times;</button>
@@ -13196,6 +13267,11 @@
           <div class="profile-card-divider"></div>
           <p class="profile-card-section-label profile-card-bio-label">Bio</p>
           <div class="profile-card-bio${bio ? '' : ' empty'}">${bio || (isOwn ? 'You haven\u2019t added a bio yet.' : 'This reviewee hasn\u2019t added a bio yet.')}</div>
+          ${isOwn ? `
+          <div class="profile-card-divider"></div>
+          <p class="profile-card-section-label">Aircraft Collections</p>
+          ${aircraftCollectionHtml}
+          ` : ''}
           ${showEditUi ? '<button type="button" class="profile-card-edit-btn" onclick="openEditProfile()">EDIT PROFILE</button>' : ''}
         </div>
       `;
@@ -17035,8 +17111,54 @@
     }
 
     // ---- MiG 3D Viewer ----
+    // Gated behind ownership of the 'mig-21' item in the shop's 'models'
+    // category — see SHOP_ITEMS.models. Free for everyone until purchased.
     let migModelLoaded = false;
+
+    function ownsShopItem(category, id) {
+      if (!walletLoaded || !userWallet) return false;
+      const ownedKey = SHOP_CATEGORY_FIELDS[category] && SHOP_CATEGORY_FIELDS[category].ownedKey;
+      if (!ownedKey || !userWallet[ownedKey]) return false;
+      return !!userWallet[ownedKey][id];
+    }
+
+    // Keeps the topbar button's lock icon/state in sync with ownership —
+    // called whenever the wallet loads/changes (see
+    // loadWalletAndApplyDailyBonus) and right after a purchase completes.
+    function updateMigViewerLockState() {
+      const btn = document.getElementById('topbar-3d-viewer-btn');
+      if (!btn) return;
+      const owned = ownsShopItem('models', 'mig-21');
+      btn.classList.toggle('locked', !owned);
+      btn.textContent = owned ? '✈️ 3D VIEWER' : '🔒 3D VIEWER';
+    }
+
+    // Builds the "AIRCRAFT COLLECTIONS" grid shown on the owner's own
+    // profile card — one tile per owned model in SHOP_ITEMS.models, reading
+    // live from userWallet.ownedModels. Tapping a tile opens the 3D Viewer.
+    function renderAircraftCollectionHtml() {
+      if (!walletLoaded) return `<div class="profile-aircraft-empty">Loading…</div>`;
+      const owned = userWallet.ownedModels || {};
+      const ownedItems = (SHOP_ITEMS.models || []).filter((item) => owned[item.id]);
+      if (ownedItems.length === 0) {
+        return `<div class="profile-aircraft-empty">No aircraft in your collection yet — check the Flight Store.</div>`;
+      }
+      const tiles = ownedItems.map((item) => `
+        <div class="profile-aircraft-item" onclick="openMigViewer()">
+          <span class="profile-aircraft-thumb" style="background-image:url('${item.imageUrl}')"></span>
+          <span class="profile-aircraft-name">${escapeHtml(item.name)}</span>
+        </div>
+      `).join('');
+      return `<div class="profile-aircraft-grid">${tiles}</div>`;
+    }
+
     function openMigViewer() {
+      if (!ownsShopItem('models', 'mig-21')) {
+        showWingsToast('🔒 Buy the MiG-21 in the Flight Store to unlock the 3D Viewer');
+        showFlightStore();
+        showShopTab('models');
+        return;
+      }
       const overlay = document.getElementById('mig-viewer-overlay');
       const model = document.getElementById('mig-model');
       if (!migModelLoaded) {
