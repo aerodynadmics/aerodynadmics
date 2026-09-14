@@ -2896,7 +2896,7 @@
   /* ---- reviewee chat ---- */
   .chat-fab {
     position: fixed;
-    bottom: 76px;
+    bottom: 16px;
     right: 20px;
     z-index: 60;
     width: 52px;
@@ -10159,7 +10159,12 @@
         { id: 'bg-motion-18', name: 'F15 Eagle', priceWings: 1111, imageUrl: 'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExNjRzODNscTBkeWZ0MDhkeWhmdnB1Njh2MDVrbm04cmdza2UycGIzcCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/2nKi2xKYjhK0w/200.webp', tier: 'Supersonic' },
         { id: 'bg-motion-19', name: 'Fighter Pilot', priceWings: 1111, imageUrl: 'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExNjRzODNscTBkeWZ0MDhkeWhmdnB1Njh2MDVrbm04cmdza2UycGIzcCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/rAmtvwCQRhNHa/200.webp', tier: 'Supersonic' },
         { id: 'bg-motion-20', name: 'Anime Air Combat', priceWings: 1111, imageUrl: 'https://media1.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3dmU3dmx0ZzBqNXA1ZmF1eXFnMHpoN25kaWJ6MnN1YTV3djI2eXV2ZiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/JTbZV8TZSTcviGQXwY/200.webp', tier: 'Supersonic' },
-        { id: 'bg-motion-21', name: 'F-16 Fighting Falcon', priceWings: 1111, imageUrl: 'https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExNjRzODNscTBkeWZ0MDhkeWhmdnB1Njh2MDVrbm04cmdza2UycGIzcCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/vWvvVmlE6zNuCMWjJK/200.webp', tier: 'Supersonic' }
+        { id: 'bg-motion-21', name: 'F-16 Fighting Falcon', priceWings: 1111, imageUrl: 'https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExNjRzODNscTBkeWZ0MDhkeWhmdnB1Njh2MDVrbm04cmdza2UycGIzcCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/vWvvVmlE6zNuCMWjJK/200.webp', tier: 'Supersonic' },
+        { id: 'bg-motion-22', name: 'Motion 22', priceWings: 1111, imageUrl: 'https://c.tenor.com/XL42fTf9FwwAAAAC/tenor.gif', tier: 'Supersonic' },
+        { id: 'bg-motion-23', name: 'Motion 23', priceWings: 1111, imageUrl: 'https://c.tenor.com/EnKFrD1qqrAAAAAd/tenor.gif', tier: 'Supersonic' },
+        { id: 'bg-motion-24', name: 'Motion 24', priceWings: 1111, imageUrl: 'https://c.tenor.com/0d0l5WfxJ_AAAAAC/tenor.gif', tier: 'Supersonic' },
+        { id: 'bg-motion-25', name: 'Motion 25', priceWings: 1111, imageUrl: 'https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExdGhwNHJxOTRwdnFrdnozbml5aDZpeDQwMDk0a3IzcWlpeG8yeG9scSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/qQgurUJnuefEtLBdp0/giphy.gif', tier: 'Supersonic' },
+        { id: 'bg-motion-26', name: 'Motion 26', priceWings: 1111, imageUrl: 'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExc2tveTcxcWxmZTgwcDMzb3M5ZnNlY3IwOGRybTQ3OWs5YzhjMTFoZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/o3dftQFlgWBuhYnYZ8/giphy.gif', tier: 'Supersonic' }
       ]
     };
 
@@ -10237,13 +10242,17 @@
     function withTierOverride(category, item) {
       const cat = shopOverrides[category];
       const override = cat && cat[item.id];
+      let result = item;
       if (override && override.tier && override.tier !== item.tier) {
         const price = override.priceWings != null
           ? override.priceWings
           : (TIER_PRICE_WINGS[category] && TIER_PRICE_WINGS[category][override.tier]);
-        return Object.assign({}, item, { tier: override.tier, priceWings: price != null ? price : item.priceWings });
+        result = Object.assign({}, result, { tier: override.tier, priceWings: price != null ? price : item.priceWings });
       }
-      return item;
+      if (override && override.name && override.name !== item.name) {
+        result = Object.assign({}, result, { name: override.name });
+      }
+      return result;
     }
 
     // Same as findShopItem, but with any admin tier/price override applied
@@ -10295,10 +10304,31 @@
       }
     }
 
+    async function adminRenameItem(category, id) {
+      if (!isAdminUser(currentChatUser)) return;
+      const item = SHOP_ITEMS[category] && SHOP_ITEMS[category].find((i) => i.id === id);
+      if (!item) return;
+      const displayed = withTierOverride(category, item);
+      const newName = await adminPrompt('New name for this item:', displayed.name);
+      if (newName == null) return;
+      const trimmed = newName.trim();
+      if (!trimmed || trimmed === displayed.name) return;
+      try {
+        ensureFirebaseApp();
+        nsRef(`shopOverrides/${category}/${id}`).update({ name: trimmed }).catch((err) => {
+          console.error('Rename item error:', err);
+          adminAlert('Could not rename the item. Try again.');
+        });
+      } catch (err) {
+        console.error('Rename item error:', err);
+      }
+    }
+
     function shopItemAdminActionsHtml(category, item) {
       if (!isAdminUser(currentChatUser)) return '';
       return `
         <div class="shop-item-admin-actions" onclick="event.stopPropagation();">
+          <button type="button" class="shop-item-admin-btn" title="Rename item" onclick="adminRenameItem('${category}','${item.id}')">&#9998;</button>
           <button type="button" class="shop-item-admin-btn" title="Adjust item type (Sonic/Supersonic)" onclick="adminAdjustItemTier('${category}','${item.id}')">&#8646;</button>
           <button type="button" class="shop-item-admin-btn danger" title="Delete item permanently" onclick="adminDeleteItemPermanently('${category}','${item.id}')">&#10005;</button>
         </div>
