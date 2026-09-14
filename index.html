@@ -6142,9 +6142,9 @@
           <!-- Upload a custom image instead of picking an emoji. Every
                signed-in user can use this (see handleAvatarImageUpload) —
                the actual file goes to Firebase Storage under
-               avatars/{uid}.jpg, scoped per-visitor by an anonymous auth
-               uid (see ensureAnonymousAuth above), not tied to their
-               nickname/account. -->
+               avatars/{nickname}/photo.jpg, scoped to the account's own
+               real, backend-verified Firebase session (see
+               signInWithFirebaseToken above), not just the browser. -->
           <div class="admin-avatar-upload-wrap visible" id="admin-avatar-upload-wrap">
             <p class="avatar-label" style="margin-top: 14px;">Or upload your own image</p>
             <div class="admin-avatar-upload-row">
@@ -7335,6 +7335,7 @@
           setForgotStageError('forgot-newcode-error', (data && data.message) || 'Could not reach the server. Please try again.');
           return;
         }
+        signInWithFirebaseToken(data.firebaseToken);
         showForgotStage('forgot-stage-success');
       });
     }
@@ -7640,11 +7641,18 @@
     // Image upload for the "change avatar" modal — available to every
     // signed-in user. The chosen image is resized/cropped to a square
     // client-side (to keep uploads small and consistent), then uploaded to
-    // Firebase Storage at avatars/{anonUid}.jpg. The Storage security rules
-    // (set in the Firebase Console) require request.auth.uid == {anonUid},
-    // where that uid comes from ensureAnonymousAuth() above — a real but
-    // identity-less Firebase session created silently for every visitor,
-    // since this app has no Firebase Auth of its own to check against.
+    // Firebase Storage at avatars/{nickname}/photo.jpg. The Storage
+    // security rules require request.auth.uid to equal that same
+    // nickname — a REAL guarantee now, because signInWithFirebaseToken()
+    // (see above) signs this browser into Firebase using a custom token
+    // the Apps Script backend only mints after it has already verified
+    // the Callsign + Flight Code (or an existing Google-linked account).
+    // (An earlier version used Firebase Anonymous Auth instead, which is
+    // tied to the BROWSER rather than the signed-in nickname — so testing
+    // two different nicknames in one browser shared one uid, and
+    // therefore one image file, each overwriting the other's avatar. This
+    // version can't have that problem: the uid is asserted by the backend
+    // after checking the account's own credentials.)
     // Once the upload finishes we get back a public download URL and store
     // THAT (not the image itself) in the same `avatar` field the backend
     // already persists — saveAvatarChange() below needs no changes to pick
@@ -7652,10 +7660,22 @@
     const AVATAR_UPLOAD_MAX_DIMENSION = 256; // px, square
     const AVATAR_UPLOAD_JPEG_QUALITY = 0.8;
 
+    // Nicknames are already restricted to lowercase a-z at signup
+    // (NICKNAME_PATTERN), matching sanitizeNickname() on the backend — this
+    // is defensive rather than load-bearing, just guaranteeing the result
+    // can never contain a "/" or other unsafe/mismatched character.
+    function avatarUploadKey(nickname) {
+      return String(nickname).toLowerCase().trim().replace(/[^a-z0-9_-]/g, '_');
+    }
+
     function handleAvatarImageUpload(event) {
       const file = event.target.files && event.target.files[0];
       const hint = document.getElementById('admin-avatar-upload-hint');
       if (!file) return;
+      if (!currentChatUser || !currentChatUser.nickname) {
+        if (hint) hint.textContent = 'You need to be signed in to upload an avatar.';
+        return;
+      }
       if (!file.type.startsWith('image/')) {
         if (hint) hint.textContent = 'Please choose an image file.';
         return;
@@ -7683,17 +7703,13 @@
             }
             if (hint) hint.textContent = 'Uploading…';
 
-            if (!ensureFirebaseApp()) {
-              if (hint) hint.textContent = 'Could not connect right now — try again in a moment.';
-              return;
-            }
-
-            ensureAnonymousAuth().then((uid) => {
+            ensureFirebaseApp();
+            waitForFirebaseUidMatching(currentChatUser.nickname).then((uid) => {
               if (!uid) {
-                if (hint) hint.textContent = 'Could not start a session for uploading — try again in a moment.';
+                if (hint) hint.textContent = 'Could not verify your session for uploading — try signing out and back in, then try again.';
                 return;
               }
-              const path = `avatars/${uid}.jpg`;
+              const path = `avatars/${uid}/photo.jpg`;
               const storageRef = firebase.storage().ref(path);
               storageRef.put(blob, { contentType: 'image/jpeg' }).then((snapshot) => {
                 return snapshot.ref.getDownloadURL();
@@ -7859,6 +7875,7 @@
         lookupAttempt++;
         jsonpRequest({ action: 'lookupNickname', email: pendingUser.email }, (data) => {
           if (data && data.nickname) {
+            signInWithFirebaseToken(data.firebaseToken);
             // Account confirmed to still exist. Prefer the cached
             // nickname/avatar to avoid landing on a stale/incomplete server
             // row and flipping the avatar back to default, same as before —
@@ -8165,6 +8182,7 @@
             ('hasFlightCode' in data ? data.hasFlightCode : !!data.flightCode));
 
           if (confirmed) {
+            signInWithFirebaseToken(data.firebaseToken);
             onFlightCodeConfirmed();
             return;
           }
@@ -8291,6 +8309,8 @@
             showDirectSigninError(data.message || 'Invalid Callsign or Flight Code');
             return;
           }
+
+          signInWithFirebaseToken(data.firebaseToken);
 
           const user = {
             name: data.name || '',
@@ -8455,6 +8475,7 @@
             data.nickname.toLowerCase() === user.nickname.toLowerCase();
 
           if (saved) {
+            signInWithFirebaseToken(data.firebaseToken);
             checking.classList.remove('visible');
             btn.disabled = false;
             finishSignIn(user, true);
@@ -9404,38 +9425,58 @@
       if (!firebase.apps || !firebase.apps.length) {
         firebase.initializeApp(FIREBASE_CONFIG);
       }
-      ensureAnonymousAuth();
       return true;
     }
 
-    // ---- anonymous auth (used only to scope Storage uploads — see
-    // avatars/{uid} in the Storage security rules) ----
-    // This app has no real Firebase Authentication of its own (Google
-    // Sign-In here is only used to read an email for the admin check, and
-    // everything else runs on the nickname/Flight Code system), so Storage
-    // rules have nothing to check requests against. Signing in anonymously
-    // gives every visitor a real (identity-less) Firebase uid in the
-    // background — invisible to them — so uploads can be scoped to
-    // "whoever actually holds this uid" instead of being wide open.
-    let anonymousAuthUid = null;
-    let anonymousAuthPromise = null;
+    // ---- real per-Callsign auth (used to scope Storage uploads — see
+    // avatars/{nickname}/photo.jpg in the Storage security rules) ----
+    // The Apps Script backend now mints a genuine Firebase Auth custom
+    // token (see mintFirebaseCustomToken/attachFirebaseToken in the .gs
+    // file) alongside every successful login, signup, Google-account
+    // lookup, and Flight Code reset — using sanitizeNickname(nickname) as
+    // the token's uid. Signing into Firebase with that token gives this
+    // browser a REAL, backend-verified uid equal to the signed-in
+    // Callsign — not just something the client claims — so Storage rules
+    // can trust request.auth.uid the same way they'd trust a normal
+    // Firebase Auth login.
+    function signInWithFirebaseToken(token) {
+      if (!token) return;
+      if (!ensureFirebaseApp()) return;
+      firebase.auth().signInWithCustomToken(token).catch((err) => {
+        console.error('Firebase custom-token sign-in error:', err);
+      });
+    }
 
-    function ensureAnonymousAuth() {
-      if (anonymousAuthUid) return Promise.resolve(anonymousAuthUid);
-      if (anonymousAuthPromise) return anonymousAuthPromise;
-      anonymousAuthPromise = new Promise((resolve) => {
-        firebase.auth().onAuthStateChanged((user) => {
-          if (user) {
-            anonymousAuthUid = user.uid;
-            resolve(user.uid);
+    // Resolves once a real (non-anonymous) Firebase session matching the
+    // given nickname is active, or resolves null after a short timeout if
+    // one never shows up (e.g. the backend's Script Properties for
+    // FB_CLIENT_EMAIL/FB_PRIVATE_KEY aren't set yet, so attachFirebaseToken
+    // silently omitted the token — see the .gs file's try/catch there).
+    // Every normal sign-in path already calls signInWithFirebaseToken()
+    // above well before the avatar-change modal can be opened, so this
+    // should resolve almost immediately in practice.
+    function waitForFirebaseUidMatching(nickname, timeoutMs) {
+      return new Promise((resolve) => {
+        if (!ensureFirebaseApp()) { resolve(null); return; }
+        const wanted = avatarUploadKey(nickname);
+        const existing = firebase.auth().currentUser;
+        if (existing && existing.uid === wanted) { resolve(wanted); return; }
+        let settled = false;
+        const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
+          if (settled) return;
+          if (user && user.uid === wanted) {
+            settled = true;
+            unsubscribe();
+            resolve(wanted);
           }
         });
-        firebase.auth().signInAnonymously().catch((err) => {
-          console.error('Anonymous auth error:', err);
+        setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          unsubscribe();
           resolve(null);
-        });
+        }, timeoutMs || 4000);
       });
-      return anonymousAuthPromise;
     }
 
     function initChat() {
@@ -13112,6 +13153,7 @@
             // Flight Alerts bell on every load — and so the flag clears
             // itself if it was resolved from another device.
             if (data && data.nickname) {
+              signInWithFirebaseToken(data.firebaseToken);
               const stillHasFlightCode = ('hasFlightCode' in data ? !!data.hasFlightCode : !!data.flightCode);
               setNeedsFlightCode(!stillHasFlightCode);
               if (currentChatUser) currentChatUser.needsFlightCode = !stillHasFlightCode;
