@@ -2194,6 +2194,70 @@
   .profile-card-bio-label {
     margin-bottom: 6px;
   }
+  .profile-aircraft-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .profile-aircraft-item {
+    cursor: pointer;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 6px;
+    text-align: center;
+    background: rgba(255,255,255,0.03);
+    transition: border-color 0.15s ease;
+  }
+  .profile-aircraft-item:hover { border-color: var(--accent); }
+  .profile-aircraft-thumb {
+    display: block;
+    width: 50%;
+    aspect-ratio: 1;
+    border-radius: 4px;
+    background-size: cover;
+    background-position: center;
+    background-color: rgba(255,255,255,0.05);
+    margin: 0 auto 4px;
+  }
+  /* model-viewer is a custom element that manages its own internal layout
+     and doesn't reliably honor aspect-ratio set directly on it — wrapping
+     it in a plain element that DOES hold the square shape, then forcing
+     the model-viewer to absolutely fill that wrapper, guarantees an actual
+     square instead of the tall rectangle aspect-ratio alone produced. */
+  .profile-aircraft-thumb-wrap {
+    display: block;
+    width: 50%;
+    aspect-ratio: 1;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    background-color: rgba(255,255,255,0.05);
+    margin: 0 auto 4px;
+  }
+  .profile-aircraft-thumb-wrap model-viewer {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    --poster-color: transparent;
+    pointer-events: none;
+  }
+  .profile-aircraft-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.02em;
+    color: var(--paper);
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .profile-aircraft-empty {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    color: var(--rivet);
+    line-height: 1.6;
+  }
   .profile-card-divider {
     height: 1px;
     background: var(--line);
@@ -4171,6 +4235,8 @@
     transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
   }
   .topbar-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .topbar-nav-btn.locked { color: var(--rivet); opacity: 0.85; }
+  .topbar-nav-btn.locked:hover { border-color: var(--line); color: var(--rivet); }
   .wings-balance-card {
     display: flex;
     align-items: center;
@@ -4401,6 +4467,25 @@
        provides the single consistent border every item gets across all
        three categories; adding one here too gave backgrounds items a
        redundant "double box" look the other categories don't have. */
+  }
+  .shop-item-preview.model-preview {
+    /* Same footprint as .bg-preview so model cards line up with every
+       other category, but this renders an actual live model-viewer
+       instead of a flat background-image, since aircraft models don't
+       have a reliable static thumbnail. */
+    width: clamp(40px, 21.67cqh, 130px);
+    height: clamp(20px, 10.67cqh, 64px);
+    max-width: 100%;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.04);
+    overflow: hidden;
+    padding: 0;
+  }
+  .shop-item-preview.model-preview model-viewer {
+    width: 100%;
+    height: 100%;
+    --poster-color: transparent;
+    pointer-events: none;
   }
   html, body {
     transition: background-image 0.4s ease;
@@ -5944,9 +6029,9 @@
   #mig-viewer-overlay.visible { display: flex; }
   .mig-viewer-box {
     position: relative;
-    width: 90%;
-    max-width: 1100px;
-    height: 85vh;
+    width: 60%;
+    max-width: 600px;
+    height: 55vh;
     background: var(--blueprint-dark);
     border: 1px solid var(--line);
     border-radius: 10px;
@@ -5973,6 +6058,20 @@
     z-index: 5001;
   }
   .mig-viewer-close-btn:hover { background: #d92e2e; }
+  .mig-viewer-title {
+    position: absolute;
+    top: 14px;
+    left: 16px;
+    right: 55px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    color: var(--paper);
+    z-index: 5001;
+    pointer-events: none;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+  }
   .mig-viewer-hint {
     position: absolute;
     bottom: 8px;
@@ -6344,6 +6443,29 @@
     <div class="profile-card" id="shop-item-preview-body"></div>
   </div>
 
+  <!-- MiG 3D Viewer overlay — deliberately a sibling of the overlays above,
+       NOT nested inside .wrap. .wrap sets position:relative + z-index:1,
+       which creates its own stacking context, so a z-index set on anything
+       inside .wrap only wins against other things inside .wrap — it can
+       never outrank the profile card overlay (z-index 1700) above, which
+       sits outside .wrap. Keeping this overlay out here lets its z-index
+       (5000) actually apply against the whole page. -->
+  <div id="mig-viewer-overlay">
+    <div class="mig-viewer-box" id="mig-viewer-box">
+      <button class="mig-viewer-close-btn" onclick="closeMigViewer()">✕</button>
+      <div class="mig-viewer-title" id="mig-viewer-title"></div>
+      <model-viewer
+        id="mig-model"
+        alt="MiG 3D Model"
+        camera-controls
+        auto-rotate
+        shadow-intensity="1"
+        exposure="1"
+      ></model-viewer>
+      <div class="mig-viewer-hint">Drag to rotate · Scroll to zoom · Right-click drag to pan</div>
+    </div>
+  </div>
+
   <!-- ---- edit profile modal ---- -->
   <div class="nick-modal-overlay" id="profile-edit-overlay">
     <div class="nick-modal">
@@ -6465,7 +6587,6 @@
         <button class="daily-claim-btn" id="daily-claim-btn" onclick="openDailyRewardsModal()" style="display:none;">🎁 CLAIM</button>
         <button class="topbar-nav-btn" id="topbar-flight-store-btn" onclick="showFlightStore()">🛒 FLIGHT STORE</button>
         <button class="topbar-nav-btn" id="topbar-hangar-btn" onclick="showHangar()">📦 HANGAR</button>
-        <button class="topbar-nav-btn" id="topbar-3d-viewer-btn" onclick="openMigViewer()">✈️ 3D VIEWER</button>
         <div class="admin-settings-wrap" id="admin-settings-wrap" style="display:none;">
           <button class="signout-btn" id="admin-settings-btn" onclick="toggleAdminSettingsMenu(event)">&#9881;&#65039; ADMIN</button>
           <div class="admin-settings-menu" id="admin-settings-menu">
@@ -6477,22 +6598,6 @@
           </div>
         </div>
         <button class="signout-btn signout-icon-btn" onclick="signOutUser()">🛫</button>
-      </div>
-    </div>
-
-    <!-- MiG 3D Viewer overlay -->
-    <div id="mig-viewer-overlay">
-      <div class="mig-viewer-box" id="mig-viewer-box">
-        <button class="mig-viewer-close-btn" onclick="closeMigViewer()">✕</button>
-        <model-viewer
-          id="mig-model"
-          alt="MiG 3D Model"
-          camera-controls
-          auto-rotate
-          shadow-intensity="1"
-          exposure="1"
-        ></model-viewer>
-        <div class="mig-viewer-hint">Drag to rotate · Scroll to zoom · Right-click drag to pan</div>
       </div>
     </div>
 
@@ -6972,11 +7077,15 @@
           </div>
 
           <div class="store-subnav">
+            <button class="store-subnav-btn" id="shop-tab-models" onclick="showShopTab('models')">Aircraft Models</button>
             <button class="store-subnav-btn active" id="shop-tab-borders" onclick="showShopTab('borders')">Avatar Decorations</button>
             <button class="store-subnav-btn" id="shop-tab-animations" onclick="showShopTab('animations')">Callsign Animations</button>
             <button class="store-subnav-btn" id="shop-tab-backgrounds" onclick="showShopTab('backgrounds')">Profile Backgrounds</button>
           </div>
 
+          <div id="shop-tab-panel-models" class="shop-tab-panel" style="display:none;">
+            <div id="shop-models-grid"></div>
+          </div>
           <div id="shop-tab-panel-borders" class="shop-tab-panel">
             <div id="shop-borders-grid"></div>
           </div>
@@ -7014,11 +7123,15 @@
           <div class="empty-note" id="hangar-empty-note" style="display:none;">NOTHING IN YOUR HANGAR YET. VISIT THE FLIGHT STORE TO GET SOMETHING.</div>
 
           <div class="store-subnav" id="hangar-subnav" style="display:none;">
+            <button class="store-subnav-btn" id="hangar-tab-models" onclick="showHangarTab('models')">Aircraft Collections</button>
             <button class="store-subnav-btn active" id="hangar-tab-borders" onclick="showHangarTab('borders')">Avatar Decorations</button>
             <button class="store-subnav-btn" id="hangar-tab-animations" onclick="showHangarTab('animations')">Callsign Animations</button>
             <button class="store-subnav-btn" id="hangar-tab-backgrounds" onclick="showHangarTab('backgrounds')">Profile Backgrounds</button>
           </div>
 
+          <div id="hangar-tab-panel-models" class="shop-tab-panel" style="display:none;">
+            <div id="hangar-models-grid"></div>
+          </div>
           <div id="hangar-tab-panel-borders" class="shop-tab-panel">
             <div id="hangar-borders-grid"></div>
           </div>
@@ -9113,7 +9226,7 @@
       unreadChatCount = 0;
       updateUnreadBadge();
       resetChatForAccountSwitch();
-      userWallet = { wings: 0, ownedBorders: {}, ownedAnimations: {}, ownedBackgrounds: {}, equippedBorder: null, equippedAnimation: null, equippedBackground: null };
+      userWallet = { wings: 0, ownedBorders: {}, ownedAnimations: {}, ownedBackgrounds: {}, ownedModels: {}, equippedBorder: null, equippedAnimation: null, equippedBackground: null, equippedModel: null };
       walletLoaded = false;
       pendingDailyClaim = null;
       updateShopWingsBalanceDisplay();
@@ -9899,6 +10012,7 @@
             section: currentSectionLabel,
             equippedBorder: (userWallet && userWallet.equippedBorder) || null,
             equippedAnimation: (userWallet && userWallet.equippedAnimation) || null,
+            ownedModels: (userWallet && userWallet.ownedModels) || {},
             lastSeen: firebase.database.ServerValue.TIMESTAMP
           });
         });
@@ -10239,6 +10353,16 @@
         { id: 'bg-motion-24', name: 'Motion 24', priceWings: 1111, imageUrl: 'https://c.tenor.com/0d0l5WfxJ_AAAAAC/tenor.gif', tier: 'Supersonic' },
         { id: 'bg-motion-25', name: 'Motion 25', priceWings: 1111, imageUrl: 'https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExdGhwNHJxOTRwdnFrdnozbml5aDZpeDQwMDk0a3IzcWlpeG8yeG9scSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/qQgurUJnuefEtLBdp0/giphy.gif', tier: 'Supersonic' },
         { id: 'bg-motion-26', name: 'Motion 26', priceWings: 1111, imageUrl: 'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExc2tveTcxcWxmZTgwcDMzb3M5ZnNlY3IwOGRybTQ3OWs5YzhjMTFoZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/o3dftQFlgWBuhYnYZ8/giphy.gif', tier: 'Supersonic' }
+      ],
+      // ---- purchasable 3D aircraft models ----
+      // Bought once, then (a) unlocks the topbar "3D VIEWER" for that model
+      // and (b) shows up under "AIRCRAFT COLLECTIONS" on the owner's profile.
+      // Uses the same imageUrl-preview branch as `backgrounds` in
+      // renderShopGrid() (a thumbnail tile), so no new preview markup is
+      // needed there. modelSrc is the actual .gltf path the viewer loads.
+      models: [
+        { id: 'mig-21', name: 'MiG-21', priceWings: 1111, imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg/640px-Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg', tier: 'Supersonic', modelSrc: 'MiG_Project_1.42/MiG_Project_1.42.gltf' },
+        { id: 'f22', name: 'F-22 Raptor', priceWings: 1500, imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Lockheed_Martin_F-22A_Raptor_JSOH.jpg?width=640', tier: 'Supersonic', modelSrc: 'F22/F22.gltf' }
       ]
     };
 
@@ -10248,7 +10372,8 @@
     const TIER_PRICE_WINGS = {
       borders: { Sonic: 200, Supersonic: 500 },
       animations: { Sonic: 200, Supersonic: 1111 },
-      backgrounds: { Sonic: 200, Supersonic: 1111 }
+      backgrounds: { Sonic: 200, Supersonic: 1111 },
+      models: { Sonic: 200, Supersonic: 1111 }
     };
     // ---- admin shop overrides (adjust tier / permanently delete) ----
     // Lives in Firebase (shared, shared by every visitor) instead of just
@@ -10417,6 +10542,15 @@
     function openShopItemPreview(category, id) {
       const item = effectiveShopItem(category, id);
       if (!item) return;
+      // Models don't equip onto the profile look like borders/animations/
+      // backgrounds do — previewing one should show the actual 3D model,
+      // not a mock "what would my profile look like" card. Reuses the same
+      // MiG 3D Viewer popup as the owned-aircraft viewer, just without the
+      // ownership gate, since this is a pre-purchase preview.
+      if (category === 'models' && item.modelSrc) {
+        openShopModelPreview(item);
+        return;
+      }
       const signedIn = !!currentChatUser;
       const avatar = (signedIn && currentChatUser.avatar) || '✈️';
       const nickname = signedIn ? currentChatUser.nickname : 'You';
@@ -10470,7 +10604,7 @@
 
     function getDeletedShopItems() {
       const out = [];
-      ['borders', 'animations', 'backgrounds'].forEach((category) => {
+      ['borders', 'animations', 'backgrounds', 'models'].forEach((category) => {
         const overrides = shopOverrides[category] || {};
         Object.keys(overrides).forEach((id) => {
           if (!overrides[id] || !overrides[id].deleted) return;
@@ -10560,7 +10694,7 @@
       return CREATE_WINGS_CHECKOUT_URL && !CREATE_WINGS_CHECKOUT_URL.startsWith('PASTE_');
     }
 
-    let userWallet = { wings: 0, ownedBorders: {}, ownedAnimations: {}, ownedBackgrounds: {}, equippedBorder: null, equippedAnimation: null, equippedBackground: null };
+    let userWallet = { wings: 0, ownedBorders: {}, ownedAnimations: {}, ownedBackgrounds: {}, ownedModels: {}, equippedBorder: null, equippedAnimation: null, equippedBackground: null, equippedModel: null };
     let walletLoaded = false;
     let walletListenerRef = null;
     // Tracks the last wings total we saw, so the realtime listener can tell
@@ -10778,7 +10912,8 @@
     const SHOP_CATEGORY_FIELDS = {
       borders: { ownedKey: 'ownedBorders', equippedKey: 'equippedBorder' },
       animations: { ownedKey: 'ownedAnimations', equippedKey: 'equippedAnimation' },
-      backgrounds: { ownedKey: 'ownedBackgrounds', equippedKey: 'equippedBackground' }
+      backgrounds: { ownedKey: 'ownedBackgrounds', equippedKey: 'equippedBackground' },
+      models: { ownedKey: 'ownedModels', equippedKey: 'equippedModel' }
     };
 
     // Items pulled from the store stay revoked for anyone who already
@@ -10838,9 +10973,11 @@
             ownedBorders: data.ownedBorders || {},
             ownedAnimations: data.ownedAnimations || {},
             ownedBackgrounds: data.ownedBackgrounds || {},
+            ownedModels: data.ownedModels || {},
             equippedBorder: data.equippedBorder || null,
             equippedAnimation: data.equippedAnimation || null,
             equippedBackground: data.equippedBackground || null,
+            equippedModel: data.equippedModel || null,
             lastLoginDate: data.lastLoginDate || null,
             loginStreak: data.loginStreak || 0
           };
@@ -10879,6 +11016,7 @@
           updateShopWingsBalanceDisplay();
           renderShopIfVisible();
           renderHangarIfVisible();
+          updateMigViewerLockState();
 
           // Persist the revocation so it's gone from Firebase for good,
           // not just hidden client-side until the next load.
@@ -11184,7 +11322,14 @@
       try {
         nsRef('presence/' + presenceKey(currentChatUser.nickname)).update({
           equippedBorder: userWallet.equippedBorder || null,
-          equippedAnimation: userWallet.equippedAnimation || null
+          equippedAnimation: userWallet.equippedAnimation || null,
+          // Synced alongside the cosmetics above so other people's profile
+          // cards can render this account's Aircraft Collections grid (see
+          // renderAircraftCollectionHtml) without needing this account's
+          // wallet loaded locally. Keeps presence as the one already-synced
+          // channel for "things about me other people's clients need to
+          // render", rather than adding a second one just for models.
+          ownedModels: userWallet.ownedModels || {}
         });
       } catch (err) {}
     }
@@ -11251,12 +11396,13 @@
       renderShopGrid('borders', 'shop-borders-grid');
       renderShopGrid('animations', 'shop-animations-grid');
       renderShopGrid('backgrounds', 'shop-backgrounds-grid');
+      renderShopGrid('models', 'shop-models-grid');
       updateShopWingsBalanceDisplay();
     }
 
     function showShopTab(tab) {
-      const panels = { borders: 'shop-tab-panel-borders', animations: 'shop-tab-panel-animations', backgrounds: 'shop-tab-panel-backgrounds' };
-      const tabs = { borders: 'shop-tab-borders', animations: 'shop-tab-animations', backgrounds: 'shop-tab-backgrounds' };
+      const panels = { borders: 'shop-tab-panel-borders', animations: 'shop-tab-panel-animations', backgrounds: 'shop-tab-panel-backgrounds', models: 'shop-tab-panel-models' };
+      const tabs = { borders: 'shop-tab-borders', animations: 'shop-tab-animations', backgrounds: 'shop-tab-backgrounds', models: 'shop-tab-models' };
       Object.keys(panels).forEach((key) => {
         const panel = document.getElementById(panels[key]);
         const tabBtn = document.getElementById(tabs[key]);
@@ -11377,8 +11523,8 @@
 
     // ---- hangar: every owned item, one flat 3-column grid per category,
     // paginated 9 (3x3) at a time instead of grouped into tier sections ----
-    const hangarPage = { borders: 1, animations: 1, backgrounds: 1 };
-    const HANGAR_GRID_IDS = { borders: 'hangar-borders-grid', animations: 'hangar-animations-grid', backgrounds: 'hangar-backgrounds-grid' };
+    const hangarPage = { borders: 1, animations: 1, backgrounds: 1, models: 1 };
+    const HANGAR_GRID_IDS = { borders: 'hangar-borders-grid', animations: 'hangar-animations-grid', backgrounds: 'hangar-backgrounds-grid', models: 'hangar-models-grid' };
 
     function goToHangarPage(category, page) {
       hangarPage[category] = page;
@@ -11392,9 +11538,10 @@
       const grids = {
         borders: document.getElementById('hangar-borders-grid'),
         animations: document.getElementById('hangar-animations-grid'),
-        backgrounds: document.getElementById('hangar-backgrounds-grid')
+        backgrounds: document.getElementById('hangar-backgrounds-grid'),
+        models: document.getElementById('hangar-models-grid')
       };
-      if (!grids.borders || !grids.animations || !grids.backgrounds) return;
+      if (!grids.borders || !grids.animations || !grids.backgrounds || !grids.models) return;
 
       if (!walletLoaded) {
         Object.values(grids).forEach((g) => { g.innerHTML = ''; });
@@ -11411,7 +11558,18 @@
           ? `<span class="shop-item-preview ${item.cssClass}">✈️</span>`
           : category === 'animations'
           ? `<span class="shop-item-preview"><span class="shop-anim-preview ${item.cssClass}">Callsign</span></span>`
+          : category === 'models' && item.modelSrc
+          ? `<span class="shop-item-preview model-preview"><model-viewer src="${item.modelSrc}" alt="${escapeHtml(item.name)}" auto-rotate rotation-per-second="25deg" disable-zoom interaction-prompt="none" shadow-intensity="0" exposure="1"></model-viewer></span>`
           : `<span class="shop-item-preview bg-preview" style="background-image:url('${item.imageUrl}')"></span>`;
+
+        // Models don't equip onto the profile look like borders/animations/
+        // backgrounds do (same reasoning as openShopItemPreview above) — so
+        // instead of an EQUIP toggle, their Hangar card gets a VIEW button
+        // that opens the actual 3D model, same as tapping one of these in
+        // the Aircraft Collections grid on a profile card.
+        const actionsHtml = category === 'models'
+          ? `<button class="shop-equip-btn" onclick="openAircraftTilePreview('${item.id}')">VIEW</button>`
+          : `<button class="shop-equip-btn ${isEquipped ? 'equipped' : ''}" onclick="toggleEquipCosmetic('${category}','${item.id}')">${isEquipped ? 'EQUIPPED' : 'EQUIP'}</button>`;
 
         return `
           <div class="shop-item-card">
@@ -11420,14 +11578,14 @@
             ${previewHtml}
             <div class="shop-item-name">${escapeHtml(item.name)}</div>
             <div class="shop-item-actions">
-              <button class="shop-equip-btn ${isEquipped ? 'equipped' : ''}" onclick="toggleEquipCosmetic('${category}','${item.id}')">${isEquipped ? 'EQUIPPED' : 'EQUIP'}</button>
+              ${actionsHtml}
             </div>
           </div>
         `;
       }
 
       let totalOwned = 0;
-      ['borders', 'animations', 'backgrounds'].forEach((category) => {
+      ['borders', 'animations', 'backgrounds', 'models'].forEach((category) => {
         const owned = userWallet[SHOP_CATEGORY_FIELDS[category].ownedKey];
         // One flat list, sorted purely alphabetically — each card already
         // carries its own tier badge, so grouping by rarity isn't needed.
@@ -11457,8 +11615,8 @@
     }
 
     function showHangarTab(tab) {
-      const panels = { borders: 'hangar-tab-panel-borders', animations: 'hangar-tab-panel-animations', backgrounds: 'hangar-tab-panel-backgrounds' };
-      const tabs = { borders: 'hangar-tab-borders', animations: 'hangar-tab-animations', backgrounds: 'hangar-tab-backgrounds' };
+      const panels = { borders: 'hangar-tab-panel-borders', animations: 'hangar-tab-panel-animations', backgrounds: 'hangar-tab-panel-backgrounds', models: 'hangar-tab-panel-models' };
+      const tabs = { borders: 'hangar-tab-borders', animations: 'hangar-tab-animations', backgrounds: 'hangar-tab-backgrounds', models: 'hangar-tab-models' };
       Object.keys(panels).forEach((key) => {
         const panel = document.getElementById(panels[key]);
         const tabBtn = document.getElementById(tabs[key]);
@@ -11471,8 +11629,8 @@
     // and get a small badge on each card, but no longer get their own
     // section/heading — the whole category is one flat, paginated 3x3 grid.
     const SHOP_TIER_ORDER = ['Subsonic', 'Sonic', 'Supersonic'];
-    const shopPage = { borders: 1, animations: 1, backgrounds: 1 };
-    const SHOP_GRID_IDS = { borders: 'shop-borders-grid', animations: 'shop-animations-grid', backgrounds: 'shop-backgrounds-grid' };
+    const shopPage = { borders: 1, animations: 1, backgrounds: 1, models: 1 };
+    const SHOP_GRID_IDS = { borders: 'shop-borders-grid', animations: 'shop-animations-grid', backgrounds: 'shop-backgrounds-grid', models: 'shop-models-grid' };
 
     function goToShopPage(category, page) {
       shopPage[category] = page;
@@ -11492,6 +11650,8 @@
           ? `<span class="shop-item-preview ${item.cssClass}">✈️</span>`
           : category === 'animations'
           ? `<span class="shop-item-preview"><span class="shop-anim-preview ${item.cssClass}">Callsign</span></span>`
+          : category === 'models' && item.modelSrc
+          ? `<span class="shop-item-preview model-preview"><model-viewer src="${item.modelSrc}" alt="${escapeHtml(item.name)}" auto-rotate rotation-per-second="25deg" disable-zoom interaction-prompt="none" shadow-intensity="0" exposure="1"></model-viewer></span>`
           : `<span class="shop-item-preview bg-preview" style="background-image:url('${item.imageUrl}')"></span>`;
 
         let actionsHtml;
@@ -11702,6 +11862,7 @@
       updateShopWingsBalanceDisplay();
       renderShopIfVisible();
       renderHangarIfVisible();
+      if (category === 'models') updateMigViewerLockState();
       // Buying a background auto-equips it, and myProfile.background is
       // already updated above — but nothing was telling the reviewees list
       // to re-render after a purchase (only toggleEquipCosmetic() did
@@ -13164,6 +13325,18 @@
         applySidebarMeCover(profile && profile.background);
       }
 
+      // Shown on every profile card, not just the owner's own — for the
+      // owner it reads live from the wallet (userWallet.ownedModels); for
+      // anyone else it reads that account's ownedModels off presence, which
+      // is now synced the same way equippedBorder/equippedAnimation already
+      // were (see applyEquippedCosmeticsToPresence). If a still-online
+      // account hasn't picked up that sync yet (e.g. an old tab that hasn't
+      // reconnected since this shipped), its presence entry just won't have
+      // ownedModels yet and the grid falls back to the empty state below.
+      const aircraftOwned = isOwn ? userWallet.ownedModels : (presenceEntry && presenceEntry.ownedModels);
+      const aircraftDataLoaded = isOwn ? walletLoaded : !!presenceEntry;
+      const aircraftCollectionHtml = renderAircraftCollectionHtml(aircraftOwned, aircraftDataLoaded, isOwn);
+
       document.getElementById('profile-card-body').innerHTML = `
         <div class="profile-card-banner" style="background:${bannerCss};">
           <button class="profile-card-close" onclick="closeUserProfile()">&times;</button>
@@ -13194,8 +13367,11 @@
             <span class="hours-chip-value" id="profile-card-flight-hours-value">${flightHours}</span>
           </span>
           <div class="profile-card-divider"></div>
+          <p class="profile-card-section-label">Aircraft Collections</p>
+          ${aircraftCollectionHtml}
+          <div class="profile-card-divider"></div>
           <p class="profile-card-section-label profile-card-bio-label">Bio</p>
-          <div class="profile-card-bio${bio ? '' : ' empty'}">${bio || (isOwn ? 'You haven\u2019t added a bio yet.' : 'This reviewee hasn\u2019t added a bio yet.')}</div>
+          <div class="profile-card-bio${bio ? '' : ' empty'}">${bio || (isOwn ? 'You haven\u2019t added a bio yet.' : '')}</div>
           ${showEditUi ? '<button type="button" class="profile-card-edit-btn" onclick="openEditProfile()">EDIT PROFILE</button>' : ''}
         </div>
       `;
@@ -17035,14 +17211,121 @@
     }
 
     // ---- MiG 3D Viewer ----
+    // Gated behind ownership of the 'mig-21' item in the shop's 'models'
+    // category — see SHOP_ITEMS.models. Free for everyone until purchased.
+    // Tracks which item's model/name is currently loaded into the shared
+    // #mig-model element, so re-opening the viewer only re-sets the src
+    // (which restarts the model load) when it's actually showing a
+    // different aircraft than last time — e.g. previewing another aircraft
+    // from the Hangar and then opening the topbar 3D Viewer button
+    // shouldn't keep showing that other aircraft's model under the MiG-21
+    // name.
     let migModelLoaded = false;
-    function openMigViewer() {
+    let currentViewerItemId = null;
+
+    function ownsShopItem(category, id) {
+      if (!walletLoaded || !userWallet) return false;
+      const ownedKey = SHOP_CATEGORY_FIELDS[category] && SHOP_CATEGORY_FIELDS[category].ownedKey;
+      if (!ownedKey || !userWallet[ownedKey]) return false;
+      return !!userWallet[ownedKey][id];
+    }
+
+    // Keeps the topbar button's lock icon/state in sync with ownership —
+    // called whenever the wallet loads/changes (see
+    // loadWalletAndApplyDailyBonus) and right after a purchase completes.
+    function updateMigViewerLockState() {
+      const btn = document.getElementById('topbar-3d-viewer-btn');
+      if (!btn) return;
+      const owned = ownsShopItem('models', 'mig-21');
+      btn.classList.toggle('locked', !owned);
+      btn.textContent = owned ? '✈️ 3D VIEWER' : '🔒 3D VIEWER';
+    }
+
+    // Builds the "AIRCRAFT COLLECTIONS" grid shown on a profile card — one
+    // tile per owned model in SHOP_ITEMS.models. Works for both the owner's
+    // own profile (owned models read live from userWallet.ownedModels) and
+    // anyone else's profile (owned models read from that account's synced
+    // presence data — see applyEquippedCosmeticsToPresence) since ownedModels
+    // now rides along in presence the same way equippedBorder/equippedAnimation
+    // already did.
+    // isOwn controls both the "Loading…"/empty copy and what tapping a tile
+    // does: on your own profile it opens the full 3D Viewer (openMigViewer,
+    // which is gated on ownership — fine, since it's your own model); on
+    // someone else's profile it opens a plain preview of that model
+    // (openAircraftTilePreview) instead, since the ownership gate is about
+    // *your* wallet and shouldn't block you from looking at models someone
+    // else owns.
+    function renderAircraftCollectionHtml(owned, dataLoaded, isOwn) {
+      if (!dataLoaded) return `<div class="profile-aircraft-empty">Loading…</div>`;
+      const ownedItems = (SHOP_ITEMS.models || []).filter((item) => owned && owned[item.id]);
+      if (ownedItems.length === 0) {
+        // Only the owner sees a prompt here (it's actionable — go buy
+        // something); on someone else's profile an empty collection just
+        // renders nothing instead of a "no aircraft yet" line.
+        return isOwn ? `<div class="profile-aircraft-empty">No aircraft in your collection yet. Check the Flight Store.</div>` : '';
+      }
+      const tiles = ownedItems.map((item) => `
+        <div class="profile-aircraft-item" onclick="${isOwn ? 'openMigViewer()' : `openAircraftTilePreview('${item.id}')`}">
+          ${item.modelSrc ? `
+          <span class="profile-aircraft-thumb-wrap">
+            <model-viewer src="${item.modelSrc}" alt="${escapeHtml(item.name)}" auto-rotate rotation-per-second="25deg" disable-zoom interaction-prompt="none" shadow-intensity="0" exposure="1"></model-viewer>
+          </span>
+          ` : `
+          <span class="profile-aircraft-thumb" style="background-image:url('${item.imageUrl}')"></span>
+          `}
+          <span class="profile-aircraft-name">${escapeHtml(item.name)}</span>
+        </div>
+      `).join('');
+      return `<div class="profile-aircraft-grid">${tiles}</div>`;
+    }
+
+    // Tapping a tile in someone ELSE's Aircraft Collections grid — opens a
+    // plain, ungated preview of that specific model (same overlay as the
+    // Flight Store's pre-purchase preview) instead of openMigViewer(), since
+    // openMigViewer() is gated on whether the *viewer's own* wallet owns the
+    // mig-21 item, which has nothing to do with whether the profile being
+    // viewed owns it.
+    function openAircraftTilePreview(itemId) {
+      const item = (SHOP_ITEMS.models || []).find((i) => i.id === itemId);
+      if (!item) return;
+      openShopModelPreview(item);
+    }
+
+    // Pre-purchase preview from the Flight Store / Hangar — same popup as
+    // openMigViewer() below, just without the ownership gate, since the
+    // point here is letting someone see the model before buying it.
+    function openShopModelPreview(item) {
       const overlay = document.getElementById('mig-viewer-overlay');
       const model = document.getElementById('mig-model');
-      if (!migModelLoaded) {
-        model.setAttribute('src', 'MiG_Project_1.42/MiG_Project_1.42.gltf');
-        migModelLoaded = true;
+      const titleEl = document.getElementById('mig-viewer-title');
+      if (currentViewerItemId !== item.id) {
+        model.setAttribute('src', item.modelSrc);
+        currentViewerItemId = item.id;
       }
+      model.setAttribute('alt', item.name || 'Aircraft 3D Model');
+      if (titleEl) titleEl.textContent = item.name || '';
+      migModelLoaded = true;
+      overlay.classList.add('visible');
+    }
+
+    function openMigViewer() {
+      if (!ownsShopItem('models', 'mig-21')) {
+        showWingsToast('🔒 Buy the MiG-21 in the Flight Store to unlock the 3D Viewer');
+        showFlightStore();
+        showShopTab('models');
+        return;
+      }
+      const overlay = document.getElementById('mig-viewer-overlay');
+      const model = document.getElementById('mig-model');
+      const titleEl = document.getElementById('mig-viewer-title');
+      const item = (SHOP_ITEMS.models || []).find((i) => i.id === 'mig-21');
+      if (currentViewerItemId !== 'mig-21') {
+        model.setAttribute('src', (item && item.modelSrc) || 'MiG_Project_1.42/MiG_Project_1.42.gltf');
+        currentViewerItemId = 'mig-21';
+      }
+      migModelLoaded = true;
+      model.setAttribute('alt', (item && item.name) || 'MiG 3D Model');
+      if (titleEl) titleEl.textContent = (item && item.name) || 'MiG-21';
       overlay.classList.add('visible');
     }
 
