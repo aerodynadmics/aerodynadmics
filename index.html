@@ -1840,13 +1840,13 @@
      icon instead of drifting right on larger anchors. */
   [data-tooltip]:not(.crewmate-btn)::after,
   [data-tooltip]:not(.crewmate-btn)::before { left: 0; }
-  [data-tooltip]:not(.crewmate-btn)::after { top: calc(100% - 4px); transform: translate(6px, -1px); }
-  [data-tooltip]:not(.crewmate-btn)::before { top: calc(100% - 6px); transform: translate(6px, -1px); }
+  [data-tooltip]:not(.crewmate-btn)::after { top: calc(100% + 8px); transform: translate(0, -4px); }
+  [data-tooltip]:not(.crewmate-btn)::before { top: calc(100% + 3px); transform: translate(0, -4px); }
   [data-tooltip]:not(.crewmate-btn):hover::after,
   [data-tooltip]:not(.crewmate-btn):hover::before {
     opacity: 1;
     visibility: visible;
-    transform: translate(6px, 0);
+    transform: translate(0, 0);
   }
   .crewmate-status-line {
     font-family: 'IBM Plex Mono', monospace;
@@ -2114,6 +2114,74 @@
     font-size: 14px;
     font-weight: 500;
     color: var(--accent);
+  }
+
+  /* ---- Achievements: Flight Hours chip beside the name, opens an info popup ---- */
+  .hours-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border: 1px solid rgba(255,177,0,0.4);
+    background: rgba(255,177,0,0.12);
+    border-radius: 999px;
+    padding: 2px 8px 2px 4px;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .hours-chip:hover {
+    background: rgba(255,177,0,0.2);
+    border-color: var(--accent);
+  }
+  .hours-chip-medal {
+    width: 15px; height: 15px; border-radius: 50%;
+    background: linear-gradient(160deg, #ffd873, var(--accent) 60%, #a86e00 100%);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .hours-chip-medal svg { width: 9px; height: 9px; color: var(--blueprint-dark); }
+  .hours-chip-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px; font-weight: 600; color: var(--accent);
+    line-height: 1; white-space: nowrap;
+  }
+
+  /* ---- Flight Hours info popup (stacks above the profile card) ---- */
+  .hours-info-overlay {
+    position: fixed; inset: 0; z-index: 1800; display: none;
+    align-items: center; justify-content: center;
+    background: rgba(4, 18, 32, 0.72); padding: 24px;
+  }
+  .hours-info-overlay.visible { display: flex; }
+  .hours-info-card {
+    width: 100%; max-width: 280px; background: var(--blueprint-dark);
+    border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+    padding: 24px 20px 20px; text-align: center; position: relative;
+    animation: profile-card-pop 0.16s ease;
+  }
+  .hours-info-close {
+    position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%;
+    border: none; background: rgba(255,255,255,0.06); color: var(--paper); font-size: 15px; line-height: 1;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .hours-info-close:hover { background: rgba(255,255,255,0.12); color: var(--accent); }
+  .hours-info-medal {
+    width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 14px;
+    background: linear-gradient(160deg, #ffd873, var(--accent) 60%, #a86e00 100%);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 0 4px rgba(255,177,0,0.15);
+  }
+  .hours-info-medal svg { width: 28px; height: 28px; color: var(--blueprint-dark); }
+  .hours-info-value {
+    font-family: 'Space Grotesk', sans-serif; font-variant-numeric: tabular-nums;
+    font-size: 30px; font-weight: 700; color: var(--paper); line-height: 1;
+  }
+  .hours-info-unit {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--accent); margin: 4px 0 14px;
+  }
+  .hours-info-desc {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; line-height: 1.6;
+    color: var(--rivet);
   }
   .profile-card-section-label {
     font-family: 'IBM Plex Mono', monospace;
@@ -6193,6 +6261,19 @@
   <div class="profile-card-overlay" id="profile-card-overlay">
     <div class="profile-card" id="profile-card-body">
       <div class="profile-card-status-row" style="padding:20px;"><span class="nick-modal-status">Loading&hellip;</span></div>
+    </div>
+  </div>
+
+  <!-- ---- Flight Hours info popup (stacks above the profile card) ---- -->
+  <div class="hours-info-overlay" id="hours-info-overlay">
+    <div class="hours-info-card">
+      <button class="hours-info-close" onclick="closeFlightHoursInfo()">&times;</button>
+      <div class="hours-info-medal">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 16v-2l-8.5-5V3.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V9L2 14v2l8.5-2.5V19L8 20.5V22l4-1 4 1v-1.5L13.5 19v-5.5L22 16z"/></svg>
+      </div>
+      <div class="hours-info-value" id="hoursInfoValue">0.00</div>
+      <div class="hours-info-unit">Flight Hours</div>
+      <p class="hours-info-desc" id="hoursInfoDesc">Total hours this reviewee has spent signed in and active on aerodynadmics.</p>
     </div>
   </div>
 
@@ -12984,10 +13065,14 @@
           <div class="profile-card-nickname ${animClass}" data-text="${escapeHtml(nickname)}">${escapeHtml(nickname)}</div>
           <div class="profile-card-status-row"><span class="nick-status-tag ${statusClass}">${statusLabel}</span></div>
           ${isOwn ? '' : renderCrewmateStatusLine(nickname)}
-          <div class="profile-card-flight-hours">
-            <span class="profile-card-flight-hours-label">Flight Hours</span>
-            <span class="profile-card-flight-hours-value" id="profile-card-flight-hours-value">${flightHours}</span>
-          </div>
+          <div class="profile-card-divider"></div>
+          <p class="profile-card-section-label">Achievements</p>
+          <span class="hours-chip" data-tooltip="Flight Hours" onclick="openFlightHoursInfo()">
+            <span class="hours-chip-medal">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 16v-2l-8.5-5V3.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V9L2 14v2l8.5-2.5V19L8 20.5V22l4-1 4 1v-1.5L13.5 19v-5.5L22 16z"/></svg>
+            </span>
+            <span class="hours-chip-value" id="profile-card-flight-hours-value">${flightHours}</span>
+          </span>
           <div class="profile-card-divider"></div>
           <p class="profile-card-section-label profile-card-bio-label">Bio</p>
           <div class="profile-card-bio${bio ? '' : ' empty'}">${bio || (isOwn ? 'You haven\u2019t added a bio yet.' : 'This reviewee hasn\u2019t added a bio yet.')}</div>
@@ -13021,7 +13106,10 @@
         const el = document.getElementById('profile-card-flight-hours-value');
         if (!el) { stopProfileCardHoursTicker(); return; }
         const elapsedHours = (Date.now() - profileCardTickBaseTime) / 3600000;
-        el.textContent = (profileCardTickBaseHours + elapsedHours).toFixed(2);
+        const ticked = (profileCardTickBaseHours + elapsedHours).toFixed(2);
+        el.textContent = ticked;
+        const infoEl = document.getElementById('hoursInfoValue');
+        if (infoEl) infoEl.textContent = ticked;
       }, 1000);
     }
 
@@ -13039,6 +13127,18 @@
         sentRequestWatchRef = null;
       }
       document.getElementById('profile-card-overlay').classList.remove('visible');
+    }
+
+    function openFlightHoursInfo() {
+      const currentValue = document.getElementById('profile-card-flight-hours-value');
+      document.getElementById('hoursInfoValue').textContent = currentValue ? currentValue.textContent : '0.00';
+      const isOwnHours = currentChatUser && profileCardOpenFor === currentChatUser.nickname;
+      const who = isOwnHours ? 'you\u2019ve' : `"${escapeHtml(profileCardOpenFor || 'this reviewee')}" has`;
+      document.getElementById('hoursInfoDesc').textContent = `Total hours ${who} spent signed in and active on aerodynadmics.`;
+      document.getElementById('hours-info-overlay').classList.add('visible');
+    }
+    function closeFlightHoursInfo() {
+      document.getElementById('hours-info-overlay').classList.remove('visible');
     }
 
     // ---- edit profile modal ----
