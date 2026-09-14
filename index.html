@@ -10778,11 +10778,14 @@
           // or another admin gifting Wings to this account) and notify.
           if (lastKnownWings !== null && wallet.wings > lastKnownWings) {
             const gained = wallet.wings - lastKnownWings;
-            if (pendingWingsPackPurchase) {
-              // This balance bump is the Wings pack this tab was waiting on
-              // (credited by the paymongoWebhook Cloud Function) — close the
-              // checkout popup/modal and celebrate with the thank-you modal
-              // instead of the generic toast.
+            if (pendingWingsPackPurchase && gained === pendingWingsPackPurchase.pack.wings) {
+              // This balance bump matches the Wings pack this tab was
+              // waiting on (credited by the paymongoWebhook Cloud Function)
+              // — close the checkout popup/modal and celebrate with the
+              // thank-you modal instead of the generic toast. Requiring the
+              // gained amount to match the pack size stops an unrelated
+              // balance bump (e.g. an admin manually adjusting wings) from
+              // being mistaken for this purchase completing.
               pendingWingsPackPurchase = null;
               showWingsThankYouModal(gained);
             } else if (suppressAutoWingsToast) {
@@ -11707,6 +11710,18 @@
       document.getElementById('shop-pay-overlay').classList.remove('visible');
       document.getElementById('shop-pay-buttons-container').innerHTML = '';
       shopPayContext = null;
+
+      // Only keep pendingWingsPackPurchase alive if the visitor actually
+      // opened the PayMongo checkout popup — that's the only case where a
+      // payment could still be in flight after this modal closes. If they
+      // closed this modal before ever clicking "Pay with PayMongo", there's
+      // no external checkout running, so clear the flag now. Otherwise it
+      // stays set forever and the next unrelated wings increase (e.g. an
+      // admin manually adjusting the balance) gets mistaken for this
+      // purchase completing.
+      if (pendingWingsPackPurchase && !wingsCheckoutPopupWindow) {
+        pendingWingsPackPurchase = null;
+      }
     }
 
     // ---- buy-wings pack store ----
