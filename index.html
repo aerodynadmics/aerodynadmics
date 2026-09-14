@@ -7047,7 +7047,7 @@
       <h3>&#128465;&#65039; Permanently Deleted Shop Items</h3>
       <div id="deleted-items-list"></div>
       <div class="banned-list-manual">
-        <p>These items were deleted from the Flight Store and Hangar. They still work correctly if a player already equipped one — deleting only stops new purchases and hides them from browsing. "RESTORE" un-deletes an item.</p>
+        <p>These items were deleted from the Flight Store and Hangar. They still work correctly if a player already equipped one; deleting only stops new purchases and hides them from browsing. "RESTORE" un-deletes an item.</p>
       </div>
     </div>
   </div>
@@ -7224,9 +7224,9 @@
           }
           adminAlert(`Banned "${nickname}".`);
         } else if (result && result.message === 'Too many attempts. Please wait a few minutes and try again.') {
-          adminAlert('Too many admin secret attempts recently — please wait a few minutes and try again.');
+          adminAlert('Too many admin secret attempts recently. Please wait a few minutes and try again.');
         } else if (result && result.message === 'Invalid Admin Secret') {
-          adminAlert('Wrong admin secret — nothing was banned. Try again.');
+          adminAlert('Wrong admin secret. Nothing was banned. Try again.');
         } else {
           adminAlert(`Could not ban "${nickname}": ${(result && result.message) || 'could not reach the server.'}`);
         }
@@ -7803,7 +7803,7 @@
 
           canvas.toBlob((blob) => {
             if (!blob) {
-              if (hint) hint.textContent = 'Could not process that image — try a different file.';
+              if (hint) hint.textContent = 'Could not process that image. Try a different file.';
               return;
             }
             if (hint) hint.textContent = 'Uploading…';
@@ -7811,7 +7811,7 @@
             ensureFirebaseApp();
             waitForFirebaseUidMatching(currentChatUser.nickname).then((uid) => {
               if (!uid) {
-                if (hint) hint.textContent = 'Could not verify your session for uploading — try signing out and back in, then try again.';
+                if (hint) hint.textContent = 'Could not verify your session for uploading. Try signing out and back in, then try again.';
                 return;
               }
               const path = `avatars/${uid}/photo.jpg`;
@@ -7834,18 +7834,18 @@
                 // isn't one of the grid choices.
                 document.querySelectorAll('#avatar-change-grid .avatar-option').forEach(el => el.classList.remove('selected'));
                 setAvatarElContent(document.getElementById('admin-avatar-upload-preview'), bustedUrl);
-                if (hint) hint.textContent = 'Image ready — tap SAVE AVATAR below to apply it.';
+                if (hint) hint.textContent = 'Image ready. Tap SAVE AVATAR below to apply it.';
               }).catch((err) => {
                 console.error('Avatar upload error:', err);
-                if (hint) hint.textContent = 'Upload failed — try again or use a smaller image.';
+                if (hint) hint.textContent = 'Upload failed. Try again or use a smaller image.';
               });
             });
           }, 'image/jpeg', AVATAR_UPLOAD_JPEG_QUALITY);
         };
-        img.onerror = () => { if (hint) hint.textContent = 'Could not read that image — try a different file.'; };
+        img.onerror = () => { if (hint) hint.textContent = 'Could not read that image. Try a different file.'; };
         img.src = reader.result;
       };
-      reader.onerror = () => { if (hint) hint.textContent = 'Could not read that file — try again.'; };
+      reader.onerror = () => { if (hint) hint.textContent = 'Could not read that file. Try again.'; };
       reader.readAsDataURL(file);
     }
 
@@ -8894,7 +8894,7 @@
         <div class="banned-list-item">
           <div class="banned-list-item-info">
             <div class="banned-list-item-nick">${escapeHtml(e.nickname || '(unknown nickname)')}</div>
-            <div class="banned-list-item-email">${escapeHtml(e.email || 'no email on file — key: ' + e.key)}</div>
+            <div class="banned-list-item-email">${escapeHtml(e.email || 'no email on file, key: ' + e.key)}</div>
           </div>
           <button type="button" class="banned-list-item-unban" onclick="unbanListedEntry(${i})">UNBAN</button>
         </div>
@@ -8908,7 +8908,7 @@
       const entry = bannedListEntries[i];
       if (!entry) return;
       if (!entry.email) {
-        await adminAlert('No email is on file for this ban — use "Unban by email…" below instead.');
+        await adminAlert('No email is on file for this ban. Use "Unban by email…" below instead.');
         return;
       }
       performUnban(entry.email, entry.key);
@@ -8946,9 +8946,9 @@
           // watching 'banned'/'bannedMeta' live, so the .remove() calls
           // above already update it on their own.
         } else if (result && result.message === 'Too many attempts. Please wait a few minutes and try again.') {
-          adminAlert('Too many admin secret attempts recently — please wait a few minutes and try again.');
+          adminAlert('Too many admin secret attempts recently. Please wait a few minutes and try again.');
         } else if (result && result.message === 'Invalid Admin Secret') {
-          adminAlert('Wrong admin secret — nothing was unbanned. Try again.');
+          adminAlert('Wrong admin secret. Nothing was unbanned. Try again.');
         } else {
           adminAlert(`Could not unban "${email}": ${(result && result.message) || 'could not reach the server.'}`);
         }
@@ -9278,7 +9278,7 @@
 
     async function migrateAppDataToNamespace() {
       if (!ensureFirebaseApp()) {
-        console.error('Firebase not configured — cannot migrate.');
+        console.error('Firebase not configured. Cannot migrate.');
         return;
       }
       const results = {};
@@ -9365,7 +9365,7 @@
 
     async function runDataMigrationFromButton() {
       if (!isAdminUser(currentChatUser)) return;
-      if (!(await adminConfirm('Migrate old chat/wallets/presence/etc. data into this app\'s own namespace? Safe to run more than once — anything already migrated is left alone, and nothing old is deleted.'))) return;
+      if (!(await adminConfirm('Migrate old chat/wallets/presence/etc. data into this app\'s own namespace? Safe to run more than once; anything already migrated is left alone, and nothing old is deleted.'))) return;
       await adminAlert('Migrating… this can take a few seconds. You\'ll get a summary popup when it\'s done.');
       let results;
       try {
@@ -9397,7 +9397,7 @@
     // old amount a second time.
     async function forceMigrateWingsForNicknames(nicknames) {
       if (!ensureFirebaseApp()) {
-        console.error('Firebase not configured — cannot migrate.');
+        console.error('Firebase not configured. Cannot migrate.');
         return {};
       }
       const results = {};
@@ -9417,7 +9417,7 @@
           const currentWings = Number(currentSnap.val()) || 0;
 
           if (!oldWings || isNaN(oldWings)) {
-            results[nickname] = `skipped (no old wings value found — current balance stays ${currentWings})`;
+            results[nickname] = `skipped (no old wings value found, current balance stays ${currentWings})`;
             await markerRef.set(true);
             continue;
           }
@@ -9471,7 +9471,7 @@
     async function cleanupDeletedAccountPresenceNodes() {
       if (!isAdminUser(currentChatUser)) return;
       if (!ensureFirebaseApp()) {
-        await adminAlert('Firebase not configured — cannot clean up presence.');
+        await adminAlert('Firebase not configured. Cannot clean up presence.');
         return;
       }
 
@@ -9499,7 +9499,7 @@
       try {
         presenceSnap = await nsRef('presence').once('value');
       } catch (err) {
-        await adminAlert('Cleanup failed: could not read presence data — ' + err.message);
+        await adminAlert('Cleanup failed: could not read presence data. ' + err.message);
         return;
       }
 
@@ -9507,7 +9507,7 @@
       const orphanKeys = Object.keys(presenceData).filter((key) => !validKeys.has(key));
 
       if (!orphanKeys.length) {
-        await adminAlert('No orphaned presence nodes found — every presence entry matches a current account.');
+        await adminAlert('No orphaned presence nodes found. Every presence entry matches a current account.');
         return;
       }
 
@@ -10291,7 +10291,7 @@
       if (!isAdminUser(currentChatUser)) return;
       const item = SHOP_ITEMS[category] && SHOP_ITEMS[category].find((i) => i.id === id);
       if (!item) return;
-      const ok = await adminConfirm(`Permanently delete "${item.name}" from the Flight Store? This can't be undone — players who already own it keep it, but no one will be able to buy it again.`);
+      const ok = await adminConfirm(`Permanently delete "${item.name}" from the Flight Store? This can't be undone; players who already own it keep it, but no one will be able to buy it again.`);
       if (!ok) return;
       try {
         ensureFirebaseApp();
@@ -10370,7 +10370,7 @@
           <div class="profile-card-nickname ${animClass}" data-text="${escapeHtml(nickname)}">${escapeHtml(nickname)}</div>
           <div class="profile-card-status-row"><span class="nick-status-tag">${categoryLabel}: ${escapeHtml(item.name)}</span></div>
           <div class="profile-card-divider"></div>
-          <p class="profile-card-section-label">Preview only — nothing's bought or equipped yet.</p>
+          <p class="profile-card-section-label">Preview only. Nothing's bought or equipped yet.</p>
         </div>
       `;
       document.getElementById('shop-item-preview-overlay').classList.add('visible');
@@ -10428,7 +10428,7 @@
       const listEl = document.getElementById('deleted-items-list');
       const entries = getDeletedShopItems();
       if (!entries.length) {
-        listEl.innerHTML = `<div class="banned-list-empty">Nothing's been deleted — the shop is fully intact.</div>`;
+        listEl.innerHTML = `<div class="banned-list-empty">Nothing's been deleted. The shop is fully intact.</div>`;
         return;
       }
       listEl.innerHTML = `<div class="banned-list-items">${entries.map((e) => `
@@ -10594,11 +10594,11 @@
           })
           .catch((err) => {
             console.error('Reset all Wings history error:', err);
-            showWingsToast('❌ Reset failed — check console.');
+            showWingsToast('❌ Reset failed. Check console.');
           });
       } catch (err) {
         console.error('Reset all Wings history init error:', err);
-        showWingsToast('❌ Reset failed — check console.');
+        showWingsToast('❌ Reset failed. Check console.');
       }
     }
 
@@ -11014,7 +11014,7 @@
         }).catch((err) => {
           suppressAutoWingsToast = false;
           console.error('Self balance adjust error:', err);
-          showWingsToast('❌ Adjustment failed — check console.');
+          showWingsToast('❌ Adjustment failed. Check console.');
         });
       } catch (err) {
         console.error('Self balance adjust init error:', err);
@@ -11082,7 +11082,7 @@
           }
         ).then((result) => {
           if (!result || !result.committed) {
-            showWingsToast(`❌ "${nickname}" only has ${(result && result.snapshot ? (result.snapshot.val() || 0) : 0).toLocaleString()} 🪽 — can't remove ${amount.toLocaleString()}.`);
+            showWingsToast(`❌ "${nickname}" only has ${(result && result.snapshot ? (result.snapshot.val() || 0) : 0).toLocaleString()} 🪽, can't remove ${amount.toLocaleString()}.`);
             return;
           }
           const newBalance = result.snapshot ? result.snapshot.val() : null;
@@ -11098,7 +11098,7 @@
           if (input) input.value = '';
         }).catch((err) => {
           console.error('Adjust balance error:', err);
-          showWingsToast('❌ Adjustment failed — check console.');
+          showWingsToast('❌ Adjustment failed. Check console.');
         });
       } catch (err) {
         console.error('Adjust balance init error:', err);
@@ -12079,11 +12079,11 @@
           // with the correct secret, since the backend refuses to even
           // compare it while locked out. Without this branch, a lockout
           // looked identical to "you typed it wrong."
-          adminAlert('Too many admin secret attempts recently — please wait a few minutes and try again.');
+          adminAlert('Too many admin secret attempts recently. Please wait a few minutes and try again.');
           return;
         }
         if (!result || !result.valid) {
-          adminAlert('Wrong admin secret — nothing was deleted. Try again.');
+          adminAlert('Wrong admin secret. Nothing was deleted. Try again.');
           return;
         }
 
@@ -13270,7 +13270,7 @@
       const ownedItems = SHOP_ITEMS.backgrounds.filter((item) => owned[item.id]);
 
       if (!ownedItems.length) {
-        grid.innerHTML = '<p class="profile-edit-hint" style="margin:0;">You haven\u2019t purchased any backgrounds yet — visit the Flight Store to buy one.</p>';
+        grid.innerHTML = '<p class="profile-edit-hint" style="margin:0;">You haven\u2019t purchased any backgrounds yet. Visit the Flight Store to buy one.</p>';
       } else {
         grid.innerHTML = ownedItems.map(item => `
           <div class="profile-bg-swatch${(selectedProfileBackground === item.id) ? ' selected' : ''}"
@@ -13363,12 +13363,12 @@
         }).catch((err) => {
           console.error('Profile save error:', err);
           btn.disabled = false;
-          status.textContent = 'Could not save right now — try again.';
+          status.textContent = 'Could not save right now. Try again.';
         });
       } catch (err) {
         console.error('Profile save error:', err);
         btn.disabled = false;
-        status.textContent = 'Could not save right now — try again.';
+        status.textContent = 'Could not save right now. Try again.';
       }
     }
 
@@ -13782,7 +13782,7 @@
         const elapsedSec = (Date.now() - Number(startStr)) / 1000;
         const remaining = duration - elapsedSec;
         if (remaining <= 0) {
-          timerEl.textContent = "00:00:00 — TIME'S UP";
+          timerEl.textContent = "00:00:00 TIME'S UP";
           timerEl.classList.add('expired');
           if (formPopupTimerInterval) formPopupTimerInterval();
         } else {
@@ -13818,7 +13818,7 @@
         const elapsedSec = (Date.now() - Number(startStr)) / 1000;
         const remaining = duration - elapsedSec;
         if (remaining <= 0) {
-          timerEl.textContent = "00:00:00 — TIME'S UP";
+          timerEl.textContent = "00:00:00 TIME'S UP";
           timerEl.classList.add('expired');
           if (gformPopupTimerInterval) gformPopupTimerInterval();
         } else {
@@ -15652,7 +15652,7 @@
         openMockAdminGroup(ref.key);
       }).catch(err => {
         console.error('createMockAdminSet error:', err);
-        adminAlert('❌ Could not create the set — check console.');
+        adminAlert('❌ Could not create the set. Check console.');
       });
     }
 
@@ -15750,7 +15750,7 @@
       });
       nsRef('').update(updates).catch(err => {
         console.error('renameMockAdminSet error:', err);
-        adminAlert('❌ Could not rename this set — check console.');
+        adminAlert('❌ Could not rename this set. Check console.');
       });
     }
 
@@ -15766,7 +15766,7 @@
       exams.forEach(([examId]) => { updates[`mockExamSets/${subjectKey}/${examId}`] = null; });
       nsRef('').update(updates).catch(err => {
         console.error('deleteMockAdminSet error:', err);
-        adminAlert('❌ Could not delete — check console.');
+        adminAlert('❌ Could not delete. Check console.');
       });
     }
 
@@ -15775,14 +15775,14 @@
       nsRef(`mockExamSets/${subjectKey}/${examId}`).update({
         published: !!published,
         updatedAt: firebase.database.ServerValue.TIMESTAMP
-      }).catch(err => { console.error('toggleMockAdminPublish error:', err); adminAlert('Could not update — check console.'); });
+      }).catch(err => { console.error('toggleMockAdminPublish error:', err); adminAlert('Could not update. Check console.'); });
     }
 
     async function deleteMockAdminExam(subjectKey, examId) {
       if (!isAdminUser(currentChatUser)) return;
       if (!(await adminConfirm('Delete this exam permanently? This cannot be undone.'))) return;
       nsRef(`mockExamSets/${subjectKey}/${examId}`).remove()
-        .catch(err => { console.error('deleteMockAdminExam error:', err); adminAlert('Could not delete — check console.'); });
+        .catch(err => { console.error('deleteMockAdminExam error:', err); adminAlert('Could not delete. Check console.'); });
     }
 
     // ---- move/copy an exam into a different set (same subject or a
@@ -15862,7 +15862,7 @@
         renderMockAdminMoveSetList(subjectKey, mockAdminMoveTargetGroupsCache);
       }).catch(err => {
         console.error('loadMockAdminMoveTargetSets error:', err);
-        el.innerHTML = '<div class="banned-list-empty">Could not load sets — check console.</div>';
+        el.innerHTML = '<div class="banned-list-empty">Could not load sets. Check console.</div>';
       });
     }
 
@@ -15911,7 +15911,7 @@
           delete mockAdminMoveTargetGroupsCache[ref.key];
           if (subjectKey === mockAdminCurrentSubject) delete mockAdminGroupsCache[ref.key];
           renderMockAdminMoveSetList(subjectKey, mockAdminMoveTargetGroupsCache);
-          adminAlert('❌ Could not create set — check console.');
+          adminAlert('❌ Could not create set. Check console.');
         });
     }
 
@@ -15947,7 +15947,7 @@
           console.error('confirmMockAdminMoveTo (copy) error:', err);
           delete mockAdminExamsCache[ref.key];
           refreshMockAdminUI();
-          adminAlert('❌ Could not copy — check console.');
+          adminAlert('❌ Could not copy. Check console.');
         });
       } else if (targetSubjectKey === sourceSubject) {
         // Same subject: just repoint groupId, no need to touch the key.
@@ -15963,7 +15963,7 @@
           console.error('confirmMockAdminMoveTo (move) error:', err);
           if (mockAdminExamsCache[examId]) Object.assign(mockAdminExamsCache[examId], previous);
           refreshMockAdminUI();
-          adminAlert('❌ Could not move — check console.');
+          adminAlert('❌ Could not move. Check console.');
         });
       } else {
         // Cross-subject move: push under the new subject, then remove the
@@ -15980,7 +15980,7 @@
             console.error('confirmMockAdminMoveTo (cross-subject move) error:', err);
             mockAdminExamsCache[examId] = exam; // restore so the admin doesn't think it vanished
             refreshMockAdminUI();
-            adminAlert('❌ Could not move — check console.');
+            adminAlert('❌ Could not move. Check console.');
           });
       }
     }
@@ -16020,7 +16020,7 @@
     function renderMockAdminQuestionsEditor() {
       const el = document.getElementById('mockadmin-questions-list');
       if (!mockAdminEditingQuestions.length) {
-        el.innerHTML = '<div class="banned-list-empty">No questions yet — click "+ ADD QUESTION" below.</div>';
+        el.innerHTML = '<div class="banned-list-empty">No questions yet. Click "+ ADD QUESTION" below.</div>';
         return;
       }
       el.innerHTML = mockAdminEditingQuestions.map((q, qi) => `
@@ -16116,10 +16116,10 @@
           if (q) q.image = dataUrl;
           renderMockAdminQuestionsEditor();
         };
-        img.onerror = () => adminAlert('Could not read that image — try a different file.');
+        img.onerror = () => adminAlert('Could not read that image. Try a different file.');
         img.src = reader.result;
       };
-      reader.onerror = () => adminAlert('Could not read that image — try a different file.');
+      reader.onerror = () => adminAlert('Could not read that image. Try a different file.');
       reader.readAsDataURL(file);
       inputEl.value = '';
     }
@@ -16178,11 +16178,11 @@
       if (!mockAdminCurrentExamId) payload.createdAt = firebase.database.ServerValue.TIMESTAMP;
 
       ref.update(payload).then(async () => {
-        await adminAlert(publish ? '✅ Saved and published — live for everyone now.' : '✅ Saved as a draft (only you can see it until published).');
+        await adminAlert(publish ? '✅ Saved and published. Live for everyone now.' : '✅ Saved as a draft (only you can see it until published).');
         closeMockAdminEditor();
       }).catch(err => {
         console.error('saveMockAdminSet error:', err);
-        adminAlert('❌ Could not save — check console.');
+        adminAlert('❌ Could not save. Check console.');
       });
     }
 
@@ -16211,7 +16211,7 @@
         runInAppMockExamMigration();
       }).catch(err => {
         console.error('migrateInAppMockExamsToFirebase check error:', err);
-        adminAlert('❌ Could not check migration status — check console.');
+        adminAlert('❌ Could not check migration status. Check console.');
       });
     }
 
@@ -16238,8 +16238,8 @@
           if (remaining === 0) {
             nsRef('mockExamMigrationDone').set(true);
             adminAlert(failed
-              ? ('Done, but ' + failed + ' exam(s) failed to copy — check console.')
-              : '✅ Migrated all 4 in-app mock exams. They\'re now live and editable from ⚙️ ADMIN → MOCK EXAMS — rename, retime, or edit their questions any time.');
+              ? ('Done, but ' + failed + ' exam(s) failed to copy. Check console.')
+              : '✅ Migrated all 4 in-app mock exams. They\'re now live and editable from ⚙️ ADMIN → MOCK EXAMS. Rename, retime, or edit their questions any time.');
           }
         });
       });
