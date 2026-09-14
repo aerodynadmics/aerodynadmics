@@ -7111,6 +7111,7 @@
             <button class="store-subnav-btn active" id="hangar-tab-borders" onclick="showHangarTab('borders')">Avatar Decorations</button>
             <button class="store-subnav-btn" id="hangar-tab-animations" onclick="showHangarTab('animations')">Callsign Animations</button>
             <button class="store-subnav-btn" id="hangar-tab-backgrounds" onclick="showHangarTab('backgrounds')">Profile Backgrounds</button>
+            <button class="store-subnav-btn" id="hangar-tab-models" onclick="showHangarTab('models')">Aircraft Models</button>
           </div>
 
           <div id="hangar-tab-panel-borders" class="shop-tab-panel">
@@ -7121,6 +7122,9 @@
           </div>
           <div id="hangar-tab-panel-backgrounds" class="shop-tab-panel" style="display:none;">
             <div id="hangar-backgrounds-grid"></div>
+          </div>
+          <div id="hangar-tab-panel-models" class="shop-tab-panel" style="display:none;">
+            <div id="hangar-models-grid"></div>
           </div>
         </div>
       </div>
@@ -9993,6 +9997,7 @@
             section: currentSectionLabel,
             equippedBorder: (userWallet && userWallet.equippedBorder) || null,
             equippedAnimation: (userWallet && userWallet.equippedAnimation) || null,
+            ownedModels: (userWallet && userWallet.ownedModels) || {},
             lastSeen: firebase.database.ServerValue.TIMESTAMP
           });
         });
@@ -11301,7 +11306,14 @@
       try {
         nsRef('presence/' + presenceKey(currentChatUser.nickname)).update({
           equippedBorder: userWallet.equippedBorder || null,
-          equippedAnimation: userWallet.equippedAnimation || null
+          equippedAnimation: userWallet.equippedAnimation || null,
+          // Synced alongside the cosmetics above so other people's profile
+          // cards can render this account's Aircraft Collections grid (see
+          // renderAircraftCollectionHtml) without needing this account's
+          // wallet loaded locally. Keeps presence as the one already-synced
+          // channel for "things about me other people's clients need to
+          // render", rather than adding a second one just for models.
+          ownedModels: userWallet.ownedModels || {}
         });
       } catch (err) {}
     }
@@ -11495,8 +11507,8 @@
 
     // ---- hangar: every owned item, one flat 3-column grid per category,
     // paginated 9 (3x3) at a time instead of grouped into tier sections ----
-    const hangarPage = { borders: 1, animations: 1, backgrounds: 1 };
-    const HANGAR_GRID_IDS = { borders: 'hangar-borders-grid', animations: 'hangar-animations-grid', backgrounds: 'hangar-backgrounds-grid' };
+    const hangarPage = { borders: 1, animations: 1, backgrounds: 1, models: 1 };
+    const HANGAR_GRID_IDS = { borders: 'hangar-borders-grid', animations: 'hangar-animations-grid', backgrounds: 'hangar-backgrounds-grid', models: 'hangar-models-grid' };
 
     function goToHangarPage(category, page) {
       hangarPage[category] = page;
@@ -11510,9 +11522,10 @@
       const grids = {
         borders: document.getElementById('hangar-borders-grid'),
         animations: document.getElementById('hangar-animations-grid'),
-        backgrounds: document.getElementById('hangar-backgrounds-grid')
+        backgrounds: document.getElementById('hangar-backgrounds-grid'),
+        models: document.getElementById('hangar-models-grid')
       };
-      if (!grids.borders || !grids.animations || !grids.backgrounds) return;
+      if (!grids.borders || !grids.animations || !grids.backgrounds || !grids.models) return;
 
       if (!walletLoaded) {
         Object.values(grids).forEach((g) => { g.innerHTML = ''; });
@@ -11533,6 +11546,15 @@
           ? `<span class="shop-item-preview model-preview"><model-viewer src="${item.modelSrc}" alt="${escapeHtml(item.name)}" auto-rotate rotation-per-second="25deg" disable-zoom interaction-prompt="none" shadow-intensity="0" exposure="1"></model-viewer></span>`
           : `<span class="shop-item-preview bg-preview" style="background-image:url('${item.imageUrl}')"></span>`;
 
+        // Models don't equip onto the profile look like borders/animations/
+        // backgrounds do (same reasoning as openShopItemPreview above) — so
+        // instead of an EQUIP toggle, their Hangar card gets a VIEW button
+        // that opens the actual 3D model, same as tapping one of these in
+        // the Aircraft Collections grid on a profile card.
+        const actionsHtml = category === 'models'
+          ? `<button class="shop-equip-btn" onclick="openAircraftTilePreview('${item.id}')">VIEW</button>`
+          : `<button class="shop-equip-btn ${isEquipped ? 'equipped' : ''}" onclick="toggleEquipCosmetic('${category}','${item.id}')">${isEquipped ? 'EQUIPPED' : 'EQUIP'}</button>`;
+
         return `
           <div class="shop-item-card">
             ${shopItemAdminActionsHtml(category, item)}
@@ -11540,14 +11562,14 @@
             ${previewHtml}
             <div class="shop-item-name">${escapeHtml(item.name)}</div>
             <div class="shop-item-actions">
-              <button class="shop-equip-btn ${isEquipped ? 'equipped' : ''}" onclick="toggleEquipCosmetic('${category}','${item.id}')">${isEquipped ? 'EQUIPPED' : 'EQUIP'}</button>
+              ${actionsHtml}
             </div>
           </div>
         `;
       }
 
       let totalOwned = 0;
-      ['borders', 'animations', 'backgrounds'].forEach((category) => {
+      ['borders', 'animations', 'backgrounds', 'models'].forEach((category) => {
         const owned = userWallet[SHOP_CATEGORY_FIELDS[category].ownedKey];
         // One flat list, sorted purely alphabetically — each card already
         // carries its own tier badge, so grouping by rarity isn't needed.
@@ -11577,8 +11599,8 @@
     }
 
     function showHangarTab(tab) {
-      const panels = { borders: 'hangar-tab-panel-borders', animations: 'hangar-tab-panel-animations', backgrounds: 'hangar-tab-panel-backgrounds' };
-      const tabs = { borders: 'hangar-tab-borders', animations: 'hangar-tab-animations', backgrounds: 'hangar-tab-backgrounds' };
+      const panels = { borders: 'hangar-tab-panel-borders', animations: 'hangar-tab-panel-animations', backgrounds: 'hangar-tab-panel-backgrounds', models: 'hangar-tab-panel-models' };
+      const tabs = { borders: 'hangar-tab-borders', animations: 'hangar-tab-animations', backgrounds: 'hangar-tab-backgrounds', models: 'hangar-tab-models' };
       Object.keys(panels).forEach((key) => {
         const panel = document.getElementById(panels[key]);
         const tabBtn = document.getElementById(tabs[key]);
@@ -13287,13 +13309,17 @@
         applySidebarMeCover(profile && profile.background);
       }
 
-      // Only the owner's own profile shows this — it reads live from the
-      // wallet (userWallet.ownedModels), which currently only exists for
-      // whoever's signed-in wallet is loaded. Showing this on OTHER users'
-      // profiles too would need each owner's ownedModels synced to presence
-      // the way equippedBorder/equippedAnimation already are — left for a
-      // follow-up since it touches presence data, not just this card.
-      const aircraftCollectionHtml = isOwn ? renderAircraftCollectionHtml() : '';
+      // Shown on every profile card, not just the owner's own — for the
+      // owner it reads live from the wallet (userWallet.ownedModels); for
+      // anyone else it reads that account's ownedModels off presence, which
+      // is now synced the same way equippedBorder/equippedAnimation already
+      // were (see applyEquippedCosmeticsToPresence). If a still-online
+      // account hasn't picked up that sync yet (e.g. an old tab that hasn't
+      // reconnected since this shipped), its presence entry just won't have
+      // ownedModels yet and the grid falls back to the empty state below.
+      const aircraftOwned = isOwn ? userWallet.ownedModels : (presenceEntry && presenceEntry.ownedModels);
+      const aircraftDataLoaded = isOwn ? walletLoaded : !!presenceEntry;
+      const aircraftCollectionHtml = renderAircraftCollectionHtml(aircraftOwned, aircraftDataLoaded, isOwn);
 
       document.getElementById('profile-card-body').innerHTML = `
         <div class="profile-card-banner" style="background:${bannerCss};">
@@ -13324,11 +13350,9 @@
             </span>
             <span class="hours-chip-value" id="profile-card-flight-hours-value">${flightHours}</span>
           </span>
-          ${isOwn ? `
           <div class="profile-card-divider"></div>
           <p class="profile-card-section-label">Aircraft Collections</p>
           ${aircraftCollectionHtml}
-          ` : ''}
           <div class="profile-card-divider"></div>
           <p class="profile-card-section-label profile-card-bio-label">Bio</p>
           <div class="profile-card-bio${bio ? '' : ' empty'}">${bio || (isOwn ? 'You haven\u2019t added a bio yet.' : 'This reviewee hasn\u2019t added a bio yet.')}</div>
@@ -17193,18 +17217,28 @@
       btn.textContent = owned ? '✈️ 3D VIEWER' : '🔒 3D VIEWER';
     }
 
-    // Builds the "AIRCRAFT COLLECTIONS" grid shown on the owner's own
-    // profile card — one tile per owned model in SHOP_ITEMS.models, reading
-    // live from userWallet.ownedModels. Tapping a tile opens the 3D Viewer.
-    function renderAircraftCollectionHtml() {
-      if (!walletLoaded) return `<div class="profile-aircraft-empty">Loading…</div>`;
-      const owned = userWallet.ownedModels || {};
-      const ownedItems = (SHOP_ITEMS.models || []).filter((item) => owned[item.id]);
+    // Builds the "AIRCRAFT COLLECTIONS" grid shown on a profile card — one
+    // tile per owned model in SHOP_ITEMS.models. Works for both the owner's
+    // own profile (owned models read live from userWallet.ownedModels) and
+    // anyone else's profile (owned models read from that account's synced
+    // presence data — see applyEquippedCosmeticsToPresence) since ownedModels
+    // now rides along in presence the same way equippedBorder/equippedAnimation
+    // already did.
+    // isOwn controls both the "Loading…"/empty copy and what tapping a tile
+    // does: on your own profile it opens the full 3D Viewer (openMigViewer,
+    // which is gated on ownership — fine, since it's your own model); on
+    // someone else's profile it opens a plain preview of that model
+    // (openAircraftTilePreview) instead, since the ownership gate is about
+    // *your* wallet and shouldn't block you from looking at models someone
+    // else owns.
+    function renderAircraftCollectionHtml(owned, dataLoaded, isOwn) {
+      if (!dataLoaded) return `<div class="profile-aircraft-empty">Loading…</div>`;
+      const ownedItems = (SHOP_ITEMS.models || []).filter((item) => owned && owned[item.id]);
       if (ownedItems.length === 0) {
-        return `<div class="profile-aircraft-empty">No aircraft in your collection yet — check the Flight Store.</div>`;
+        return `<div class="profile-aircraft-empty">${isOwn ? 'No aircraft in your collection yet — check the Flight Store.' : 'No aircraft in this reviewee\u2019s collection yet.'}</div>`;
       }
       const tiles = ownedItems.map((item) => `
-        <div class="profile-aircraft-item" onclick="openMigViewer()">
+        <div class="profile-aircraft-item" onclick="${isOwn ? 'openMigViewer()' : `openAircraftTilePreview('${item.id}')`}">
           ${item.modelSrc ? `
           <span class="profile-aircraft-thumb-wrap">
             <model-viewer src="${item.modelSrc}" alt="${escapeHtml(item.name)}" auto-rotate rotation-per-second="25deg" disable-zoom interaction-prompt="none" shadow-intensity="0" exposure="1"></model-viewer>
@@ -17216,6 +17250,18 @@
         </div>
       `).join('');
       return `<div class="profile-aircraft-grid">${tiles}</div>`;
+    }
+
+    // Tapping a tile in someone ELSE's Aircraft Collections grid — opens a
+    // plain, ungated preview of that specific model (same overlay as the
+    // Flight Store's pre-purchase preview) instead of openMigViewer(), since
+    // openMigViewer() is gated on whether the *viewer's own* wallet owns the
+    // mig-21 item, which has nothing to do with whether the profile being
+    // viewed owns it.
+    function openAircraftTilePreview(itemId) {
+      const item = (SHOP_ITEMS.models || []).find((i) => i.id === itemId);
+      if (!item) return;
+      openShopModelPreview(item);
     }
 
     // Pre-purchase preview from the Flight Store / Hangar — same popup as
