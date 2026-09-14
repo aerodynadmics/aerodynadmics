@@ -12280,7 +12280,7 @@
 
         return `
         ${dividerHtml}
-        <li${classAttr} data-nickname="${escapeHtml(nick)}" onclick="openUserProfile(this.dataset.nickname)"${liInlineStyle}>
+        <li${classAttr} data-nickname="${escapeHtml(nick)}" onclick="openUserProfile(this.dataset.nickname, true)"${liInlineStyle}>
           ${coverImgHtml}
           ${coverOverlayHtml}
           <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span></span>
@@ -12803,10 +12803,16 @@
     }
 
     let profileCardOpenFor = null;
+    // When true, the popover hides the edit-profile affordances (avatar
+    // pencil + EDIT PROFILE button) even if the profile being viewed is
+    // our own — used when opening our own card from the Reviewees list,
+    // which should look exactly like how everyone else sees it.
+    let profileCardReadOnly = false;
 
-    function openUserProfile(nickname) {
+    function openUserProfile(nickname, readOnly) {
       if (!nickname) return;
       profileCardOpenFor = nickname;
+      profileCardReadOnly = !!readOnly;
       const overlay = document.getElementById('profile-card-overlay');
       overlay.classList.add('visible');
       document.getElementById('profile-card-body').innerHTML =
@@ -12872,6 +12878,10 @@
 
     function renderProfileCard(nickname, profile) {
       const isOwn = currentChatUser && currentChatUser.nickname === nickname;
+      // Own profile still renders with our real avatar/border/bio like
+      // normal, but when opened from the Reviewees list (profileCardReadOnly)
+      // we suppress the edit affordances so it matches what everyone else sees.
+      const showEditUi = isOwn && !(profileCardOpenFor === nickname && profileCardReadOnly);
       const isOnline = onlineNicknames.has(nickname);
       const presenceEntry = latestPresenceData[presenceKey(nickname)];
       const avatar = (isOwn && currentChatUser.avatar) || (presenceEntry && presenceEntry.avatar) || '✈️';
@@ -12902,7 +12912,7 @@
         <div class="profile-card-banner" style="background:${bannerCss};">
           <button class="profile-card-close" onclick="closeUserProfile()">&times;</button>
           <div class="profile-card-avatar-wrap">
-            ${isOwn ? `
+            ${showEditUi ? `
             <span class="avatar-edit-wrap">
               <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}</span>
               <button type="button" class="avatar-edit-pencil" onclick="openAvatarChangeModal()" aria-label="Change avatar">&#9998;</button>
@@ -12910,7 +12920,7 @@
             ` : `
             <span class="avatar-edit-wrap">
               <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}</span>
-              ${renderCrewmateBtn(nickname)}
+              ${isOwn ? '' : renderCrewmateBtn(nickname)}
             </span>
             `}
           </div>
@@ -12922,13 +12932,14 @@
           <div class="profile-card-divider"></div>
           <p class="profile-card-section-label profile-card-bio-label">Bio</p>
           <div class="profile-card-bio${bio ? '' : ' empty'}">${bio || (isOwn ? 'You haven\u2019t added a bio yet.' : 'This reviewee hasn\u2019t added a bio yet.')}</div>
-          ${isOwn ? '<button type="button" class="profile-card-edit-btn" onclick="openEditProfile()">EDIT PROFILE</button>' : ''}
+          ${showEditUi ? '<button type="button" class="profile-card-edit-btn" onclick="openEditProfile()">EDIT PROFILE</button>' : ''}
         </div>
       `;
     }
 
     function closeUserProfile() {
       profileCardOpenFor = null;
+      profileCardReadOnly = false;
       if (sentRequestWatchRef) {
         sentRequestWatchRef.off();
         sentRequestWatchRef = null;
