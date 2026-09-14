@@ -2211,7 +2211,7 @@
   .profile-aircraft-item:hover { border-color: var(--accent); }
   .profile-aircraft-thumb {
     display: block;
-    width: 25%;
+    width: 50%;
     aspect-ratio: 1;
     border-radius: 4px;
     background-size: cover;
@@ -2219,7 +2219,26 @@
     background-color: rgba(255,255,255,0.05);
     margin: 0 auto 4px;
   }
-  model-viewer.profile-aircraft-thumb {
+  /* model-viewer is a custom element that manages its own internal layout
+     and doesn't reliably honor aspect-ratio set directly on it — wrapping
+     it in a plain element that DOES hold the square shape, then forcing
+     the model-viewer to absolutely fill that wrapper, guarantees an actual
+     square instead of the tall rectangle aspect-ratio alone produced. */
+  .profile-aircraft-thumb-wrap {
+    display: block;
+    width: 50%;
+    aspect-ratio: 1;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    background-color: rgba(255,255,255,0.05);
+    margin: 0 auto 4px;
+  }
+  .profile-aircraft-thumb-wrap model-viewer {
+    position: absolute;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
     --poster-color: transparent;
     pointer-events: none;
   }
@@ -17187,7 +17206,9 @@
       const tiles = ownedItems.map((item) => `
         <div class="profile-aircraft-item" onclick="openMigViewer()">
           ${item.modelSrc ? `
-          <model-viewer class="profile-aircraft-thumb" src="${item.modelSrc}" alt="${escapeHtml(item.name)}" auto-rotate rotation-per-second="25deg" disable-zoom interaction-prompt="none" shadow-intensity="0" exposure="1"></model-viewer>
+          <span class="profile-aircraft-thumb-wrap">
+            <model-viewer src="${item.modelSrc}" alt="${escapeHtml(item.name)}" auto-rotate rotation-per-second="25deg" disable-zoom interaction-prompt="none" shadow-intensity="0" exposure="1"></model-viewer>
+          </span>
           ` : `
           <span class="profile-aircraft-thumb" style="background-image:url('${item.imageUrl}')"></span>
           `}
