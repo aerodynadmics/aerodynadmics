@@ -2095,6 +2095,26 @@
     background: rgba(60, 231, 177, 0.15);
     border-color: rgba(60, 231, 177, 0.4);
   }
+  .profile-card-flight-hours {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 8px;
+    margin: 4px 0 2px;
+  }
+  .profile-card-flight-hours-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--rivet);
+    text-transform: uppercase;
+  }
+  .profile-card-flight-hours-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--accent);
+  }
   .profile-card-section-label {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
@@ -9571,6 +9591,13 @@
     let preOverlaySectionLabel = null;
     let presenceHeartbeatInterval = null;
     let presenceTickInterval = null;
+    // "Flight Hours" — total time this account has spent signed in with
+    // the app open, shown on the profile card. Accumulated in small
+    // increments (piggybacking on the presence heartbeat below) rather
+    // than a single value written at sign-out, so a crash or closed tab
+    // only loses at most one heartbeat's worth of time instead of the
+    // whole session.
+    let flightHoursLastFlush = null;
     const ONLINE_THRESHOLD_MS = 45000; // treat someone as online if seen in the last 45s
 
     function presenceKey(nickname) {
@@ -9738,11 +9765,13 @@
 
         // Heartbeat: keep this user's lastSeen fresh every 15s while the tab is open
         if (presenceHeartbeatInterval) clearInterval(presenceHeartbeatInterval);
+        flightHoursLastFlush = Date.now();
         presenceHeartbeatInterval = setInterval(() => {
           myPresenceRef.update({
             online: true,
             lastSeen: firebase.database.ServerValue.TIMESTAMP
           });
+          flushFlightHours(user.nickname);
         }, 15000);
 
         // Tick: re-evaluate who counts as "online" every few seconds,
@@ -9756,6 +9785,28 @@
       }
     }
 
+    // Adds whatever time has elapsed since the last flush (or since sign-in,
+    // for the first call) onto this account's flightHours, both locally
+    // (so an open profile card updates live) and in the database, via an
+    // atomic increment so concurrent tabs/devices never stomp each other.
+    function flushFlightHours(nickname) {
+      if (!flightHoursLastFlush) { flightHoursLastFlush = Date.now(); return; }
+      const now = Date.now();
+      const elapsedHours = (now - flightHoursLastFlush) / 3600000;
+      flightHoursLastFlush = now;
+      if (!(elapsedHours > 0)) return;
+      myProfile = { ...myProfile, flightHours: (myProfile.flightHours || 0) + elapsedHours };
+      myProfileLoaded = true;
+      profileCache[nickname] = myProfile;
+      if (profileCardOpenFor === nickname) renderProfileCard(nickname, myProfile);
+      if (!chatConfigIsFilledIn()) return;
+      try {
+        profileRef(nickname).update({ flightHours: firebase.database.ServerValue.increment(elapsedHours) });
+      } catch (err) {
+        console.error('Flight hours update error:', err);
+      }
+    }
+
     function markPresenceOffline() {
       if (!presenceInitialized || !currentChatUser) return;
       try {
@@ -9765,6 +9816,8 @@
           lastSeen: firebase.database.ServerValue.TIMESTAMP
         });
       } catch (err) {}
+      if (currentChatUser.nickname) flushFlightHours(currentChatUser.nickname);
+      flightHoursLastFlush = null;
       if (presenceHeartbeatInterval) { clearInterval(presenceHeartbeatInterval); presenceHeartbeatInterval = null; }
       if (presenceTickInterval) { clearInterval(presenceTickInterval); presenceTickInterval = null; }
       presenceInitialized = false;
@@ -12396,7 +12449,7 @@
       return nsRef('profiles/' + presenceKey(nickname));
     }
 
-    let myProfile = { bio: '', background: null };
+    let myProfile = { bio: '', background: null, flightHours: 0 };
     let myProfileLoaded = false;
     const profileCache = {};
     // Nicknames we've already attached a live profile listener for, so the
@@ -12416,7 +12469,7 @@
         ensureFirebaseApp();
         profileRef(nickname).on('value', (snap) => {
           const data = snap.val() || {};
-          profileCache[nickname] = { bio: data.bio || '', background: data.background || null };
+          profileCache[nickname] = { bio: data.bio || '', background: data.background || null, flightHours: Number(data.flightHours) || 0 };
           // Keep every row in the reviewees list showing each person's
           // current equipped background in real time, same as their
           // online/offline dot already updates live.
@@ -12434,7 +12487,7 @@
         ensureFirebaseApp();
         profileRef(user.nickname).on('value', (snap) => {
           const data = snap.val() || {};
-          myProfile = { bio: data.bio || '', background: data.background || null };
+          myProfile = { bio: data.bio || '', background: data.background || null, flightHours: Number(data.flightHours) || 0 };
           myProfileLoaded = true;
           profileCache[user.nickname] = myProfile;
           // Mirror the equipped background into the sidebar's own-user
@@ -12827,7 +12880,7 @@
         renderProfileCard(nickname, profileCache[nickname]);
       }
       if (!chatConfigIsFilledIn()) {
-        if (!profileCache[nickname]) renderProfileCard(nickname, { bio: '', background: null });
+        if (!profileCache[nickname]) renderProfileCard(nickname, { bio: '', background: null, flightHours: 0 });
         return;
       }
       try {
@@ -12835,18 +12888,18 @@
         profileRef(nickname).once('value').then((snap) => {
           if (profileCardOpenFor !== nickname) return; // user moved on before this resolved
           const data = snap.val() || {};
-          const profile = { bio: data.bio || '', background: data.background || null };
+          const profile = { bio: data.bio || '', background: data.background || null, flightHours: Number(data.flightHours) || 0 };
           profileCache[nickname] = profile;
           renderProfileCard(nickname, profile);
         }).catch((err) => {
           console.error('Profile fetch error:', err);
           if (profileCardOpenFor === nickname && !profileCache[nickname]) {
-            renderProfileCard(nickname, { bio: '', background: null });
+            renderProfileCard(nickname, { bio: '', background: null, flightHours: 0 });
           }
         });
       } catch (err) {
         console.error('Profile fetch error:', err);
-        renderProfileCard(nickname, { bio: '', background: null });
+        renderProfileCard(nickname, { bio: '', background: null, flightHours: 0 });
       }
       // Watch whether we already have a pending Crewmate request out to
       // this person — live, not a one-off check, so if they decline it
@@ -12899,6 +12952,8 @@
         : (animClassFor(presenceEntry && presenceEntry.equippedAnimation) || '');
       const { statusClass, statusLabel } = getPresenceStatusInfo(nickname);
       const bio = (profile && profile.bio) ? escapeHtml(profile.bio) : '';
+      const flightHoursNum = (profile && typeof profile.flightHours === 'number') ? profile.flightHours : 0;
+      const flightHours = flightHoursNum.toFixed(2);
       const bannerCss = profileBackgroundCss(profile && profile.background);
       // Keep the persistent sidebar card's cover in lockstep with whatever
       // this popover just rendered for the signed-in user's own profile —
@@ -12929,17 +12984,56 @@
           <div class="profile-card-nickname ${animClass}" data-text="${escapeHtml(nickname)}">${escapeHtml(nickname)}</div>
           <div class="profile-card-status-row"><span class="nick-status-tag ${statusClass}">${statusLabel}</span></div>
           ${isOwn ? '' : renderCrewmateStatusLine(nickname)}
+          <div class="profile-card-flight-hours">
+            <span class="profile-card-flight-hours-label">Flight Hours</span>
+            <span class="profile-card-flight-hours-value" id="profile-card-flight-hours-value">${flightHours}</span>
+          </div>
           <div class="profile-card-divider"></div>
           <p class="profile-card-section-label profile-card-bio-label">Bio</p>
           <div class="profile-card-bio${bio ? '' : ' empty'}">${bio || (isOwn ? 'You haven\u2019t added a bio yet.' : 'This reviewee hasn\u2019t added a bio yet.')}</div>
           ${showEditUi ? '<button type="button" class="profile-card-edit-btn" onclick="openEditProfile()">EDIT PROFILE</button>' : ''}
         </div>
       `;
+      // Keep the on-screen number visibly ticking upward every second
+      // while this person is online, instead of only jumping every ~15s
+      // when the underlying value actually syncs. It's purely a display
+      // interpolation — the real recorded value it's anchored to (and
+      // catches back up with) only ever moves forward via flushFlightHours().
+      if (isOnline) {
+        startProfileCardHoursTicker(nickname, flightHoursNum);
+      } else {
+        stopProfileCardHoursTicker();
+      }
+    }
+
+    let profileCardTickInterval = null;
+    let profileCardTickNickname = null;
+    let profileCardTickBaseHours = 0;
+    let profileCardTickBaseTime = 0;
+
+    function startProfileCardHoursTicker(nickname, baseHours) {
+      profileCardTickNickname = nickname;
+      profileCardTickBaseHours = baseHours;
+      profileCardTickBaseTime = Date.now();
+      if (profileCardTickInterval) return; // already ticking, just re-anchored above
+      profileCardTickInterval = setInterval(() => {
+        if (profileCardOpenFor !== profileCardTickNickname) { stopProfileCardHoursTicker(); return; }
+        const el = document.getElementById('profile-card-flight-hours-value');
+        if (!el) { stopProfileCardHoursTicker(); return; }
+        const elapsedHours = (Date.now() - profileCardTickBaseTime) / 3600000;
+        el.textContent = (profileCardTickBaseHours + elapsedHours).toFixed(2);
+      }, 1000);
+    }
+
+    function stopProfileCardHoursTicker() {
+      if (profileCardTickInterval) { clearInterval(profileCardTickInterval); profileCardTickInterval = null; }
+      profileCardTickNickname = null;
     }
 
     function closeUserProfile() {
       profileCardOpenFor = null;
       profileCardReadOnly = false;
+      stopProfileCardHoursTicker();
       if (sentRequestWatchRef) {
         sentRequestWatchRef.off();
         sentRequestWatchRef = null;
@@ -13091,7 +13185,12 @@
       status.classList.add('visible');
 
       const nickname = currentChatUser.nickname;
-      const newProfile = { bio, background };
+      // Keep whatever flightHours is already on record locally — this save
+      // only ever edits bio/background, and the DB write below uses
+      // update() rather than set() for the same reason: flightHours ticks
+      // up on its own via the presence heartbeat and must never be
+      // clobbered by an unrelated profile-details save.
+      const newProfile = { bio, background, flightHours: myProfile.flightHours || 0 };
 
       if (!chatConfigIsFilledIn()) {
         // No live database configured — just keep it client-side for this session.
@@ -13107,7 +13206,7 @@
 
       try {
         ensureFirebaseApp();
-        profileRef(nickname).set(newProfile).then(() => {
+        profileRef(nickname).update({ bio, background }).then(() => {
           btn.disabled = false;
           closeEditProfile();
           myProfile = newProfile;
