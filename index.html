@@ -7714,11 +7714,21 @@
               storageRef.put(blob, { contentType: 'image/jpeg' }).then((snapshot) => {
                 return snapshot.ref.getDownloadURL();
               }).then((downloadUrl) => {
-                changeSelectedAvatar = downloadUrl;
+                // Every upload writes to the SAME storage path
+                // (avatars/{uid}/photo.jpg), so Firebase hands back the
+                // exact same URL as last time. Without a cache-buster,
+                // the browser just reuses its cached copy of that URL
+                // instead of fetching the new image — the avatar would
+                // then only refresh after a hard page reload. Appending
+                // a timestamp makes every upload a "new" URL so it's
+                // fetched and shown immediately everywhere it's used
+                // (sidebar, profile popover, chat, etc.).
+                const bustedUrl = downloadUrl + (downloadUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
+                changeSelectedAvatar = bustedUrl;
                 // Clear any highlighted emoji option — an uploaded image
                 // isn't one of the grid choices.
                 document.querySelectorAll('#avatar-change-grid .avatar-option').forEach(el => el.classList.remove('selected'));
-                setAvatarElContent(document.getElementById('admin-avatar-upload-preview'), downloadUrl);
+                setAvatarElContent(document.getElementById('admin-avatar-upload-preview'), bustedUrl);
                 if (hint) hint.textContent = 'Image ready — tap SAVE AVATAR below to apply it.';
               }).catch((err) => {
                 console.error('Avatar upload error:', err);
