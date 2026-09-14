@@ -6058,6 +6058,20 @@
     z-index: 5001;
   }
   .mig-viewer-close-btn:hover { background: #d92e2e; }
+  .mig-viewer-title {
+    position: absolute;
+    top: 14px;
+    left: 16px;
+    right: 55px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    color: var(--paper);
+    z-index: 5001;
+    pointer-events: none;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+  }
   .mig-viewer-hint {
     position: absolute;
     bottom: 8px;
@@ -6439,6 +6453,7 @@
   <div id="mig-viewer-overlay">
     <div class="mig-viewer-box" id="mig-viewer-box">
       <button class="mig-viewer-close-btn" onclick="closeMigViewer()">✕</button>
+      <div class="mig-viewer-title" id="mig-viewer-title"></div>
       <model-viewer
         id="mig-model"
         alt="MiG 3D Model"
@@ -7062,12 +7077,15 @@
           </div>
 
           <div class="store-subnav">
+            <button class="store-subnav-btn" id="shop-tab-models" onclick="showShopTab('models')">Aircraft Models</button>
             <button class="store-subnav-btn active" id="shop-tab-borders" onclick="showShopTab('borders')">Avatar Decorations</button>
             <button class="store-subnav-btn" id="shop-tab-animations" onclick="showShopTab('animations')">Callsign Animations</button>
             <button class="store-subnav-btn" id="shop-tab-backgrounds" onclick="showShopTab('backgrounds')">Profile Backgrounds</button>
-            <button class="store-subnav-btn" id="shop-tab-models" onclick="showShopTab('models')">Aircraft Models</button>
           </div>
 
+          <div id="shop-tab-panel-models" class="shop-tab-panel" style="display:none;">
+            <div id="shop-models-grid"></div>
+          </div>
           <div id="shop-tab-panel-borders" class="shop-tab-panel">
             <div id="shop-borders-grid"></div>
           </div>
@@ -7076,9 +7094,6 @@
           </div>
           <div id="shop-tab-panel-backgrounds" class="shop-tab-panel" style="display:none;">
             <div id="shop-backgrounds-grid"></div>
-          </div>
-          <div id="shop-tab-panel-models" class="shop-tab-panel" style="display:none;">
-            <div id="shop-models-grid"></div>
           </div>
         </div>
       </div>
@@ -7108,12 +7123,15 @@
           <div class="empty-note" id="hangar-empty-note" style="display:none;">NOTHING IN YOUR HANGAR YET. VISIT THE FLIGHT STORE TO GET SOMETHING.</div>
 
           <div class="store-subnav" id="hangar-subnav" style="display:none;">
+            <button class="store-subnav-btn" id="hangar-tab-models" onclick="showHangarTab('models')">Aircraft Collections</button>
             <button class="store-subnav-btn active" id="hangar-tab-borders" onclick="showHangarTab('borders')">Avatar Decorations</button>
             <button class="store-subnav-btn" id="hangar-tab-animations" onclick="showHangarTab('animations')">Callsign Animations</button>
             <button class="store-subnav-btn" id="hangar-tab-backgrounds" onclick="showHangarTab('backgrounds')">Profile Backgrounds</button>
-            <button class="store-subnav-btn" id="hangar-tab-models" onclick="showHangarTab('models')">Aircraft Models</button>
           </div>
 
+          <div id="hangar-tab-panel-models" class="shop-tab-panel" style="display:none;">
+            <div id="hangar-models-grid"></div>
+          </div>
           <div id="hangar-tab-panel-borders" class="shop-tab-panel">
             <div id="hangar-borders-grid"></div>
           </div>
@@ -7122,9 +7140,6 @@
           </div>
           <div id="hangar-tab-panel-backgrounds" class="shop-tab-panel" style="display:none;">
             <div id="hangar-backgrounds-grid"></div>
-          </div>
-          <div id="hangar-tab-panel-models" class="shop-tab-panel" style="display:none;">
-            <div id="hangar-models-grid"></div>
           </div>
         </div>
       </div>
@@ -13355,7 +13370,7 @@
           ${aircraftCollectionHtml}
           <div class="profile-card-divider"></div>
           <p class="profile-card-section-label profile-card-bio-label">Bio</p>
-          <div class="profile-card-bio${bio ? '' : ' empty'}">${bio || (isOwn ? 'You haven\u2019t added a bio yet.' : 'This reviewee hasn\u2019t added a bio yet.')}</div>
+          <div class="profile-card-bio${bio ? '' : ' empty'}">${bio || (isOwn ? 'You haven\u2019t added a bio yet.' : '')}</div>
           ${showEditUi ? '<button type="button" class="profile-card-edit-btn" onclick="openEditProfile()">EDIT PROFILE</button>' : ''}
         </div>
       `;
@@ -17197,7 +17212,15 @@
     // ---- MiG 3D Viewer ----
     // Gated behind ownership of the 'mig-21' item in the shop's 'models'
     // category — see SHOP_ITEMS.models. Free for everyone until purchased.
+    // Tracks which item's model/name is currently loaded into the shared
+    // #mig-model element, so re-opening the viewer only re-sets the src
+    // (which restarts the model load) when it's actually showing a
+    // different aircraft than last time — e.g. previewing another aircraft
+    // from the Hangar and then opening the topbar 3D Viewer button
+    // shouldn't keep showing that other aircraft's model under the MiG-21
+    // name.
     let migModelLoaded = false;
+    let currentViewerItemId = null;
 
     function ownsShopItem(category, id) {
       if (!walletLoaded || !userWallet) return false;
@@ -17235,7 +17258,10 @@
       if (!dataLoaded) return `<div class="profile-aircraft-empty">Loading…</div>`;
       const ownedItems = (SHOP_ITEMS.models || []).filter((item) => owned && owned[item.id]);
       if (ownedItems.length === 0) {
-        return `<div class="profile-aircraft-empty">${isOwn ? 'No aircraft in your collection yet — check the Flight Store.' : 'No aircraft in this reviewee\u2019s collection yet.'}</div>`;
+        // Only the owner sees a prompt here (it's actionable — go buy
+        // something); on someone else's profile an empty collection just
+        // renders nothing instead of a "no aircraft yet" line.
+        return isOwn ? `<div class="profile-aircraft-empty">No aircraft in your collection yet. Check the Flight Store.</div>` : '';
       }
       const tiles = ownedItems.map((item) => `
         <div class="profile-aircraft-item" onclick="${isOwn ? 'openMigViewer()' : `openAircraftTilePreview('${item.id}')`}">
@@ -17270,7 +17296,13 @@
     function openShopModelPreview(item) {
       const overlay = document.getElementById('mig-viewer-overlay');
       const model = document.getElementById('mig-model');
-      model.setAttribute('src', item.modelSrc);
+      const titleEl = document.getElementById('mig-viewer-title');
+      if (currentViewerItemId !== item.id) {
+        model.setAttribute('src', item.modelSrc);
+        currentViewerItemId = item.id;
+      }
+      model.setAttribute('alt', item.name || 'Aircraft 3D Model');
+      if (titleEl) titleEl.textContent = item.name || '';
       migModelLoaded = true;
       overlay.classList.add('visible');
     }
@@ -17284,10 +17316,15 @@
       }
       const overlay = document.getElementById('mig-viewer-overlay');
       const model = document.getElementById('mig-model');
-      if (!migModelLoaded) {
-        model.setAttribute('src', 'MiG_Project_1.42/MiG_Project_1.42.gltf');
-        migModelLoaded = true;
+      const titleEl = document.getElementById('mig-viewer-title');
+      const item = (SHOP_ITEMS.models || []).find((i) => i.id === 'mig-21');
+      if (currentViewerItemId !== 'mig-21') {
+        model.setAttribute('src', (item && item.modelSrc) || 'MiG_Project_1.42/MiG_Project_1.42.gltf');
+        currentViewerItemId = 'mig-21';
       }
+      migModelLoaded = true;
+      model.setAttribute('alt', (item && item.name) || 'MiG 3D Model');
+      if (titleEl) titleEl.textContent = (item && item.name) || 'MiG-21';
       overlay.classList.add('visible');
     }
 
