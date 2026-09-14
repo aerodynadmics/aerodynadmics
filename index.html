@@ -12229,7 +12229,14 @@
             : '')
           : '';
         const nick = typeof item === 'string' ? item : item.nickname;
-        const avatar = typeof item === 'string' ? '✈️' : (item.avatar || '✈️');
+        // Prefer the LIVE presence avatar over item.avatar. item.avatar
+        // comes from lastNicknameListData, a snapshot fetched from the
+        // backend (listNicknames) that's only refreshed periodically — so
+        // it stays stale right after you change your own avatar, even
+        // though latestPresenceData (live Firebase presence) already has
+        // the new one. This was the actual reason the list needed a full
+        // page reload to show a new avatar.
+        const avatar = getLiveAvatar(nick) || (typeof item === 'string' ? '✈️' : (item.avatar || '✈️'));
         const isOnline = onlineNicknames.has(nick);
         const presenceEntry = latestPresenceData[presenceKey(nick)];
         const borderClass = rowBorderClassFor(nick);
