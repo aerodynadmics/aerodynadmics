@@ -13406,7 +13406,11 @@
       menu.className = 'crewmate-action-menu';
       menu.id = 'crewmate-action-menu';
       menu.style.top = (rect.bottom + 6) + 'px';
-      menu.style.left = Math.max(8, rect.right - 176) + 'px';
+      // Anchor by the RIGHT edge instead of guessing a left offset from a
+      // hardcoded width: the menu's right edge sits flush with the badge's
+      // right edge, so the popup hangs leftward and stays aligned no
+      // matter how wide the widest row ends up being.
+      menu.style.right = Math.max(8, window.innerWidth - rect.right) + 'px';
       // Only offer "Apply as Co-Pilot" when there's actually a slot open —
       // 'none' means no existing Co-Pilot and no pending request either
       // way, with this person or anyone else. Otherwise, explain WHY the
@@ -13438,6 +13442,13 @@
         <button type="button" class="crewmate-action-menu-item danger" onclick="event.stopPropagation(); closeCrewmateActionMenu(); removeCrewmate('${nickAttr}')"><span class="crewmate-action-menu-icon">\u2715</span>Remove as Crewmate</button>
       `;
       document.body.appendChild(menu);
+      // Right-alignment is the preference, not a hard rule: on narrow
+      // screens a long status row ("<name> already has a Co-Pilot") can
+      // push the menu past the left edge, so fall back to pinning left.
+      if (menu.getBoundingClientRect().left < 8) {
+        menu.style.right = 'auto';
+        menu.style.left = '8px';
+      }
       requestAnimationFrame(() => menu.classList.add('visible'));
       setTimeout(() => document.addEventListener('click', closeCrewmateActionMenuOnOutsideClick), 0);
     }
