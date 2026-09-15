@@ -6920,6 +6920,7 @@
             <button id="admin-mock-exams-btn" onclick="openMockExamAdmin(); closeAdminSettingsMenu();">MOCK EXAMS</button>
             <button id="admin-deleted-items-btn" onclick="openDeletedItemsModal(); closeAdminSettingsMenu();">DELETED SHOP ITEMS</button>
             <button id="admin-clean-presence-btn" onclick="cleanupDeletedAccountPresenceNodes(); closeAdminSettingsMenu();">CLEAN UP DELETED PRESENCE</button>
+            <button id="admin-toggle-flightstore-btn" onclick="toggleFlightStoreEnabled(); closeAdminSettingsMenu();">DISABLE FLIGHT STORE</button>
           </div>
         </div>
         <button class="signout-btn signout-icon-btn" onclick="signOutUser()">🛫</button>
@@ -9311,6 +9312,7 @@
       updateSidebarMeBar(user);
       document.getElementById('admin-settings-wrap').style.display = isAdminUser(user) ? '' : 'none';
       if (!isAdminUser(user)) closeAdminSettingsMenu();
+      updateFlightStoreButtonVisibility();
       currentChatUser = user;
       setNeedsFlightCode(user.needsFlightCode);
       document.getElementById('chat-fab').style.display = 'flex';
@@ -9318,6 +9320,7 @@
       initPresence(user);
       watchForLiveBan(user);
       initShopOverrides();
+      initFlightStoreSettings();
       loadWalletAndApplyDailyBonus(user);
       loadOwnProfile(user);
       loadCrewmateData(user);
@@ -9535,6 +9538,7 @@
       markPresenceOffline();
       stopWatchingForLiveBan();
       stopWatchingShopOverrides();
+      stopWatchingFlightStoreSettings();
       if (walletListenerRef) { walletListenerRef.off('value'); walletListenerRef = null; }
       // Detach so the next account signed in on this device doesn't
       // briefly render the previous account's Wings alerts before its own
@@ -10753,6 +10757,65 @@
 
     function stopWatchingShopOverrides() {
       if (shopOverridesRef) { shopOverridesRef.off('value'); shopOverridesRef = null; }
+    }
+
+    // ---- admin: enable/disable the Flight Store platform-wide ----
+    // Lives in Firebase (shared/platformSettings) so one admin's toggle is
+    // visible to every visitor immediately, not just this browser. When
+    // disabled, the topbar button is hidden from everyone except admins —
+    // admins keep access so they can still manage items and flip it back.
+    let flightStoreEnabled = true;
+    let flightStoreSettingsRef = null;
+
+    function initFlightStoreSettings() {
+      if (!chatConfigIsFilledIn()) return;
+      try {
+        ensureFirebaseApp();
+        if (flightStoreSettingsRef) { flightStoreSettingsRef.off('value'); }
+        flightStoreSettingsRef = nsRef('platformSettings/flightStoreEnabled');
+        flightStoreSettingsRef.on('value', (snap) => {
+          // Default to enabled when the key has never been set.
+          flightStoreEnabled = snap.val() !== false;
+          updateFlightStoreButtonVisibility();
+          // If it just got disabled while a non-admin is sitting inside the
+          // Flight Store overlay, close it out from under them right away.
+          if (!flightStoreEnabled && !isAdminUser(currentChatUser)) {
+            const shopView = document.getElementById('view-shop');
+            if (shopView && shopView.classList.contains('visible')) {
+              closeFlightStore();
+              showWingsToast('🛒 The Flight Store is currently closed.');
+            }
+          }
+        });
+      } catch (err) {
+        console.error('Flight Store settings init error:', err);
+      }
+    }
+
+    function stopWatchingFlightStoreSettings() {
+      if (flightStoreSettingsRef) { flightStoreSettingsRef.off('value'); flightStoreSettingsRef = null; }
+    }
+
+    function updateFlightStoreButtonVisibility() {
+      const btn = document.getElementById('topbar-flight-store-btn');
+      if (!btn) return;
+      const admin = isAdminUser(currentChatUser);
+      // Non-admins: hidden entirely when disabled. Admins: always visible,
+      // but labeled so it's obvious the store is currently closed to others.
+      btn.style.display = (flightStoreEnabled || admin) ? '' : 'none';
+      btn.textContent = (!flightStoreEnabled && admin) ? '🛒 FLIGHT STORE (CLOSED)' : '🛒 FLIGHT STORE';
+      const toggleBtn = document.getElementById('admin-toggle-flightstore-btn');
+      if (toggleBtn) toggleBtn.textContent = flightStoreEnabled ? 'DISABLE FLIGHT STORE' : 'ENABLE FLIGHT STORE';
+    }
+
+    async function toggleFlightStoreEnabled() {
+      if (!isAdminUser(currentChatUser)) return;
+      try {
+        ensureFirebaseApp();
+        await nsRef('platformSettings/flightStoreEnabled').set(!flightStoreEnabled);
+      } catch (err) {
+        console.error('Toggle Flight Store error:', err);
+      }
     }
 
     function shopItemIsDeleted(category, id) {
@@ -18118,6 +18181,10 @@
     function updateTopbarStoreNav() {}
 
     function showFlightStore() {
+      if (!flightStoreEnabled && !isAdminUser(currentChatUser)) {
+        showWingsToast('🛒 The Flight Store is currently closed.');
+        return;
+      }
       // Remember what section we were actually in before switching to this
       // overlay — but only if we're not already inside the other overlay,
       // so opening Hangar from within the Shop (or vice versa) doesn't
