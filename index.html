@@ -1376,18 +1376,6 @@
     background: var(--line);
     opacity: 0.5;
   }
-  /* Placeholder row shown under the "CO-PILOT" divider when the
-     signed-in pilot hasn't picked one yet — dashed outline and no
-     background/cursor so it reads as an empty slot, not a clickable row. */
-  .nick-list .nick-list-empty-row {
-    cursor: default;
-    pointer-events: none;
-    background: transparent;
-    border: 1px dashed var(--line);
-    color: #7d8790;
-    font-size: 11.5px;
-    line-height: 1.4;
-  }
   .nick-list .nick-status-tag {
     margin-left: auto;
     flex-shrink: 0;
@@ -1733,6 +1721,30 @@
     justify-content: center;
   }
   .profile-card-close:hover { background: rgba(4, 18, 32, 0.85); color: var(--accent); }
+  /* Back arrow — only shown when the profile card was opened by drilling
+     into it from a Co-Pilot/Crewmates popup (see profileCardStack), so
+     you can return to whichever profile you were looking at instead of
+     that one being lost. Mirrors .profile-card-close's own positioning,
+     just on the opposite corner. */
+  .profile-card-back {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(4, 18, 32, 0.55);
+    color: var(--paper);
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .profile-card-back:hover { background: rgba(4, 18, 32, 0.85); color: var(--accent); }
   .profile-card-avatar-wrap {
     position: absolute;
     left: 18px;
@@ -1761,8 +1773,8 @@
     position: absolute;
     right: -2px;
     bottom: -2px;
-    width: 22px;
-    height: 22px;
+    width: 18px;
+    height: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1772,7 +1784,7 @@
     cursor: pointer;
     color: var(--blueprint-dark);
   }
-  .crewmate-btn svg { width: 13px; height: 13px; }
+  .crewmate-btn svg { width: 10px; height: 10px; }
   .crewmate-btn.state-none { background: #8a97a3; }
   .crewmate-btn.state-none:hover { background: #a3aeb8; }
   .crewmate-btn.state-sent { background: var(--rivet); opacity: 0.9; }
@@ -1786,27 +1798,28 @@
   }
   .crewmate-btn.state-crewmates:hover { background: rgba(79, 209, 160, 0.18); }
 
-  /* ---- "Make Co-Pilot" button: same treatment as .crewmate-btn, but
-     pinned to the opposite (top-right) corner of the avatar so the two
-     can be used independently without overlapping. Co-Pilot is capped at
-     ONE person at a time — state-full means the slot is already taken by
-     someone else and the button is shown disabled. ---- */
+  /* ---- "Make Co-Pilot" button: an inline star icon that sits right
+     after the callsign in the profile popover (.profile-card-nickname-row),
+     rather than badging the avatar like .crewmate-btn does. Co-Pilot is
+     capped at ONE person at a time — state-full means the slot is already
+     taken by someone else and the button is shown disabled. ---- */
   .copilot-btn {
-    position: absolute;
-    right: -2px;
-    top: -2px;
-    width: 22px;
-    height: 22px;
-    display: flex;
+    position: relative;
+    flex-shrink: 0;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
-    border: 2px solid var(--blueprint-dark);
+    border: none;
     padding: 0;
     cursor: pointer;
     color: var(--blueprint-dark);
+    font-size: 10px;
+    line-height: 1;
   }
-  .copilot-btn svg { width: 13px; height: 13px; }
+  .copilot-btn svg { width: 10px; height: 10px; }
   .copilot-btn.state-none { background: #8a97a3; }
   .copilot-btn.state-none:hover { background: #a3aeb8; }
   .copilot-btn.state-sent { background: var(--rivet); opacity: 0.9; }
@@ -1814,17 +1827,11 @@
   .copilot-btn.state-incoming { background: #ffd166; color: #3a2900; }
   .copilot-btn.state-incoming:hover { background: #ffdd8f; }
   .copilot-btn.state-copilot {
-    background: var(--blueprint-dark);
-    color: #ffd166;
-    border-color: #ffd166;
+    background: transparent;
+    color: #ff6fb0;
+    border: 2px solid #ff6fb0;
   }
-  .copilot-btn.state-copilot:hover { background: rgba(255, 209, 102, 0.18); }
-  .copilot-btn.state-full {
-    background: #4a5158;
-    color: #8a97a3;
-    cursor: not-allowed;
-    opacity: 0.7;
-  }
+  .copilot-btn.state-copilot:hover { background: rgba(255, 111, 176, 0.18); }
 
   /* ---- custom floating tooltip, site-wide (replaces the plain browser
      title tooltip) — triggered via [data-tooltip] instead of [title],
@@ -1915,7 +1922,67 @@
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10.5px;
     color: var(--rivet);
+    margin: 0;
+  }
+  /* Holds the Co-Pilot + Crewmate relationship lines side by side
+     (Co-Pilot first), instead of stacking them one above the other. */
+  .profile-card-relations-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
     margin: 0 0 14px;
+  }
+  /* Fixed-width icon column so "Crewmates" and "Co-Pilot" text line up
+     with each other even though the plane/star emoji render at slightly
+     different widths. */
+  .crewmate-status-line .status-line-icon {
+    display: inline-block;
+    width: 18px;
+  }
+  /* Who a profile's OWN Co-Pilot is — shown to every viewer, not tied to
+     the viewer's own relationship status like .crewmate-status-line is. */
+  .profile-card-copilot-line {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: #ffd166;
+    margin: 0 0 6px;
+  }
+  .profile-card-copilot-line strong {
+    color: #fff;
+    font-weight: 600;
+  }
+  /* "Co-Pilot" / "Crewmates" entry points on the profile card — clicking
+     either opens the same crew-list popup (#crew-list-overlay), just a
+     roster view of THIS profile's Co-Pilot + Crewmates rather than the
+     viewer's own relationship to them (that's still .crewmate-status-line
+     above, shown separately in .profile-card-relations-row). */
+  .profile-card-crew-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin: 0;
+    padding-top: 2px;
+  }
+  .profile-card-crew-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--rivet);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: color 0.12s ease;
+  }
+  .profile-card-crew-link:hover { color: var(--green); }
+  .profile-card-crew-link-copilot:hover { color: #ff6fb0; }
+  .profile-card-crew-link .status-line-icon {
+    display: inline-block;
+    width: 18px;
   }
   .crewmate-status-line.is-incoming { color: var(--green); }
   .crewmate-status-line .crewmate-decline-link {
@@ -2107,6 +2174,16 @@
     word-break: break-word;
   }
   .profile-card-nickname.nick-legend { color: transparent; }
+  /* Row that pairs the nickname with the inline "Make Co-Pilot" star, so
+     the button sits right after the callsign instead of on the avatar. */
+  .profile-card-nickname-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .profile-card-nickname-row .profile-card-nickname {
+    min-width: 0;
+  }
   .profile-card-status-row {
     margin: 6px 0 14px;
   }
@@ -6265,7 +6342,7 @@
         <button type="button" class="ai-note-modal-close" onclick="document.getElementById('ai-note-overlay').classList.remove('visible')">&times;</button>
       </div>
       <div class="ai-note-body">
-        <p>This site was built with the help of Artificial Intelligence. I'm an Aeronautical Engineering graduate, not a coder, and AI helped me turn an idea into something usable for fellow AELE reviewees.</p>
+        <p>This site was built with the help of Artificial Intelligence. I'm an Aeronautical Engineering graduate, not a coder, and AI helped me turn an idea into something usable for fellow AELE Souls on Board.</p>
         <p>I know AI use isn't environmentally free, and I don't want to brush past that. But I believe how and why we use a tool matters as much as whether we use it at all. Here, it went toward making review materials easier to access and organize.</p>
         <p style="font-style: italic; color: var(--accent);">&ldquo;Maybe it's less about AI being good or bad, and more about the purpose we choose to use it for, while still acknowledging its impact on our environment and starting the change with ourselves to help protect it.&rdquo;<br><span style="display: inline-block; margin-top: 8px; color: var(--paper);">- aerodynadmics</span></p>
       </div>
@@ -6279,7 +6356,7 @@
         <button type="button" class="ai-note-modal-close" onclick="document.getElementById('shop-note-overlay').classList.remove('visible')">&times;</button>
       </div>
       <div class="ai-note-body">
-        <p>When you spend Wings in the Flight Store, that amount is treated as a voluntary contribution supporting this platform's continued development, maintenance, and hosting costs. It is not a direct commercial purchase of goods or services in the traditional sense. This platform is a passion project built and maintained independently, and every contribution helps keep it running and improving for the AELE reviewee community.</p>
+        <p>When you spend Wings in the Flight Store, that amount is treated as a voluntary contribution supporting this platform's continued development, maintenance, and hosting costs. It is not a direct commercial purchase of goods or services in the traditional sense. This platform is a passion project built and maintained independently, and every contribution helps keep it running and improving for the AELE Soul on Board community.</p>
         <p>That said, the cosmetic item associated with your contribution (avatar decoration, callsign animation, or profile background) remains yours. Once unlocked, it stays tied to your account and is available for you to equip, unequip, and use freely within the platform for as long as your account exists here.</p>
         <p>By purchasing an item, you acknowledge that this platform does not claim ownership over the cosmetic assets made available here. These cosmetics are provided for decorative, non-commercial use within the platform only, and neither the platform nor you, as a supporter, hold proprietary rights over them. What your contribution supports is the platform itself, not the acquisition of a proprietary asset. Through continued support from the community, the developer intends to eventually introduce original, first-party items that are genuinely owned and offered for sale, distinct from the cosmetics currently available.</p>
         <p>Use of these items is granted under fair use within this platform only. They are intended for personal display and enjoyment while using this site, are non-transferable between accounts, and may not be extracted, redistributed, resold, or used outside this platform. Access to an item may be revoked in cases of account bans, abuse, or violation of the platform's community guidelines, since it remains part of the shared system rather than a separately owned asset.</p>
@@ -6301,7 +6378,7 @@
         <button type="button" class="ai-note-modal-close" onclick="closeShopAckModal()">&times;</button>
       </div>
       <div class="ai-note-body">
-        <p>When you spend Wings in the Flight Store, that amount is treated as a voluntary contribution supporting this platform's continued development, maintenance, and hosting costs. It is not a direct commercial purchase of goods or services in the traditional sense. This platform is a passion project built and maintained independently, and every contribution helps keep it running and improving for the AELE reviewee community.</p>
+        <p>When you spend Wings in the Flight Store, that amount is treated as a voluntary contribution supporting this platform's continued development, maintenance, and hosting costs. It is not a direct commercial purchase of goods or services in the traditional sense. This platform is a passion project built and maintained independently, and every contribution helps keep it running and improving for the AELE Soul on Board community.</p>
         <p>That said, the cosmetic item associated with your contribution (avatar decoration, callsign animation, or profile background) remains yours. Once unlocked, it stays tied to your account and is available for you to equip, unequip, and use freely within the platform for as long as your account exists here.</p>
         <p>By purchasing an item, you acknowledge that this platform does not claim ownership over the cosmetic assets made available here. These cosmetics are provided for decorative, non-commercial use within the platform only, and neither the platform nor you, as a supporter, hold proprietary rights over them. What your contribution supports is the platform itself, not the acquisition of a proprietary asset. Through continued support from the community, the developer intends to eventually introduce original, first-party items that are genuinely owned and offered for sale, distinct from the cosmetics currently available.</p>
         <p>Use of these items is granted under fair use within this platform only. They are intended for personal display and enjoyment while using this site, are non-transferable between accounts, and may not be extracted, redistributed, resold, or used outside this platform. Access to an item may be revoked in cases of account bans, abuse, or violation of the platform's community guidelines, since it remains part of the shared system rather than a separately owned asset.</p>
@@ -6328,7 +6405,7 @@
   <div class="reviewees-sidebar" id="reviewees-sidebar">
     <div class="reviewees-sidebar-head">
       <h3>SOULS ON BOARD</h3>
-      <button type="button" class="reviewees-refresh-btn" id="reviewees-refresh-btn" onclick="manualRefreshNicknameList()" aria-label="Refresh reviewees list">&#8635;</button>
+      <button type="button" class="reviewees-refresh-btn" id="reviewees-refresh-btn" onclick="manualRefreshNicknameList()" aria-label="Refresh Souls on Board list">&#8635;</button>
     </div>
     <div class="reviewees-sidebar-body" id="nick-modal-body">
       <div class="nick-modal-status">Loading&hellip;</div>
@@ -6473,7 +6550,21 @@
       </div>
       <div class="hours-info-value" id="hoursInfoValue">0.00</div>
       <div class="hours-info-unit">Flight Hours</div>
-      <p class="hours-info-desc" id="hoursInfoDesc">Total hours this reviewee has spent signed in and active on aerodynadmics.</p>
+      <p class="hours-info-desc" id="hoursInfoDesc">Total hours this Soul on Board has spent signed in and active on aerodynadmics.</p>
+    </div>
+  </div>
+
+  <!-- ---- Co-Pilot / Crewmates roster popup (stacks above the profile
+       card, same reused nick-modal-overlay/nick-list styling as the
+       Reviewees sidebar) — reachable by clicking either "Co-Pilot" or
+       "Crewmates" on a profile card. No header/close button — closes by
+       clicking the backdrop (see the click listener added alongside
+       mig-viewer-overlay's). ---- -->
+  <div class="nick-modal-overlay" id="crew-list-overlay" style="z-index: 1800;">
+    <div class="nick-modal" style="max-width: 250px;">
+      <div class="nick-modal-body" id="crew-list-body">
+        <div class="nick-modal-status">Loading&hellip;</div>
+      </div>
     </div>
   </div>
 
@@ -6518,7 +6609,7 @@
       <div class="nick-modal-body">
         <div style="padding: 4px 16px 16px;">
           <p class="profile-edit-label">Bio</p>
-          <textarea id="profile-edit-bio" maxlength="50" placeholder="Tell other reviewees a bit about yourself&hellip;" oninput="updateProfileBioCharCount()"></textarea>
+          <textarea id="profile-edit-bio" maxlength="50" placeholder="Tell other Souls on Board a bit about yourself&hellip;" oninput="updateProfileBioCharCount()"></textarea>
           <div class="profile-edit-charcount" id="profile-edit-charcount">0 / 50</div>
 
           <p class="profile-edit-label">Background</p>
@@ -6579,7 +6670,7 @@
 
   <div class="chat-panel" id="chat-panel">
     <div class="chat-panel-head">
-      <span>💬 Reviewees Discussion Chatbox</span>
+      <span>💬 Souls on Board Discussion Chatbox</span>
       <button class="chat-panel-close" onclick="toggleChatPanel()">&times;</button>
     </div>
     <div class="chat-panel-status-row">
@@ -6702,9 +6793,9 @@
           <span class="collapsible-arrow" id="support-arrow">&#9660;</span>
         </div>
         <div class="collapsible-body" id="support-body">        <p>This platform was created from a simple hope: to make AELE preparation a little more accessible, organized, and manageable for those working toward the same goal. It is being developed into a more comprehensive review platform, with structured lessons, detailed explanations, and interactive animations to help make difficult concepts, especially in Aerodynamics, easier to understand, visualize, and remember.</p>
-        <p>The platform is also meant to help reviewees become more comfortable with answering exams in a computerized environment. Since the AELE is conducted through a Computer-Based Licensure Examination (CBLE) setup, I hope that practicing in a similar format can make the experience a little less unfamiliar when the actual examination day comes.</p>
+        <p>The platform is also meant to help Souls on Board become more comfortable with answering exams in a computerized environment. Since the AELE is conducted through a Computer-Based Licensure Examination (CBLE) setup, I hope that practicing in a similar format can make the experience a little less unfamiliar when the actual examination day comes.</p>
         <p>If you find this platform helpful in your AELE preparation and would like to support the project, visiting the Flight Store is one way you can help. Every purchase contributes to keeping the platform running and gives me the opportunity to continue improving it, adding new features, and creating more resources for future examinees.</p>
-        <p>There is absolutely no obligation to purchase anything. Simply using the reviewer, sharing it with a fellow reviewee, or leaving <a href="https://forms.gle/BRZW2QFN5WGyUXAg8" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline; text-underline-offset:3px;">feedback</a> already means more than you might realize. Your feedback helps me understand how this platform can become better and more useful for the people who need it.</p>
+        <p>There is absolutely no obligation to purchase anything. Simply using the reviewer, sharing it with a fellow Soul on Board, or leaving <a href="https://forms.gle/BRZW2QFN5WGyUXAg8" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline; text-underline-offset:3px;">feedback</a> already means more than you might realize. Your feedback helps me understand how this platform can become better and more useful for the people who need it.</p>
         <p>If you have your own review materials or mock exams that you would be willing to share, I would also be grateful to have them become part of this growing collection. Feel free to <a href="https://forms.gle/GRHoKWEkkoHpCbwM8" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline; text-underline-offset:3px;">contribute a file</a>, and I’ll work on getting it published. The goal is to build a place where future examinees can find mock exams and review materials from different sources, so no one has to feel like they are preparing alone or searching everywhere for something to practice with.</p>
         <p>Thank you for taking the time to use this platform, for supporting it in whatever way you can, and for being part of its journey. I hope it can be even a small help as you work toward the day you can finally call yourself a licensed Aeronautical Engineer.</p>
                 <p class="thanks">Thank you, and best of luck to all future Aeronautical Engineers ✈️!</p>
@@ -7243,14 +7334,14 @@
   <div class="chat-guidelines-overlay" id="chat-guidelines-overlay">
     <div class="chat-guidelines-card">
       <button class="chat-guidelines-close" onclick="closeChatGuidelines()">&times;</button>
-      <h3>&#9888;&#65039; Reviewees Discussion Chatbox</h3>
-      <p>This chatbox is intended for respectful and collaborative discussion among reviewees. You may use it to ask questions, share knowledge, discuss difficult topics, and help fellow reviewees with their AELE preparation.</p>
+      <h3>&#9888;&#65039; Souls on Board Discussion Chatbox</h3>
+      <p>This chatbox is intended for respectful and collaborative discussion among Souls on Board. You may use it to ask questions, share knowledge, discuss difficult topics, and help fellow Souls on Board with their AELE preparation.</p>
       <p><strong>Please observe the following:</strong></p>
       <ul>
         <li>Be respectful to everyone. Personal attacks, insults, harassment, discrimination, and disrespectful behavior are not allowed.</li>
         <li>Keep discussions academic and relevant to the purpose of the reviewer.</li>
         <li>Do not intentionally mislead, spam, or disrupt discussions.</li>
-        <li>Remember that there are fellow reviewees behind every account. Treat everyone with the same respect you expect from others.</li>
+        <li>Remember that there are fellow Souls on Board behind every account. Treat everyone with the same respect you expect from others.</li>
         <li>An administrator actively oversees this discussion box and may review conversations to maintain a safe, respectful, and productive environment.</li>
       </ul>
       <p class="chat-guidelines-warning">&#9888;&#65039; Warning: Any account found engaging in serious or repeated disrespectful behavior may be banned from the website. A banned Google account may also be permanently prevented from creating or accessing another account on the website.</p>
@@ -12679,18 +12770,38 @@
 
       // ---- "PILOT" (self) + "CO-PILOT" — pinned above everyone else,
       // in that order, ahead of the Crewmates/Flight Passengers groups
-      // below. Self and the current Co-Pilot (if any) are excluded from
-      // those lower groups (see the .filter() below) so nobody is ever
-      // listed twice.
+      // below. Self and the current Co-Pilot are excluded from those
+      // lower groups (see the .filter() below) so nobody is ever listed
+      // twice. Both sections use the same per-row equipped-background
+      // treatment as the main list (ensureListProfileListener +
+      // resolveProfileCover) so covers actually show up here too.
       const myNickname = currentChatUser && currentChatUser.nickname;
-      const pilotRowHtml = (nick, extraClass) => {
+      const pilotRowHtml = (nick) => {
         const avatar = getLiveAvatar(nick) || (nick === myNickname && currentChatUser && currentChatUser.avatar) || '\u2708\ufe0f';
         const isOnline = nick === myNickname ? true : onlineNicknames.has(nick);
         const borderClass = rowBorderClassFor(nick);
         const animClass = rowAnimClassFor(nick);
-        const rowClasses = [isOnline ? 'is-online' : '', extraClass || ''].filter(Boolean).join(' ');
+
+        ensureListProfileListener(nick);
+        const rowProfile = (currentChatUser && currentChatUser.nickname === nick)
+          ? (myProfileLoaded ? myProfile : null)
+          : profileCache[nick];
+        const cover = rowProfile ? resolveProfileCover(rowProfile.background) : null;
+
+        const coverImgHtml = cover && cover.type === 'image'
+          ? `<img class="list-item-cover-img" src="${escapeHtml(cover.value)}" alt="" aria-hidden="true">`
+          : '';
+        const coverOverlayHtml = cover ? '<div class="list-item-cover-overlay"></div>' : '';
+        const liInlineStyle = cover && cover.type === 'gradient'
+          ? ` style="background-image:${cover.value};background-size:cover;background-position:center;"`
+          : (cover && cover.type === 'color' ? ` style="background-color:${cover.value};"` : '');
+        const rowClasses = [isOnline ? 'is-online' : '', cover ? 'has-cover' : ''].filter(Boolean).join(' ');
+        const classAttr = rowClasses ? ` class="${rowClasses}"` : '';
+
         return `
-        <li${rowClasses ? ` class="${rowClasses}"` : ''} data-nickname="${escapeHtml(nick)}" onclick="openUserProfile(this.dataset.nickname, true)">
+        <li${classAttr} data-nickname="${escapeHtml(nick)}" onclick="openUserProfile(this.dataset.nickname, true)"${liInlineStyle}>
+          ${coverImgHtml}
+          ${coverOverlayHtml}
           <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span></span>
           <span class="${animClass}" data-text="${escapeHtml(nick)}" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; padding:0 8px; margin:0 -8px;">${escapeHtml(nick)}</span>
         </li>
@@ -12704,12 +12815,11 @@
       const copilotNickname = myCopilotKey
         ? ((latestPresenceData[myCopilotKey] && latestPresenceData[myCopilotKey].nickname) || myCopilotKey)
         : null;
-      const copilotHtml = myNickname
-        ? `<li class="nick-list-divider">CO-PILOT</li>${
-            copilotNickname
-              ? pilotRowHtml(copilotNickname)
-              : '<li class="nick-list-empty-row">No Co-Pilot yet &mdash; add one from a pilot\u2019s profile</li>'
-          }`
+      // Only shown once an actual Co-Pilot is set — no placeholder row
+      // when the slot is empty, same as Crewmates never showing a
+      // "Crewmates" header when there aren't any (see hasBothGroups below).
+      const copilotHtml = copilotNickname
+        ? `<li class="nick-list-divider">CO-PILOT</li>${pilotRowHtml(copilotNickname)}`
         : '';
 
       const sorted = [...lastNicknameListData]
@@ -13009,6 +13119,7 @@
           myCrewmates = snap.val() || {};
           crewmateDataLoaded = true;
           if (profileCardOpenFor) renderProfileCard(profileCardOpenFor, profileCache[profileCardOpenFor] || { bio: '', background: null });
+          if (crewListOpenFor === user.nickname) renderCrewListModal(user.nickname);
           renderNicknameListFromCache();
         }, (err) => console.error('Crewmates load error:', err));
         crewmateRequestsRef(user.nickname).on('value', (snap) => {
@@ -13020,6 +13131,31 @@
         }, (err) => console.error('Crewmate requests load error:', err));
       } catch (err) {
         console.error('Crewmate data init error:', err);
+      }
+    }
+
+    // Lets any viewer see a profile's OWN Crewmates roster (not just the
+    // viewer's relationship to that person) — same live-listener-per-
+    // nickname pattern as ensureCopilotListener, just reading the
+    // crewmates/<nickname> map instead of a single copilot value. Skipped
+    // for the signed-in user's own nickname since myCrewmates (from
+    // loadCrewmateData) already covers that case.
+    const otherCrewmatesCache = {}; // nickname -> array of that person's crewmates' presenceKeys
+    const crewmatesListenerNicknames = new Set();
+    function ensureCrewmatesListener(nickname) {
+      if (!nickname) return;
+      if (currentChatUser && currentChatUser.nickname === nickname) return;
+      if (crewmatesListenerNicknames.has(nickname)) return;
+      if (!chatConfigIsFilledIn()) return;
+      crewmatesListenerNicknames.add(nickname);
+      try {
+        ensureFirebaseApp();
+        crewmatesRef(nickname).on('value', (snap) => {
+          otherCrewmatesCache[nickname] = Object.keys(snap.val() || {});
+          if (crewListOpenFor === nickname) renderCrewListModal(nickname);
+        }, (err) => console.error('Crewmates listener error:', err));
+      } catch (err) {
+        console.error('Crewmates listener init error:', err);
       }
     }
 
@@ -13054,9 +13190,10 @@
 
     function renderCrewmateStatusLine(nickname) {
       const status = getCrewmateStatus(nickname);
-      if (status === 'crewmates') {
-        return '<div class="crewmate-status-line">\u2708\ufe0f Crewmates</div>';
-      }
+      // The mutual "Crewmates" case used to render its own plain-text line
+      // here, but that's now redundant with (and was rendering directly
+      // above) the clickable "Crewmates" link in .profile-card-crew-row —
+      // so only the actionable "incoming request" case still shows here.
       if (status === 'incoming') {
         const nickAttr = escapeHtml(nickname).replace(/'/g, "\\'");
         return `<div class="crewmate-status-line is-incoming">Wants to be your Crewmate<span class="crewmate-decline-link" onclick="declineCrewmateRequest('${nickAttr}')">Decline</span></div>`;
@@ -13360,6 +13497,7 @@
           myCopilotKey = snap.val() || null;
           copilotDataLoaded = true;
           if (profileCardOpenFor) renderProfileCard(profileCardOpenFor, profileCache[profileCardOpenFor] || { bio: '', background: null });
+          if (crewListOpenFor === user.nickname) renderCrewListModal(user.nickname);
           renderNicknameListFromCache();
         }, (err) => console.error('Co-Pilot load error:', err));
         copilotRequestsRef(user.nickname).on('value', (snap) => {
@@ -13371,6 +13509,35 @@
         }, (err) => console.error('Co-Pilot requests load error:', err));
       } catch (err) {
         console.error('Co-Pilot data init error:', err);
+      }
+    }
+
+    // Lets any viewer see who a profile's OWN Co-Pilot is (not just the
+    // viewer's relationship to that person) — same live-listener-per-
+    // nickname pattern as ensureListProfileListener, just reading the
+    // copilot/<nickname> path instead of profiles/<nickname>. Skipped for
+    // the signed-in user's own nickname since myCopilotKey (from
+    // loadCopilotData above) already covers that case.
+    const otherCopilotCache = {}; // nickname -> their Co-Pilot's nickname, or null
+    const copilotListenerNicknames = new Set();
+    function ensureCopilotListener(nickname) {
+      if (!nickname) return;
+      if (currentChatUser && currentChatUser.nickname === nickname) return;
+      if (copilotListenerNicknames.has(nickname)) return;
+      if (!chatConfigIsFilledIn()) return;
+      copilotListenerNicknames.add(nickname);
+      try {
+        ensureFirebaseApp();
+        copilotRef(nickname).on('value', (snap) => {
+          const partnerKey = snap.val() || null;
+          otherCopilotCache[nickname] = partnerKey
+            ? ((latestPresenceData[partnerKey] && latestPresenceData[partnerKey].nickname) || partnerKey)
+            : null;
+          if (profileCardOpenFor === nickname) renderProfileCard(nickname, profileCache[nickname] || { bio: '', background: null });
+          if (crewListOpenFor === nickname) renderCrewListModal(nickname);
+        }, (err) => console.error('Co-Pilot listener error:', err));
+      } catch (err) {
+        console.error('Co-Pilot listener init error:', err);
       }
     }
 
@@ -13389,29 +13556,30 @@
     function renderCopilotBtn(nickname) {
       const status = getCopilotStatus(nickname);
       const nickAttr = escapeHtml(nickname).replace(/'/g, "\\'");
-      const ICON_STAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 9 22 9.5 16.5 14.5 18 22 12 18 6 22 7.5 14.5 2 9.5 9 9 12 2"/></svg>';
-      const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
       const ICON_CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14.5"/></svg>';
       if (status === 'copilot') {
-        return `<button type="button" class="copilot-btn state-copilot" data-tooltip="Co-Pilot \u00b7 click to remove" onclick="event.stopPropagation(); removeCopilot('${nickAttr}')">${ICON_CHECK}</button>`;
+        return `<button type="button" class="copilot-btn state-copilot" data-tooltip="Co-Pilot \u00b7 click to remove" onclick="event.stopPropagation(); removeCopilot('${nickAttr}')">\ud83d\udc68\ud83c\udffb\u200d\u2708\ufe0f</button>`;
       }
       if (status === 'incoming') {
-        return `<button type="button" class="copilot-btn state-incoming" data-tooltip="Accept Co-Pilot request" onclick="event.stopPropagation(); acceptCopilotRequest('${nickAttr}')">${ICON_STAR}</button>`;
+        return `<button type="button" class="copilot-btn state-incoming" data-tooltip="Accept Co-Pilot request" onclick="event.stopPropagation(); acceptCopilotRequest('${nickAttr}')">\ud83d\udc68\ud83c\udffb\u200d\u2708\ufe0f</button>`;
       }
       if (status === 'sent') {
         return `<button type="button" class="copilot-btn state-sent" data-tooltip="Co-Pilot request sent \u00b7 click to cancel" onclick="event.stopPropagation(); cancelCopilotRequest('${nickAttr}')">${ICON_CLOCK}</button>`;
       }
       if (status === 'full') {
-        return `<button type="button" class="copilot-btn state-full" data-tooltip="You already have a Co-Pilot \u2014 remove them first" onclick="event.stopPropagation();">${ICON_STAR}</button>`;
+        // We already have a different Co-Pilot — don't even show a
+        // disabled button on everyone else's profile, just nothing.
+        return '';
       }
-      return `<button type="button" class="copilot-btn state-none" data-tooltip="Make Co-Pilot" onclick="event.stopPropagation(); sendCopilotRequest('${nickAttr}')">${ICON_STAR}</button>`;
+      return `<button type="button" class="copilot-btn state-none" data-tooltip="Make Co-Pilot" onclick="event.stopPropagation(); sendCopilotRequest('${nickAttr}')">\ud83d\udc68\ud83c\udffb\u200d\u2708\ufe0f</button>`;
     }
 
     function renderCopilotStatusLine(nickname) {
       const status = getCopilotStatus(nickname);
-      if (status === 'copilot') {
-        return '<div class="crewmate-status-line">\u2b50 Co-Pilot</div>';
-      }
+      // Same reasoning as renderCrewmateStatusLine above: the mutual
+      // "Co-Pilot" case is now covered by the clickable "Co-Pilot" link in
+      // .profile-card-crew-row, so only the actionable "incoming request"
+      // case still renders its own line here.
       if (status === 'incoming') {
         const nickAttr = escapeHtml(nickname).replace(/'/g, "\\'");
         return `<div class="crewmate-status-line is-incoming">Wants to be your Co-Pilot<span class="crewmate-decline-link" onclick="declineCopilotRequest('${nickAttr}')">Decline</span></div>`;
@@ -13516,6 +13684,12 @@
     // our own — used when opening our own card from the Reviewees list,
     // which should look exactly like how everyone else sees it.
     let profileCardReadOnly = false;
+    // Nicknames "underneath" the one currently showing, most recent last —
+    // populated when a profile is opened by drilling in from a Co-Pilot/
+    // Crewmates popup (openProfileFromCrewList), so clicking someone
+    // there doesn't just abandon whichever profile you were already
+    // looking at. The back arrow pops this to return to it.
+    let profileCardStack = [];
 
     function openUserProfile(nickname, readOnly) {
       if (!nickname) return;
@@ -13631,8 +13805,36 @@
       const aircraftOrder = isOwn ? (userWallet.modelOrder || []) : (presenceEntry && presenceEntry.modelOrder) || [];
       const aircraftCollectionHtml = renderAircraftCollectionHtml(aircraftOwned, aircraftDataLoaded, isOwn, aircraftOrder);
 
+      // "Co-Pilot" / "Crewmates" links — clicking either opens a roster
+      // popup of THIS profile's own Co-Pilot + Crewmates (not the
+      // viewer's relationship to them, which is what
+      // renderCopilotStatusLine/renderCrewmateStatusLine cover instead,
+      // further down in .profile-card-relations-row). Shown on every
+      // profile card, own included, so opening your own card is also how
+      // you check your own crew.
+      ensureCopilotListener(nickname);
+      const nickAttrForCrew = escapeHtml(nickname).replace(/'/g, "\\'");
+      const copilotLineHtml = `
+        <div class="profile-card-crew-row">
+          <button type="button" class="profile-card-crew-link profile-card-crew-link-copilot" onclick="openCrewList('${nickAttrForCrew}', 'copilot')"><span class="status-line-icon">\ud83d\udc68\ud83c\udffb\u200d\u2708\ufe0f</span>Co-Pilot</button>
+          <button type="button" class="profile-card-crew-link" onclick="openCrewList('${nickAttrForCrew}', 'crewmates')"><span class="status-line-icon">\u2708\ufe0f</span>Crewmates</button>
+        </div>
+      `;
+
+      // "Wants to be your Crewmate/Co-Pilot" rows only render when there's
+      // an actual incoming request to show — an empty wrapping div still
+      // took up its own margin/gap, which is what left that dead band of
+      // space under Co-Pilot/Crewmates in the common case (no request
+      // pending), so the whole row is skipped when both are blank.
+      const copilotStatusLineHtml = isOwn ? '' : renderCopilotStatusLine(nickname);
+      const crewmateStatusLineHtml = isOwn ? '' : renderCrewmateStatusLine(nickname);
+      const relationsRowHtml = (copilotStatusLineHtml || crewmateStatusLineHtml)
+        ? `<div class="profile-card-relations-row">${copilotStatusLineHtml}${crewmateStatusLineHtml}</div>`
+        : '';
+
       document.getElementById('profile-card-body').innerHTML = `
         <div class="profile-card-banner" style="background:${bannerCss};">
+          ${profileCardStack.length ? '<button class="profile-card-back" onclick="goBackProfileCard()" aria-label="Back">&lsaquo;</button>' : ''}
           <button class="profile-card-close" onclick="closeUserProfile()">&times;</button>
           <div class="profile-card-avatar-wrap">
             ${showEditUi ? `
@@ -13644,16 +13846,18 @@
             <span class="avatar-edit-wrap">
               <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}</span>
               ${isOwn ? '' : renderCrewmateBtn(nickname)}
-              ${isOwn ? '' : renderCopilotBtn(nickname)}
             </span>
             `}
           </div>
         </div>
         <div class="profile-card-body">
-          <div class="profile-card-nickname ${animClass}" data-text="${escapeHtml(nickname)}">${escapeHtml(nickname)}</div>
+          <div class="profile-card-nickname-row">
+            <div class="profile-card-nickname ${animClass}" data-text="${escapeHtml(nickname)}">${escapeHtml(nickname)}</div>
+            ${isOwn ? '' : renderCopilotBtn(nickname)}
+          </div>
           <div class="profile-card-status-row"><span class="nick-status-tag ${statusClass}">${statusLabel}</span></div>
-          ${isOwn ? '' : renderCrewmateStatusLine(nickname)}
-          ${isOwn ? '' : renderCopilotStatusLine(nickname)}
+          ${copilotLineHtml}
+          ${relationsRowHtml}
           <div class="profile-card-divider"></div>
           <p class="profile-card-section-label">Achievements</p>
           <span class="hours-chip" data-tooltip="Flight Hours" onclick="openFlightHoursInfo()">
@@ -13713,6 +13917,7 @@
     function closeUserProfile() {
       profileCardOpenFor = null;
       profileCardReadOnly = false;
+      profileCardStack = [];
       stopProfileCardHoursTicker();
       if (sentRequestWatchRef) {
         sentRequestWatchRef.off();
@@ -13721,16 +13926,127 @@
       document.getElementById('profile-card-overlay').classList.remove('visible');
     }
 
+    // Pops the back-stack and returns to whichever profile card was open
+    // before the person drilled into this one from a Co-Pilot/Crewmates
+    // popup.
+    function goBackProfileCard() {
+      const prevNickname = profileCardStack.pop();
+      if (!prevNickname) return;
+      openUserProfile(prevNickname, true);
+    }
+
     function openFlightHoursInfo() {
       const currentValue = document.getElementById('profile-card-flight-hours-value');
       document.getElementById('hoursInfoValue').textContent = currentValue ? currentValue.textContent : '0.00';
       const isOwnHours = currentChatUser && profileCardOpenFor === currentChatUser.nickname;
-      const who = isOwnHours ? 'you\u2019ve' : `"${escapeHtml(profileCardOpenFor || 'this reviewee')}" has`;
+      const who = isOwnHours ? 'you\u2019ve' : `"${escapeHtml(profileCardOpenFor || 'this Soul on Board')}" has`;
       document.getElementById('hoursInfoDesc').textContent = `Total hours ${who} spent signed in and active on aerodynadmics.`;
       document.getElementById('hours-info-overlay').classList.add('visible');
     }
     function closeFlightHoursInfo() {
       document.getElementById('hours-info-overlay').classList.remove('visible');
+    }
+
+    // ---- Co-Pilot / Crewmates roster popup, opened from the "Co-Pilot"
+    // and "Crewmates" links on a profile card. Shows THAT profile's own
+    // Co-Pilot + Crewmates (sidebar-list style, avatar + name), and every
+    // row in it is itself clickable to jump straight to that person's
+    // profile. ----
+    let crewListOpenFor = null;
+    let crewListMode = 'copilot'; // 'copilot' | 'crewmates' — which single section this popup shows
+
+    function openCrewList(nickname, mode) {
+      if (!nickname) return;
+      crewListOpenFor = nickname;
+      crewListMode = mode === 'crewmates' ? 'crewmates' : 'copilot';
+      ensureCopilotListener(nickname);
+      ensureCrewmatesListener(nickname);
+      document.getElementById('crew-list-overlay').classList.add('visible');
+      renderCrewListModal(nickname);
+    }
+
+    function closeCrewList() {
+      crewListOpenFor = null;
+      document.getElementById('crew-list-overlay').classList.remove('visible');
+    }
+
+    // Rows inside the roster popup open that person's own profile card —
+    // closing the roster popup itself first (both are full-screen overlays
+    // and would otherwise stack awkwardly), but the profile card being
+    // viewed underneath is pushed onto profileCardStack rather than lost,
+    // so the back arrow can return to it instead of this drill-in
+    // replacing it outright.
+    function openProfileFromCrewList(nickname) {
+      if (profileCardOpenFor && profileCardOpenFor !== nickname) {
+        profileCardStack.push(profileCardOpenFor);
+      }
+      closeCrewList();
+      openUserProfile(nickname, true);
+    }
+
+    function renderCrewListModal(nickname) {
+      if (crewListOpenFor !== nickname) return;
+      const body = document.getElementById('crew-list-body');
+      const isOwn = currentChatUser && currentChatUser.nickname === nickname;
+
+      // Same per-row equipped-background treatment as the main sidebar
+      // list (ensureListProfileListener + resolveProfileCover), keyed per
+      // row so each person's OWN cover shows, not the viewer's.
+      const rowHtml = (nick) => {
+        const avatar = getLiveAvatar(nick) || '\u2708\ufe0f';
+        const isOnline = onlineNicknames.has(nick);
+        const borderClass = rowBorderClassFor(nick);
+        const animClass = rowAnimClassFor(nick);
+        const nickAttr = escapeHtml(nick).replace(/'/g, "\\'");
+
+        ensureListProfileListener(nick);
+        const rowProfile = (currentChatUser && currentChatUser.nickname === nick)
+          ? (myProfileLoaded ? myProfile : null)
+          : profileCache[nick];
+        const cover = rowProfile ? resolveProfileCover(rowProfile.background) : null;
+
+        const coverImgHtml = cover && cover.type === 'image'
+          ? `<img class="list-item-cover-img" src="${escapeHtml(cover.value)}" alt="" aria-hidden="true">`
+          : '';
+        const coverOverlayHtml = cover ? '<div class="list-item-cover-overlay"></div>' : '';
+        const liInlineStyle = cover && cover.type === 'gradient'
+          ? ` style="background-image:${cover.value};background-size:cover;background-position:center;"`
+          : (cover && cover.type === 'color' ? ` style="background-color:${cover.value};"` : '');
+        const rowClasses = [isOnline ? 'is-online' : '', cover ? 'has-cover' : ''].filter(Boolean).join(' ');
+        const classAttr = rowClasses ? ` class="${rowClasses}"` : '';
+
+        return `
+        <li${classAttr} data-nickname="${escapeHtml(nick)}" onclick="openProfileFromCrewList('${nickAttr}')"${liInlineStyle}>
+          ${coverImgHtml}
+          ${coverOverlayHtml}
+          <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span></span>
+          <span class="${animClass}" data-text="${escapeHtml(nick)}" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; padding:0 8px; margin:0 -8px;">${escapeHtml(nick)}</span>
+        </li>
+      `;
+      };
+
+      if (crewListMode === 'copilot') {
+        const copilotNickname = isOwn
+          ? (myCopilotKey ? ((latestPresenceData[myCopilotKey] && latestPresenceData[myCopilotKey].nickname) || myCopilotKey) : null)
+          : (Object.prototype.hasOwnProperty.call(otherCopilotCache, nickname) ? otherCopilotCache[nickname] : null);
+        if (!copilotNickname) {
+          body.innerHTML = `<div class="nick-modal-status">${isOwn ? 'You haven\u2019t' : 'This Soul on Board hasn\u2019t'} set a Co-Pilot yet.</div>`;
+          return;
+        }
+        body.innerHTML = `<ul class="nick-list">${rowHtml(copilotNickname)}</ul>`;
+        return;
+      }
+
+      // crewListMode === 'crewmates'
+      const crewmateKeys = isOwn ? Object.keys(myCrewmates || {}) : (otherCrewmatesCache[nickname] || []);
+      const crewmateNicknames = crewmateKeys
+        .map((key) => (latestPresenceData[key] && latestPresenceData[key].nickname) || key)
+        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+      if (!crewmateNicknames.length) {
+        body.innerHTML = `<div class="nick-modal-status">${isOwn ? 'You haven\u2019t' : 'This Soul on Board hasn\u2019t'} added any Crewmates yet.</div>`;
+        return;
+      }
+      body.innerHTML = `<ul class="nick-list">${crewmateNicknames.map(rowHtml).join('')}</ul>`;
     }
 
     // ---- edit profile modal ----
@@ -17709,6 +18025,12 @@
       if (e.target === this) closeMigViewer();
     });
 
+    // No header/close button on the Co-Pilot/Crewmates popup — clicking
+    // the dimmed backdrop outside the list is the only way to close it.
+    document.getElementById('crew-list-overlay').addEventListener('click', function(e) {
+      if (e.target === this) closeCrewList();
+    });
+
     function closeGoogleFormPopup() {
       const overlay = document.getElementById('form-popup-overlay');
       const iframe = document.getElementById('form-popup-iframe');
@@ -17724,6 +18046,7 @@
       if (e.key === 'Escape') document.getElementById('shop-note-overlay').classList.remove('visible');
       if (e.key === 'Escape') closeShopAckModal();
       if (e.key === 'Escape') closeMigViewer();
+      if (e.key === 'Escape') closeCrewList();
     });
 
     // ---- block zoom (ctrl/cmd + scroll, ctrl/cmd +/-/0, pinch) ----
