@@ -9,7 +9,7 @@
      on Messenger, Facebook, WhatsApp, etc. Replace the placeholder values
      below with your real domain and a real image URL. -->
 <meta property="og:title" content="aerodynadmics" />
-<meta property="og:description" content="an AELE Review Platform made by Nad" />
+<meta property="og:description" content="an Aero Platform for Aeronautical Engineering Students and Engineers, made by Nad" />
 <meta property="og:image" content="https://aerodynadmics.com/preview.png" />
 <meta property="og:url" content="https://aerodynadmics.com/" />
 <meta property="og:type" content="website" />
@@ -2578,10 +2578,20 @@
     line-height: 1.6;
   }
   .profile-card-divider {
-    height: 1px;
+    height: 2px;
     background: var(--line);
     opacity: 0.4;
     margin: 14px 0;
+    /* A 1px line at low opacity is sensitive to sub-pixel positioning —
+       depending on what precedes it (e.g. whether the Aircraft Collections
+       grid is present or empty), its top edge can land on a fractional
+       device pixel and get anti-aliased across two rows instead of one,
+       which reads as noticeably thicker/blurrier in some cases than
+       others even though the CSS is identical. Drawing it at 2px and
+       scaling down 50% keeps the line itself consistently crisp
+       regardless of where it happens to fall vertically.
+    */
+    transform: scaleY(0.5);
   }
   .profile-card-bio {
     font-family: 'IBM Plex Mono', monospace;
@@ -6376,7 +6386,7 @@
   <div id="signin-gate">
     <div class="signin-card">
       <h2 id="signin-card-title" class="nick-blueprint">aerodynadmics</h2>
-      <p class="signin-by" id="signin-card-subtitle">an AELE Review Platform made by Nad</p>
+      <p class="signin-by" id="signin-card-subtitle">an Aero Platform for Aeronautical Engineering Students and Engineers, made by Nad</p>
 
       <div id="signin-direct-step">
         <input type="search" id="callsign-login-input" placeholder="Enter your Callsign" maxlength="13" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly');">
@@ -6933,7 +6943,7 @@
       </div>
       <header>
         <h1 class="site-title nick-blueprint">aerodynadmics</h1>
-        <p class="sub">an AELE Review Platform made by <a href="https://www.facebook.com/nadburanday" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline; text-underline-offset:3px;">Nad</a></p>
+        <p class="sub" style="max-width:none;">an Aero Platform for Aeronautical Engineering Students and Engineers, made by <a href="https://www.facebook.com/nadburanday" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline; text-underline-offset:3px;">Nad</a></p>
         <p class="sub" style="margin-top:10px; font-style:italic;">sic itur ad astra ⭐!</p>
       </header>
 
@@ -10629,9 +10639,7 @@
         { id: 'blueprint', name: 'Blueprint', priceWings: 1111, cssClass: 'nick-blueprint', tier: 'Supersonic' },
         { id: 'lumamesh', name: 'Luma Mesh', priceWings: 200, cssClass: 'nick-lumamesh', tier: 'Sonic' },
         { id: 'prismcut', name: 'Prism Cut', priceWings: 1111, cssClass: 'nick-prismcut', tier: 'Supersonic' },
-        { id: 'topographic', name: 'Topographic', priceWings: 200, cssClass: 'nick-topographic', tier: 'Sonic' },
         { id: 'duotone', name: 'Duotone', priceWings: 1111, cssClass: 'nick-duotone', tier: 'Supersonic' },
-        { id: 'dotmatrix', name: 'Dot Matrix', priceWings: 200, cssClass: 'nick-dotmatrix', tier: 'Sonic' },
         { id: 'frost', name: 'Frostbite', priceWings: 200, cssClass: 'nick-frost', tier: 'Sonic' },
         { id: 'moire', name: 'Moiré', priceWings: 200, cssClass: 'nick-moire', tier: 'Sonic' }
       ],
