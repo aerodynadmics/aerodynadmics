@@ -17,6 +17,21 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Preconnect to Firebase's Realtime Database and the Apps Script
+     backend too — without this, the DNS lookup + TLS handshake to those
+     hosts only starts once the JS further down actually calls them
+     (firebase.initializeApp()'s first .on('value'), or the first
+     jsonpRequest), adding real, visible time to the "everything blank"
+     window right after sign-in. Starting the handshake here lets it
+     happen in parallel with script parsing instead of after it. Also
+     covers www.gstatic.com, where the Firebase SDK's script tags
+     themselves load from — those tags sit thousands of lines into the
+     document, so without this the browser wouldn't even start that
+     connection until it had parsed its way down to them. -->
+<link rel="preconnect" href="https://aele-mock-exam-hub-default-rtdb.asia-southeast1.firebasedatabase.app">
+<link rel="preconnect" href="https://script.google.com">
+<link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Nabla:EDPT,EHLT@30..200,24&display=swap">
 <style>
   /* Fonts used to be pulled in via @import right here — @import blocks
@@ -1832,6 +1847,129 @@
     border: 2px solid #ff6fb0;
   }
   .copilot-btn.state-copilot:hover { background: rgba(255, 111, 176, 0.18); }
+
+  /* Co-Pilot badge, but positioned to sit in the avatar corner exactly
+     like .crewmate-btn — used when renderCopilotAvatarBadge replaces the
+     Crewmate badge on the avatar once the two of you are Co-Pilots. */
+  .copilot-btn.avatar-copilot-badge {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+  }
+
+  /* ---- Crewmate action menu: popup shown when clicking the "Crewmates"
+     avatar badge, offering to remove the Crewmate relationship or apply
+     as Co-Pilot instead of removing immediately on click. ---- */
+  .crewmate-action-menu {
+    position: fixed;
+    z-index: 1800;
+    min-width: 176px;
+    background: var(--blueprint-dark);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    padding: 4px;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.12s ease, transform 0.12s ease;
+  }
+  .crewmate-action-menu.visible { opacity: 1; transform: translateY(0); }
+  .crewmate-action-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    background: none;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--paper);
+    cursor: pointer;
+    text-align: left;
+  }
+  .crewmate-action-menu-item:hover { background: rgba(255,255,255,0.08); }
+  .crewmate-action-menu-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    flex-shrink: 0;
+  }
+  .crewmate-action-menu-item.danger { color: #ff8f8f; }
+  .crewmate-action-menu-item.danger:hover { background: rgba(255, 107, 107, 0.12); }
+  /* Non-interactive status row — shown instead of the "Apply as Co-Pilot"
+     button when a request to THIS specific person is already pending, so
+     the menu still confirms the pending state instead of just omitting
+     the button with no explanation. */
+  .crewmate-action-menu-item.disabled {
+    cursor: default;
+    color: var(--dim, rgba(255,255,255,0.5));
+  }
+  .crewmate-action-menu-item.disabled:hover { background: none; }
+
+  /* ---- Themed confirm dialog, replacing native confirm() for the
+     Remove Crewmate / Remove Co-Pilot actions. ---- */
+  .confirm-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(4, 18, 32, 0.72);
+    padding: 24px;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+  }
+  .confirm-dialog-overlay.visible { opacity: 1; }
+  .confirm-dialog {
+    width: 100%;
+    max-width: 300px;
+    background: var(--blueprint-dark);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+    padding: 18px;
+  }
+  .confirm-dialog-message {
+    margin: 0 0 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--paper);
+  }
+  .confirm-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .confirm-dialog-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    border-radius: 6px;
+    padding: 8px 14px;
+    cursor: pointer;
+    border: 1px solid var(--line);
+    background: none;
+    color: var(--paper);
+  }
+  .confirm-dialog-btn.cancel:hover { background: rgba(255,255,255,0.08); }
+  .confirm-dialog-btn.confirm {
+    border-color: rgba(255, 107, 107, 0.4);
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.12);
+  }
+  .confirm-dialog-btn.confirm:hover { background: rgba(255, 107, 107, 0.22); }
+  .confirm-dialog-btn.affirm {
+    border-color: rgba(255, 111, 176, 0.4);
+    color: #ff6fb0;
+    background: rgba(255, 111, 176, 0.12);
+  }
+  .confirm-dialog-btn.affirm:hover { background: rgba(255, 111, 176, 0.22); }
+
 
   /* ---- custom floating tooltip, site-wide (replaces the plain browser
      title tooltip) — triggered via [data-tooltip] instead of [title],
@@ -12688,16 +12826,29 @@
     // unlike presence, it's kept in sync with account creation/deletion on
     // the backend, so it naturally excludes deleted accounts even if their
     // old presence node is still lingering in Firebase.
-    function refreshNicknameListFromBackend(onDone) {
+    //
+    // A single failed/timed-out attempt is very often just a slow Apps
+    // Script cold-start (see jsonpRequest's comment above) rather than an
+    // actual connectivity problem — the backend answers fine, it just
+    // took longer than the default 10s timeout to spin up. So the first
+    // failure retries once automatically, with a longer timeout, before
+    // actually reporting failure — that way a normal cold-start delay
+    // doesn't surface "Radar contact lost" for a backend that was about
+    // to answer anyway.
+    function refreshNicknameListFromBackend(onDone, isRetry) {
       jsonpRequest({ action: 'listNicknames' }, (data) => {
         if (!data || !Array.isArray(data.nicknames)) {
+          if (!isRetry) {
+            refreshNicknameListFromBackend(onDone, true);
+            return;
+          }
           if (onDone) onDone(false);
           return;
         }
         lastNicknameListData = data.nicknames;
         renderNicknameListFromCache();
         if (onDone) onDone(true);
-      });
+      }, isRetry ? { timeoutMs: 20000 } : undefined);
     }
 
     // Presence is realtime, so it's a good SIGNAL that the roster might be
@@ -12731,17 +12882,17 @@
 
     function showNicknameList() {
       const body = document.getElementById('nick-modal-body');
-      body.innerHTML = '<div class="nick-modal-status">Loading&hellip;</div>';
+      body.innerHTML = '<div class="nick-modal-status">Sweeping radar&hellip;</div>';
 
       refreshNicknameListFromBackend((ok) => {
-        if (!ok) body.innerHTML = '<div class="nick-modal-status">Could not load the list right now.</div>';
+        if (!ok) body.innerHTML = '<div class="nick-modal-status">Radar contact lost. Could not detect anyone right now.</div>';
       });
     }
 
     // Manual refresh button in the sidebar header — for the rare case
     // where the list never loaded (or got stuck) on its own. Spins the
-    // button briefly for feedback and shows the same "Loading…" /
-    // "Could not load" states as the initial load.
+    // button briefly for feedback and shows the same "Sweeping radar…" /
+    // "Radar contact lost" states as the initial load.
     function manualRefreshNicknameList() {
       const btn = document.getElementById('reviewees-refresh-btn');
       const body = document.getElementById('nick-modal-body');
@@ -12751,10 +12902,10 @@
         void btn.offsetWidth;
         btn.classList.add('is-spinning');
       }
-      if (body) body.innerHTML = '<div class="nick-modal-status">Loading&hellip;</div>';
+      if (body) body.innerHTML = '<div class="nick-modal-status">Sweeping radar&hellip;</div>';
 
       refreshNicknameListFromBackend((ok) => {
-        if (!ok && body) body.innerHTML = '<div class="nick-modal-status">Could not load the list right now.</div>';
+        if (!ok && body) body.innerHTML = '<div class="nick-modal-status">Radar contact lost. Could not detect anyone right now.</div>';
         if (btn) btn.classList.remove('is-spinning');
       });
     }
@@ -13177,7 +13328,7 @@
       const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>';
       const ICON_CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14.5"/></svg>';
       if (status === 'crewmates') {
-        return `<button type="button" class="crewmate-btn state-crewmates" data-tooltip="Crewmates \u00b7 click to remove" onclick="event.stopPropagation(); removeCrewmate('${nickAttr}')">${ICON_CHECK}</button>`;
+        return `<button type="button" class="crewmate-btn state-crewmates" data-tooltip="Crewmates \u00b7 click for options" onclick="openCrewmateActionMenu('${nickAttr}', event)">${ICON_CHECK}</button>`;
       }
       if (status === 'incoming') {
         return `<button type="button" class="crewmate-btn state-incoming" data-tooltip="Accept Crewmate request" onclick="event.stopPropagation(); acceptCrewmateRequest('${nickAttr}')">${ICON_ADD}</button>`;
@@ -13186,6 +13337,66 @@
         return `<button type="button" class="crewmate-btn state-sent" data-tooltip="Crewmate request sent \u00b7 click to cancel" onclick="event.stopPropagation(); cancelCrewmateRequest('${nickAttr}')">${ICON_CLOCK}</button>`;
       }
       return `<button type="button" class="crewmate-btn state-none" data-tooltip="Add Crewmate" onclick="event.stopPropagation(); sendCrewmateRequest('${nickAttr}')">${ICON_ADD}</button>`;
+    }
+
+    // Popup shown when clicking the "Crewmates" avatar badge — Crewmates
+    // is the prerequisite relationship for Co-Pilot, so this is the one
+    // place that offers "apply as Co-Pilot" alongside "remove as
+    // Crewmate", instead of the badge just removing on click.
+    function openCrewmateActionMenu(nickname, evt) {
+      if (evt) evt.stopPropagation();
+      closeCrewmateActionMenu();
+      const btn = evt && evt.currentTarget;
+      if (!btn) return;
+      const rect = btn.getBoundingClientRect();
+      const nickAttr = escapeHtml(nickname).replace(/'/g, "\\'");
+      const menu = document.createElement('div');
+      menu.className = 'crewmate-action-menu';
+      menu.id = 'crewmate-action-menu';
+      menu.style.top = (rect.bottom + 6) + 'px';
+      menu.style.left = Math.max(8, rect.right - 176) + 'px';
+      // Only offer "Apply as Co-Pilot" when there's actually a slot open —
+      // 'none' means no existing Co-Pilot and no pending request either
+      // way, with this person or anyone else. Otherwise, explain WHY the
+      // button isn't offered instead of just silently omitting it. Cancel
+      // is only offered from the exact person's own menu that the
+      // request was sent to ('sent') — NOT from anyone else's menu while
+      // a request sits pending elsewhere ('full'), which stays a plain,
+      // non-clickable heads-up instead.
+      const copilotStatusForThisPerson = getCopilotStatus(nickname);
+      const canApplyCopilot = copilotStatusForThisPerson === 'none';
+      let copilotStatusMessage = '';
+      let copilotCancelTarget = '';
+      if (copilotStatusForThisPerson === 'sent') {
+        copilotStatusMessage = 'Co-Pilot request sent \u00b7 click to cancel';
+        copilotCancelTarget = nickname;
+      } else if (copilotStatusForThisPerson === 'full') {
+        copilotStatusMessage = myCopilotKey
+          ? 'You already have a Co-Pilot'
+          : 'Already applied to someone. Stay loyal!';
+      }
+      const copilotCancelAttr = copilotCancelTarget ? escapeHtml(copilotCancelTarget).replace(/'/g, "\\'") : '';
+      menu.innerHTML = `
+        ${canApplyCopilot ? `<button type="button" class="crewmate-action-menu-item" onclick="event.stopPropagation(); closeCrewmateActionMenu(); openApplyCopilotDialog('${nickAttr}')"><span class="crewmate-action-menu-icon">\ud83d\udc68\ud83c\udffb\u200d\u2708\ufe0f</span>Apply as Co-Pilot</button>` : ''}
+        ${copilotStatusMessage ? (copilotCancelTarget
+          ? `<button type="button" class="crewmate-action-menu-item" onclick="event.stopPropagation(); closeCrewmateActionMenu(); cancelCopilotRequest('${copilotCancelAttr}')"><span class="crewmate-action-menu-icon">\u23f3</span>${copilotStatusMessage}</button>`
+          : `<div class="crewmate-action-menu-item disabled"><span class="crewmate-action-menu-icon">\u23f3</span>${copilotStatusMessage}</div>`) : ''}
+        <button type="button" class="crewmate-action-menu-item danger" onclick="event.stopPropagation(); closeCrewmateActionMenu(); removeCrewmate('${nickAttr}')"><span class="crewmate-action-menu-icon">\u2715</span>Remove as Crewmate</button>
+      `;
+      document.body.appendChild(menu);
+      requestAnimationFrame(() => menu.classList.add('visible'));
+      setTimeout(() => document.addEventListener('click', closeCrewmateActionMenuOnOutsideClick), 0);
+    }
+
+    function closeCrewmateActionMenuOnOutsideClick(evt) {
+      const menu = document.getElementById('crewmate-action-menu');
+      if (menu && !menu.contains(evt.target)) closeCrewmateActionMenu();
+    }
+
+    function closeCrewmateActionMenu() {
+      const menu = document.getElementById('crewmate-action-menu');
+      if (menu) menu.remove();
+      document.removeEventListener('click', closeCrewmateActionMenuOnOutsideClick);
     }
 
     function renderCrewmateStatusLine(nickname) {
@@ -13452,18 +13663,69 @@
       if (overlay) overlay.classList.remove('visible');
     }
 
+    // Themed replacement for native confirm() — shows a centered dialog
+    // with Cancel/Remove buttons and calls onConfirm only if the person
+    // clicks Remove. Used by removeCrewmate and removeCopilot below.
+    function openConfirmDialog(message, onConfirm, confirmLabel, tone) {
+      closeConfirmDialog();
+      const overlay = document.createElement('div');
+      overlay.id = 'confirm-dialog-overlay';
+      overlay.className = 'confirm-dialog-overlay';
+      const toneClass = tone === 'affirm' ? 'affirm' : 'confirm';
+      overlay.innerHTML = `
+        <div class="confirm-dialog">
+          <p class="confirm-dialog-message">${escapeHtml(message)}</p>
+          <div class="confirm-dialog-actions">
+            <button type="button" class="confirm-dialog-btn cancel" onclick="closeConfirmDialog()">Cancel</button>
+            <button type="button" class="confirm-dialog-btn ${toneClass}" id="confirm-dialog-confirm-btn">${escapeHtml(confirmLabel || 'Remove')}</button>
+          </div>
+        </div>
+      `;
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) closeConfirmDialog(); });
+      document.body.appendChild(overlay);
+      requestAnimationFrame(() => overlay.classList.add('visible'));
+      document.getElementById('confirm-dialog-confirm-btn').addEventListener('click', () => {
+        closeConfirmDialog();
+        onConfirm();
+      });
+    }
+
+    function closeConfirmDialog() {
+      const overlay = document.getElementById('confirm-dialog-overlay');
+      if (overlay) overlay.remove();
+    }
+
     function removeCrewmate(nickname) {
       if (!currentChatUser || !nickname) return;
-      if (!confirm(`Remove ${nickname} as a Crewmate?`)) return;
-      try {
-        ensureFirebaseApp();
-        const myKey = presenceKey(currentChatUser.nickname);
-        const theirKey = presenceKey(nickname);
-        crewmatesRef(currentChatUser.nickname).child(theirKey).remove().catch((err) => console.error('Remove Crewmate error:', err));
-        crewmatesRef(nickname).child(myKey).remove().catch((err) => console.error('Remove Crewmate error:', err));
-      } catch (err) {
-        console.error('Remove Crewmate error:', err);
-      }
+      openConfirmDialog(`Remove ${nickname} as a Crewmate?`, () => {
+        try {
+          ensureFirebaseApp();
+          const myKey = presenceKey(currentChatUser.nickname);
+          const theirKey = presenceKey(nickname);
+          crewmatesRef(currentChatUser.nickname).child(theirKey).remove().catch((err) => console.error('Remove Crewmate error:', err));
+          crewmatesRef(nickname).child(myKey).remove().catch((err) => console.error('Remove Crewmate error:', err));
+          // Crewmates is the prerequisite relationship for Co-Pilot, so
+          // removing it should also clear out any Co-Pilot request left
+          // dangling between the two of you (in either direction).
+          // Otherwise re-adding them as a Crewmate later comes back to a
+          // stale "request sent"/"incoming" state that neither the old
+          // sentCopilotRequestCache entry nor the old Firebase request
+          // node ever gets cleaned up from, and the pending request can
+          // never be re-applied fresh.
+          if (sentCopilotRequestCache[theirKey]) {
+            delete sentCopilotRequestCache[theirKey];
+            copilotRequestsRef(nickname).child(myKey).remove()
+              .catch((err) => console.error('Remove Crewmate cleanup (sent Co-Pilot request) error:', err));
+          }
+          if (myIncomingCopilotRequests && myIncomingCopilotRequests[theirKey]) {
+            copilotRequestsRef(currentChatUser.nickname).child(theirKey).remove()
+              .catch((err) => console.error('Remove Crewmate cleanup (incoming Co-Pilot request) error:', err));
+          }
+          if (profileCardOpenFor === nickname) renderProfileCard(nickname, profileCache[nickname] || { bio: '', background: null });
+        } catch (err) {
+          console.error('Remove Crewmate error:', err);
+        }
+      });
     }
 
     // ---- Co-Pilot (a single, mutual "wingman" slot — capped at ONE at a
@@ -13542,14 +13804,16 @@
     }
 
     // Resolves the relationship between the signed-in user and `nickname`:
-    // 'copilot' | 'incoming' | 'sent' | 'full' (we already have a
-    // different Co-Pilot, so this button is shown disabled) | 'none'.
+    // 'copilot' | 'incoming' | 'sent' | 'full' (the one-at-a-time slot is
+    // committed elsewhere — either an established Co-Pilot, or a request
+    // already sent to someone else awaiting their answer — so no NEW
+    // application should be offered until that resolves) | 'none'.
     function getCopilotStatus(nickname) {
       const key = presenceKey(nickname);
       if (myCopilotKey && myCopilotKey === key) return 'copilot';
       if (myIncomingCopilotRequests && myIncomingCopilotRequests[key]) return 'incoming';
       if (sentCopilotRequestCache[key]) return 'sent';
-      if (myCopilotKey) return 'full';
+      if (myCopilotKey || Object.keys(sentCopilotRequestCache).length > 0) return 'full';
       return 'none';
     }
 
@@ -13574,6 +13838,18 @@
       return `<button type="button" class="copilot-btn state-none" data-tooltip="Make Co-Pilot" onclick="event.stopPropagation(); sendCopilotRequest('${nickAttr}')">\ud83d\udc68\ud83c\udffb\u200d\u2708\ufe0f</button>`;
     }
 
+    // Badges the avatar corner (same spot .crewmate-btn normally sits)
+    // once the two of you are actually Co-Pilots, so the avatar shows the
+    // stronger relationship instead of just "Crewmates". Clicking it
+    // removes the Co-Pilot relationship (with confirm()) but — unlike
+    // removeCrewmate — leaves the underlying Crewmate relationship
+    // intact, so the badge just falls back to the Crewmates checkmark
+    // once myCopilotKey clears and this re-renders.
+    function renderCopilotAvatarBadge(nickname) {
+      const nickAttr = escapeHtml(nickname).replace(/'/g, "\\'");
+      return `<button type="button" class="copilot-btn state-copilot avatar-copilot-badge" data-tooltip="Co-Pilot \u00b7 click to remove" onclick="event.stopPropagation(); removeCopilot('${nickAttr}')">\ud83d\udc68\ud83c\udffb\u200d\u2708\ufe0f</button>`;
+    }
+
     function renderCopilotStatusLine(nickname) {
       const status = getCopilotStatus(nickname);
       // Same reasoning as renderCrewmateStatusLine above: the mutual
@@ -13585,6 +13861,18 @@
         return `<div class="crewmate-status-line is-incoming">Wants to be your Co-Pilot<span class="crewmate-decline-link" onclick="declineCopilotRequest('${nickAttr}')">Decline</span></div>`;
       }
       return '';
+    }
+
+    // Shown from the Crewmate action menu before actually firing the
+    // request — Co-Pilot is capped at one person at a time, so this is a
+    // heads-up about that rather than a destructive-action confirm.
+    function openApplyCopilotDialog(nickname) {
+      openConfirmDialog(
+        `You can only have one Co-Pilot at a time, so choose wisely and stay loyal! Apply as ${nickname}'s Co-Pilot?`,
+        () => sendCopilotRequest(nickname),
+        'Apply',
+        'affirm'
+      );
     }
 
     function sendCopilotRequest(nickname) {
@@ -13668,14 +13956,15 @@
 
     function removeCopilot(nickname) {
       if (!currentChatUser || !nickname) return;
-      if (!confirm(`Remove ${nickname} as your Co-Pilot?`)) return;
-      try {
-        ensureFirebaseApp();
-        copilotRef(currentChatUser.nickname).remove().catch((err) => console.error('Remove Co-Pilot error:', err));
-        copilotRef(nickname).remove().catch((err) => console.error('Remove Co-Pilot error:', err));
-      } catch (err) {
-        console.error('Remove Co-Pilot error:', err);
-      }
+      openConfirmDialog(`Remove ${nickname} as your Co-Pilot?`, () => {
+        try {
+          ensureFirebaseApp();
+          copilotRef(currentChatUser.nickname).remove().catch((err) => console.error('Remove Co-Pilot error:', err));
+          copilotRef(nickname).remove().catch((err) => console.error('Remove Co-Pilot error:', err));
+        } catch (err) {
+          console.error('Remove Co-Pilot error:', err);
+        }
+      });
     }
 
     let profileCardOpenFor = null;
@@ -13845,7 +14134,7 @@
             ` : `
             <span class="avatar-edit-wrap">
               <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}</span>
-              ${isOwn ? '' : renderCrewmateBtn(nickname)}
+              ${isOwn ? '' : (getCopilotStatus(nickname) === 'copilot' ? renderCopilotAvatarBadge(nickname) : renderCrewmateBtn(nickname))}
             </span>
             `}
           </div>
@@ -13853,7 +14142,6 @@
         <div class="profile-card-body">
           <div class="profile-card-nickname-row">
             <div class="profile-card-nickname ${animClass}" data-text="${escapeHtml(nickname)}">${escapeHtml(nickname)}</div>
-            ${isOwn ? '' : renderCopilotBtn(nickname)}
           </div>
           <div class="profile-card-status-row"><span class="nick-status-tag ${statusClass}">${statusLabel}</span></div>
           ${copilotLineHtml}
