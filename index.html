@@ -78,7 +78,7 @@
     max-height: calc(100vh - 48px);
     overflow-y: auto;
     text-align: center;
-    border: 1px solid var(--line);
+    
     border-radius: 10px;
     padding: 26px 28px;
     background: var(--blueprint-dark);
@@ -195,7 +195,7 @@
   #flight-alert-step { display: none; }
   #flight-alert-step.visible { display: block; }
   .flight-alert-box {
-    border: 1px solid var(--line);
+    
     border-radius: 8px;
     background: rgba(255,255,255,0.04);
     padding: 16px;
@@ -682,7 +682,7 @@
     flex-direction: column;
     text-align: left;
     background: var(--blueprint-dark);
-    border: 1px solid var(--line);
+    
     border-radius: 10px;
     box-shadow: 0 12px 40px rgba(0,0,0,0.55);
     animation: profile-card-pop 0.18s ease;
@@ -1118,7 +1118,7 @@
     display: flex;
     flex-direction: column;
     background: var(--blueprint-dark);
-    border: 1px solid var(--line);
+    
     border-radius: 6px;
     box-shadow: 0 8px 28px rgba(0,0,0,0.5);
     overflow: hidden;
@@ -1188,7 +1188,7 @@
     display: flex;
     flex-direction: column;
     background: var(--blueprint-dark);
-    border: 1px solid var(--line);
+    
     border-radius: 6px;
     box-shadow: 0 8px 28px rgba(0,0,0,0.5);
     overflow: hidden;
@@ -1376,6 +1376,18 @@
     background: var(--line);
     opacity: 0.5;
   }
+  /* Placeholder row shown under the "CO-PILOT" divider when the
+     signed-in pilot hasn't picked one yet — dashed outline and no
+     background/cursor so it reads as an empty slot, not a clickable row. */
+  .nick-list .nick-list-empty-row {
+    cursor: default;
+    pointer-events: none;
+    background: transparent;
+    border: 1px dashed var(--line);
+    color: #7d8790;
+    font-size: 11.5px;
+    line-height: 1.4;
+  }
   .nick-list .nick-status-tag {
     margin-left: auto;
     flex-shrink: 0;
@@ -1469,7 +1481,6 @@
     display: flex;
     flex-direction: column;
     background: var(--blueprint-dark);
-    border: 1px solid var(--line);
     border-radius: 14px;
     overflow: hidden;
     box-shadow: 4px 0 20px rgba(0,0,0,0.3);
@@ -1555,12 +1566,10 @@
        sidebar's clipping, so it reads as a distinct, slightly elevated
        card floating inside the sidebar. */
     border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.08);
     box-shadow: 0 2px 10px rgba(0,0,0,0.28);
   }
   .reviewees-sidebar-me:hover {
     background-color: rgba(255,255,255,0.07);
-    border-color: var(--rivet);
     box-shadow: 0 3px 14px rgba(0,0,0,0.36);
   }
   /* Keep the avatar/name/status above the cover image + overlay. */
@@ -1689,7 +1698,6 @@
     width: 100%;
     max-width: 340px;
     background: var(--blueprint-dark);
-    border: 1px solid var(--line);
     border-radius: 10px;
     box-shadow: 0 8px 28px rgba(0,0,0,0.5);
     animation: profile-card-pop 0.16s ease;
@@ -1778,6 +1786,46 @@
   }
   .crewmate-btn.state-crewmates:hover { background: rgba(79, 209, 160, 0.18); }
 
+  /* ---- "Make Co-Pilot" button: same treatment as .crewmate-btn, but
+     pinned to the opposite (top-right) corner of the avatar so the two
+     can be used independently without overlapping. Co-Pilot is capped at
+     ONE person at a time — state-full means the slot is already taken by
+     someone else and the button is shown disabled. ---- */
+  .copilot-btn {
+    position: absolute;
+    right: -2px;
+    top: -2px;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 2px solid var(--blueprint-dark);
+    padding: 0;
+    cursor: pointer;
+    color: var(--blueprint-dark);
+  }
+  .copilot-btn svg { width: 13px; height: 13px; }
+  .copilot-btn.state-none { background: #8a97a3; }
+  .copilot-btn.state-none:hover { background: #a3aeb8; }
+  .copilot-btn.state-sent { background: var(--rivet); opacity: 0.9; }
+  .copilot-btn.state-sent:hover { background: #ff8f8f; color: #3a0000; }
+  .copilot-btn.state-incoming { background: #ffd166; color: #3a2900; }
+  .copilot-btn.state-incoming:hover { background: #ffdd8f; }
+  .copilot-btn.state-copilot {
+    background: var(--blueprint-dark);
+    color: #ffd166;
+    border-color: #ffd166;
+  }
+  .copilot-btn.state-copilot:hover { background: rgba(255, 209, 102, 0.18); }
+  .copilot-btn.state-full {
+    background: #4a5158;
+    color: #8a97a3;
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
   /* ---- custom floating tooltip, site-wide (replaces the plain browser
      title tooltip) — triggered via [data-tooltip] instead of [title],
      styled to match the app's blueprint theme. The "Add Crewmate" button
@@ -1786,7 +1834,7 @@
      a fixed pixel offset (instead of a %-of-width offset) so the tooltip
      always lands close to its own icon, directly below and only
      slightly to the right, no matter how wide that icon/button is. ---- */
-  [data-tooltip]:not(.crewmate-btn) {
+  [data-tooltip]:not(.crewmate-btn):not(.copilot-btn) {
     position: relative;
   }
   [data-tooltip]::after,
@@ -1835,15 +1883,30 @@
     transform: translate(12px, 0);
   }
 
+  /* Co-Pilot button's tooltip — same fixed nudge as the Crewmate
+     reference above, just applied to .copilot-btn so it doesn't fall
+     into the position:relative "every other tooltip" bucket below (it's
+     already position:absolute for the top-right corner placement). */
+  .copilot-btn::after,
+  .copilot-btn::before { left: 50%; }
+  .copilot-btn::after { top: calc(100% - 4px); transform: translate(12px, -1px); }
+  .copilot-btn::before { top: calc(100% - 6px); transform: translate(12px, -1px); }
+  .copilot-btn:hover::after,
+  .copilot-btn:hover::before {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(12px, 0);
+  }
+
   /* Every other tooltip — same vertical gap as the reference, but a small
      fixed horizontal nudge (not a %-of-icon-width offset) so it hugs the
      icon instead of drifting right on larger anchors. */
-  [data-tooltip]:not(.crewmate-btn)::after,
-  [data-tooltip]:not(.crewmate-btn)::before { left: 0; }
-  [data-tooltip]:not(.crewmate-btn)::after { top: calc(100% + 8px); transform: translate(0, -4px); }
-  [data-tooltip]:not(.crewmate-btn)::before { top: calc(100% + 3px); transform: translate(0, -4px); }
-  [data-tooltip]:not(.crewmate-btn):hover::after,
-  [data-tooltip]:not(.crewmate-btn):hover::before {
+  [data-tooltip]:not(.crewmate-btn):not(.copilot-btn)::after,
+  [data-tooltip]:not(.crewmate-btn):not(.copilot-btn)::before { left: 0; }
+  [data-tooltip]:not(.crewmate-btn):not(.copilot-btn)::after { top: calc(100% + 8px); transform: translate(0, -4px); }
+  [data-tooltip]:not(.crewmate-btn):not(.copilot-btn)::before { top: calc(100% + 3px); transform: translate(0, -4px); }
+  [data-tooltip]:not(.crewmate-btn):not(.copilot-btn):hover::after,
+  [data-tooltip]:not(.crewmate-btn):not(.copilot-btn):hover::before {
     opacity: 1;
     visibility: visible;
     transform: translate(0, 0);
@@ -2154,7 +2217,7 @@
   .hours-info-overlay.visible { display: flex; }
   .hours-info-card {
     width: 100%; max-width: 280px; background: var(--blueprint-dark);
-    border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+    border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,0.5);
     padding: 24px 20px 20px; text-align: center; position: relative;
     animation: profile-card-pop 0.16s ease;
   }
@@ -2195,28 +2258,27 @@
     margin-bottom: 6px;
   }
   .profile-aircraft-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    display: flex;
+    flex-wrap: wrap;
     gap: 8px;
   }
   .profile-aircraft-item {
     cursor: pointer;
-    border: 1px solid var(--line);
     border-radius: 6px;
     padding: 6px;
     text-align: center;
-    background: rgba(255,255,255,0.03);
-    transition: border-color 0.15s ease;
+    transition: background-color 0.15s ease;
   }
-  .profile-aircraft-item:hover { border-color: var(--accent); }
+  .profile-aircraft-item:hover { background-color: rgba(255,255,255,0.06); }
+  .profile-aircraft-item[draggable="true"] { cursor: grab; }
+  .profile-aircraft-item.dragging { opacity: 0.4; }
   .profile-aircraft-thumb {
     display: block;
-    width: 50%;
+    width: 48px;
     aspect-ratio: 1;
     border-radius: 4px;
     background-size: cover;
     background-position: center;
-    background-color: rgba(255,255,255,0.05);
     margin: 0 auto 4px;
   }
   /* model-viewer is a custom element that manages its own internal layout
@@ -2226,12 +2288,11 @@
      square instead of the tall rectangle aspect-ratio alone produced. */
   .profile-aircraft-thumb-wrap {
     display: block;
-    width: 50%;
+    width: 48px;
     aspect-ratio: 1;
     border-radius: 4px;
     overflow: hidden;
     position: relative;
-    background-color: rgba(255,255,255,0.05);
     margin: 0 auto 4px;
   }
   .profile-aircraft-thumb-wrap model-viewer {
@@ -2248,6 +2309,7 @@
     letter-spacing: 0.02em;
     color: var(--paper);
     display: block;
+    max-width: 48px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -2906,7 +2968,7 @@
     height: calc(100vh - 32px);
     max-height: calc(100vh - 32px);
     background: var(--blueprint-dark);
-    border: 1px solid var(--line);
+    
     border-radius: 14px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.5);
     overflow: hidden;
@@ -2965,8 +3027,8 @@
     z-index: 60;
     width: 52px;
     height: 52px;
+    border: none;
     border-radius: 50%;
-    border: 1px solid var(--line);
     background: var(--blueprint-dark);
     color: var(--paper);
     font-size: 22px;
@@ -2976,7 +3038,6 @@
     align-items: center;
     justify-content: center;
   }
-  .chat-fab:hover { border-color: var(--accent); }
   .chat-fab.mention { animation: chatFabPulse 1.4s ease-in-out infinite; }
   @keyframes chatFabPulse {
     0%, 100% { box-shadow: 0 8px 22px rgba(0,0,0,0.45), 0 0 0 0 rgba(255,177,0,0.55); }
@@ -3010,8 +3071,7 @@
     width: 320px;
     max-height: 440px;
     background: var(--blueprint-dark);
-    border: 1px solid var(--line);
-    border-radius: 6px;
+        border-radius: 6px;
     box-shadow: 0 8px 28px rgba(0,0,0,0.45);
     display: none;
     flex-direction: column;
@@ -3088,7 +3148,7 @@
     max-height: 82vh;
     overflow-y: auto;
     background: var(--blueprint-dark);
-    border: 1px solid var(--line);
+    
     border-radius: 6px;
     padding: 30px 26px;
     font-family: 'Space Grotesk', sans-serif;
@@ -3154,7 +3214,7 @@
     max-height: 82vh;
     overflow-y: auto;
     background: var(--blueprint-dark);
-    border: 1px solid var(--line);
+    
     border-radius: 6px;
     padding: 30px 26px;
     font-family: 'Space Grotesk', sans-serif;
@@ -3258,7 +3318,7 @@
     max-height: 88vh;
     overflow-y: auto;
     background: var(--blueprint-dark);
-    border: 1px solid var(--line);
+    
     border-radius: 6px;
     padding: 30px 26px;
     font-family: 'Space Grotesk', sans-serif;
@@ -3467,7 +3527,7 @@
     max-height: 82vh;
     overflow-y: auto;
     background: var(--blueprint-dark);
-    border: 1px solid var(--line);
+    
     border-radius: 6px;
     padding: 30px 26px;
     font-family: 'Space Grotesk', sans-serif;
@@ -4027,7 +4087,7 @@
     border-radius: 3px;
     padding: 22px 20px;
     text-align: center;
-    border: 1px solid var(--line);
+    
   }
   .board-result-box.pass { border-color: var(--green); background: rgba(79, 209, 160, 0.08); }
   .board-result-box.fail { border-color: #ff6b6b; background: rgba(255, 107, 107, 0.08); }
@@ -4065,7 +4125,7 @@
 
   .support-card {
     margin-top: 40px;
-    border: 1px solid var(--line);
+    
     border-radius: 3px;
     padding: 26px 24px;
     background: rgba(255,255,255,0.03);
@@ -5482,7 +5542,7 @@
   .shop-pay-box {
     position: relative;
     background: var(--blueprint-dark);
-    border: 1px solid var(--line);
+    
     border-radius: 10px;
     padding: 20px;
     width: 520px;
@@ -5538,7 +5598,7 @@
   .wings-thankyou-box {
     position: relative;
     background: var(--blueprint-dark);
-    border: 1px solid var(--line);
+    
     border-radius: 10px;
     padding: 32px 26px 26px;
     width: 420px;
@@ -5598,7 +5658,7 @@
   .wings-store-box {
     position: relative;
     background: var(--blueprint-dark);
-    border: 1px solid var(--line);
+    
     border-radius: 10px;
     padding: 22px;
     width: 620px;
@@ -5694,7 +5754,7 @@
   .daily-rewards-overlay.visible { display: flex; }
   .daily-rewards-box {
     background: var(--blueprint-dark);
-    border: 1px solid var(--line);
+    
     border-radius: 10px;
     padding: 24px;
     width: 620px;
@@ -5818,7 +5878,7 @@
 .gform-modal {
   background: var(--blueprint-dark); width: 100%; max-width: 720px;
   height: calc(100vh - 32px);
-  border: 1px solid var(--line); border-radius: 14px;
+  border-radius: 14px;
   box-shadow: 4px 0 20px rgba(0,0,0,0.3);
   font-family: 'Space Grotesk', sans-serif; color: var(--paper);
   display: flex; flex-direction: column; overflow: hidden;
@@ -5977,7 +6037,7 @@
 .gform-score-overlay.visible { display: flex; }
 .gform-score-modal {
   width: 100%; max-width: 360px; text-align: center;
-  border: 1px solid var(--line); border-radius: 10px;
+  border-radius: 10px;
   padding: 28px 26px; background: var(--blueprint-dark);
   box-shadow: 0 12px 40px rgba(0,0,0,0.55);
 }
@@ -6022,8 +6082,10 @@
     inset: 0;
     z-index: 5000;
     background: rgba(3,14,26,0.85);
+    flex-direction: column;
     justify-content: center;
     align-items: center;
+    gap: 10px;
     padding: 20px;
   }
   #mig-viewer-overlay.visible { display: flex; }
@@ -6033,7 +6095,7 @@
     max-width: 600px;
     height: 55vh;
     background: var(--blueprint-dark);
-    border: 1px solid var(--line);
+    
     border-radius: 10px;
     overflow: hidden;
     box-shadow: 0 12px 40px rgba(0,0,0,0.55);
@@ -6043,26 +6105,11 @@
     height: 100%;
     --poster-color: transparent;
   }
-  .mig-viewer-close-btn {
-    position: absolute;
-    top: 10px;
-    right: 15px;
-    background: #ff3b3b;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    font-size: 16px;
-    cursor: pointer;
-    z-index: 5001;
-  }
-  .mig-viewer-close-btn:hover { background: #d92e2e; }
   .mig-viewer-title {
     position: absolute;
     top: 14px;
     left: 16px;
-    right: 55px;
+    right: 16px;
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 600;
     font-size: 14px;
@@ -6073,10 +6120,6 @@
     text-shadow: 0 1px 4px rgba(0,0,0,0.6);
   }
   .mig-viewer-hint {
-    position: absolute;
-    bottom: 8px;
-    left: 0;
-    right: 0;
     text-align: center;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
@@ -6284,7 +6327,7 @@
 
   <div class="reviewees-sidebar" id="reviewees-sidebar">
     <div class="reviewees-sidebar-head">
-      <h3>Reviewees</h3>
+      <h3>SOULS ON BOARD</h3>
       <button type="button" class="reviewees-refresh-btn" id="reviewees-refresh-btn" onclick="manualRefreshNicknameList()" aria-label="Refresh reviewees list">&#8635;</button>
     </div>
     <div class="reviewees-sidebar-body" id="nick-modal-body">
@@ -6452,7 +6495,6 @@
        (5000) actually apply against the whole page. -->
   <div id="mig-viewer-overlay">
     <div class="mig-viewer-box" id="mig-viewer-box">
-      <button class="mig-viewer-close-btn" onclick="closeMigViewer()">✕</button>
       <div class="mig-viewer-title" id="mig-viewer-title"></div>
       <model-viewer
         id="mig-model"
@@ -6462,8 +6504,8 @@
         shadow-intensity="1"
         exposure="1"
       ></model-viewer>
-      <div class="mig-viewer-hint">Drag to rotate · Scroll to zoom · Right-click drag to pan</div>
     </div>
+    <div class="mig-viewer-hint">Drag to rotate · Scroll to zoom · Right-click drag to pan</div>
   </div>
 
   <!-- ---- edit profile modal ---- -->
@@ -7077,16 +7119,16 @@
           </div>
 
           <div class="store-subnav">
-            <button class="store-subnav-btn" id="shop-tab-models" onclick="showShopTab('models')">Aircraft Models</button>
-            <button class="store-subnav-btn active" id="shop-tab-borders" onclick="showShopTab('borders')">Avatar Decorations</button>
+            <button class="store-subnav-btn active" id="shop-tab-models" onclick="showShopTab('models')">Aircraft Models</button>
+            <button class="store-subnav-btn" id="shop-tab-borders" onclick="showShopTab('borders')">Avatar Decorations</button>
             <button class="store-subnav-btn" id="shop-tab-animations" onclick="showShopTab('animations')">Callsign Animations</button>
             <button class="store-subnav-btn" id="shop-tab-backgrounds" onclick="showShopTab('backgrounds')">Profile Backgrounds</button>
           </div>
 
-          <div id="shop-tab-panel-models" class="shop-tab-panel" style="display:none;">
+          <div id="shop-tab-panel-models" class="shop-tab-panel">
             <div id="shop-models-grid"></div>
           </div>
-          <div id="shop-tab-panel-borders" class="shop-tab-panel">
+          <div id="shop-tab-panel-borders" class="shop-tab-panel" style="display:none;">
             <div id="shop-borders-grid"></div>
           </div>
           <div id="shop-tab-panel-animations" class="shop-tab-panel" style="display:none;">
@@ -7123,16 +7165,16 @@
           <div class="empty-note" id="hangar-empty-note" style="display:none;">NOTHING IN YOUR HANGAR YET. VISIT THE FLIGHT STORE TO GET SOMETHING.</div>
 
           <div class="store-subnav" id="hangar-subnav" style="display:none;">
-            <button class="store-subnav-btn" id="hangar-tab-models" onclick="showHangarTab('models')">Aircraft Collections</button>
-            <button class="store-subnav-btn active" id="hangar-tab-borders" onclick="showHangarTab('borders')">Avatar Decorations</button>
+            <button class="store-subnav-btn active" id="hangar-tab-models" onclick="showHangarTab('models')">Aircraft Collections</button>
+            <button class="store-subnav-btn" id="hangar-tab-borders" onclick="showHangarTab('borders')">Avatar Decorations</button>
             <button class="store-subnav-btn" id="hangar-tab-animations" onclick="showHangarTab('animations')">Callsign Animations</button>
             <button class="store-subnav-btn" id="hangar-tab-backgrounds" onclick="showHangarTab('backgrounds')">Profile Backgrounds</button>
           </div>
 
-          <div id="hangar-tab-panel-models" class="shop-tab-panel" style="display:none;">
+          <div id="hangar-tab-panel-models" class="shop-tab-panel">
             <div id="hangar-models-grid"></div>
           </div>
-          <div id="hangar-tab-panel-borders" class="shop-tab-panel">
+          <div id="hangar-tab-panel-borders" class="shop-tab-panel" style="display:none;">
             <div id="hangar-borders-grid"></div>
           </div>
           <div id="hangar-tab-panel-animations" class="shop-tab-panel" style="display:none;">
@@ -8996,6 +9038,7 @@
       loadWalletAndApplyDailyBonus(user);
       loadOwnProfile(user);
       loadCrewmateData(user);
+      loadCopilotData(user);
       loadWingsAlerts(user);
       showNicknameList();
       updateSidebarVisibility();
@@ -9226,7 +9269,7 @@
       unreadChatCount = 0;
       updateUnreadBadge();
       resetChatForAccountSwitch();
-      userWallet = { wings: 0, ownedBorders: {}, ownedAnimations: {}, ownedBackgrounds: {}, ownedModels: {}, equippedBorder: null, equippedAnimation: null, equippedBackground: null, equippedModel: null };
+      userWallet = { wings: 0, ownedBorders: {}, ownedAnimations: {}, ownedBackgrounds: {}, ownedModels: {}, modelOrder: [], equippedBorder: null, equippedAnimation: null, equippedBackground: null, equippedModel: null };
       walletLoaded = false;
       pendingDailyClaim = null;
       updateShopWingsBalanceDisplay();
@@ -10013,6 +10056,7 @@
             equippedBorder: (userWallet && userWallet.equippedBorder) || null,
             equippedAnimation: (userWallet && userWallet.equippedAnimation) || null,
             ownedModels: (userWallet && userWallet.ownedModels) || {},
+            modelOrder: (userWallet && userWallet.modelOrder) || [],
             lastSeen: firebase.database.ServerValue.TIMESTAMP
           });
         });
@@ -10694,7 +10738,7 @@
       return CREATE_WINGS_CHECKOUT_URL && !CREATE_WINGS_CHECKOUT_URL.startsWith('PASTE_');
     }
 
-    let userWallet = { wings: 0, ownedBorders: {}, ownedAnimations: {}, ownedBackgrounds: {}, ownedModels: {}, equippedBorder: null, equippedAnimation: null, equippedBackground: null, equippedModel: null };
+    let userWallet = { wings: 0, ownedBorders: {}, ownedAnimations: {}, ownedBackgrounds: {}, ownedModels: {}, modelOrder: [], equippedBorder: null, equippedAnimation: null, equippedBackground: null, equippedModel: null };
     let walletLoaded = false;
     let walletListenerRef = null;
     // Tracks the last wings total we saw, so the realtime listener can tell
@@ -10974,6 +11018,7 @@
             ownedAnimations: data.ownedAnimations || {},
             ownedBackgrounds: data.ownedBackgrounds || {},
             ownedModels: data.ownedModels || {},
+            modelOrder: data.modelOrder || [],
             equippedBorder: data.equippedBorder || null,
             equippedAnimation: data.equippedAnimation || null,
             equippedBackground: data.equippedBackground || null,
@@ -11329,7 +11374,8 @@
           // wallet loaded locally. Keeps presence as the one already-synced
           // channel for "things about me other people's clients need to
           // render", rather than adding a second one just for models.
-          ownedModels: userWallet.ownedModels || {}
+          ownedModels: userWallet.ownedModels || {},
+          modelOrder: userWallet.modelOrder || []
         });
       } catch (err) {}
     }
@@ -12630,7 +12676,49 @@
         body.innerHTML = '<div class="nick-modal-status">No nicknames claimed yet.</div>';
         return;
       }
+
+      // ---- "PILOT" (self) + "CO-PILOT" — pinned above everyone else,
+      // in that order, ahead of the Crewmates/Flight Passengers groups
+      // below. Self and the current Co-Pilot (if any) are excluded from
+      // those lower groups (see the .filter() below) so nobody is ever
+      // listed twice.
+      const myNickname = currentChatUser && currentChatUser.nickname;
+      const pilotRowHtml = (nick, extraClass) => {
+        const avatar = getLiveAvatar(nick) || (nick === myNickname && currentChatUser && currentChatUser.avatar) || '\u2708\ufe0f';
+        const isOnline = nick === myNickname ? true : onlineNicknames.has(nick);
+        const borderClass = rowBorderClassFor(nick);
+        const animClass = rowAnimClassFor(nick);
+        const rowClasses = [isOnline ? 'is-online' : '', extraClass || ''].filter(Boolean).join(' ');
+        return `
+        <li${rowClasses ? ` class="${rowClasses}"` : ''} data-nickname="${escapeHtml(nick)}" onclick="openUserProfile(this.dataset.nickname, true)">
+          <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span></span>
+          <span class="${animClass}" data-text="${escapeHtml(nick)}" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; padding:0 8px; margin:0 -8px;">${escapeHtml(nick)}</span>
+        </li>
+      `;
+      };
+
+      const pilotHtml = myNickname
+        ? `<li class="nick-list-divider">PILOT</li>${pilotRowHtml(myNickname)}`
+        : '';
+
+      const copilotNickname = myCopilotKey
+        ? ((latestPresenceData[myCopilotKey] && latestPresenceData[myCopilotKey].nickname) || myCopilotKey)
+        : null;
+      const copilotHtml = myNickname
+        ? `<li class="nick-list-divider">CO-PILOT</li>${
+            copilotNickname
+              ? pilotRowHtml(copilotNickname)
+              : '<li class="nick-list-empty-row">No Co-Pilot yet &mdash; add one from a pilot\u2019s profile</li>'
+          }`
+        : '';
+
       const sorted = [...lastNicknameListData]
+        // Self and the current Co-Pilot already have their own pinned
+        // rows above, so drop them from the Crewmates/everyone-else list.
+        .filter((item) => {
+          const nick = typeof item === 'string' ? item : item.nickname;
+          return nick !== myNickname && nick !== copilotNickname;
+        })
         .sort((a, b) => {
           const nickA = typeof a === 'string' ? a : a.nickname;
           const nickB = typeof b === 'string' ? b : b.nickname;
@@ -12655,7 +12743,7 @@
         // isn't split for no reason.
         const dividerHtml = hasBothGroups
           ? (i === 0 ? '<li class="nick-list-divider">Crewmates</li>'
-            : i === crewmateCount ? '<li class="nick-list-divider">Everyone else</li>'
+            : i === crewmateCount ? '<li class="nick-list-divider">FLIGHT PASSENGERS</li>'
             : '')
           : '';
         const nick = typeof item === 'string' ? item : item.nickname;
@@ -12703,7 +12791,7 @@
         </li>
       `;
       }).join('');
-      body.innerHTML = `<ul class="nick-list">${items}</ul>`;
+      body.innerHTML = `<ul class="nick-list">${pilotHtml}${copilotHtml}${items}</ul>`;
     }
 
     function closeNicknameList() {
@@ -13046,7 +13134,7 @@
       const badge = document.getElementById('flight-alerts-badge');
       if (!badge) return;
       const unreadWingsCount = Object.values(myWingsAlerts || {}).filter(a => a && !a.read).length;
-      const count = Object.keys(myIncomingRequests || {}).length + (currentUserNeedsFlightCode ? 1 : 0) + unreadWingsCount;
+      const count = Object.keys(myIncomingRequests || {}).length + Object.keys(myIncomingCopilotRequests || {}).length + (currentUserNeedsFlightCode ? 1 : 0) + unreadWingsCount;
       if (count > 0) {
         badge.textContent = count > 9 ? '9+' : String(count);
         badge.classList.add('visible');
@@ -13096,6 +13184,30 @@
         `;
       }).join('');
 
+      // Co-Pilot requests — same row shape as Crewmate requests above, but
+      // confirming one auto-clears every other pending Co-Pilot request
+      // (see acceptCopilotRequest) since only one can ever be accepted.
+      const copilotKeys = Object.keys(myIncomingCopilotRequests || {});
+      const copilotRowsHtml = copilotKeys.map((key) => {
+        const presenceEntry = latestPresenceData[key];
+        const nickname = (presenceEntry && presenceEntry.nickname) || key;
+        const avatar = (presenceEntry && presenceEntry.avatar) || '\u2708\ufe0f';
+        const nickAttr = escapeHtml(nickname).replace(/'/g, "\\'");
+        return `
+          <div class="flight-alert-row">
+            <span class="avatar-circle"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}</span>
+            <div class="flight-alert-info">
+              <span class="flight-alert-name">${escapeHtml(nickname)}</span>
+              <span class="flight-alert-sub">Wants to be your Co-Pilot</span>
+            </div>
+            <div class="flight-alert-actions">
+              <button type="button" class="flight-alert-btn confirm" onclick="acceptCopilotRequest('${nickAttr}'); renderFlightAlerts();">Confirm</button>
+              <button type="button" class="flight-alert-btn decline" onclick="declineCopilotRequest('${nickAttr}'); renderFlightAlerts();">Decline</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
       // Wings alerts (admin gift/adjust) — newest first. Each row is a
       // single click target: clicking opens the detail popup and marks
       // that alert read. Just seeing it listed here does NOT mark it
@@ -13124,7 +13236,7 @@
         `;
       }).join('');
 
-      const allRows = flightCodeRow + crewmateRowsHtml + wingsRowsHtml;
+      const allRows = flightCodeRow + copilotRowsHtml + crewmateRowsHtml + wingsRowsHtml;
       body.innerHTML = allRows || '<div class="flight-alerts-empty">No Pending Flight Alerts</div>';
     }
 
@@ -13214,6 +13326,187 @@
         crewmatesRef(nickname).child(myKey).remove().catch((err) => console.error('Remove Crewmate error:', err));
       } catch (err) {
         console.error('Remove Crewmate error:', err);
+      }
+    }
+
+    // ---- Co-Pilot (a single, mutual "wingman" slot — capped at ONE at a
+    // time, unlike Crewmates which has no limit). Request/accept flow is
+    // otherwise identical to Crewmates. Modeled in Firebase as:
+    //   copilotRequests/<recipient>/<sender> = timestamp   (pending, one-way)
+    //   copilot/<nickname>                   = <other's presenceKey>
+    //                                           (a single value, not a map —
+    //                                           this is what structurally
+    //                                           keeps it to one at a time)
+    function copilotRef(nickname) {
+      return nsRef('copilot/' + presenceKey(nickname));
+    }
+    function copilotRequestsRef(nickname) {
+      return nsRef('copilotRequests/' + presenceKey(nickname));
+    }
+
+    let myCopilotKey = null; // presenceKey of the signed-in user's Co-Pilot, or null if unset
+    let myIncomingCopilotRequests = {};
+    let copilotDataLoaded = false;
+    // Requests *we've* sent that are still pending, mirroring
+    // sentRequestCache above. In practice this only ever holds one entry
+    // at a time, since sendCopilotRequest refuses to fire a second one.
+    const sentCopilotRequestCache = {};
+
+    function loadCopilotData(user) {
+      if (!chatConfigIsFilledIn() || !user || !user.nickname) return;
+      try {
+        ensureFirebaseApp();
+        copilotRef(user.nickname).on('value', (snap) => {
+          myCopilotKey = snap.val() || null;
+          copilotDataLoaded = true;
+          if (profileCardOpenFor) renderProfileCard(profileCardOpenFor, profileCache[profileCardOpenFor] || { bio: '', background: null });
+          renderNicknameListFromCache();
+        }, (err) => console.error('Co-Pilot load error:', err));
+        copilotRequestsRef(user.nickname).on('value', (snap) => {
+          myIncomingCopilotRequests = snap.val() || {};
+          if (profileCardOpenFor) renderProfileCard(profileCardOpenFor, profileCache[profileCardOpenFor] || { bio: '', background: null });
+          updateFlightAlertsBadge();
+          const overlay = document.getElementById('flight-alerts-overlay');
+          if (overlay && overlay.classList.contains('visible')) renderFlightAlerts();
+        }, (err) => console.error('Co-Pilot requests load error:', err));
+      } catch (err) {
+        console.error('Co-Pilot data init error:', err);
+      }
+    }
+
+    // Resolves the relationship between the signed-in user and `nickname`:
+    // 'copilot' | 'incoming' | 'sent' | 'full' (we already have a
+    // different Co-Pilot, so this button is shown disabled) | 'none'.
+    function getCopilotStatus(nickname) {
+      const key = presenceKey(nickname);
+      if (myCopilotKey && myCopilotKey === key) return 'copilot';
+      if (myIncomingCopilotRequests && myIncomingCopilotRequests[key]) return 'incoming';
+      if (sentCopilotRequestCache[key]) return 'sent';
+      if (myCopilotKey) return 'full';
+      return 'none';
+    }
+
+    function renderCopilotBtn(nickname) {
+      const status = getCopilotStatus(nickname);
+      const nickAttr = escapeHtml(nickname).replace(/'/g, "\\'");
+      const ICON_STAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 9 22 9.5 16.5 14.5 18 22 12 18 6 22 7.5 14.5 2 9.5 9 9 12 2"/></svg>';
+      const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+      const ICON_CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14.5"/></svg>';
+      if (status === 'copilot') {
+        return `<button type="button" class="copilot-btn state-copilot" data-tooltip="Co-Pilot \u00b7 click to remove" onclick="event.stopPropagation(); removeCopilot('${nickAttr}')">${ICON_CHECK}</button>`;
+      }
+      if (status === 'incoming') {
+        return `<button type="button" class="copilot-btn state-incoming" data-tooltip="Accept Co-Pilot request" onclick="event.stopPropagation(); acceptCopilotRequest('${nickAttr}')">${ICON_STAR}</button>`;
+      }
+      if (status === 'sent') {
+        return `<button type="button" class="copilot-btn state-sent" data-tooltip="Co-Pilot request sent \u00b7 click to cancel" onclick="event.stopPropagation(); cancelCopilotRequest('${nickAttr}')">${ICON_CLOCK}</button>`;
+      }
+      if (status === 'full') {
+        return `<button type="button" class="copilot-btn state-full" data-tooltip="You already have a Co-Pilot \u2014 remove them first" onclick="event.stopPropagation();">${ICON_STAR}</button>`;
+      }
+      return `<button type="button" class="copilot-btn state-none" data-tooltip="Make Co-Pilot" onclick="event.stopPropagation(); sendCopilotRequest('${nickAttr}')">${ICON_STAR}</button>`;
+    }
+
+    function renderCopilotStatusLine(nickname) {
+      const status = getCopilotStatus(nickname);
+      if (status === 'copilot') {
+        return '<div class="crewmate-status-line">\u2b50 Co-Pilot</div>';
+      }
+      if (status === 'incoming') {
+        const nickAttr = escapeHtml(nickname).replace(/'/g, "\\'");
+        return `<div class="crewmate-status-line is-incoming">Wants to be your Co-Pilot<span class="crewmate-decline-link" onclick="declineCopilotRequest('${nickAttr}')">Decline</span></div>`;
+      }
+      return '';
+    }
+
+    function sendCopilotRequest(nickname) {
+      if (!currentChatUser || !nickname || nickname === currentChatUser.nickname) return;
+      if (!chatConfigIsFilledIn()) return;
+      // Only one Co-Pilot slot: refuse to fire a request if it's already
+      // filled, or if a different request is already pending out.
+      if (myCopilotKey) return;
+      if (Object.keys(sentCopilotRequestCache).length > 0) return;
+      const key = presenceKey(nickname);
+      sentCopilotRequestCache[key] = true;
+      if (profileCardOpenFor === nickname) renderProfileCard(nickname, profileCache[nickname] || { bio: '', background: null });
+      try {
+        ensureFirebaseApp();
+        copilotRequestsRef(nickname).child(presenceKey(currentChatUser.nickname)).set(firebase.database.ServerValue.TIMESTAMP)
+          .catch((err) => {
+            console.error('Send Co-Pilot request error:', err);
+            delete sentCopilotRequestCache[key];
+            if (profileCardOpenFor === nickname) renderProfileCard(nickname, profileCache[nickname] || { bio: '', background: null });
+          });
+      } catch (err) {
+        console.error('Send Co-Pilot request error:', err);
+        delete sentCopilotRequestCache[key];
+      }
+    }
+
+    function cancelCopilotRequest(nickname) {
+      if (!currentChatUser || !nickname) return;
+      const key = presenceKey(nickname);
+      delete sentCopilotRequestCache[key];
+      if (profileCardOpenFor === nickname) renderProfileCard(nickname, profileCache[nickname] || { bio: '', background: null });
+      try {
+        ensureFirebaseApp();
+        copilotRequestsRef(nickname).child(presenceKey(currentChatUser.nickname)).remove()
+          .catch((err) => console.error('Cancel Co-Pilot request error:', err));
+      } catch (err) {
+        console.error('Cancel Co-Pilot request error:', err);
+      }
+    }
+
+    function acceptCopilotRequest(nickname) {
+      if (!currentChatUser || !nickname) return;
+      // Enforce the one-Co-Pilot cap: if the slot filled up between the
+      // request arriving and it being accepted, bail out rather than
+      // silently overwriting the existing Co-Pilot.
+      if (myCopilotKey) return;
+      try {
+        ensureFirebaseApp();
+        const myKey = presenceKey(currentChatUser.nickname);
+        const theirKey = presenceKey(nickname);
+        copilotRef(currentChatUser.nickname).set(theirKey).catch((err) => console.error('Accept Co-Pilot error:', err));
+        copilotRef(nickname).set(myKey).catch((err) => console.error('Accept Co-Pilot error:', err));
+        copilotRequestsRef(currentChatUser.nickname).child(theirKey).remove().catch((err) => console.error('Accept Co-Pilot cleanup error:', err));
+        // The slot is taken now, so every OTHER pending request either
+        // side had is moot — clear our remaining incoming requests so
+        // Flight Alerts stops offering a slot that no longer exists, and
+        // drop any outstanding request we'd sent elsewhere.
+        Object.keys(myIncomingCopilotRequests || {}).forEach((k) => {
+          if (k !== theirKey) copilotRequestsRef(currentChatUser.nickname).child(k).remove().catch(() => {});
+        });
+        Object.keys(sentCopilotRequestCache).forEach((k) => delete sentCopilotRequestCache[k]);
+      } catch (err) {
+        console.error('Accept Co-Pilot error:', err);
+      }
+    }
+
+    function declineCopilotRequest(nickname) {
+      if (!currentChatUser || !nickname) return;
+      const key = presenceKey(nickname);
+      delete myIncomingCopilotRequests[key];
+      updateFlightAlertsBadge();
+      if (profileCardOpenFor === nickname) renderProfileCard(profileCardOpenFor, profileCache[profileCardOpenFor] || { bio: '', background: null });
+      try {
+        ensureFirebaseApp();
+        copilotRequestsRef(currentChatUser.nickname).child(key).remove()
+          .catch((err) => console.error('Decline Co-Pilot request error:', err));
+      } catch (err) {
+        console.error('Decline Co-Pilot request error:', err);
+      }
+    }
+
+    function removeCopilot(nickname) {
+      if (!currentChatUser || !nickname) return;
+      if (!confirm(`Remove ${nickname} as your Co-Pilot?`)) return;
+      try {
+        ensureFirebaseApp();
+        copilotRef(currentChatUser.nickname).remove().catch((err) => console.error('Remove Co-Pilot error:', err));
+        copilotRef(nickname).remove().catch((err) => console.error('Remove Co-Pilot error:', err));
+      } catch (err) {
+        console.error('Remove Co-Pilot error:', err);
       }
     }
 
@@ -13335,7 +13628,8 @@
       // ownedModels yet and the grid falls back to the empty state below.
       const aircraftOwned = isOwn ? userWallet.ownedModels : (presenceEntry && presenceEntry.ownedModels);
       const aircraftDataLoaded = isOwn ? walletLoaded : !!presenceEntry;
-      const aircraftCollectionHtml = renderAircraftCollectionHtml(aircraftOwned, aircraftDataLoaded, isOwn);
+      const aircraftOrder = isOwn ? (userWallet.modelOrder || []) : (presenceEntry && presenceEntry.modelOrder) || [];
+      const aircraftCollectionHtml = renderAircraftCollectionHtml(aircraftOwned, aircraftDataLoaded, isOwn, aircraftOrder);
 
       document.getElementById('profile-card-body').innerHTML = `
         <div class="profile-card-banner" style="background:${bannerCss};">
@@ -13350,6 +13644,7 @@
             <span class="avatar-edit-wrap">
               <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}</span>
               ${isOwn ? '' : renderCrewmateBtn(nickname)}
+              ${isOwn ? '' : renderCopilotBtn(nickname)}
             </span>
             `}
           </div>
@@ -13358,6 +13653,7 @@
           <div class="profile-card-nickname ${animClass}" data-text="${escapeHtml(nickname)}">${escapeHtml(nickname)}</div>
           <div class="profile-card-status-row"><span class="nick-status-tag ${statusClass}">${statusLabel}</span></div>
           ${isOwn ? '' : renderCrewmateStatusLine(nickname)}
+          ${isOwn ? '' : renderCopilotStatusLine(nickname)}
           <div class="profile-card-divider"></div>
           <p class="profile-card-section-label">Achievements</p>
           <span class="hours-chip" data-tooltip="Flight Hours" onclick="openFlightHoursInfo()">
@@ -17255,7 +17551,11 @@
     // (openAircraftTilePreview) instead, since the ownership gate is about
     // *your* wallet and shouldn't block you from looking at models someone
     // else owns.
-    function renderAircraftCollectionHtml(owned, dataLoaded, isOwn) {
+    // order is that account's saved tile arrangement (userWallet.modelOrder
+    // for the owner, presence.modelOrder for anyone else) — any owned item
+    // not yet in it (never reordered, or bought after the order was last
+    // saved) just falls back to SHOP_ITEMS.models order at the end.
+    function renderAircraftCollectionHtml(owned, dataLoaded, isOwn, order) {
       if (!dataLoaded) return `<div class="profile-aircraft-empty">Loading…</div>`;
       const ownedItems = (SHOP_ITEMS.models || []).filter((item) => owned && owned[item.id]);
       if (ownedItems.length === 0) {
@@ -17264,8 +17564,13 @@
         // renders nothing instead of a "no aircraft yet" line.
         return isOwn ? `<div class="profile-aircraft-empty">No aircraft in your collection yet. Check the Flight Store.</div>` : '';
       }
-      const tiles = ownedItems.map((item) => `
-        <div class="profile-aircraft-item" onclick="${isOwn ? 'openMigViewer()' : `openAircraftTilePreview('${item.id}')`}">
+      const orderedItems = sortAircraftItemsByOrder(ownedItems, order);
+      const tiles = orderedItems.map((item) => `
+        <div class="profile-aircraft-item"${isOwn ? ' draggable="true"' : ''} data-aircraft-id="${item.id}" onclick="${isOwn ? `openMigViewer('${item.id}')` : `openAircraftTilePreview('${item.id}')`}"${isOwn ? `
+          ondragstart="handleAircraftDragStart(event, '${item.id}')"
+          ondragover="handleAircraftDragOver(event)"
+          ondrop="handleAircraftDrop(event, '${item.id}')"
+          ondragend="handleAircraftDragEnd(event)"` : ''}>
           ${item.modelSrc ? `
           <span class="profile-aircraft-thumb-wrap">
             <model-viewer src="${item.modelSrc}" alt="${escapeHtml(item.name)}" auto-rotate rotation-per-second="25deg" disable-zoom interaction-prompt="none" shadow-intensity="0" exposure="1"></model-viewer>
@@ -17273,10 +17578,75 @@
           ` : `
           <span class="profile-aircraft-thumb" style="background-image:url('${item.imageUrl}')"></span>
           `}
-          <span class="profile-aircraft-name">${escapeHtml(item.name)}</span>
+          <span class="profile-aircraft-name">${escapeHtml(item.id === 'f22' ? 'F-22' : item.name)}</span>
         </div>
       `).join('');
-      return `<div class="profile-aircraft-grid">${tiles}</div>`;
+      return `<div class="profile-aircraft-grid"${isOwn ? ' id="profile-aircraft-grid"' : ''}>${tiles}</div>`;
+    }
+
+    // Applies a saved tile order (an array of item ids) to a list of owned
+    // SHOP_ITEMS.models entries. Ids in the saved order come first, in that
+    // order; anything owned but missing from it (a fresh purchase, or an
+    // account that never reordered) is appended afterward in the item's
+    // normal SHOP_ITEMS.models order, so nothing ever silently disappears.
+    function sortAircraftItemsByOrder(ownedItems, order) {
+      if (!order || order.length === 0) return ownedItems;
+      const byId = {};
+      ownedItems.forEach((item) => { byId[item.id] = item; });
+      const sorted = [];
+      order.forEach((id) => {
+        if (byId[id]) { sorted.push(byId[id]); delete byId[id]; }
+      });
+      ownedItems.forEach((item) => { if (byId[item.id]) sorted.push(item); });
+      return sorted;
+    }
+
+    // ---- Aircraft Collections drag-to-reorder (own profile only) ----
+    let draggedAircraftId = null;
+
+    function handleAircraftDragStart(e, itemId) {
+      draggedAircraftId = itemId;
+      e.dataTransfer.effectAllowed = 'move';
+      try { e.dataTransfer.setData('text/plain', itemId); } catch (err) {}
+      if (e.currentTarget) e.currentTarget.classList.add('dragging');
+    }
+
+    function handleAircraftDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    }
+
+    function handleAircraftDrop(e, targetItemId) {
+      e.preventDefault();
+      if (!draggedAircraftId || draggedAircraftId === targetItemId) return;
+      reorderAircraftCollection(draggedAircraftId, targetItemId);
+    }
+
+    function handleAircraftDragEnd(e) {
+      draggedAircraftId = null;
+      const grid = document.getElementById('profile-aircraft-grid');
+      if (grid) grid.querySelectorAll('.dragging').forEach((el) => el.classList.remove('dragging'));
+    }
+
+    // Moves fromId to sit where toId currently is, saves the resulting
+    // order to the wallet (so it survives a reload), mirrors it to presence
+    // so it shows the same way on everyone else's screen, and re-renders
+    // the open profile card immediately.
+    function reorderAircraftCollection(fromId, toId) {
+      const ownedItems = (SHOP_ITEMS.models || []).filter((item) => userWallet.ownedModels && userWallet.ownedModels[item.id]);
+      const currentOrder = sortAircraftItemsByOrder(ownedItems, userWallet.modelOrder || []).map((item) => item.id);
+      const fromIndex = currentOrder.indexOf(fromId);
+      const toIndex = currentOrder.indexOf(toId);
+      if (fromIndex === -1 || toIndex === -1) return;
+      currentOrder.splice(toIndex, 0, currentOrder.splice(fromIndex, 1)[0]);
+      userWallet.modelOrder = currentOrder;
+      if (currentChatUser && currentChatUser.nickname) {
+        walletRef(currentChatUser.nickname).set(userWallet);
+      }
+      applyEquippedCosmeticsToPresence();
+      if (currentChatUser && profileCardOpenFor === currentChatUser.nickname) {
+        renderProfileCard(currentChatUser.nickname, myProfile);
+      }
     }
 
     // Tapping a tile in someone ELSE's Aircraft Collections grid — opens a
@@ -17308,9 +17678,11 @@
       overlay.classList.add('visible');
     }
 
-    function openMigViewer() {
-      if (!ownsShopItem('models', 'mig-21')) {
-        showWingsToast('🔒 Buy the MiG-21 in the Flight Store to unlock the 3D Viewer');
+    function openMigViewer(itemId) {
+      itemId = itemId || 'mig-21';
+      if (!ownsShopItem('models', itemId)) {
+        const lockedItem = (SHOP_ITEMS.models || []).find((i) => i.id === itemId);
+        showWingsToast(`🔒 Buy the ${(lockedItem && lockedItem.name) || 'aircraft'} in the Flight Store to unlock the 3D Viewer`);
         showFlightStore();
         showShopTab('models');
         return;
@@ -17318,10 +17690,10 @@
       const overlay = document.getElementById('mig-viewer-overlay');
       const model = document.getElementById('mig-model');
       const titleEl = document.getElementById('mig-viewer-title');
-      const item = (SHOP_ITEMS.models || []).find((i) => i.id === 'mig-21');
-      if (currentViewerItemId !== 'mig-21') {
+      const item = (SHOP_ITEMS.models || []).find((i) => i.id === itemId);
+      if (currentViewerItemId !== itemId) {
         model.setAttribute('src', (item && item.modelSrc) || 'MiG_Project_1.42/MiG_Project_1.42.gltf');
-        currentViewerItemId = 'mig-21';
+        currentViewerItemId = itemId;
       }
       migModelLoaded = true;
       model.setAttribute('alt', (item && item.name) || 'MiG 3D Model');
