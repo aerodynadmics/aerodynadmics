@@ -6806,6 +6806,9 @@
         <div style="padding: 4px 16px 16px;">
           <p class="profile-edit-label">Background</p>
           <div class="profile-bg-grid" id="profile-bg-grid"></div>
+          <input type="file" id="profile-bg-upload-input" accept="image/*,.gif" style="display:none;" onchange="handleProfileBackgroundUpload(event)">
+          <p class="profile-edit-hint" id="profile-bg-upload-price" style="margin:8px 0 0;">Uploading your own background costs 200 &#129706; for an image, or 1,111 &#129706; for a GIF.</p>
+          <div class="profile-edit-hint" id="profile-bg-upload-hint" style="display:none;"></div>
 
           <button type="button" class="profile-edit-save-btn" id="profile-edit-bg-save-btn" onclick="saveProfileBackground()">SAVE BACKGROUND</button>
           <div class="profile-edit-status" id="profile-edit-bg-status"></div>
@@ -7520,6 +7523,22 @@
       <div style="display:flex; gap:10px;">
         <button class="shop-buy-wings-btn" style="flex:1;" onclick="confirmWingsPurchase()">CONFIRM</button>
         <button class="shop-buy-cash-btn" style="flex:1;" onclick="closeWingsConfirmModal()">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- confirm spending Wings on a custom background upload ----
+       Deliberately separate from the Flight Store's wings-confirm modal:
+       that one is wired to wingsConfirmContext / confirmWingsPurchase()
+       and grants a shop item, which is not what's happening here. -->
+  <div class="shop-pay-overlay" id="bg-upload-confirm-overlay">
+    <div class="shop-pay-box">
+      <button class="shop-pay-x" onclick="cancelProfileBackgroundUpload()" aria-label="Close">&times;</button>
+      <h3 id="bg-upload-confirm-title">Upload background?</h3>
+      <p id="bg-upload-confirm-subtitle">—</p>
+      <div style="display:flex; gap:10px;">
+        <button class="shop-buy-wings-btn" style="flex:1;" onclick="confirmProfileBackgroundUpload()">CONFIRM</button>
+        <button class="shop-buy-cash-btn" style="flex:1;" onclick="cancelProfileBackgroundUpload()">CANCEL</button>
       </div>
     </div>
   </div>
@@ -8277,6 +8296,14 @@
     // this up, exactly like it didn't need changes for the emoji avatars.
     const AVATAR_UPLOAD_MAX_DIMENSION = 256; // px, square
     const AVATAR_UPLOAD_JPEG_QUALITY = 0.8;
+    const PROFILE_BG_UPLOAD_MAX_BYTES = 8 * 1024 * 1024; // 8 MB — uploaded as-is (no recompression) so GIF animation survives
+    // Uploading your own profile background costs Wings. Animated GIFs cost
+    // considerably more than a static image — they're heavier to store and
+    // serve, and they're the showier option. The charge happens once per
+    // successful upload (not per save), and is only deducted after the file
+    // has actually landed in storage, so a failed upload never costs anything.
+    const PROFILE_BG_UPLOAD_COST_IMAGE = 200;
+    const PROFILE_BG_UPLOAD_COST_GIF = 1111;
 
     // Nicknames are already restricted to lowercase a-z at signup
     // (NICKNAME_PATTERN), matching sanitizeNickname() on the backend — this
@@ -13177,7 +13204,10 @@
     }
 
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') { closeNicknameList(); closeUserProfile(); closeEditBio(); closeEditBackground(); closeFlightAlerts(); }
+      if (e.key === 'Escape') {
+        if (document.getElementById('bg-upload-confirm-overlay').classList.contains('visible')) { cancelProfileBackgroundUpload(); return; }
+        closeNicknameList(); closeUserProfile(); closeEditBio(); closeEditBackground(); closeFlightAlerts();
+      }
     });
 
     // ---- shared online/offline + activity status helper ----
@@ -14516,16 +14546,23 @@
     function openEditBackground() {
       if (!currentChatUser) return;
       document.getElementById('profile-card-overlay').classList.remove('visible');
-      // A background you own from the Flight Store, or one of the free
-      // solid colors, can be selected here. If your saved background is
-      // neither (e.g. no longer owned), start with nothing selected rather
-      // than showing it.
+      // A background you own from the Flight Store, or a previously-uploaded
+      // custom image/GIF (a plain URL not matching any shop item), can be
+      // selected here. Free solid colors were removed as a pickable option —
+      // if your saved background is still an old free color (or otherwise
+      // no longer available), start with nothing selected rather than
+      // showing it, since there's no tile left to highlight for it.
       const owned = walletLoaded ? (userWallet.ownedBackgrounds || {}) : {};
-      const isFreeColor = myProfile.background && BACKGROUND_COLORS.some(c => c.id === myProfile.background);
-      selectedProfileBackground = (myProfile.background && (owned[myProfile.background] || isFreeColor)) ? myProfile.background : null;
+      const isUploadedUrl = myProfile.background && /^https?:\/\//i.test(myProfile.background) && !owned[myProfile.background];
+      selectedProfileBackground = (myProfile.background && (owned[myProfile.background] || isUploadedUrl)) ? myProfile.background : null;
       if (myProfile.background && owned[myProfile.background]) {
         lastPurchasedBackground = myProfile.background;
       }
+      if (isUploadedUrl) {
+        lastUploadedBackground = myProfile.background;
+      }
+      const uploadHint = document.getElementById('profile-bg-upload-hint');
+      if (uploadHint) { uploadHint.style.display = 'none'; uploadHint.textContent = ''; }
       renderProfileBgGrid();
       const status = document.getElementById('profile-edit-bg-status');
       status.classList.remove('visible');
@@ -14547,35 +14584,190 @@
       document.getElementById('profile-edit-charcount').textContent = `${val.length} / 50`;
     }
 
-    // Free solid colors plus one more tile (8 total, filling the 4x2 grid)
-    // that opens a picker for any backgrounds the user has purchased. The
-    // tile always previews the last purchased background you picked (if
-    // any), so it doesn't just vanish when a color is the active selection —
-    // only its highlighted border reflects what's actually equipped right now.
+    // An "upload your own" tile plus one more tile that opens a picker for
+    // any backgrounds the user has purchased. Free solid colors used to be
+    // a third option here and have been removed — profileBackgroundCss()
+    // still resolves old saved color IDs so existing profiles keep
+    // rendering correctly, but they're no longer offered as a pick. Each
+    // tile previews the last background you picked of that kind (if any),
+    // so it doesn't just vanish when the other one is the active
+    // selection — only its highlighted border reflects what's actually
+    // equipped right now.
+    let lastUploadedBackground = null;
     function renderProfileBgGrid() {
       const grid = document.getElementById('profile-bg-grid');
       const owned = walletLoaded ? (userWallet.ownedBackgrounds || {}) : {};
       const previewItem = lastPurchasedBackground ? SHOP_ITEMS.backgrounds.find(item => item.id === lastPurchasedBackground && owned[item.id]) : null;
       const isActive = previewItem && selectedProfileBackground === previewItem.id;
 
-      const colorSwatches = BACKGROUND_COLORS.map(c => `
-        <div class="profile-bg-swatch${(selectedProfileBackground === c.id) ? ' selected' : ''}"
-             style="background:${c.hex};"
-             onclick="selectProfileBackground('${c.id}')"></div>
-      `).join('');
-
       const purchasedTileStyle = previewItem
         ? `background-image:url('${previewItem.imageUrl.replace(/'/g, '%27')}'); background-size:cover; background-position:center;`
         : '';
       const purchasedTile = `
         <div class="profile-bg-swatch purchased-tile${isActive ? ' selected' : ''}"
-             style="${purchasedTileStyle}"
+             style="grid-column: span 2; ${purchasedTileStyle}"
              onclick="openPurchasedBgPicker()">
           <span class="purchased-tile-icon">&#9998;</span>
         </div>
       `;
 
-      grid.innerHTML = colorSwatches + purchasedTile;
+      const uploadIsActive = lastUploadedBackground && selectedProfileBackground === lastUploadedBackground;
+      const uploadTileStyle = lastUploadedBackground
+        ? `background-image:url('${lastUploadedBackground.replace(/'/g, '%27')}'); background-size:cover; background-position:center;`
+        : '';
+      const uploadTile = `
+        <div class="profile-bg-swatch purchased-tile${uploadIsActive ? ' selected' : ''}"
+             style="grid-column: span 2; ${uploadTileStyle}"
+             onclick="document.getElementById('profile-bg-upload-input').click()"
+             title="Upload your own image (200 Wings) or GIF (1,111 Wings)">
+          <span class="purchased-tile-icon">&#128247;</span>
+        </div>
+      `;
+
+      grid.innerHTML = uploadTile + purchasedTile;
+    }
+
+    // A GIF is whatever the browser reports as image/gif, with a filename
+    // fallback for the odd case where the OS hands over an empty/generic
+    // type — otherwise someone could get an animated background at the
+    // static-image price just because the MIME sniff came back vague.
+    function profileBackgroundFileIsGif(file) {
+      if (!file) return false;
+      if ((file.type || '').toLowerCase() === 'image/gif') return true;
+      return /\.gif$/i.test(file.name || '');
+    }
+
+    function profileBackgroundUploadCost(file) {
+      return profileBackgroundFileIsGif(file) ? PROFILE_BG_UPLOAD_COST_GIF : PROFILE_BG_UPLOAD_COST_IMAGE;
+    }
+
+    // Holds the chosen file between "you picked a file" and "you confirmed
+    // the Wings charge". Cleared on cancel so a dismissed modal can never
+    // leave a file queued for a later, unrelated confirm.
+    let pendingProfileBackgroundUpload = null;
+
+    function handleProfileBackgroundUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      const input = event.target;
+      const hint = document.getElementById('profile-bg-upload-hint');
+      if (!file) return;
+      if (!currentChatUser || !currentChatUser.nickname) {
+        if (hint) { hint.style.display = ''; hint.textContent = 'You need to be signed in to upload a background.'; }
+        input.value = '';
+        return;
+      }
+      // GIFs report as image/gif, which starts with 'image/' just like every
+      // other photo type — one check covers both without special-casing.
+      if (!file.type.startsWith('image/')) {
+        if (hint) { hint.style.display = ''; hint.textContent = 'Please choose an image or GIF file.'; }
+        input.value = '';
+        return;
+      }
+      if (file.size > PROFILE_BG_UPLOAD_MAX_BYTES) {
+        if (hint) { hint.style.display = ''; hint.textContent = 'That file is too big — please choose one under 8 MB.'; }
+        input.value = '';
+        return;
+      }
+
+      const isGif = profileBackgroundFileIsGif(file);
+      const cost = profileBackgroundUploadCost(file);
+
+      // The wallet has to be loaded before any of this can be judged — if
+      // it isn't, say so rather than silently uploading for free.
+      if (!walletLoaded) {
+        if (hint) { hint.style.display = ''; hint.textContent = 'Still loading your Wings balance — try again in a moment.'; }
+        input.value = '';
+        return;
+      }
+      if (userWallet.wings < cost) {
+        if (hint) {
+          hint.style.display = '';
+          hint.textContent = `Uploading ${isGif ? 'a GIF' : 'an image'} costs ${cost.toLocaleString()} 🪽 — you have ${userWallet.wings.toLocaleString()} 🪽.`;
+        }
+        showWingsToast('❌ Insufficient Wings');
+        input.value = '';
+        return;
+      }
+
+      pendingProfileBackgroundUpload = { file, cost, isGif };
+      document.getElementById('bg-upload-confirm-title').textContent = isGif ? 'Upload this GIF?' : 'Upload this image?';
+      document.getElementById('bg-upload-confirm-subtitle').textContent =
+        `This will spend ${cost.toLocaleString()} 🪽 from your balance. You have ${userWallet.wings.toLocaleString()} 🪽.`;
+      document.getElementById('bg-upload-confirm-overlay').classList.add('visible');
+      if (hint) { hint.style.display = ''; hint.textContent = ''; }
+      // Cleared here so re-picking the same file still fires onchange.
+      input.value = '';
+    }
+
+    function cancelProfileBackgroundUpload() {
+      pendingProfileBackgroundUpload = null;
+      document.getElementById('bg-upload-confirm-overlay').classList.remove('visible');
+      const hint = document.getElementById('profile-bg-upload-hint');
+      if (hint) { hint.style.display = 'none'; hint.textContent = ''; }
+    }
+
+    function confirmProfileBackgroundUpload() {
+      if (!pendingProfileBackgroundUpload) return;
+      const { file, cost, isGif } = pendingProfileBackgroundUpload;
+      pendingProfileBackgroundUpload = null;
+      document.getElementById('bg-upload-confirm-overlay').classList.remove('visible');
+
+      const hint = document.getElementById('profile-bg-upload-hint');
+      if (!currentChatUser || !currentChatUser.nickname) return;
+      // Re-check the balance at confirm time: Wings could have been spent
+      // elsewhere (or gifted away) while this modal sat open.
+      if (!walletLoaded || userWallet.wings < cost) {
+        if (hint) { hint.style.display = ''; hint.textContent = `You no longer have enough Wings for this — it costs ${cost.toLocaleString()} 🪽.`; }
+        showWingsToast('❌ Insufficient Wings');
+        return;
+      }
+
+      if (hint) { hint.style.display = ''; hint.textContent = 'Uploading…'; }
+
+      // Unlike the avatar upload, this is NOT cropped/recompressed through a
+      // canvas — that would flatten an animated GIF down to a single frame.
+      // The original file is uploaded as-is so GIF animation (and full
+      // static-image quality) survives intact.
+      ensureFirebaseApp();
+      waitForFirebaseUidMatching(currentChatUser.nickname).then((uid) => {
+        if (!uid) {
+          if (hint) hint.textContent = 'Could not verify your session for uploading. Try signing out and back in, then try again.';
+          return;
+        }
+        const ext = (file.name && /\.(\w+)$/.exec(file.name)) ? RegExp.$1.toLowerCase() : (file.type.split('/')[1] || 'jpg');
+        const path = `backgrounds/${uid}/photo.${ext}`;
+        const storageRef = firebase.storage().ref(path);
+        storageRef.put(file, { contentType: file.type }).then((snapshot) => {
+          return snapshot.ref.getDownloadURL();
+        }).then((downloadUrl) => {
+          // Charge only once the file is actually in storage and readable —
+          // anything that fails above costs the user nothing. The balance is
+          // checked one last time here for the same reason as above.
+          if (!walletLoaded || userWallet.wings < cost) {
+            if (hint) hint.textContent = `Upload finished, but your balance no longer covers the ${cost.toLocaleString()} 🪽 charge. Nothing was applied.`;
+            showWingsToast('❌ Insufficient Wings');
+            return;
+          }
+          userWallet.wings -= cost;
+          saveWallet();
+          logWingsTransaction(currentChatUser.nickname, `Custom profile background upload (${isGif ? 'GIF' : 'image'})`, -cost);
+          updateShopWingsBalanceDisplay();
+          renderShopIfVisible();
+          renderHangarIfVisible();
+          showWingsToast(`🪽 -${cost.toLocaleString()} Wings spent on your background upload`);
+
+          // Same reasoning as the avatar upload: every upload writes to the
+          // same storage path, so without a cache-buster the browser would
+          // keep showing a stale cached copy after re-uploading.
+          const bustedUrl = downloadUrl + (downloadUrl.includes('?') ? '&' : '?') + 't=' + Date.now();
+          lastUploadedBackground = bustedUrl;
+          selectProfileBackground(bustedUrl);
+          if (hint) hint.textContent = 'Image ready. Tap SAVE BACKGROUND below to apply it.';
+        }).catch((err) => {
+          console.error('Background upload error:', err);
+          if (hint) hint.textContent = 'Upload failed — no Wings were spent. Try again or use a smaller image.';
+        });
+      });
     }
 
     function openPurchasedBgPicker() {
