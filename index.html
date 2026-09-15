@@ -1760,6 +1760,30 @@
     justify-content: center;
   }
   .profile-card-back:hover { background: rgba(4, 18, 32, 0.85); color: var(--accent); }
+  /* Edit-background pencil — sits in the same top-left slot as
+     .profile-card-back, since the two never show at once: this only
+     renders for the signed-in user's own (non-read-only) profile, and
+     the back arrow only renders when the card was reached read-only via
+     a drill-in from a roster (see profileCardStack). */
+  .profile-card-bg-edit-btn {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(4, 18, 32, 0.55);
+    color: var(--paper);
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: scaleX(-1);
+  }
+  .profile-card-bg-edit-btn:hover { background: rgba(4, 18, 32, 0.85); color: var(--accent); }
   .profile-card-avatar-wrap {
     position: absolute;
     left: 18px;
@@ -1837,6 +1861,7 @@
   .copilot-btn svg { width: 10px; height: 10px; }
   .copilot-btn.state-none { background: #8a97a3; }
   .copilot-btn.state-none:hover { background: #a3aeb8; }
+  .copilot-btn.state-taken { background: #5a636b; }
   .copilot-btn.state-sent { background: var(--rivet); opacity: 0.9; }
   .copilot-btn.state-sent:hover { background: #ff8f8f; color: #3a0000; }
   .copilot-btn.state-incoming { background: #ffd166; color: #3a2900; }
@@ -2436,12 +2461,6 @@
     padding: 24px 20px 20px; text-align: center; position: relative;
     animation: profile-card-pop 0.16s ease;
   }
-  .hours-info-close {
-    position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%;
-    border: none; background: rgba(255,255,255,0.06); color: var(--paper); font-size: 15px; line-height: 1;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-  }
-  .hours-info-close:hover { background: rgba(255,255,255,0.12); color: var(--accent); }
   .hours-info-medal {
     width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 14px;
     background: linear-gradient(160deg, #ffd873, var(--accent) 60%, #a86e00 100%);
@@ -2472,6 +2491,29 @@
   .profile-card-bio-label {
     margin-bottom: 6px;
   }
+  /* Wraps the "Bio" label together with its edit pencil, side by side —
+     the label keeps its own text styling and the row absorbs the
+     spacing below it so the pencil doesn't shift the label's baseline. */
+  .profile-card-bio-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .profile-card-bio-row .profile-card-bio-label {
+    margin-bottom: 0;
+  }
+  .profile-card-bio-edit-btn {
+    background: none;
+    border: none;
+    color: var(--rivet);
+    font-size: 13px;
+    line-height: 1;
+    padding: 0;
+    cursor: pointer;
+    transform: scaleX(-1);
+  }
+  .profile-card-bio-edit-btn:hover { color: var(--accent); }
   .profile-aircraft-grid {
     display: flex;
     flex-wrap: wrap;
@@ -2554,20 +2596,6 @@
     color: var(--rivet);
     font-style: italic;
   }
-  .profile-card-edit-btn {
-    width: 100%;
-    margin-top: 16px;
-    background: var(--accent);
-    border: none;
-    color: var(--blueprint-dark);
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 600;
-    font-size: 13px;
-    padding: 10px 14px;
-    border-radius: 999px;
-    cursor: pointer;
-  }
-  .profile-card-edit-btn:hover { opacity: 0.9; }
 
   /* ---- profile edit modal ---- */
   .profile-edit-label {
@@ -6682,7 +6710,6 @@
   <!-- ---- Flight Hours info popup (stacks above the profile card) ---- -->
   <div class="hours-info-overlay" id="hours-info-overlay">
     <div class="hours-info-card">
-      <button class="hours-info-close" onclick="closeFlightHoursInfo()">&times;</button>
       <div class="hours-info-medal">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 16v-2l-8.5-5V3.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V9L2 14v2l8.5-2.5V19L8 20.5V22l4-1 4 1v-1.5L13.5 19v-5.5L22 16z"/></svg>
       </div>
@@ -6738,11 +6765,11 @@
   </div>
 
   <!-- ---- edit profile modal ---- -->
-  <div class="nick-modal-overlay" id="profile-edit-overlay">
+  <div class="nick-modal-overlay" id="profile-edit-bio-overlay">
     <div class="nick-modal">
       <div class="nick-modal-head">
-        <h3>Edit Profile</h3>
-        <button class="nick-modal-back" onclick="closeEditProfile()" aria-label="Back">&lsaquo;</button>
+        <h3>Edit Bio</h3>
+        <button class="nick-modal-back" onclick="closeEditBio()" aria-label="Back">&lsaquo;</button>
       </div>
       <div class="nick-modal-body">
         <div style="padding: 4px 16px 16px;">
@@ -6750,11 +6777,28 @@
           <textarea id="profile-edit-bio" maxlength="50" placeholder="Tell other Souls on Board a bit about yourself&hellip;" oninput="updateProfileBioCharCount()"></textarea>
           <div class="profile-edit-charcount" id="profile-edit-charcount">0 / 50</div>
 
+          <button type="button" class="profile-edit-save-btn" id="profile-edit-bio-save-btn" onclick="saveProfileBio()">SAVE BIO</button>
+          <div class="profile-edit-status" id="profile-edit-bio-status"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- edit background modal (separate from bio — each has its own
+       save flow so editing one never touches the other) ---- -->
+  <div class="nick-modal-overlay" id="profile-edit-bg-overlay">
+    <div class="nick-modal">
+      <div class="nick-modal-head">
+        <h3>Edit Background</h3>
+        <button class="nick-modal-back" onclick="closeEditBackground()" aria-label="Back">&lsaquo;</button>
+      </div>
+      <div class="nick-modal-body">
+        <div style="padding: 4px 16px 16px;">
           <p class="profile-edit-label">Background</p>
           <div class="profile-bg-grid" id="profile-bg-grid"></div>
 
-          <button type="button" class="profile-edit-save-btn" id="profile-edit-save-btn" onclick="saveProfileEdits()">SAVE PROFILE</button>
-          <div class="profile-edit-status" id="profile-edit-status"></div>
+          <button type="button" class="profile-edit-save-btn" id="profile-edit-bg-save-btn" onclick="saveProfileBackground()">SAVE BACKGROUND</button>
+          <div class="profile-edit-status" id="profile-edit-bg-status"></div>
         </div>
       </div>
     </div>
@@ -13062,7 +13106,7 @@
     }
 
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') { closeNicknameList(); closeUserProfile(); closeEditProfile(); closeFlightAlerts(); }
+      if (e.key === 'Escape') { closeNicknameList(); closeUserProfile(); closeEditBio(); closeEditBackground(); closeFlightAlerts(); }
     });
 
     // ---- shared online/offline + activity status helper ----
@@ -13374,6 +13418,8 @@
         copilotStatusMessage = myCopilotKey
           ? 'You already have a Co-Pilot'
           : 'Already applied to someone. Stay loyal!';
+      } else if (copilotStatusForThisPerson === 'taken') {
+        copilotStatusMessage = `${escapeHtml(nickname)} already has a Co-Pilot`;
       }
       const copilotCancelAttr = copilotCancelTarget ? escapeHtml(copilotCancelTarget).replace(/'/g, "\\'") : '';
       menu.innerHTML = `
@@ -13814,6 +13860,12 @@
       if (myIncomingCopilotRequests && myIncomingCopilotRequests[key]) return 'incoming';
       if (sentCopilotRequestCache[key]) return 'sent';
       if (myCopilotKey || Object.keys(sentCopilotRequestCache).length > 0) return 'full';
+      // The checks above only cover MY OWN slot — they say nothing about
+      // whether `nickname` themselves already has a Co-Pilot with a third
+      // party. If the 'copilot' branch above didn't already match (i.e.
+      // their Co-Pilot isn't me), otherCopilotCache[nickname] being set
+      // means their slot is taken by someone else.
+      if (otherCopilotCache[nickname]) return 'taken';
       return 'none';
     }
 
@@ -13834,6 +13886,11 @@
         // We already have a different Co-Pilot — don't even show a
         // disabled button on everyone else's profile, just nothing.
         return '';
+      }
+      if (status === 'taken') {
+        // This person already has a Co-Pilot (not me) — show a
+        // non-clickable heads-up instead of an actionable button.
+        return `<span class="copilot-btn state-taken" data-tooltip="${escapeHtml(nickname)} already has a Co-Pilot" style="cursor:default; opacity:0.5;">\ud83d\udc68\ud83c\udffb\u200d\u2708\ufe0f</span>`;
       }
       return `<button type="button" class="copilot-btn state-none" data-tooltip="Make Co-Pilot" onclick="event.stopPropagation(); sendCopilotRequest('${nickAttr}')">\ud83d\udc68\ud83c\udffb\u200d\u2708\ufe0f</button>`;
     }
@@ -13882,6 +13939,10 @@
       // filled, or if a different request is already pending out.
       if (myCopilotKey) return;
       if (Object.keys(sentCopilotRequestCache).length > 0) return;
+      // Also refuse if the RECIPIENT's slot is already taken by someone
+      // else — mirrors the UI check in getCopilotStatus, but enforced
+      // here too in case this fires from stale UI or a race.
+      if (otherCopilotCache[nickname]) return;
       const key = presenceKey(nickname);
       sentCopilotRequestCache[key] = true;
       if (profileCardOpenFor === nickname) renderProfileCard(nickname, profileCache[nickname] || { bio: '', background: null });
@@ -14124,6 +14185,7 @@
       document.getElementById('profile-card-body').innerHTML = `
         <div class="profile-card-banner" style="background:${bannerCss};">
           ${profileCardStack.length ? '<button class="profile-card-back" onclick="goBackProfileCard()" aria-label="Back">&lsaquo;</button>' : ''}
+          ${showEditUi ? '<button type="button" class="profile-card-bg-edit-btn" onclick="openEditBackground()" aria-label="Edit background">&#9998;</button>' : ''}
           <button class="profile-card-close" onclick="closeUserProfile()">&times;</button>
           <div class="profile-card-avatar-wrap">
             ${showEditUi ? `
@@ -14158,9 +14220,11 @@
           <p class="profile-card-section-label">Aircraft Collections</p>
           ${aircraftCollectionHtml}
           <div class="profile-card-divider"></div>
-          <p class="profile-card-section-label profile-card-bio-label">Bio</p>
+          <div class="profile-card-bio-row">
+            <p class="profile-card-section-label profile-card-bio-label">Bio</p>
+            ${showEditUi ? '<button type="button" class="profile-card-bio-edit-btn" onclick="openEditBio()" aria-label="Edit bio">&#9998;</button>' : ''}
+          </div>
           <div class="profile-card-bio${bio ? '' : ' empty'}">${bio || (isOwn ? 'You haven\u2019t added a bio yet.' : '')}</div>
-          ${showEditUi ? '<button type="button" class="profile-card-edit-btn" onclick="openEditProfile()">EDIT PROFILE</button>' : ''}
         </div>
       `;
       // Keep the on-screen number visibly ticking upward every second
@@ -14227,7 +14291,7 @@
       const currentValue = document.getElementById('profile-card-flight-hours-value');
       document.getElementById('hoursInfoValue').textContent = currentValue ? currentValue.textContent : '0.00';
       const isOwnHours = currentChatUser && profileCardOpenFor === currentChatUser.nickname;
-      const who = isOwnHours ? 'you\u2019ve' : `"${escapeHtml(profileCardOpenFor || 'this Soul on Board')}" has`;
+      const who = isOwnHours ? 'you\u2019ve' : `${escapeHtml(profileCardOpenFor || 'this Soul on Board')} has`;
       document.getElementById('hoursInfoDesc').textContent = `Total hours ${who} spent signed in and active on aerodynadmics.`;
       document.getElementById('hours-info-overlay').classList.add('visible');
     }
@@ -14344,7 +14408,7 @@
     // tile can keep showing it as a thumbnail even while a color is equipped.
     let lastPurchasedBackground = null;
 
-    function openEditProfile() {
+    function openEditBio() {
       if (!currentChatUser) return;
       // Close the profile card first — both are full-screen overlays and the
       // card sits at a higher z-index, so leaving it open made the edit
@@ -14352,6 +14416,24 @@
       document.getElementById('profile-card-overlay').classList.remove('visible');
       document.getElementById('profile-edit-bio').value = myProfile.bio || '';
       updateProfileBioCharCount();
+      const status = document.getElementById('profile-edit-bio-status');
+      status.classList.remove('visible');
+      status.textContent = '';
+      document.getElementById('profile-edit-bio-overlay').classList.add('visible');
+    }
+
+    function closeEditBio() {
+      const overlay = document.getElementById('profile-edit-bio-overlay');
+      const wasVisible = overlay.classList.contains('visible');
+      overlay.classList.remove('visible');
+      if (wasVisible && currentChatUser && currentChatUser.nickname) {
+        openUserProfile(currentChatUser.nickname);
+      }
+    }
+
+    function openEditBackground() {
+      if (!currentChatUser) return;
+      document.getElementById('profile-card-overlay').classList.remove('visible');
       // A background you own from the Flight Store, or one of the free
       // solid colors, can be selected here. If your saved background is
       // neither (e.g. no longer owned), start with nothing selected rather
@@ -14363,14 +14445,14 @@
         lastPurchasedBackground = myProfile.background;
       }
       renderProfileBgGrid();
-      const status = document.getElementById('profile-edit-status');
+      const status = document.getElementById('profile-edit-bg-status');
       status.classList.remove('visible');
       status.textContent = '';
-      document.getElementById('profile-edit-overlay').classList.add('visible');
+      document.getElementById('profile-edit-bg-overlay').classList.add('visible');
     }
 
-    function closeEditProfile() {
-      const overlay = document.getElementById('profile-edit-overlay');
+    function closeEditBackground() {
+      const overlay = document.getElementById('profile-edit-bg-overlay');
       const wasVisible = overlay.classList.contains('visible');
       overlay.classList.remove('visible');
       if (wasVisible && currentChatUser && currentChatUser.nickname) {
@@ -14440,12 +14522,62 @@
       renderProfileBgGrid();
     }
 
-    function saveProfileEdits() {
+    function saveProfileBio() {
       if (!currentChatUser || !currentChatUser.nickname) return;
-      const btn = document.getElementById('profile-edit-save-btn');
-      const status = document.getElementById('profile-edit-status');
-      const background = selectedProfileBackground || null;
+      const btn = document.getElementById('profile-edit-bio-save-btn');
+      const status = document.getElementById('profile-edit-bio-status');
       const bio = document.getElementById('profile-edit-bio').value.slice(0, 50).trim();
+
+      btn.disabled = true;
+      status.textContent = 'Saving\u2026';
+      status.classList.add('visible');
+
+      const nickname = currentChatUser.nickname;
+      // Keep everything else on the profile (background, flightHours) as-is
+      // — this save only ever touches bio, and the DB write below uses
+      // update() with just the bio key for the same reason: it must never
+      // clobber a background change made independently in its own modal.
+      const newProfile = { ...myProfile, bio, flightHours: myProfile.flightHours || 0 };
+
+      if (!chatConfigIsFilledIn()) {
+        // No live database configured — just keep it client-side for this session.
+        myProfile = newProfile;
+        myProfileLoaded = true;
+        profileCache[nickname] = newProfile;
+        btn.disabled = false;
+        closeEditBio();
+        renderProfileCard(nickname, newProfile);
+        document.getElementById('profile-card-overlay').classList.add('visible');
+        return;
+      }
+
+      try {
+        ensureFirebaseApp();
+        profileRef(nickname).update({ bio }).then(() => {
+          btn.disabled = false;
+          closeEditBio();
+          myProfile = newProfile;
+          myProfileLoaded = true;
+          profileCache[nickname] = newProfile;
+          renderProfileCard(nickname, newProfile);
+          document.getElementById('profile-card-overlay').classList.add('visible');
+        }).catch((err) => {
+          console.error('Bio save error:', err);
+          btn.disabled = false;
+          status.textContent = 'Could not save right now. Try again.';
+        });
+      } catch (err) {
+        console.error('Bio save error:', err);
+        btn.disabled = false;
+        status.textContent = 'Could not save right now. Try again.';
+      }
+    }
+
+    function saveProfileBackground() {
+      if (!currentChatUser || !currentChatUser.nickname) return;
+      const btn = document.getElementById('profile-edit-bg-save-btn');
+      const status = document.getElementById('profile-edit-bg-status');
+      const background = selectedProfileBackground || null;
 
       // Keep the wallet's "equipped background" in sync with whatever's
       // picked here — the Hangar's EQUIPPED badge reads userWallet.equippedBackground,
@@ -14465,6 +14597,8 @@
       // in the no-database branch below), which is exactly why picking a
       // free solid color here never used to show up live.
       applySidebarMeCover(background);
+
+      const nickname = currentChatUser.nickname;
       // The reviewees list renders the signed-in user's own row straight
       // off myProfile.background too — update that optimistically here
       // (the .then()/no-DB branches below still set the full myProfile
@@ -14473,20 +14607,17 @@
       // round-trip resolves.
       myProfile = { ...myProfile, background };
       myProfileLoaded = true;
-      if (currentChatUser && currentChatUser.nickname) profileCache[currentChatUser.nickname] = myProfile;
+      profileCache[nickname] = myProfile;
       try { renderNicknameListFromCache(); } catch (err) { console.error('Nickname list refresh error:', err); }
 
       btn.disabled = true;
       status.textContent = 'Saving\u2026';
       status.classList.add('visible');
 
-      const nickname = currentChatUser.nickname;
-      // Keep whatever flightHours is already on record locally — this save
-      // only ever edits bio/background, and the DB write below uses
-      // update() rather than set() for the same reason: flightHours ticks
-      // up on its own via the presence heartbeat and must never be
-      // clobbered by an unrelated profile-details save.
-      const newProfile = { bio, background, flightHours: myProfile.flightHours || 0 };
+      // Keep everything else on the profile (bio, flightHours) as-is —
+      // this save only ever touches background, and the DB write below
+      // uses update() with just the background key for the same reason.
+      const newProfile = { ...myProfile, background, flightHours: myProfile.flightHours || 0 };
 
       if (!chatConfigIsFilledIn()) {
         // No live database configured — just keep it client-side for this session.
@@ -14494,7 +14625,7 @@
         myProfileLoaded = true;
         profileCache[nickname] = newProfile;
         btn.disabled = false;
-        closeEditProfile();
+        closeEditBackground();
         renderProfileCard(nickname, newProfile);
         document.getElementById('profile-card-overlay').classList.add('visible');
         return;
@@ -14502,21 +14633,21 @@
 
       try {
         ensureFirebaseApp();
-        profileRef(nickname).update({ bio, background }).then(() => {
+        profileRef(nickname).update({ background }).then(() => {
           btn.disabled = false;
-          closeEditProfile();
+          closeEditBackground();
           myProfile = newProfile;
           myProfileLoaded = true;
           profileCache[nickname] = newProfile;
           renderProfileCard(nickname, newProfile);
           document.getElementById('profile-card-overlay').classList.add('visible');
         }).catch((err) => {
-          console.error('Profile save error:', err);
+          console.error('Background save error:', err);
           btn.disabled = false;
           status.textContent = 'Could not save right now. Try again.';
         });
       } catch (err) {
-        console.error('Profile save error:', err);
+        console.error('Background save error:', err);
         btn.disabled = false;
         status.textContent = 'Could not save right now. Try again.';
       }
@@ -18317,6 +18448,12 @@
     // the dimmed backdrop outside the list is the only way to close it.
     document.getElementById('crew-list-overlay').addEventListener('click', function(e) {
       if (e.target === this) closeCrewList();
+    });
+
+    // No close button on the Flight Hours info card either — same
+    // click-the-backdrop pattern to dismiss it.
+    document.getElementById('hours-info-overlay').addEventListener('click', function(e) {
+      if (e.target === this) closeFlightHoursInfo();
     });
 
     function closeGoogleFormPopup() {
