@@ -2650,9 +2650,21 @@
     border: 2px solid transparent;
     cursor: pointer;
     box-shadow: 0 0 0 1px var(--line);
-    transition: transform 0.1s ease, box-shadow 0.15s ease;
+    transition: box-shadow 0.15s ease;
   }
+  /* Shop-purchased tiles still lift on hover; the upload tile below
+     overrides this back to no movement. */
   .profile-bg-swatch:hover { transform: translateY(-1px); }
+  /* The upload tile is now the only tile in this grid, and a card that
+     shifts under the cursor reads as a broken hover state for something
+     that's really just a single button — keep it still. Its aspect ratio
+     is also shorter than the shared default so the modal doesn't loom. */
+  .profile-bg-swatch.upload-tile {
+    aspect-ratio: 16/6;
+  }
+  .profile-bg-swatch.upload-tile:hover {
+    transform: none;
+  }
   .profile-bg-swatch.selected {
     border-color: var(--rivet);
     box-shadow: 0 0 0 1px var(--rivet);
@@ -2668,6 +2680,39 @@
     font-size: 16px;
     color: var(--rivet);
     transform: scaleX(-1);
+  }
+  /* The upload tile is now the only tile in the grid, so it gets a bigger
+     pencil glyph and no horizontal flip (that flip existed for the old
+     camera icon). */
+  .profile-bg-swatch.upload-tile .upload-tile-icon {
+    font-size: 24px;
+    line-height: 1;
+    color: var(--rivet);
+    display: inline-block;
+    transform: scaleX(-1);
+  }
+  /* Upload Fee block. Its bottom margin matches .profile-bg-grid's, so the
+     gap above it (grid -> fee) and below it (fee -> SAVE button) are equal. */
+  .profile-bg-fee {
+    margin: 0 0 14px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .profile-bg-fee-title {
+    margin: 0 0 4px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+  .profile-bg-fee-line {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--muted);
   }
   .profile-bg-swatch.purchased-tile.selected .purchased-tile-icon {
     color: var(--rivet);
@@ -6547,6 +6592,24 @@
     </div>
   </div>
 
+  <div class="ai-note-overlay" id="bg-fee-note-overlay">
+    <div class="ai-note-modal" style="max-width: 760px;">
+      <div class="ai-note-modal-head" style="gap: 16px;">
+        <h3>Why do I charge Wings for custom profile background but not for avatars?</h3>
+        <button type="button" class="ai-note-modal-close" onclick="closeBgFeeNoteModal()">&times;</button>
+      </div>
+      <div class="ai-note-body">
+        <p>I know some of you might wonder why I charge a small amount of Wings when you upload a custom profile background or GIF, while profile avatars remain completely free.</p>
+        <p>The simple answer is that I want avatars to remain a free and basic part of aerodynadmics. I don't want someone to feel like they have to spend Wings just to have a profile picture. It's one of those small things that I believe everyone should be able to enjoy without worrying about a cost.</p>
+        <p>Custom backgrounds and GIFs are a little different. When you upload them, I have to store those files on aerodynadmics' cloud storage and keep them hosted so they can continue to appear on your profile. Larger and more numerous files mean more storage and hosting costs for me as I continue running the platform.</p>
+        <p>The Wings fee isn't meant to punish anyone for uploading an image, and it's not a charge for the image itself. It's simply my way of helping cover some of the ongoing costs of providing that extra customization feature.</p>
+        <p>I could make everything paid, but I don't want to. I'd rather keep the basic features, like avatars, freely available and only charge for optional features that require additional resources to maintain.</p>
+        <p>I'm building aerodynadmics on my own, and every part of the platform comes with real costs behind the scenes. I want to be honest about that rather than pretending these features are completely free to operate.</p>
+        <p>Thank you for understanding and for supporting what I'm building with aerodynadmics. Every bit of support helps me keep the platform running and continue improving<span style="white-space: nowrap;">&nbsp;it 🫶🌸!</span></p>
+      </div>
+    </div>
+  </div>
+
   <div class="ai-note-overlay" id="shop-ack-overlay">
     <div class="ai-note-modal">
       <div class="ai-note-modal-head">
@@ -6797,36 +6860,27 @@
   <!-- ---- edit background modal (separate from bio — each has its own
        save flow so editing one never touches the other) ---- -->
   <div class="nick-modal-overlay" id="profile-edit-bg-overlay">
-    <div class="nick-modal">
+    <div class="nick-modal" style="max-width: 360px;">
       <div class="nick-modal-head">
         <h3>Edit Background</h3>
         <button class="nick-modal-back" onclick="closeEditBackground()" aria-label="Back">&lsaquo;</button>
       </div>
       <div class="nick-modal-body">
         <div style="padding: 4px 16px 16px;">
-          <p class="profile-edit-label">Background</p>
           <div class="profile-bg-grid" id="profile-bg-grid"></div>
           <input type="file" id="profile-bg-upload-input" accept="image/*,.gif" style="display:none;" onchange="handleProfileBackgroundUpload(event)">
-          <p class="profile-edit-hint" id="profile-bg-upload-price" style="margin:8px 0 0;">Uploading your own background costs 200 &#129706; for an image, or 1,111 &#129706; for a GIF.</p>
+          <div class="profile-bg-fee" id="profile-bg-upload-price">
+            <div>
+              <p class="profile-bg-fee-title">Upload Fee</p>
+              <p class="profile-bg-fee-line">Image: 200 🪽</p>
+              <p class="profile-bg-fee-line">GIF: 1111 🪽</p>
+            </div>
+            <button type="button" class="ai-note-link" id="bg-fee-note-link-btn" onclick="openBgFeeNoteModal()" style="margin:0; padding:0; white-space:nowrap;">Why is there a fee?</button>
+          </div>
           <div class="profile-edit-hint" id="profile-bg-upload-hint" style="display:none;"></div>
 
           <button type="button" class="profile-edit-save-btn" id="profile-edit-bg-save-btn" onclick="saveProfileBackground()">SAVE BACKGROUND</button>
           <div class="profile-edit-status" id="profile-edit-bg-status"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ---- hangar backgrounds picker modal ---- -->
-  <div class="nick-modal-overlay" id="purchased-bg-overlay">
-    <div class="nick-modal">
-      <div class="nick-modal-head">
-        <h3>Hangar</h3>
-        <button class="nick-modal-back" onclick="closePurchasedBgPicker()" aria-label="Back">&lsaquo;</button>
-      </div>
-      <div class="nick-modal-body">
-        <div style="padding: 4px 16px 16px;">
-          <div class="profile-bg-grid" id="purchased-bg-grid"></div>
         </div>
       </div>
     </div>
@@ -7409,7 +7463,6 @@
             <button class="store-subnav-btn active" id="shop-tab-models" onclick="showShopTab('models')">Aircraft Models</button>
             <button class="store-subnav-btn" id="shop-tab-borders" onclick="showShopTab('borders')">Avatar Decorations</button>
             <button class="store-subnav-btn" id="shop-tab-animations" onclick="showShopTab('animations')">Callsign Animations</button>
-            <button class="store-subnav-btn" id="shop-tab-backgrounds" onclick="showShopTab('backgrounds')">Profile Backgrounds</button>
           </div>
 
           <div id="shop-tab-panel-models" class="shop-tab-panel">
@@ -7420,9 +7473,6 @@
           </div>
           <div id="shop-tab-panel-animations" class="shop-tab-panel" style="display:none;">
             <div id="shop-animations-grid"></div>
-          </div>
-          <div id="shop-tab-panel-backgrounds" class="shop-tab-panel" style="display:none;">
-            <div id="shop-backgrounds-grid"></div>
           </div>
         </div>
       </div>
@@ -7455,7 +7505,6 @@
             <button class="store-subnav-btn active" id="hangar-tab-models" onclick="showHangarTab('models')">Aircraft Collections</button>
             <button class="store-subnav-btn" id="hangar-tab-borders" onclick="showHangarTab('borders')">Avatar Decorations</button>
             <button class="store-subnav-btn" id="hangar-tab-animations" onclick="showHangarTab('animations')">Callsign Animations</button>
-            <button class="store-subnav-btn" id="hangar-tab-backgrounds" onclick="showHangarTab('backgrounds')">Profile Backgrounds</button>
           </div>
 
           <div id="hangar-tab-panel-models" class="shop-tab-panel">
@@ -7466,9 +7515,6 @@
           </div>
           <div id="hangar-tab-panel-animations" class="shop-tab-panel" style="display:none;">
             <div id="hangar-animations-grid"></div>
-          </div>
-          <div id="hangar-tab-panel-backgrounds" class="shop-tab-panel" style="display:none;">
-            <div id="hangar-backgrounds-grid"></div>
           </div>
         </div>
       </div>
@@ -7531,7 +7577,7 @@
        Deliberately separate from the Flight Store's wings-confirm modal:
        that one is wired to wingsConfirmContext / confirmWingsPurchase()
        and grants a shop item, which is not what's happening here. -->
-  <div class="shop-pay-overlay" id="bg-upload-confirm-overlay">
+  <div class="shop-pay-overlay" id="bg-upload-confirm-overlay" style="z-index: 2400;">
     <div class="shop-pay-box">
       <button class="shop-pay-x" onclick="cancelProfileBackgroundUpload()" aria-label="Close">&times;</button>
       <h3 id="bg-upload-confirm-title">Upload background?</h3>
@@ -9583,7 +9629,7 @@
       unreadChatCount = 0;
       updateUnreadBadge();
       resetChatForAccountSwitch();
-      userWallet = { wings: 0, ownedBorders: {}, ownedAnimations: {}, ownedBackgrounds: {}, ownedModels: {}, modelOrder: [], equippedBorder: null, equippedAnimation: null, equippedBackground: null, equippedModel: null };
+      userWallet = { wings: 0, ownedBorders: {}, ownedAnimations: {}, ownedModels: {}, modelOrder: [], equippedBorder: null, equippedAnimation: null, equippedModel: null };
       walletLoaded = false;
       pendingDailyClaim = null;
       updateShopWingsBalanceDisplay();
@@ -10674,48 +10720,6 @@
         { id: 'frost', name: 'Frostbite', priceWings: 200, cssClass: 'nick-frost', tier: 'Sonic' },
         { id: 'moire', name: 'Moiré', priceWings: 200, cssClass: 'nick-moire', tier: 'Sonic' }
       ],
-      backgrounds: [
-        { id: 'bg-ningguang', name: 'Ningguang', priceWings: 200, imageUrl: 'https://c4.wallpaperflare.com/wallpaper/285/701/304/anime-anime-girls-seymour-ningguang-genshin-impact-genshin-impact-hd-wallpaper-preview.jpg', tier: 'Sonic' },
-        { id: 'bg-zhongli', name: 'Zhongli', priceWings: 200, imageUrl: 'https://c4.wallpaperflare.com/wallpaper/395/419/689/genshin-impact-anime-boys-zhongli-genshin-impact-hd-wallpaper-preview.jpg', tier: 'Sonic' },
-        { id: 'bg-cityscape-muse', name: 'Cityscape Muse', priceWings: 200, imageUrl: 'https://c4.wallpaperflare.com/wallpaper/695/331/660/digital-art-artwork-women-cityscape-wallpaper-preview.jpg', tier: 'Sonic' },
-        { id: 'bg-neon-city', name: 'Neon Cyberpunk City', priceWings: 200, imageUrl: 'https://c4.wallpaperflare.com/wallpaper/843/56/876/night-artwork-futuristic-city-cyberpunk-wallpaper-preview.jpg', tier: 'Sonic' },
-        { id: 'bg-anime-city', name: 'Anime Cityscape', priceWings: 200, imageUrl: 'https://c4.wallpaperflare.com/wallpaper/291/819/697/illustration-city-anime-painting-wallpaper-preview.jpg', tier: 'Sonic' },
-        { id: 'bg-fantasy-landscape', name: 'Fantasy Landscape', priceWings: 200, imageUrl: 'https://c4.wallpaperflare.com/wallpaper/142/751/831/landscape-anime-digital-art-fantasy-art-wallpaper-preview.jpg', tier: 'Sonic' },
-        { id: 'bg-black-armor', name: 'Black Armor', priceWings: 200, imageUrl: 'https://c4.wallpaperflare.com/wallpaper/848/927/678/minimalism-texture-black-background-black-armor-wallpaper-preview.jpg', tier: 'Sonic' },
-        { id: 'bg-starry-sky', name: 'Starry Night Sky', priceWings: 200, imageUrl: 'https://c4.wallpaperflare.com/wallpaper/186/380/857/your-name-sky-stars-kimi-no-na-wa-wallpaper-preview.jpg', tier: 'Sonic' },
-        { id: 'bg-ganyu', name: 'Ganyu', priceWings: 200, imageUrl: 'https://c4.wallpaperflare.com/wallpaper/276/169/114/genshin-impact-ganyu-genshin-impact-yinshu-hd-wallpaper-preview.jpg', tier: 'Sonic' },
-        { id: 'bg-raiden-shogun', name: 'Raiden Shogun', priceWings: 200, imageUrl: 'https://c4.wallpaperflare.com/wallpaper/248/315/778/anime-girls-genshin-impact-raiden-shogun-genshin-impact-hd-wallpaper-preview.jpg', tier: 'Sonic' },
-        { id: 'bg-nightcap', name: 'Nightcap', priceWings: 200, imageUrl: 'https://c4.wallpaperflare.com/wallpaper/292/961/72/original-characters-anime-girls-alcohol-the-lm7-wallpaper-preview.jpg', tier: 'Sonic' },
-        { id: 'bg-legendary-motion', name: 'Animation Summer', priceWings: 1111, imageUrl: 'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExdDU2YWtvZXcwY3Zya3dnZGNuMXp1YXQ5cDR4MHdraTFrOWJwZDlrcCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/h46dQcou27sBaWw6RI/giphy.gif', tier: 'Supersonic' },
-        { id: 'bg-motion-02', name: '5 Centimeters Per Second', priceWings: 1111, imageUrl: 'https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExcW1scXU5MjZidW41a2wyZ2ltdGFxaXV1YXdqanF1MnB2aW8yaW4zayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/D8qXEyYgBvrzFSIE2y/giphy.gif', tier: 'Supersonic' },
-        { id: 'bg-motion-03', name: '5 Centimeters Per Second II', priceWings: 1111, imageUrl: 'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExazdvdDk0cWN2cjFqOXV0YnZ5aHh4cm05a2YzM3A4dmFsdHpxazl5NSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/oAvQOD7hJMXQFDDhBI/giphy.gif', tier: 'Supersonic' },
-        { id: 'bg-motion-04', name: 'Your Name Comet Tiamat', priceWings: 1111, imageUrl: 'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExdmk1OXN4NDMyMjl0YTl3Z25zenpwejU5MTVwYTlzd243ejk5dTE1ZSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/nWPLGmsjvdQ4g/200.webp', tier: 'Supersonic' },
-        { id: 'bg-motion-05', name: 'Kimi No Nawa?', priceWings: 1111, imageUrl: 'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExdmk1OXN4NDMyMjl0YTl3Z25zenpwejU5MTVwYTlzd243ejk5dTE1ZSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/xUNd9VlzCHOF72g4AU/200.webp', tier: 'Supersonic' },
-        { id: 'bg-motion-06', name: 'Your Name Red Thread of Fate', priceWings: 1111, imageUrl: 'https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExdmk1OXN4NDMyMjl0YTl3Z25zenpwejU5MTVwYTlzd243ejk5dTE1ZSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/xT1R9JrgVFXMizvGww/200.webp', tier: 'Supersonic' },
-        { id: 'bg-motion-08', name: 'Gihigugma Tika M', priceWings: 1111, imageUrl: 'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExdmk1OXN4NDMyMjl0YTl3Z25zenpwejU5MTVwYTlzd243ejk5dTE1ZSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/xUNd9OPRy8oNCGv2MM/200.webp', tier: 'Supersonic' },
-        { id: 'bg-motion-09', name: 'City Night', priceWings: 1111, imageUrl: 'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExcjBncG03OTZ2cGhreHN5eW4wMnc3czJvbG8zdHpvMGs3aWx6MmppdCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/oNAfZqEeriJQR01Jxe/200.webp', tier: 'Supersonic' },
-        { id: 'bg-motion-11', name: 'Dark Particle', priceWings: 1111, imageUrl: 'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExcjBncG03OTZ2cGhreHN5eW4wMnc3czJvbG8zdHpvMGs3aWx6MmppdCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/2lx83o4ZJIxYA/200.webp', tier: 'Supersonic' },
-        { id: 'bg-motion-12', name: 'Calm Nature', priceWings: 1111, imageUrl: 'https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExcjBncG03OTZ2cGhreHN5eW4wMnc3czJvbG8zdHpvMGs3aWx6MmppdCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/3oEduYJ5WzNGsAadKU/200.webp', tier: 'Supersonic' },
-        { id: 'bg-motion-14', name: 'Art Love', priceWings: 1111, imageUrl: 'https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExeGNiZDQyODZrZXNtZm81eDNxcnZqbm5zNG92Y3J4aDRyenRyZGZweSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/5iYAMIM8H8pWjBoPit/200.webp', tier: 'Supersonic' },
-        { id: 'bg-motion-15', name: 'Blue Galaxy', priceWings: 1111, imageUrl: 'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExeGNiZDQyODZrZXNtZm81eDNxcnZqbm5zNG92Y3J4aDRyenRyZGZweSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/cHcdcVJ0hppOL0Lamo/giphy.webp', tier: 'Supersonic' },
-        { id: 'bg-motion-16', name: 'Stars Colliding', priceWings: 1111, imageUrl: 'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExeGNiZDQyODZrZXNtZm81eDNxcnZqbm5zNG92Y3J4aDRyenRyZGZweSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/tdC6N1RKNp4swre2JY/giphy.webp', tier: 'Supersonic' },
-        { id: 'bg-motion-17', name: 'Exponential Flow', priceWings: 1111, imageUrl: 'https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExeGNiZDQyODZrZXNtZm81eDNxcnZqbm5zNG92Y3J4aDRyenRyZGZweSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/3o7btOfPKQb7mCLxBu/giphy.webp', tier: 'Supersonic' },
-        { id: 'bg-motion-18', name: 'F15 Eagle', priceWings: 1111, imageUrl: 'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExNjRzODNscTBkeWZ0MDhkeWhmdnB1Njh2MDVrbm04cmdza2UycGIzcCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/2nKi2xKYjhK0w/200.webp', tier: 'Supersonic' },
-        { id: 'bg-motion-19', name: 'Fighter Pilot', priceWings: 1111, imageUrl: 'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExNjRzODNscTBkeWZ0MDhkeWhmdnB1Njh2MDVrbm04cmdza2UycGIzcCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/rAmtvwCQRhNHa/200.webp', tier: 'Supersonic' },
-        { id: 'bg-motion-20', name: 'Anime Air Combat', priceWings: 1111, imageUrl: 'https://media1.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3dmU3dmx0ZzBqNXA1ZmF1eXFnMHpoN25kaWJ6MnN1YTV3djI2eXV2ZiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/JTbZV8TZSTcviGQXwY/200.webp', tier: 'Supersonic' },
-        { id: 'bg-motion-21', name: 'F-16 Fighting Falcon', priceWings: 1111, imageUrl: 'https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExNjRzODNscTBkeWZ0MDhkeWhmdnB1Njh2MDVrbm04cmdza2UycGIzcCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/vWvvVmlE6zNuCMWjJK/200.webp', tier: 'Supersonic' },
-        { id: 'bg-motion-22', name: 'Motion 22', priceWings: 1111, imageUrl: 'https://c.tenor.com/XL42fTf9FwwAAAAC/tenor.gif', tier: 'Supersonic' },
-        { id: 'bg-motion-23', name: 'Motion 23', priceWings: 1111, imageUrl: 'https://c.tenor.com/EnKFrD1qqrAAAAAd/tenor.gif', tier: 'Supersonic' },
-        { id: 'bg-motion-24', name: 'Motion 24', priceWings: 1111, imageUrl: 'https://c.tenor.com/0d0l5WfxJ_AAAAAC/tenor.gif', tier: 'Supersonic' },
-        { id: 'bg-motion-25', name: 'Motion 25', priceWings: 1111, imageUrl: 'https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExdGhwNHJxOTRwdnFrdnozbml5aDZpeDQwMDk0a3IzcWlpeG8yeG9scSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/qQgurUJnuefEtLBdp0/giphy.gif', tier: 'Supersonic' },
-        { id: 'bg-motion-26', name: 'Motion 26', priceWings: 1111, imageUrl: 'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExc2tveTcxcWxmZTgwcDMzb3M5ZnNlY3IwOGRybTQ3OWs5YzhjMTFoZSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/o3dftQFlgWBuhYnYZ8/giphy.gif', tier: 'Supersonic' }
-      ],
-      // ---- purchasable 3D aircraft models ----
-      // Bought once, then (a) unlocks the topbar "3D VIEWER" for that model
-      // and (b) shows up under "AIRCRAFT COLLECTIONS" on the owner's profile.
-      // Uses the same imageUrl-preview branch as `backgrounds` in
-      // renderShopGrid() (a thumbnail tile), so no new preview markup is
-      // needed there. modelSrc is the actual .gltf path the viewer loads.
       models: [
         { id: 'mig-21', name: 'MiG-21', priceWings: 1111, imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg/640px-Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg', tier: 'Supersonic', modelSrc: 'MiG_Project_1.42/MiG_Project_1.42.gltf' },
         { id: 'f22', name: 'F-22 Raptor', priceWings: 1500, imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Lockheed_Martin_F-22A_Raptor_JSOH.jpg?width=640', tier: 'Supersonic', modelSrc: 'F22/F22.gltf' }
@@ -10728,7 +10732,6 @@
     const TIER_PRICE_WINGS = {
       borders: { Sonic: 200, Supersonic: 500 },
       animations: { Sonic: 200, Supersonic: 1111 },
-      backgrounds: { Sonic: 200, Supersonic: 1111 },
       models: { Sonic: 200, Supersonic: 1111 }
     };
     // ---- admin shop overrides (adjust tier / permanently delete) ----
@@ -10740,7 +10743,7 @@
     // it never touches SHOP_ITEMS itself or the wallet's ownership flag,
     // so a still-equipped cosmetic keeps rendering correctly everywhere
     // else in the app, e.g. on chat avatars).
-    let shopOverrides = { borders: {}, animations: {}, backgrounds: {} };
+    let shopOverrides = { borders: {}, animations: {} };
     let shopOverridesRef = null;
 
     function initShopOverrides() {
@@ -10753,8 +10756,7 @@
           const val = snap.val() || {};
           shopOverrides = {
             borders: val.borders || {},
-            animations: val.animations || {},
-            backgrounds: val.backgrounds || {}
+            animations: val.animations || {}
           };
           // If a wallet is already loaded in this session and something it
           // has equipped just got deleted, unequip it right now instead of
@@ -10957,8 +10959,8 @@
     function openShopItemPreview(category, id) {
       const item = effectiveShopItem(category, id);
       if (!item) return;
-      // Models don't equip onto the profile look like borders/animations/
-      // backgrounds do — previewing one should show the actual 3D model,
+      // Models don't equip onto the profile look like borders/animations
+      // do — previewing one should show the actual 3D model,
       // not a mock "what would my profile look like" card. Reuses the same
       // MiG 3D Viewer popup as the owned-aircraft viewer, just without the
       // ownership gate, since this is a pre-purchase preview.
@@ -10975,10 +10977,8 @@
       const animClass = category === 'animations'
         ? item.cssClass
         : ((signedIn && walletLoaded) ? (animClassFor(userWallet.equippedAnimation) || '') : '');
-      const bannerCss = category === 'backgrounds'
-        ? profileBackgroundCss(item.id)
-        : profileBackgroundCss(signedIn ? myProfile.background : null);
-      const categoryLabel = category === 'borders' ? 'Avatar border' : category === 'animations' ? 'Name animation' : 'Profile background';
+      const bannerCss = profileBackgroundCss(signedIn ? myProfile.background : null);
+      const categoryLabel = category === 'borders' ? 'Avatar border' : category === 'animations' ? 'Name animation' : category === 'models' ? 'Aircraft model' : 'Item';
 
       document.getElementById('shop-item-preview-body').innerHTML = `
         <div class="profile-card-banner" style="background:${bannerCss};">
@@ -11019,7 +11019,7 @@
 
     function getDeletedShopItems() {
       const out = [];
-      ['borders', 'animations', 'backgrounds', 'models'].forEach((category) => {
+      ['borders', 'animations', 'models'].forEach((category) => {
         const overrides = shopOverrides[category] || {};
         Object.keys(overrides).forEach((id) => {
           if (!overrides[id] || !overrides[id].deleted) return;
@@ -11109,7 +11109,7 @@
       return CREATE_WINGS_CHECKOUT_URL && !CREATE_WINGS_CHECKOUT_URL.startsWith('PASTE_');
     }
 
-    let userWallet = { wings: 0, ownedBorders: {}, ownedAnimations: {}, ownedBackgrounds: {}, ownedModels: {}, modelOrder: [], equippedBorder: null, equippedAnimation: null, equippedBackground: null, equippedModel: null };
+    let userWallet = { wings: 0, ownedBorders: {}, ownedAnimations: {}, ownedModels: {}, modelOrder: [], equippedBorder: null, equippedAnimation: null, equippedModel: null };
     let walletLoaded = false;
     let walletListenerRef = null;
     // Tracks the last wings total we saw, so the realtime listener can tell
@@ -11323,11 +11323,15 @@
 
     // Maps each shop category to its wallet field names, so every place
     // that reads/writes ownership or equip state can support borders,
-    // animations, and backgrounds (and any future category) the same way.
+    // animations, and models (and any future category) the same way.
+    // Profile backgrounds used to be a category here too — that store
+    // category has been retired (uploading your own is the only way to
+    // set a background now), so it's gone from this map. ownedBackgrounds
+    // and equippedBackground still exist as dead fields on old wallet
+    // records; loadWallet() strips them on load (see below).
     const SHOP_CATEGORY_FIELDS = {
       borders: { ownedKey: 'ownedBorders', equippedKey: 'equippedBorder' },
       animations: { ownedKey: 'ownedAnimations', equippedKey: 'equippedAnimation' },
-      backgrounds: { ownedKey: 'ownedBackgrounds', equippedKey: 'equippedBackground' },
       models: { ownedKey: 'ownedModels', equippedKey: 'equippedModel' }
     };
 
@@ -11383,22 +11387,30 @@
         walletListenerRef = walletRef(user.nickname);
         walletListenerRef.on('value', (snap) => {
           const data = snap.val() || {};
+          // Profile backgrounds were retired as a Flight Store/Hangar
+          // category — ownedBackgrounds and equippedBackground are
+          // deliberately left out of the rebuilt wallet object below (not
+          // just hidden) so that once this wallet gets saved again, those
+          // fields are actually gone from Firebase, for every user,
+          // regardless of what they'd purchased. hadLegacyBackgroundData
+          // flags that this account still has old data, forcing that save
+          // to happen right away instead of waiting for some unrelated
+          // change to trigger it.
+          const hadLegacyBackgroundData = !!(data.ownedBackgrounds && Object.keys(data.ownedBackgrounds).length) || !!data.equippedBackground;
           const wallet = {
             wings: data.wings || 0,
             ownedBorders: data.ownedBorders || {},
             ownedAnimations: data.ownedAnimations || {},
-            ownedBackgrounds: data.ownedBackgrounds || {},
             ownedModels: data.ownedModels || {},
             modelOrder: data.modelOrder || [],
             equippedBorder: data.equippedBorder || null,
             equippedAnimation: data.equippedAnimation || null,
-            equippedBackground: data.equippedBackground || null,
             equippedModel: data.equippedModel || null,
             lastLoginDate: data.lastLoginDate || null,
             loginStreak: data.loginStreak || 0
           };
 
-          const wasCleaned = stripDiscontinuedItems(wallet) || stripDeletedEquippedItems(wallet);
+          const wasCleaned = stripDiscontinuedItems(wallet) || stripDeletedEquippedItems(wallet) || hadLegacyBackgroundData;
 
           // Detect a balance increase that this tab didn't already toast for
           // itself (e.g. Wings credited by paymongoWebhook after a purchase,
@@ -11784,24 +11796,15 @@
       });
     }
 
-    // Applies whichever wallpaper (if any) the user has equipped as their
+    // Applies the user's custom-uploaded background (if any) as their
     // profile info background, shown on the banner of their own profile
     // card. Falls back to the regular profile banner presets when nothing
-    // is equipped. This is purely personal — it isn't broadcast to presence.
+    // is set. This is purely personal — it isn't broadcast to presence.
+    // Profile backgrounds are no longer a Hangar/Shop-equippable category
+    // — myProfile.background (a custom-uploaded URL, or null) is the only
+    // source now.
     function applyEquippedBackground() {
-      // Read straight off userWallet first — the exact same "single source
-      // of truth, applied immediately, no round-trip" approach
-      // applyOwnCosmeticsToBadge() already uses for equippedBorder /
-      // equippedAnimation, which is why avatar decorations show up in the
-      // sidebar the instant EQUIP is clicked in the Hangar. Background
-      // previously only ever read myProfile.background here, which is a
-      // separate object only kept in sync by whichever code path happened
-      // to touch it — routing through userWallet first removes that gap
-      // entirely for the Hangar/Shop-equip case. myProfile.background is
-      // still the fallback, since a free solid-color pick made in Edit
-      // Profile isn't tracked in the wallet at all.
-      const walletBackground = walletLoaded ? userWallet.equippedBackground : null;
-      applySidebarMeCover(walletBackground || myProfile.background || null);
+      applySidebarMeCover(myProfile.background || null);
       if (currentChatUser && profileCardOpenFor === currentChatUser.nickname) {
         renderProfileCard(currentChatUser.nickname, myProfile);
       }
@@ -11812,14 +11815,13 @@
       if (!view || !view.classList.contains('visible')) return;
       renderShopGrid('borders', 'shop-borders-grid');
       renderShopGrid('animations', 'shop-animations-grid');
-      renderShopGrid('backgrounds', 'shop-backgrounds-grid');
       renderShopGrid('models', 'shop-models-grid');
       updateShopWingsBalanceDisplay();
     }
 
     function showShopTab(tab) {
-      const panels = { borders: 'shop-tab-panel-borders', animations: 'shop-tab-panel-animations', backgrounds: 'shop-tab-panel-backgrounds', models: 'shop-tab-panel-models' };
-      const tabs = { borders: 'shop-tab-borders', animations: 'shop-tab-animations', backgrounds: 'shop-tab-backgrounds', models: 'shop-tab-models' };
+      const panels = { borders: 'shop-tab-panel-borders', animations: 'shop-tab-panel-animations', models: 'shop-tab-panel-models' };
+      const tabs = { borders: 'shop-tab-borders', animations: 'shop-tab-animations', models: 'shop-tab-models' };
       Object.keys(panels).forEach((key) => {
         const panel = document.getElementById(panels[key]);
         const tabBtn = document.getElementById(tabs[key]);
@@ -11924,9 +11926,7 @@
     // collapsing to just the card's own padding.
     function fillerCardsHtml(category, count) {
       if (count <= 0) return '';
-      const previewHtml = category === 'backgrounds'
-        ? `<span class="shop-item-preview bg-preview">&nbsp;</span>`
-        : `<span class="shop-item-preview">&nbsp;</span>`;
+      const previewHtml = `<span class="shop-item-preview">&nbsp;</span>`;
       const card = `
         <div class="shop-item-card shop-item-filler" aria-hidden="true">
           <span class="shop-item-tier">&nbsp;</span>
@@ -11940,8 +11940,8 @@
 
     // ---- hangar: every owned item, one flat 3-column grid per category,
     // paginated 9 (3x3) at a time instead of grouped into tier sections ----
-    const hangarPage = { borders: 1, animations: 1, backgrounds: 1, models: 1 };
-    const HANGAR_GRID_IDS = { borders: 'hangar-borders-grid', animations: 'hangar-animations-grid', backgrounds: 'hangar-backgrounds-grid', models: 'hangar-models-grid' };
+    const hangarPage = { borders: 1, animations: 1, models: 1 };
+    const HANGAR_GRID_IDS = { borders: 'hangar-borders-grid', animations: 'hangar-animations-grid', models: 'hangar-models-grid' };
 
     function goToHangarPage(category, page) {
       hangarPage[category] = page;
@@ -11955,10 +11955,9 @@
       const grids = {
         borders: document.getElementById('hangar-borders-grid'),
         animations: document.getElementById('hangar-animations-grid'),
-        backgrounds: document.getElementById('hangar-backgrounds-grid'),
         models: document.getElementById('hangar-models-grid')
       };
-      if (!grids.borders || !grids.animations || !grids.backgrounds || !grids.models) return;
+      if (!grids.borders || !grids.animations || !grids.models) return;
 
       if (!walletLoaded) {
         Object.values(grids).forEach((g) => { g.innerHTML = ''; });
@@ -11979,8 +11978,8 @@
           ? `<span class="shop-item-preview model-preview"><model-viewer src="${item.modelSrc}" alt="${escapeHtml(item.name)}" auto-rotate rotation-per-second="25deg" disable-zoom interaction-prompt="none" shadow-intensity="0" exposure="1"></model-viewer></span>`
           : `<span class="shop-item-preview bg-preview" style="background-image:url('${item.imageUrl}')"></span>`;
 
-        // Models don't equip onto the profile look like borders/animations/
-        // backgrounds do (same reasoning as openShopItemPreview above) — so
+        // Models don't equip onto the profile look like borders/animations
+        // do (same reasoning as openShopItemPreview above) — so
         // instead of an EQUIP toggle, their Hangar card gets a VIEW button
         // that opens the actual 3D model, same as tapping one of these in
         // the Aircraft Collections grid on a profile card.
@@ -12002,7 +12001,7 @@
       }
 
       let totalOwned = 0;
-      ['borders', 'animations', 'backgrounds', 'models'].forEach((category) => {
+      ['borders', 'animations', 'models'].forEach((category) => {
         const owned = userWallet[SHOP_CATEGORY_FIELDS[category].ownedKey];
         // One flat list, sorted purely alphabetically — each card already
         // carries its own tier badge, so grouping by rarity isn't needed.
@@ -12032,8 +12031,8 @@
     }
 
     function showHangarTab(tab) {
-      const panels = { borders: 'hangar-tab-panel-borders', animations: 'hangar-tab-panel-animations', backgrounds: 'hangar-tab-panel-backgrounds', models: 'hangar-tab-panel-models' };
-      const tabs = { borders: 'hangar-tab-borders', animations: 'hangar-tab-animations', backgrounds: 'hangar-tab-backgrounds', models: 'hangar-tab-models' };
+      const panels = { borders: 'hangar-tab-panel-borders', animations: 'hangar-tab-panel-animations', models: 'hangar-tab-panel-models' };
+      const tabs = { borders: 'hangar-tab-borders', animations: 'hangar-tab-animations', models: 'hangar-tab-models' };
       Object.keys(panels).forEach((key) => {
         const panel = document.getElementById(panels[key]);
         const tabBtn = document.getElementById(tabs[key]);
@@ -12046,8 +12045,8 @@
     // and get a small badge on each card, but no longer get their own
     // section/heading — the whole category is one flat, paginated 3x3 grid.
     const SHOP_TIER_ORDER = ['Subsonic', 'Sonic', 'Supersonic'];
-    const shopPage = { borders: 1, animations: 1, backgrounds: 1, models: 1 };
-    const SHOP_GRID_IDS = { borders: 'shop-borders-grid', animations: 'shop-animations-grid', backgrounds: 'shop-backgrounds-grid', models: 'shop-models-grid' };
+    const shopPage = { borders: 1, animations: 1, models: 1 };
+    const SHOP_GRID_IDS = { borders: 'shop-borders-grid', animations: 'shop-animations-grid', models: 'shop-models-grid' };
 
     function goToShopPage(category, page) {
       shopPage[category] = page;
@@ -12262,18 +12261,6 @@
 
       saveWallet();
       logWingsTransaction(currentChatUser.nickname, `Bought "${item.name}"`, -item.priceWings);
-      // Same sidebar-cover sync as toggleEquipCosmetic() below: buying a
-      // background auto-equips it, so myProfile.background (and the saved
-      // profile doc) need to be pointed at it too, not just the wallet.
-      if (category === 'backgrounds') {
-        myProfile = { ...myProfile, background: id };
-        myProfileLoaded = true;
-        if (currentChatUser && currentChatUser.nickname) {
-          profileCache[currentChatUser.nickname] = myProfile;
-          try { profileRef(currentChatUser.nickname).update({ background: id }); } catch (err) { console.error('Profile background sync error:', err); }
-        }
-        applySidebarMeCover(id);
-      }
       applyEquippedCosmeticsToPresence();
       applyEquippedBackground();
       updateShopWingsBalanceDisplay();
@@ -12305,21 +12292,6 @@
         applyEquippedBackground();
       } catch (err) {
         console.error('Cosmetic apply error:', err);
-      }
-      // The background category is also the profile banner, which is
-      // otherwise controlled from Edit Profile (color swatches or the
-      // purchased-backgrounds picker) — keep both paths pointed at the same
-      // saved value so equipping here actually shows up on the profile card
-      // for anyone viewing it later (this part is persistence, separate
-      // from the instant sidebar update above).
-      if (category === 'backgrounds') {
-        const newBackground = userWallet.equippedBackground;
-        myProfile = { ...myProfile, background: newBackground };
-        myProfileLoaded = true;
-        if (currentChatUser && currentChatUser.nickname) {
-          profileCache[currentChatUser.nickname] = myProfile;
-          try { profileRef(currentChatUser.nickname).update({ background: newBackground }); } catch (err) { console.error('Profile background sync error:', err); }
-        }
       }
       applyEquippedCosmeticsToPresence();
       renderShopIfVisible();
@@ -13205,6 +13177,7 @@
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
+        if (document.getElementById('bg-fee-note-overlay').classList.contains('visible')) { closeBgFeeNoteModal(); return; }
         if (document.getElementById('bg-upload-confirm-overlay').classList.contains('visible')) { cancelProfileBackgroundUpload(); return; }
         closeNicknameList(); closeUserProfile(); closeEditBio(); closeEditBackground(); closeFlightAlerts();
       }
@@ -13251,29 +13224,16 @@
       { id: 'legendary', label: 'Legendary', css: 'linear-gradient(90deg, #ff2d78, #ffbe0b, #3ce7b1, #3a86ff, #c78bff)' }
     ];
 
-    // Free solid-color backgrounds — same 7 colors used for the Flight
-    // Store's borders/callsign cosmetics, always available to everyone
-    // (no purchase needed).
-    const BACKGROUND_COLORS = [
-      { id: 'color-gold', name: 'Gold', hex: '#ffd166' },
-      { id: 'color-neon', name: 'Blue', hex: '#3a86ff' },
-      { id: 'color-fire', name: 'Orange', hex: '#ff6b35' },
-      { id: 'color-red', name: 'Red', hex: '#ff4d4d' },
-      { id: 'color-purple', name: 'Purple', hex: '#a374ff' },
-      { id: 'color-pink', name: 'Pink', hex: '#ff6fb5' },
-      { id: 'color-green', name: 'Green', hex: '#4ade80' }
-    ];
-
-
     function profileBackgroundCss(background) {
       if (!background) return PROFILE_BACKGROUNDS[0].css;
       if (/^https?:\/\//i.test(background)) {
         return `url('${background.replace(/'/g, '%27')}') center / cover no-repeat`;
       }
-      // Free solid-color picks.
-      const colorPreset = BACKGROUND_COLORS.find(c => c.id === background);
-      if (colorPreset) return colorPreset.hex;
-      // Purchased Flight Store backgrounds are looked up first...
+      // Profile backgrounds are no longer sold in the Flight Store, so
+      // findShopItem('backgrounds', ...) will never match — this only
+      // exists so a profile that still has an old purchased-background id
+      // saved (from before that store category was retired) falls through
+      // to the legacy free presets below instead of rendering nothing.
       const shopItem = findShopItem('backgrounds', background);
       if (shopItem) return `url('${shopItem.imageUrl.replace(/'/g, '%27')}') center / cover no-repeat`;
       // ...then fall back to the old free presets, kept only so profiles
@@ -14515,10 +14475,6 @@
 
     // ---- edit profile modal ----
     let selectedProfileBackground = null;
-    // Remembers the last purchased background (image), independent of
-    // whichever background is currently selected/active, so the picker
-    // tile can keep showing it as a thumbnail even while a color is equipped.
-    let lastPurchasedBackground = null;
 
     function openEditBio() {
       if (!currentChatUser) return;
@@ -14546,18 +14502,14 @@
     function openEditBackground() {
       if (!currentChatUser) return;
       document.getElementById('profile-card-overlay').classList.remove('visible');
-      // A background you own from the Flight Store, or a previously-uploaded
-      // custom image/GIF (a plain URL not matching any shop item), can be
-      // selected here. Free solid colors were removed as a pickable option —
-      // if your saved background is still an old free color (or otherwise
-      // no longer available), start with nothing selected rather than
-      // showing it, since there's no tile left to highlight for it.
-      const owned = walletLoaded ? (userWallet.ownedBackgrounds || {}) : {};
-      const isUploadedUrl = myProfile.background && /^https?:\/\//i.test(myProfile.background) && !owned[myProfile.background];
-      selectedProfileBackground = (myProfile.background && (owned[myProfile.background] || isUploadedUrl)) ? myProfile.background : null;
-      if (myProfile.background && owned[myProfile.background]) {
-        lastPurchasedBackground = myProfile.background;
-      }
+      // Profile backgrounds are no longer sold in the Flight Store — the
+      // only kind of background a profile can have now is a previously
+      // uploaded custom image/GIF (a plain URL). If a profile still points
+      // at an old shop item ID (a pre-existing non-URL value from before
+      // that store category was retired), start with nothing selected,
+      // since there's no tile left to highlight for it.
+      const isUploadedUrl = myProfile.background && /^https?:\/\//i.test(myProfile.background);
+      selectedProfileBackground = isUploadedUrl ? myProfile.background : null;
       if (isUploadedUrl) {
         lastUploadedBackground = myProfile.background;
       }
@@ -14584,47 +14536,24 @@
       document.getElementById('profile-edit-charcount').textContent = `${val.length} / 50`;
     }
 
-    // An "upload your own" tile plus one more tile that opens a picker for
-    // any backgrounds the user has purchased. Free solid colors used to be
-    // a third option here and have been removed — profileBackgroundCss()
-    // still resolves old saved color IDs so existing profiles keep
-    // rendering correctly, but they're no longer offered as a pick. Each
-    // tile previews the last background you picked of that kind (if any),
-    // so it doesn't just vanish when the other one is the active
-    // selection — only its highlighted border reflects what's actually
-    // equipped right now.
+    // A single "upload your own" tile — the Flight Store no longer sells
+    // profile backgrounds, so uploading is the only way to set one. The
+    // tile previews the last background you uploaded (if any), so it
+    // doesn't vanish when nothing's currently equipped.
     let lastUploadedBackground = null;
     function renderProfileBgGrid() {
       const grid = document.getElementById('profile-bg-grid');
-      const owned = walletLoaded ? (userWallet.ownedBackgrounds || {}) : {};
-      const previewItem = lastPurchasedBackground ? SHOP_ITEMS.backgrounds.find(item => item.id === lastPurchasedBackground && owned[item.id]) : null;
-      const isActive = previewItem && selectedProfileBackground === previewItem.id;
-
-      const purchasedTileStyle = previewItem
-        ? `background-image:url('${previewItem.imageUrl.replace(/'/g, '%27')}'); background-size:cover; background-position:center;`
-        : '';
-      const purchasedTile = `
-        <div class="profile-bg-swatch purchased-tile${isActive ? ' selected' : ''}"
-             style="grid-column: span 2; ${purchasedTileStyle}"
-             onclick="openPurchasedBgPicker()">
-          <span class="purchased-tile-icon">&#9998;</span>
-        </div>
-      `;
-
       const uploadIsActive = lastUploadedBackground && selectedProfileBackground === lastUploadedBackground;
       const uploadTileStyle = lastUploadedBackground
         ? `background-image:url('${lastUploadedBackground.replace(/'/g, '%27')}'); background-size:cover; background-position:center;`
         : '';
-      const uploadTile = `
-        <div class="profile-bg-swatch purchased-tile${uploadIsActive ? ' selected' : ''}"
-             style="grid-column: span 2; ${uploadTileStyle}"
-             onclick="document.getElementById('profile-bg-upload-input').click()"
-             title="Upload your own image (200 Wings) or GIF (1,111 Wings)">
-          <span class="purchased-tile-icon">&#128247;</span>
+      grid.innerHTML = `
+        <div class="profile-bg-swatch purchased-tile upload-tile${uploadIsActive ? ' selected' : ''}"
+             style="grid-column: 1 / -1; ${uploadTileStyle}"
+             onclick="document.getElementById('profile-bg-upload-input').click()">
+          <span class="upload-tile-icon">&#9998;</span>
         </div>
       `;
-
-      grid.innerHTML = uploadTile + purchasedTile;
     }
 
     // A GIF is whatever the browser reports as image/gif, with a filename
@@ -14699,6 +14628,14 @@
       input.value = '';
     }
 
+    function openBgFeeNoteModal() {
+      document.getElementById('bg-fee-note-overlay').classList.add('visible');
+    }
+
+    function closeBgFeeNoteModal() {
+      document.getElementById('bg-fee-note-overlay').classList.remove('visible');
+    }
+
     function cancelProfileBackgroundUpload() {
       pendingProfileBackgroundUpload = null;
       document.getElementById('bg-upload-confirm-overlay').classList.remove('visible');
@@ -14770,27 +14707,6 @@
       });
     }
 
-    function openPurchasedBgPicker() {
-      const grid = document.getElementById('purchased-bg-grid');
-      const owned = walletLoaded ? (userWallet.ownedBackgrounds || {}) : {};
-      const ownedItems = SHOP_ITEMS.backgrounds.filter((item) => owned[item.id]);
-
-      if (!ownedItems.length) {
-        grid.innerHTML = '<p class="profile-edit-hint" style="margin:0;">You haven\u2019t purchased any backgrounds yet. Visit the Flight Store to buy one.</p>';
-      } else {
-        grid.innerHTML = ownedItems.map(item => `
-          <div class="profile-bg-swatch${(selectedProfileBackground === item.id) ? ' selected' : ''}"
-               style="background-image:url('${item.imageUrl.replace(/'/g, '%27')}'); background-size:cover; background-position:center;"
-               onclick="lastPurchasedBackground='${item.id}'; selectProfileBackground('${item.id}'); closePurchasedBgPicker();"></div>
-        `).join('');
-      }
-      document.getElementById('purchased-bg-overlay').classList.add('visible');
-    }
-
-    function closePurchasedBgPicker() {
-      document.getElementById('purchased-bg-overlay').classList.remove('visible');
-    }
-
     function selectProfileBackground(id) {
       selectedProfileBackground = id;
       renderProfileBgGrid();
@@ -14853,23 +14769,13 @@
       const status = document.getElementById('profile-edit-bg-status');
       const background = selectedProfileBackground || null;
 
-      // Keep the wallet's "equipped background" in sync with whatever's
-      // picked here — the Hangar's EQUIPPED badge reads userWallet.equippedBackground,
-      // not the profile doc, so without this the Hangar would keep showing
-      // the old (or no) background as equipped after a change made here.
-      // A purchased item stays equipped in the Hangar; a free solid color
-      // isn't a Hangar item, so it clears whatever was equipped there.
-      const owned = walletLoaded ? (userWallet.ownedBackgrounds || {}) : {};
-      const isPurchasedBackground = !!(background && owned[background]);
-      userWallet.equippedBackground = isPurchasedBackground ? background : null;
-      saveWallet();
       renderShopIfVisible();
       renderHangarIfVisible();
       // Instant sidebar update, same as toggleEquipCosmetic() in the
       // Hangar — this whole function otherwise only touches the sidebar
       // after the profileRef().set() round-trip resolves (or not at all,
       // in the no-database branch below), which is exactly why picking a
-      // free solid color here never used to show up live.
+      // background here never used to show up live.
       applySidebarMeCover(background);
 
       const nickname = currentChatUser.nickname;
