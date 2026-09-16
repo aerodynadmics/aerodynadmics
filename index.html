@@ -1319,6 +1319,14 @@
     font-size: 13px;
     color: var(--paper);
     background-color: rgba(255,255,255,0.03);
+    /* Default look for a row whose user has no profile background
+       equipped — same dark blueprint-toned fade as the "me" card below,
+       instead of a flat near-invisible tint. Rows that DO have a cover
+       photo/gradient/color get their backgroundImage set inline in JS
+       (see the .has-cover row-building code), which overrides this. */
+    background-image: linear-gradient(135deg, rgba(8,39,68,0.4) 0%, rgba(3,14,26,0.55) 100%);
+    background-size: cover;
+    background-position: center;
     border-radius: 6px;
     margin-bottom: 4px;
     cursor: pointer;
@@ -1559,6 +1567,12 @@
        on all sides instead of the card touching the sidebar edges. */
     margin: 6px 10px 10px;
     background-color: rgba(255,255,255,0.03);
+    /* Default look when no profile background is equipped: a subtle dark
+       diagonal fade in the blueprint palette, instead of a flat near-
+       invisible tint, so the card still reads as "there" against the
+       sidebar. Cleared inline (bar.style.backgroundImage) whenever a real
+       cover photo/gradient/color is equipped — see applySidebarMeCover(). */
+    background-image: linear-gradient(135deg, rgba(8,39,68,0.4) 0%, rgba(3,14,26,0.55) 100%);
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -13250,15 +13264,28 @@
     // actually look like", same as the expanded profile popover.
     function resolveProfileCover(background) {
       if (!background) return null;
-      const css = profileBackgroundCss(background);
-      const urlMatch = /^url\(([^)]*)\)/.exec(css);
-      if (urlMatch) {
-        return { type: 'image', value: urlMatch[1].replace(/^['"]|['"]$/g, '') };
+      if (/^https?:\/\//i.test(background)) {
+        return { type: 'image', value: background };
       }
-      if (/^linear-gradient\(/.test(css)) {
-        return { type: 'gradient', value: css };
+      const shopItem = findShopItem('backgrounds', background);
+      if (shopItem) return { type: 'image', value: shopItem.imageUrl };
+      const preset = PROFILE_BACKGROUNDS.find(b => b.id === background);
+      if (preset) {
+        return /^linear-gradient\(/.test(preset.css)
+          ? { type: 'gradient', value: preset.css }
+          : { type: 'color', value: preset.css };
       }
-      return { type: 'color', value: css };
+      // background holds a truthy but unresolvable value — a stale/removed
+      // reference (e.g. an old shop-background id, or a field that got
+      // cleared to "" or some other non-empty leftover instead of a true
+      // null). profileBackgroundCss() would silently paper over this by
+      // falling back to the default "Blueprint" preset, which is exactly
+      // what caused previously-covered rows to render a lighter background
+      // than rows that never had one equipped at all, instead of both
+      // falling through to the same "no cover" state. Treat it the same as
+      // no background at all here, so the sidebar/list always agree with
+      // whether a user has genuinely got something equipped.
+      return null;
     }
 
     function profileRef(nickname) {
