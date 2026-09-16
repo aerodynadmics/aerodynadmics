@@ -55,6 +55,8 @@
   }
 
   * { box-sizing: border-box; }
+  button:focus { outline: none; }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   html, body {
     margin: 0;
@@ -2276,11 +2278,10 @@
     outline-offset: -1px;
   }
   .flight-alert-row.wings-alert-row.unread {
-    background: rgba(127, 168, 201, 0.10);
     box-shadow: inset 3px 0 0 var(--rivet);
   }
   .flight-alert-row.wings-alert-row.unread:hover {
-    background: rgba(127, 168, 201, 0.16);
+    background: rgba(255,255,255,0.04);
   }
   .flight-alert-row.wings-alert-row.unread .flight-alert-name {
     color: var(--paper);
@@ -3380,7 +3381,7 @@
 
   .chat-panel {
     position: fixed;
-    bottom: 140px;
+    bottom: 80px;
     right: 20px;
     z-index: 60;
     width: 320px;
@@ -3853,8 +3854,8 @@
     font-size: 17px;
   }
   .gift-wings-self {
-    background: rgba(255, 177, 0, 0.08);
-    border: 1px solid rgba(255, 177, 0, 0.3);
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--line);
     border-radius: 8px;
     padding: 14px 16px;
     margin-bottom: 20px;
@@ -4344,7 +4345,7 @@
   .chat-emoji-item:hover { background: rgba(255,177,0,0.15); }
 
   @media (max-width: 480px) {
-    .chat-panel { width: calc(100vw - 32px); right: 16px; bottom: 140px; max-height: 55vh; }
+    .chat-panel { width: calc(100vw - 32px); right: 16px; bottom: 80px; max-height: 55vh; }
     .chat-fab { right: 16px; bottom: 76px; }
   }
 
@@ -6384,12 +6385,12 @@
 }
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js" defer></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js" defer></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js" defer></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-database-compat.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-auth-compat.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-storage-compat.js" defer></script>
 <!-- MiG 3D Viewer: model-viewer component -->
-<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.0.0/dist/model-viewer.min.js"></script>
 <style>
   #mig-viewer-overlay {
     display: none;
@@ -6695,11 +6696,10 @@
     </div>
   </div>
 
-  <div class="nick-modal-overlay" id="wings-alert-detail-overlay" style="z-index: 2100;">
-    <div class="nick-modal" style="max-width: 340px;">
+  <div class="nick-modal-overlay" id="wings-alert-detail-overlay" style="z-index: 2100;" onclick="closeWingsAlertDetail()">
+    <div class="nick-modal" style="max-width: 340px;" onclick="event.stopPropagation();">
       <div class="nick-modal-head">
-        <h3>&#129405; Wings Update</h3>
-        <button class="nick-modal-close" onclick="closeWingsAlertDetail()">&times;</button>
+        <h3>Wings Update</h3>
       </div>
       <div class="nick-modal-body" style="padding: 20px 18px;">
         <div class="wings-alert-detail-amount" id="wings-alert-detail-amount"></div>
@@ -6993,7 +6993,6 @@
             <button id="admin-gift-wings-btn" onclick="openGiftWingsModal(); closeAdminSettingsMenu();">ADJUST BALANCE</button>
             <button id="admin-mock-exams-btn" onclick="openMockExamAdmin(); closeAdminSettingsMenu();">MOCK EXAMS</button>
             <button id="admin-deleted-items-btn" onclick="openDeletedItemsModal(); closeAdminSettingsMenu();">DELETED SHOP ITEMS</button>
-            <button id="admin-clean-presence-btn" onclick="cleanupDeletedAccountPresenceNodes(); closeAdminSettingsMenu();">CLEAN UP DELETED PRESENCE</button>
             <button id="admin-toggle-flightstore-btn" onclick="toggleFlightStoreEnabled(); closeAdminSettingsMenu();">DISABLE FLIGHT STORE</button>
           </div>
         </div>
@@ -7667,8 +7666,6 @@
       <hr class="gift-wings-divider">
       <h3>🪽 Adjust Another User's Balance</h3>
       <div id="gift-wings-items"></div>
-      <hr class="gift-wings-divider">
-      <button type="button" class="gift-wings-self-btn reduce" style="width:100%;" onclick="resetAllWingsHistory()">🗑️ Reset All Wings History (all users)</button>
     </div>
   </div>
 
@@ -11008,7 +11005,6 @@
         </div>
         <div class="profile-card-body">
           <div class="profile-card-nickname ${animClass}" data-text="${escapeHtml(nickname)}">${escapeHtml(nickname)}</div>
-          <div class="profile-card-status-row"><span class="nick-status-tag">${categoryLabel}: ${escapeHtml(item.name)}</span></div>
           <div class="profile-card-divider"></div>
           <p class="profile-card-section-label">Preview only. Nothing's bought or equipped yet.</p>
         </div>
@@ -11663,8 +11659,8 @@
           input.value = '';
           const verb = sign > 0 ? 'Added' : 'Removed';
           const wingsNote = giftWingsMode === 'gift'
-            ? `You gifted yourself ${amount.toLocaleString()} 🪽 via the admin panel`
-            : `You adjusted your own balance by ${delta > 0 ? '+' : ''}${delta.toLocaleString()} 🪽 via the admin panel`;
+            ? `You gifted yourself +${amount.toLocaleString()}🪽 via the admin panel`
+            : `You adjusted your own balance by ${delta > 0 ? '+' : ''}${delta.toLocaleString()}🪽 via the admin panel`;
           logWingsTransaction(nickname, wingsNote, delta);
           pushWingsFlightAlert(nickname, wingsNote, delta);
           showWingsToast(`✅ ${verb} ${amount.toLocaleString()} 🪽. New balance: ${(newBalance != null ? newBalance.toLocaleString() : '—')} 🪽.`);
@@ -11700,7 +11696,7 @@
         return `
         <div class="gift-wings-item">
           <div class="gift-wings-item-info">
-            <span class="gift-wings-item-avatar">${avatar}</span>
+            <span class="gift-wings-item-avatar avatar-circle${getLiveBorderClass(nick) ? ' ' + getLiveBorderClass(nick) : ''}"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}</span>
             <span class="gift-wings-item-nick">${escapeHtml(nick)}</span>
           </div>
           <div class="gift-wings-item-controls">
@@ -11747,8 +11743,8 @@
           const verb = sign > 0 ? 'Added' : 'Removed';
           const balanceNote = newBalance != null ? ` New balance: ${newBalance.toLocaleString()} 🪽.` : '';
           const wingsNote = giftWingsMode === 'gift'
-            ? `Admin ${currentChatUser.nickname} gifted you ${amount.toLocaleString()} 🪽`
-            : `Admin ${currentChatUser.nickname} adjusted your balance by ${delta > 0 ? '+' : ''}${delta.toLocaleString()} 🪽`;
+            ? `Admin ${currentChatUser.nickname} gifted you +${amount.toLocaleString()}🪽`
+            : `Admin ${currentChatUser.nickname} adjusted your balance by ${delta > 0 ? '+' : ''}${delta.toLocaleString()}🪽`;
           logWingsTransaction(nickname, wingsNote, delta);
           pushWingsFlightAlert(nickname, wingsNote, delta);
           showWingsToast(`✅ ${verb} ${amount.toLocaleString()} 🪽 for "${nickname}".${balanceNote}`);
@@ -13727,9 +13723,8 @@
         const unreadClass = entry.read ? '' : ' unread';
         return `
           <div class="flight-alert-row wings-alert-row${unreadClass}" onclick="openWingsAlertDetail('${keyAttr}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openWingsAlertDetail('${keyAttr}');}">
-            <span class="avatar-circle">\ud83e\udd7d</span>
             <div class="flight-alert-info">
-              <span class="flight-alert-name">${sign}${amount.toLocaleString()} \ud83e\udd7d ${isGift ? 'Gifted' : 'Adjusted'}</span>
+              <span class="flight-alert-name">${sign}${amount.toLocaleString()} ${isGift ? 'Gifted' : 'Adjusted'}</span>
               <span class="flight-alert-sub">Tap to view details</span>
             </div>
             <button type="button" class="wings-alert-delete-btn" aria-label="Delete notification" title="Delete notification" onclick="event.stopPropagation(); deleteWingsAlert('${keyAttr}');">&times;</button>
@@ -13781,7 +13776,7 @@
       const sign = amount > 0 ? '+' : '';
       const when = entry.ts ? new Date(entry.ts).toLocaleString([], { hour12: false }) : '';
       const amountEl = document.getElementById('wings-alert-detail-amount');
-      amountEl.textContent = `${sign}${amount.toLocaleString()} \ud83e\udd7d`;
+      amountEl.textContent = `${sign}${amount.toLocaleString()}🪽`;
       amountEl.className = 'wings-alert-detail-amount ' + (amount >= 0 ? 'positive' : 'negative');
       document.getElementById('wings-alert-detail-note').textContent = entry.note || 'Wings adjustment';
       document.getElementById('wings-alert-detail-time').textContent = when;
