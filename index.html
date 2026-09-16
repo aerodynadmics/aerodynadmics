@@ -13095,8 +13095,9 @@
         ? ((latestPresenceData[myCopilotKey] && latestPresenceData[myCopilotKey].nickname) || myCopilotKey)
         : null;
       // Only shown once an actual Co-Pilot is set — no placeholder row
-      // when the slot is empty, same as Crewmates never showing a
-      // "Crewmates" header when there aren't any (see hasBothGroups below).
+      // when the slot is empty. Unlike Crewmates below, "FLIGHT
+      // PASSENGERS" always shows for the remaining group as long as it's
+      // non-empty, with or without any Crewmates present.
       const copilotHtml = copilotNickname
         ? `<li class="nick-list-divider">CO-PILOT</li>${pilotRowHtml(copilotNickname)}`
         : '';
@@ -13123,18 +13124,22 @@
         const nick = typeof item === 'string' ? item : item.nickname;
         return getCrewmateStatus(nick) === 'crewmates';
       }).length;
-      const hasBothGroups = crewmateCount > 0 && crewmateCount < sorted.length;
 
       const items = sorted
         .map((item, i) => {
-        // A visible divider line between the two groups — only when both
-        // actually exist, so a list that's all-crewmates or has none of
-        // isn't split for no reason.
-        const dividerHtml = hasBothGroups
-          ? (i === 0 ? '<li class="nick-list-divider">Crewmates</li>'
-            : i === crewmateCount ? '<li class="nick-list-divider">FLIGHT PASSENGERS</li>'
-            : '')
-          : '';
+        // Two independent dividers, not a single "both or neither" toggle:
+        // "Crewmates" only makes sense once there's at least one Crewmate
+        // to head, but "FLIGHT PASSENGERS" should label the remaining
+        // group whenever there IS a remaining group — even with zero
+        // Crewmates, everyone left is still a Flight Passenger and the
+        // label should say so, rather than disappearing along with the
+        // "Crewmates" header. When crewmateCount is 0 this lands right at
+        // i === 0, so the passengers header opens the list on its own.
+        const dividerHtml = (i === 0 && crewmateCount > 0)
+          ? '<li class="nick-list-divider">Crewmates</li>'
+          : (i === crewmateCount && crewmateCount < sorted.length)
+            ? '<li class="nick-list-divider">FLIGHT PASSENGERS</li>'
+            : '';
         const nick = typeof item === 'string' ? item : item.nickname;
         // Prefer the LIVE presence avatar over item.avatar. item.avatar
         // comes from lastNicknameListData, a snapshot fetched from the
@@ -14249,10 +14254,25 @@
       // account hasn't picked up that sync yet (e.g. an old tab that hasn't
       // reconnected since this shipped), its presence entry just won't have
       // ownedModels yet and the grid falls back to the empty state below.
+      //
+      // The DATA still always comes from the wallet for isOwn (it's the
+      // live source of truth regardless of how this card was opened), but
+      // what renderAircraftCollectionHtml treats as "own" for DISPLAY
+      // purposes is showEditUi, not raw isOwn — same distinction
+      // showEditUi already draws for the background/bio edit buttons above.
+      // Opened from the bottom sidebar card, showEditUi is true and this
+      // renders the full owner experience: the "No aircraft in your
+      // collection yet" prompt, drag-to-reorder, tiles opening the gated
+      // 3D Viewer. Opened read-only from the Reviewees list, showEditUi is
+      // false, so an empty collection just renders nothing (like it would
+      // on anyone else's profile) and tiles fall back to the plain preview
+      // popup — the sidebar-list preview of your own profile should always
+      // look exactly like what everyone else sees when they open it, not
+      // like your own management view.
       const aircraftOwned = isOwn ? userWallet.ownedModels : (presenceEntry && presenceEntry.ownedModels);
       const aircraftDataLoaded = isOwn ? walletLoaded : !!presenceEntry;
       const aircraftOrder = isOwn ? (userWallet.modelOrder || []) : (presenceEntry && presenceEntry.modelOrder) || [];
-      const aircraftCollectionHtml = renderAircraftCollectionHtml(aircraftOwned, aircraftDataLoaded, isOwn, aircraftOrder);
+      const aircraftCollectionHtml = renderAircraftCollectionHtml(aircraftOwned, aircraftDataLoaded, showEditUi, aircraftOrder);
 
       // "Co-Pilot" / "Crewmates" links — clicking either opens a roster
       // popup of THIS profile's own Co-Pilot + Crewmates (not the
