@@ -3825,6 +3825,47 @@
   .mockadmin-save-btn:hover { border-color: var(--accent); color: var(--accent); }
   .mockadmin-publish-btn:hover { opacity: 0.85; }
 
+  /* ---- bulk mock exam creator (BEC) ---- */
+  .bec-launch-btn { background: none; border: 1px solid var(--accent); color: var(--accent); }
+  .bec-steps-bar {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin: 4px 0 18px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--rivet);
+  }
+  .bec-step-dot { border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; }
+  .bec-step-dot.active { border-color: var(--accent); color: var(--accent); }
+  .bec-step-dot.done { color: var(--paper); }
+  .bec-paste-textarea { min-height: 260px; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; resize: vertical; }
+  .bec-format-guide { margin: 14px 0; border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; background: rgba(255,255,255,0.03); }
+  .bec-format-guide summary { cursor: pointer; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--rivet); }
+  .bec-format-guide pre {
+    white-space: pre-wrap; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px;
+    color: var(--paper); margin: 10px 0; line-height: 1.5;
+  }
+  .bec-format-guide p { font-size: 11.5px; color: var(--rivet); margin: 6px 0 0; }
+  .bec-step-nav { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .bec-step-nav .mockadmin-save-btn, .bec-step-nav .mockadmin-publish-btn { flex: 1; min-width: 140px; }
+  .bec-summary-bar {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--paper);
+    border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; margin-bottom: 12px;
+    background: rgba(255,255,255,0.03);
+  }
+  .bec-review-toolbar { display: flex; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+  .bec-q-head { justify-content: space-between; }
+  .bec-q-head-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .bec-q-card.bec-needs-review { border-color: #f0c96a; }
+  .bec-q-card.bec-needs-review .bec-q-badge { color: #f0c96a; }
+  .bec-issue-box {
+    background: rgba(240,122,106,0.1); border: 1px solid rgba(240,122,106,0.4); color: #f07a6a;
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 8px 10px; border-radius: 4px;
+    margin-bottom: 10px; line-height: 1.5;
+  }
+  .bec-final-review { border: 1px solid var(--line); border-radius: 4px; padding: 4px 14px; background: rgba(255,255,255,0.03); }
+  .bec-final-row { display: flex; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .bec-final-row:last-child { border-bottom: none; }
+  .bec-final-row span { color: var(--rivet); font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; }
+  .bec-publish-check { display: flex; align-items: center; gap: 8px; margin-top: 16px; font-size: 12px; color: var(--rivet); cursor: pointer; }
+
   .gift-wings-overlay {
     position: fixed;
     inset: 0;
@@ -7697,7 +7738,10 @@
       <div id="mockadmin-list-view">
         <div class="mockadmin-list-head">
           <span id="mockadmin-current-subject-name"></span>
-          <button type="button" class="mockadmin-new-btn" onclick="createMockAdminSet()">+ NEW SET</button>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="mockadmin-new-btn" onclick="createMockAdminSet()">+ NEW SET</button>
+            <button type="button" class="mockadmin-new-btn bec-launch-btn" onclick="openBulkExamCreator()">&#9889; BULK CREATOR</button>
+          </div>
         </div>
         <div id="mockadmin-set-list"></div>
       </div>
@@ -7727,6 +7771,107 @@
         <div class="mockadmin-editor-actions">
           <button type="button" class="mockadmin-save-btn" onclick="saveMockAdminSet(false)">SAVE AS DRAFT</button>
           <button type="button" class="mockadmin-publish-btn" onclick="saveMockAdminSet(true)">SAVE &amp; PUBLISH</button>
+        </div>
+      </div><!-- /mockadmin-editor-view -->
+
+      <!-- Bulk Mock Exam Creator (BEC) — additional way of creating exams,
+           alongside the manual one-by-one editor above. Paste a whole exam,
+           auto-parse it, review/edit it, then it's saved through the same
+           mockExamSets/<subject>/<examId> structure as the manual editor. -->
+      <div id="mockadmin-bulk-view" style="display:none;">
+        <button type="button" class="mockadmin-back-btn" onclick="closeBulkExamCreator()">&larr; BACK</button>
+        <h3 style="margin:0 0 4px; font-size:15px;">&#9889; Bulk Mock Exam Creator</h3>
+        <div class="bec-steps-bar">
+          <span class="bec-step-dot">1. Paste</span>
+          <span class="bec-step-dot">2. Review</span>
+          <span class="bec-step-dot">3. Settings</span>
+          <span class="bec-step-dot">4. Destination</span>
+          <span class="bec-step-dot">5. Final Review</span>
+        </div>
+
+        <!-- STEP 1 — paste -->
+        <div id="bec-step-1">
+          <label class="mockadmin-field-label">PASTE EXAM QUESTIONS</label>
+          <textarea id="bec-paste-textarea" class="mockadmin-input bec-paste-textarea" placeholder="Paste the full exam here (20, 50, 100, 200+ questions supported)&#10;&#10;Question 1. Highest Thrust Setting without time limitation&#10;A. Max. Take-off thrust&#10;B. Max. Go-around thrust&#10;C. Max. Continuous thrust&#10;D. Max. Climb thrust&#10;Answer: C"></textarea>
+          <details class="bec-format-guide">
+            <summary>Formatting Guide</summary>
+            <pre>Question 1. What is lift?
+
+A. Force perpendicular to relative wind
+B. Force parallel to relative wind
+C. Engine force
+D. Weight
+
+Answer: A
+
+Question 2. What is drag?
+
+A. ...
+B. ...
+C. ...
+D. ...
+
+Answer: C</pre>
+            <p>Also understands "1.", "1)", "Question 1:", "A)", "A:", "Correct Answer:", "Correct:", and "Answer - A" style formats. Lowercase answer letters (e.g. "answer: a") are normalized automatically.</p>
+          </details>
+          <div class="bec-step-nav">
+            <button type="button" class="mockadmin-publish-btn" onclick="BEC_doParse()">PARSE QUESTIONS</button>
+          </div>
+        </div>
+
+        <!-- STEP 2 — parsed preview / edit -->
+        <div id="bec-step-2" style="display:none;">
+          <div id="bec-summary" class="bec-summary-bar"></div>
+          <div class="bec-review-toolbar">
+            <button type="button" class="mockadmin-mini-btn" onclick="BEC_toggleAll(true)">EXPAND ALL</button>
+            <button type="button" class="mockadmin-mini-btn" onclick="BEC_toggleAll(false)">COLLAPSE ALL</button>
+            <button type="button" class="mockadmin-add-q-btn" onclick="BEC_addQuestion()">+ ADD QUESTION</button>
+          </div>
+          <div id="bec-questions-list"></div>
+          <div class="bec-step-nav">
+            <button type="button" class="mockadmin-save-btn" onclick="BEC_showStep(1)">&larr; BACK TO PASTE</button>
+            <button type="button" class="mockadmin-publish-btn" onclick="BEC_toSettingsStep()">NEXT: EXAM SETTINGS</button>
+          </div>
+        </div>
+
+        <!-- STEP 3 — exam settings -->
+        <div id="bec-step-3" style="display:none;">
+          <label class="mockadmin-field-label">EXAM NAME</label>
+          <input type="text" id="bec-exam-title" class="mockadmin-input" placeholder="e.g. Mock Exam 1">
+          <label class="mockadmin-field-label">TIMER (MINUTES)</label>
+          <input type="number" id="bec-exam-duration" class="mockadmin-input" min="1" placeholder="240" style="max-width:160px;">
+          <div class="bec-step-nav">
+            <button type="button" class="mockadmin-save-btn" onclick="BEC_showStep(2)">&larr; BACK TO REVIEW</button>
+            <button type="button" class="mockadmin-publish-btn" onclick="BEC_toDestinationStep()">NEXT: DESTINATION</button>
+          </div>
+        </div>
+
+        <!-- STEP 4 — destination (existing subjects + sets structure) -->
+        <div id="bec-step-4" style="display:none;">
+          <label class="mockadmin-field-label">WHERE SHOULD THIS MOCK EXAM BE CREATED?</label>
+          <div class="mockadmin-subject-picker" id="bec-dest-subject-picker"></div>
+          <div class="mockadmin-list-head">
+            <span>Sets in this subject</span>
+            <button type="button" class="mockadmin-new-btn" onclick="BEC_createDestGroup()">+ NEW SET</button>
+          </div>
+          <div id="bec-dest-set-list"></div>
+          <div class="bec-step-nav">
+            <button type="button" class="mockadmin-save-btn" onclick="BEC_showStep(3)">&larr; BACK TO SETTINGS</button>
+            <button type="button" class="mockadmin-publish-btn" onclick="BEC_toFinalReviewStep()">NEXT: FINAL REVIEW</button>
+          </div>
+        </div>
+
+        <!-- STEP 5 — final review + create -->
+        <div id="bec-step-5" style="display:none;">
+          <label class="mockadmin-field-label">FINAL REVIEW</label>
+          <div id="bec-final-review" class="bec-final-review"></div>
+          <label class="bec-publish-check">
+            <input type="checkbox" id="bec-publish-now"> Publish immediately (otherwise saved as a draft, same as the manual editor)
+          </label>
+          <div class="bec-step-nav">
+            <button type="button" class="mockadmin-save-btn" onclick="BEC_showStep(4)">&larr; BACK</button>
+            <button type="button" class="mockadmin-publish-btn" onclick="BEC_createExam()">CREATE MOCK EXAM</button>
+          </div>
         </div>
       </div>
     </div>
@@ -17700,6 +17845,486 @@
         closeMockAdminEditor();
       }).catch(err => {
         console.error('saveMockAdminSet error:', err);
+        adminAlert('❌ Could not save. Check console.');
+      });
+    }
+
+    // ======================================================================
+    // ---- Bulk Mock Exam Creator (BEC) --------------------------------
+    // An ADDITIONAL admin-only way to create exams, alongside the manual
+    // one-by-one editor above (openMockAdminEditor/saveMockAdminSet), which
+    // this never touches. Flow: paste -> parse -> review/edit -> exam
+    // settings -> destination -> final review -> create. Everything it
+    // produces is a plain { q, options, correct, image? } question object —
+    // the exact same shape mockAdminEditingQuestions uses — and it is saved
+    // through the same mockExamSets/<subjectKey>/<examId> Firebase
+    // structure as saveMockAdminSet(), via the same nsRef() helper, so
+    // bulk-created exams behave identically to manually-created ones for
+    // reviewees. All state/DOM ids are namespaced BEC_ / bec- to avoid any
+    // collision with the manual editor's mockAdmin* code.
+    // ======================================================================
+
+    let BEC = { step: 1, questions: [], title: '', minutes: 240, subjectKey: null, groupId: null, groupTitle: '', groupsCache: {} };
+
+    function openBulkExamCreator() {
+      if (!isAdminUser(currentChatUser)) return;
+      BEC = {
+        step: 1,
+        questions: [],
+        title: '',
+        minutes: 240,
+        subjectKey: mockAdminCurrentSubject || (subjects[0] && subjects[0].key),
+        groupId: null,
+        groupTitle: '',
+        groupsCache: {}
+      };
+      document.getElementById('mockadmin-list-view').style.display = 'none';
+      document.getElementById('mockadmin-examlist-view').style.display = 'none';
+      document.getElementById('mockadmin-editor-view').style.display = 'none';
+      document.getElementById('mockadmin-bulk-view').style.display = '';
+      document.getElementById('bec-paste-textarea').value = '';
+      document.getElementById('bec-questions-list').innerHTML = '';
+      document.getElementById('bec-summary').innerHTML = '';
+      const pubCheckbox = document.getElementById('bec-publish-now');
+      if (pubCheckbox) pubCheckbox.checked = false;
+      BEC_showStep(1);
+    }
+
+    function closeBulkExamCreator() {
+      document.getElementById('mockadmin-bulk-view').style.display = 'none';
+      // Return to whichever view the manual editor would return to — a
+      // group's exam list if one was open, otherwise the top-level set list.
+      if (mockAdminCurrentGroupId) {
+        document.getElementById('mockadmin-examlist-view').style.display = '';
+      } else {
+        document.getElementById('mockadmin-list-view').style.display = '';
+      }
+      BEC.questions = []; // release memory for large (100-200q) exams
+    }
+
+    function BEC_showStep(n) {
+      BEC.step = n;
+      for (let i = 1; i <= 5; i++) {
+        const el = document.getElementById('bec-step-' + i);
+        if (el) el.style.display = (i === n) ? '' : 'none';
+      }
+      document.querySelectorAll('.bec-step-dot').forEach((dot, idx) => {
+        dot.classList.toggle('active', idx + 1 === n);
+        dot.classList.toggle('done', idx + 1 < n);
+      });
+    }
+
+    // ---- STEP 1 -> 2: paste + parse ----
+
+    function BEC_doParse() {
+      const raw = document.getElementById('bec-paste-textarea').value;
+      if (!raw || !raw.trim()) { adminAlert('Paste an exam into the box first.'); return; }
+      const parsed = BEC_parseText(raw);
+      if (!parsed.length) {
+        adminAlert('Could not detect any questions in that text. Check the Formatting Guide and try again.');
+        return;
+      }
+      BEC.questions = parsed;
+      BEC_renderQuestions();
+      BEC_showStep(2);
+    }
+
+    // Splits pasted text into question blocks by scanning line-by-line for
+    // a "question start" line, then collects choice lines and an answer
+    // line into that block until the next question start. Deliberately a
+    // plain regex/string-processing parser (no AI/API call needed for this).
+    function BEC_parseText(text) {
+      const lines = text.split(/\r\n|\r|\n/);
+      // "Question 1.", "Question 1:", "Question 1)" OR bare "1." / "1)"
+      const qStartRe = /^\s*(?:question\s*\d+\s*[:.)]?|\d+\s*[.)])\s*(.*)$/i;
+      // "Answer: A", "Correct Answer: A", "Correct: A", "Answer - A", lowercase ok
+      const answerRe = /^\s*(?:correct\s+answer|correct|answer)\s*[:\-]\s*([A-Za-z])\s*$/i;
+      // "A. text", "A) text", "A: text"
+      const choiceRe = /^\s*([A-Za-z])\s*[.):]\s*(.*)$/;
+
+      const blocks = [];
+      let current = null;
+
+      for (const rawLine of lines) {
+        const qm = rawLine.match(qStartRe);
+        if (qm) {
+          if (current) blocks.push(current);
+          current = { textLines: [qm[1] ? qm[1].trim() : ''], choiceLines: [], answerLetter: null };
+          continue;
+        }
+        if (!current) continue; // ignore any preamble before the first detected question
+
+        const am = rawLine.match(answerRe);
+        if (am) { current.answerLetter = am[1].toUpperCase(); continue; }
+
+        const cm = rawLine.match(choiceRe);
+        if (cm) { current.choiceLines.push({ letter: cm[1].toUpperCase(), text: (cm[2] || '').trim() }); continue; }
+
+        const trimmed = rawLine.trim();
+        if (!trimmed) continue; // blank line
+        if (current.choiceLines.length === 0) {
+          current.textLines.push(trimmed); // wrapped question text (question spans multiple lines)
+        } else {
+          // wrapped choice text — glue onto the previous choice rather than guessing it's a new field
+          current.choiceLines[current.choiceLines.length - 1].text += ' ' + trimmed;
+        }
+      }
+      if (current) blocks.push(current);
+
+      return blocks.map(BEC_buildQuestion);
+    }
+
+    function BEC_buildQuestion(b) {
+      const q = b.textLines.join(' ').trim();
+      const options = b.choiceLines.map(c => c.text.trim());
+      let correct = '';
+      if (b.answerLetter) {
+        const idx = b.answerLetter.charCodeAt(0) - 65;
+        if (idx >= 0 && idx < options.length) correct = options[idx];
+      }
+      const question = { q, options: options.length ? options : ['', ''], correct, _answerLetter: b.answerLetter || null };
+      BEC_validateQuestion(question);
+      return question;
+    }
+
+    // Never silently guesses — anything it can't confidently resolve
+    // (missing answer, answer letter with no matching choice, too few
+    // choices, empty choices) is surfaced as an issue and the question is
+    // flagged "NEEDS REVIEW" instead of being saved as-is.
+    function BEC_validateQuestion(q) {
+      const issues = [];
+      if (!q.q || !q.q.trim()) issues.push('Question text is empty.');
+      const opts = q.options || [];
+      const filled = opts.filter(o => o && o.trim());
+      if (opts.length < 2) {
+        issues.push(`Only ${opts.length} choice${opts.length === 1 ? '' : 's'} detected.`);
+      } else if (opts.length !== 4) {
+        issues.push(`${opts.length} choices detected (standard is 4).`);
+      }
+      if (filled.length < opts.length) issues.push('One or more choices is empty.');
+      if (!q.correct || !opts.includes(q.correct)) {
+        issues.push(q._answerLetter ? `Answer "${q._answerLetter}" does not match a detected choice.` : 'Could not determine the correct answer.');
+      }
+      q._issues = issues;
+      q._valid = issues.length === 0;
+      return q;
+    }
+
+    // ---- STEP 2: editable preview (same data model/fields as the manual editor) ----
+
+    function BEC_renderQuestions() {
+      const el = document.getElementById('bec-questions-list');
+      if (!BEC.questions.length) {
+        el.innerHTML = '<div class="banned-list-empty">No questions. Click "+ ADD QUESTION" below.</div>';
+        BEC_updateSummary();
+        return;
+      }
+      el.innerHTML = BEC.questions.map((q, qi) => `
+        <div class="mockadmin-question-card bec-q-card ${q._valid ? '' : 'bec-needs-review'}" data-qi="${qi}">
+          <div class="mockadmin-question-head bec-q-head">
+            <span style="cursor:pointer;" onclick="BEC_toggleCard(${qi})">QUESTION ${qi + 1} &nbsp; <span class="bec-q-badge">${q._valid ? '✓ VALID' : '⚠ NEEDS REVIEW'}</span></span>
+            <span class="bec-q-head-actions">
+              <button type="button" class="mockadmin-mini-btn" title="Move up" onclick="BEC_moveQuestion(${qi}, -1)" ${qi === 0 ? 'disabled' : ''}>&uarr;</button>
+              <button type="button" class="mockadmin-mini-btn" title="Move down" onclick="BEC_moveQuestion(${qi}, 1)" ${qi === BEC.questions.length - 1 ? 'disabled' : ''}>&darr;</button>
+              <button type="button" class="mockadmin-mini-btn danger" onclick="BEC_removeQuestion(${qi})">REMOVE</button>
+            </span>
+          </div>
+          <div class="bec-q-body" style="${q._valid ? 'display:none;' : ''}">
+            <div class="bec-issue-box" style="${q._issues.length ? '' : 'display:none;'}">${q._issues.map(i => '⚠ ' + escapeHtml(i)).join('<br>')}</div>
+            <textarea class="mockadmin-input mockadmin-textarea" placeholder="Question text"
+              oninput="BEC_updateField(${qi}, 'q', this.value)">${escapeHtml(q.q || '')}</textarea>
+            ${(q.options || []).map((opt, oi) => `
+              <div class="mockadmin-option-row">
+                <input type="radio" name="bec-correct-${qi}" ${opt !== '' && q.correct === opt ? 'checked' : ''}
+                  title="Mark as correct answer" onchange="BEC_setCorrect(${qi}, ${oi})">
+                <input type="text" class="mockadmin-input" value="${escapeHtml(opt)}" placeholder="Option ${oi + 1}"
+                  oninput="BEC_updateOption(${qi}, ${oi}, this.value)">
+                <button type="button" class="mockadmin-mini-btn danger" title="Remove option" onclick="BEC_removeOption(${qi}, ${oi})">&times;</button>
+              </div>
+            `).join('')}
+            <button type="button" class="mockadmin-add-opt-btn" onclick="BEC_addOption(${qi})">+ ADD OPTION</button>
+          </div>
+        </div>
+      `).join('');
+      BEC_updateSummary();
+    }
+
+    function BEC_updateSummary() {
+      const el = document.getElementById('bec-summary');
+      if (!el) return;
+      const total = BEC.questions.length;
+      const validCount = BEC.questions.filter(q => q._valid).length;
+      el.innerHTML = `PARSED QUESTIONS: <strong>${total}</strong> &nbsp; ✓ ${validCount} Valid &nbsp; ⚠ ${total - validCount} Need Review`;
+    }
+
+    // Re-validates and patches just one card in place (badge + issue box +
+    // border color) instead of re-rendering the whole list on every
+    // keystroke — keeps large (100-200 question) exams responsive and
+    // avoids losing focus/scroll position while typing.
+    function BEC_refreshCard(qi) {
+      const q = BEC.questions[qi];
+      if (!q) return;
+      BEC_validateQuestion(q);
+      BEC_updateSummary();
+      const card = document.querySelector(`.bec-q-card[data-qi="${qi}"]`);
+      if (!card) return;
+      card.classList.toggle('bec-needs-review', !q._valid);
+      const badge = card.querySelector('.bec-q-badge');
+      if (badge) badge.textContent = q._valid ? '✓ VALID' : '⚠ NEEDS REVIEW';
+      const issueBox = card.querySelector('.bec-issue-box');
+      if (issueBox) {
+        issueBox.innerHTML = q._issues.map(i => '⚠ ' + escapeHtml(i)).join('<br>');
+        issueBox.style.display = q._issues.length ? '' : 'none';
+      }
+    }
+
+    function BEC_updateField(qi, field, value) {
+      const q = BEC.questions[qi];
+      if (!q) return;
+      q[field] = value;
+      BEC_refreshCard(qi);
+    }
+    function BEC_updateOption(qi, oi, value) {
+      const q = BEC.questions[qi];
+      if (!q) return;
+      const oldVal = q.options[oi];
+      if (q.correct === oldVal) q.correct = value; // keep the correct-answer pointer in sync, same as the manual editor
+      q.options[oi] = value;
+      BEC_refreshCard(qi);
+    }
+    function BEC_setCorrect(qi, oi) {
+      const q = BEC.questions[qi];
+      if (!q) return;
+      q.correct = q.options[oi];
+      BEC_refreshCard(qi);
+    }
+    function BEC_addOption(qi) {
+      const q = BEC.questions[qi];
+      if (!q) return;
+      q.options.push('');
+      BEC_renderQuestions();
+    }
+    function BEC_removeOption(qi, oi) {
+      const q = BEC.questions[qi];
+      if (!q || q.options.length <= 2) { adminAlert('A question needs at least 2 options.'); return; }
+      const removed = q.options[oi];
+      q.options.splice(oi, 1);
+      if (q.correct === removed) q.correct = '';
+      BEC_renderQuestions();
+    }
+    function BEC_addQuestion() {
+      BEC.questions.push(BEC_validateQuestion({ q: '', options: ['', '', '', ''], correct: '' }));
+      BEC_renderQuestions();
+    }
+    function BEC_removeQuestion(qi) {
+      BEC.questions.splice(qi, 1);
+      BEC_renderQuestions();
+    }
+    function BEC_moveQuestion(qi, dir) {
+      const nj = qi + dir;
+      if (nj < 0 || nj >= BEC.questions.length) return;
+      const tmp = BEC.questions[qi];
+      BEC.questions[qi] = BEC.questions[nj];
+      BEC.questions[nj] = tmp;
+      BEC_renderQuestions();
+    }
+    function BEC_toggleCard(qi) {
+      const body = document.querySelector(`.bec-q-card[data-qi="${qi}"] .bec-q-body`);
+      if (body) body.style.display = (body.style.display === 'none') ? '' : 'none';
+    }
+    function BEC_toggleAll(expand) {
+      document.querySelectorAll('.bec-q-card .bec-q-body').forEach(el => { el.style.display = expand ? '' : 'none'; });
+    }
+
+    // ---- STEP 2 -> 3 ----
+
+    async function BEC_toSettingsStep() {
+      if (!BEC.questions.length) { adminAlert('No questions to create an exam from yet.'); return; }
+      const invalidCount = BEC.questions.filter(q => !q._valid).length;
+      if (invalidCount > 0) {
+        const ok = await adminConfirm(`${invalidCount} question${invalidCount === 1 ? '' : 's'} still need review.\n\nContinue anyway? You can still fix them later from "Back to Review".`);
+        if (!ok) return;
+      }
+      document.getElementById('bec-exam-title').value = BEC.title || '';
+      document.getElementById('bec-exam-duration').value = BEC.minutes || 240;
+      BEC_showStep(3);
+    }
+
+    // ---- STEP 3 -> 4: exam settings (same fields as the manual editor) ----
+
+    function BEC_toDestinationStep() {
+      const title = document.getElementById('bec-exam-title').value.trim();
+      const minutes = Number(document.getElementById('bec-exam-duration').value);
+      if (!title) { adminAlert('Give this exam a name first.'); return; }
+      BEC.title = title;
+      BEC.minutes = (Number.isFinite(minutes) && minutes > 0) ? minutes : 240;
+      BEC_renderDestSubjectPicker();
+      BEC_loadDestGroups(BEC.subjectKey);
+      BEC_showStep(4);
+    }
+
+    // ---- STEP 4: destination — reuses the existing subjects[] + mockExamGroups
+    // structure (the same two-level hierarchy the manual editor's "Move" modal
+    // uses), never a separate/duplicate organization system. ----
+
+    function BEC_renderDestSubjectPicker() {
+      const el = document.getElementById('bec-dest-subject-picker');
+      el.innerHTML = subjects.map(s => `
+        <button type="button" class="mockadmin-subject-btn ${s.key === BEC.subjectKey ? 'active' : ''}"
+          onclick="BEC_selectDestSubject('${s.key}')">${escapeHtml(s.name)}</button>
+      `).join('');
+    }
+    function BEC_selectDestSubject(key) {
+      BEC.subjectKey = key;
+      BEC.groupId = null;
+      BEC.groupTitle = '';
+      BEC_renderDestSubjectPicker();
+      BEC_loadDestGroups(key);
+    }
+    function BEC_loadDestGroups(subjectKey) {
+      const el = document.getElementById('bec-dest-set-list');
+      el.innerHTML = '<div class="banned-list-empty">Loading&hellip;</div>';
+      // Reuse the already-live cache when browsing whichever subject the
+      // main manager currently has open, otherwise a one-off read —
+      // same approach as loadMockAdminMoveTargetSets().
+      const cached = subjectKey === mockAdminCurrentSubject ? mockAdminGroupsCache : null;
+      const p = cached ? Promise.resolve({ val: () => cached }) : nsRef('mockExamGroups/' + subjectKey).once('value');
+      p.then(snap => {
+        if (BEC.subjectKey !== subjectKey) return; // subject changed while loading
+        BEC.groupsCache = snap.val() || {};
+        BEC_renderDestGroupList(subjectKey, BEC.groupsCache);
+      }).catch(err => {
+        console.error('BEC_loadDestGroups error:', err);
+        el.innerHTML = '<div class="banned-list-empty">Could not load sets. Check console.</div>';
+      });
+    }
+    function BEC_renderDestGroupList(subjectKey, groups) {
+      const el = document.getElementById('bec-dest-set-list');
+      const entries = Object.entries(groups || {});
+      if (!entries.length) {
+        el.innerHTML = '<div class="banned-list-empty">No sets yet in this subject. Click "+ NEW SET" above to create one.</div>';
+        return;
+      }
+      entries.sort((a, b) => (a[1].updatedAt || a[1].createdAt || 0) - (b[1].updatedAt || b[1].createdAt || 0));
+      el.innerHTML = entries.map(([id, group]) => {
+        const titleAttr = (group.title || 'Untitled Set').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        const selected = BEC.groupId === id;
+        return `
+        <div class="mockadmin-set-row">
+          <div class="mockadmin-set-info"><span class="mockadmin-set-title">${escapeHtml(group.title || 'Untitled Set')}</span></div>
+          <div class="mockadmin-set-controls">
+            <button type="button" class="mockadmin-mini-btn" onclick="BEC_selectDestGroup('${id}','${titleAttr}')">${selected ? '✓ SELECTED' : 'CHOOSE'}</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+    function BEC_selectDestGroup(id, title) {
+      BEC.groupId = id;
+      BEC.groupTitle = title;
+      BEC_renderDestGroupList(BEC.subjectKey, BEC.groupsCache);
+    }
+    async function BEC_createDestGroup() {
+      const name = await adminPrompt('Name this new set (e.g. "PATTS Mock Exam 2024"):');
+      if (name === null) return;
+      const title = name.trim();
+      if (!title) { await adminAlert('Give this set a name first.'); return; }
+      const subjectKey = BEC.subjectKey;
+      const ref = nsRef('mockExamGroups/' + subjectKey).push();
+      const groupData = { title, createdAt: firebase.database.ServerValue.TIMESTAMP, updatedAt: firebase.database.ServerValue.TIMESTAMP };
+      BEC.groupsCache = { ...BEC.groupsCache, [ref.key]: groupData };
+      if (subjectKey === mockAdminCurrentSubject) mockAdminGroupsCache[ref.key] = groupData;
+      BEC_selectDestGroup(ref.key, title);
+      ref.set(groupData).catch(err => {
+        console.error('BEC_createDestGroup error:', err);
+        delete BEC.groupsCache[ref.key];
+        if (subjectKey === mockAdminCurrentSubject) delete mockAdminGroupsCache[ref.key];
+        if (BEC.groupId === ref.key) { BEC.groupId = null; BEC.groupTitle = ''; }
+        BEC_renderDestGroupList(subjectKey, BEC.groupsCache);
+        adminAlert('❌ Could not create set. Check console.');
+      });
+    }
+
+    // ---- STEP 4 -> 5 ----
+
+    function BEC_toFinalReviewStep() {
+      if (!BEC.groupId) { adminAlert('Choose a destination set first.'); return; }
+      const subjName = (subjects.find(s => s.key === BEC.subjectKey) || {}).name || BEC.subjectKey;
+      document.getElementById('bec-final-review').innerHTML = `
+        <div class="bec-final-row"><span>EXAM NAME</span><strong>${escapeHtml(BEC.title)}</strong></div>
+        <div class="bec-final-row"><span>QUESTIONS</span><strong>${BEC.questions.length}</strong></div>
+        <div class="bec-final-row"><span>TIMER</span><strong>${BEC.minutes} minutes</strong></div>
+        <div class="bec-final-row"><span>DESTINATION</span><strong>${escapeHtml(subjName)} &rsaquo; ${escapeHtml(BEC.groupTitle)}</strong></div>
+        <div class="bec-final-row"><span>STATUS</span><strong>Ready to create</strong></div>
+      `;
+      BEC_showStep(5);
+    }
+
+    // ---- STEP 5: create — saves via the exact same Firebase structure/shape
+    // as saveMockAdminSet() (mockExamSets/<subjectKey>/<examId>), so bulk and
+    // manually created exams are indistinguishable to the reviewee UI. ----
+
+    async function BEC_createExam() {
+      if (!isAdminUser(currentChatUser)) return;
+      if (!BEC.groupId) { adminAlert('Choose a destination set first.'); return; }
+      if (!BEC.questions.length) { adminAlert('No questions to save.'); return; }
+      for (const q of BEC.questions) {
+        if (!q.q || !q.q.trim()) { await adminAlert('Every question needs question text. Go back to Review and fix it.'); return; }
+        const filled = (q.options || []).filter(o => o && o.trim());
+        if (filled.length < 2) { await adminAlert('Every question needs at least 2 filled-in options. Go back to Review and fix it.'); return; }
+        if (!q.correct || !q.options.includes(q.correct) || !q.correct.trim()) { await adminAlert('Every question needs a correct answer selected. Go back to Review and fix it.'); return; }
+      }
+
+      const subjectKey = BEC.subjectKey;
+      const title = BEC.title;
+
+      // Duplicate-title protection within the destination subject, before
+      // anything is written — mirrors the "don't silently overwrite" rule
+      // the manual editor already follows for its Move/Copy flows.
+      const cached = subjectKey === mockAdminCurrentSubject ? mockAdminExamsCache : null;
+      let examsSnapVal = null;
+      try {
+        const snap = cached ? { val: () => cached } : await nsRef('mockExamSets/' + subjectKey).once('value');
+        examsSnapVal = snap.val() || {};
+      } catch (err) {
+        console.error('BEC duplicate-check error:', err);
+        await adminAlert('❌ Could not check for duplicate exam names. Check console.');
+        return;
+      }
+      const dup = Object.values(examsSnapVal).some(e => e && (e.title || '').trim().toLowerCase() === title.toLowerCase());
+      if (dup) {
+        const goRename = await adminConfirm(`⚠ AN EXAM WITH THIS NAME ALREADY EXISTS\n\n"${title}" already exists in this subject.\n\nClick OK to go back and rename it, or Cancel to stop.`);
+        if (goRename) { BEC_showStep(3); document.getElementById('bec-exam-title').focus(); }
+        return;
+      }
+
+      const publish = !!(document.getElementById('bec-publish-now') && document.getElementById('bec-publish-now').checked);
+      const durationSec = Math.round(BEC.minutes * 60);
+      const payload = {
+        title,
+        groupId: BEC.groupId,
+        group: BEC.groupTitle || null,
+        durationSec,
+        published: publish,
+        questions: BEC.questions.map(q => ({
+          q: q.q.trim(),
+          options: q.options.filter(o => o && o.trim()),
+          correct: q.correct,
+          ...(q.image ? { image: q.image } : {})
+        })),
+        createdAt: firebase.database.ServerValue.TIMESTAMP,
+        updatedAt: firebase.database.ServerValue.TIMESTAMP
+      };
+
+      const ref = nsRef('mockExamSets/' + subjectKey).push(); // same push()-then-set() pattern as saveMockAdminSet()
+      if (subjectKey === mockAdminCurrentSubject) mockAdminExamsCache[ref.key] = payload;
+      ref.set(payload).then(async () => {
+        await adminAlert(publish ? '✅ Bulk exam created and published. Live for everyone now.' : '✅ Bulk exam created as a draft (only you can see it until published).');
+        refreshMockAdminUI();
+        closeBulkExamCreator();
+      }).catch(err => {
+        console.error('BEC_createExam error:', err);
+        if (subjectKey === mockAdminCurrentSubject) delete mockAdminExamsCache[ref.key];
+        refreshMockAdminUI();
         adminAlert('❌ Could not save. Check console.');
       });
     }
