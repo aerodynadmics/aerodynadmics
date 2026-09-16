@@ -14698,8 +14698,20 @@
           if (hint) hint.textContent = 'Could not verify your session for uploading. Try signing out and back in, then try again.';
           return;
         }
-        const ext = (file.name && /\.(\w+)$/.exec(file.name)) ? RegExp.$1.toLowerCase() : (file.type.split('/')[1] || 'jpg');
-        const path = `backgrounds/${uid}/photo.${ext}`;
+        // Fixed filename (no extension) rather than one derived from the
+        // uploaded file's type. The old per-extension path (photo.jpg /
+        // photo.gif / photo.png) meant switching background *types*
+        // (e.g. an image, then later a GIF) left the previous file behind
+        // in storage instead of overwriting it — same-extension re-uploads
+        // already overwrote in place, but cross-extension ones silently
+        // accumulated orphans. A single fixed object always gets replaced
+        // in-place on every upload, so exactly one file ever exists per
+        // user, and there's no separate delete call (with its own
+        // failure/race risk) needed to clean up the old one. The correct
+        // Content-Type is still stored as object metadata below, so the
+        // image/GIF renders correctly with or without a file extension in
+        // the path.
+        const path = `backgrounds/${uid}/photo`;
         const storageRef = firebase.storage().ref(path);
         storageRef.put(file, { contentType: file.type }).then((snapshot) => {
           return snapshot.ref.getDownloadURL();
