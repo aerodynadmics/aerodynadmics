@@ -1516,6 +1516,56 @@
     letter-spacing: 0.04em;
     color: #fff;
   }
+  /* ---- Flights + Airspace: shows which Flight the existing sidebar is
+       currently displaying, right next to "SOULS ON BOARD". Purely a
+       label — the sidebar's own layout/cards are untouched. ---- */
+  .active-flight-label {
+    display: block;
+    margin-top: 2px;
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    color: var(--accent, #4fd1a0);
+    text-transform: none;
+  }
+  .airspace-flight-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    background: rgba(255,255,255,0.02);
+  }
+  .airspace-flight-row:hover { border-color: var(--accent, #4fd1a0); }
+  .airspace-flight-row.is-active { border-color: var(--accent, #4fd1a0); background: rgba(79, 209, 160, 0.08); }
+  .airspace-flight-row-name { font-size: 13px; color: #fff; }
+  .airspace-flight-row-sub { font-size: 10px; color: var(--rivet); margin-top: 2px; }
+  .airspace-flight-row-badge {
+    font-size: 9px;
+    letter-spacing: 0.05em;
+    color: var(--accent, #4fd1a0);
+    border: 1px solid var(--accent, #4fd1a0);
+    border-radius: 10px;
+    padding: 2px 7px;
+    flex-shrink: 0;
+  }
+  .airspace-section-label {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--rivet);
+    margin: 14px 0 8px;
+  }
+  .airspace-section-label:first-child { margin-top: 0; }
+  .chat-msg-flight-tag {
+    font-size: 9px;
+    color: var(--rivet);
+    margin-left: 5px;
+    font-weight: 400;
+  }
   .reviewees-refresh-btn {
     flex-shrink: 0;
     width: 22px;
@@ -6554,6 +6604,12 @@
         </div>
         <div class="nick-error" id="flightcode-error"></div>
 
+        <p class="field-label">Main Flight</p>
+        <select id="main-flight-select" style="width:100%; font-family:'IBM Plex Mono', monospace; background: var(--blueprint-dark); color:#fff; border:1px solid var(--line); border-radius:4px; padding:9px 10px; margin-bottom:10px;">
+          <option value="">Loading Flights&hellip;</option>
+        </select>
+        <div class="nick-error" id="main-flight-error"></div>
+
         <button id="nickname-submit" onclick="submitNickname()">CREATE ACCOUNT</button>
         <div class="nick-checking" id="nickname-checking">Checking availability&hellip;</div>
       </div>
@@ -6702,7 +6758,7 @@
 
   <div class="reviewees-sidebar" id="reviewees-sidebar">
     <div class="reviewees-sidebar-head">
-      <h3>SOULS ON BOARD</h3>
+      <h3>SOULS ON BOARD<span class="active-flight-label" id="active-flight-label"></span></h3>
       <button type="button" class="reviewees-refresh-btn" id="reviewees-refresh-btn" onclick="manualRefreshNicknameList()" aria-label="Refresh Souls on Board list">&#8635;</button>
     </div>
     <div class="reviewees-sidebar-body" id="nick-modal-body">
@@ -6733,6 +6789,37 @@
       </div>
       <div class="nick-modal-body" id="flight-alerts-body">
         <div class="flight-alerts-empty">Loading&hellip;</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- AIRSPACE: the Flight selector. Picking a Flight here does not
+       redesign or replace the existing "Souls on Board" sidebar — it just
+       changes which Flight's members that sidebar (and the chat) shows.
+       ---- -->
+  <div class="nick-modal-overlay" id="airspace-overlay">
+    <div class="nick-modal">
+      <div class="nick-modal-head">
+        <h3>&#9992;&#65039; AIRSPACE</h3>
+        <button class="nick-modal-close" onclick="closeAirspace()">&times;</button>
+      </div>
+      <div class="nick-modal-body" id="airspace-body" style="padding:14px 16px;">
+        <div class="nick-modal-status">Loading&hellip;</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- Admin-only: create/view Flights. Does not touch the sidebar
+       or Airspace layout — just manages the flights/ list they both
+       read from. ---- -->
+  <div class="nick-modal-overlay" id="flight-management-overlay">
+    <div class="nick-modal">
+      <div class="nick-modal-head">
+        <h3>Flight Management</h3>
+        <button class="nick-modal-close" onclick="closeFlightManagement()">&times;</button>
+      </div>
+      <div class="nick-modal-body" id="flight-management-body" style="padding:14px 16px;">
+        <div class="nick-modal-status">Loading&hellip;</div>
       </div>
     </div>
   </div>
@@ -7025,6 +7112,7 @@
           <span class="account-wings-badge" id="account-wings-badge" onclick="openBuyWingsModal()" style="display:none;">🪽 —</span>
         </div>
         <button class="daily-claim-btn" id="daily-claim-btn" onclick="openDailyRewardsModal()" style="display:none;">🎁 CLAIM</button>
+        <button class="topbar-nav-btn" id="topbar-airspace-btn" onclick="openAirspace()">🛰️ AIRSPACE</button>
         <button class="topbar-nav-btn" id="topbar-flight-store-btn" onclick="showFlightStore()">🛒 FLIGHT STORE</button>
         <button class="topbar-nav-btn" id="topbar-hangar-btn" onclick="showHangar()">📦 HANGAR</button>
         <div class="admin-settings-wrap" id="admin-settings-wrap" style="display:none;">
@@ -7035,6 +7123,7 @@
             <button id="admin-mock-exams-btn" onclick="openMockExamAdmin(); closeAdminSettingsMenu();">MOCK EXAMS</button>
             <button id="admin-deleted-items-btn" onclick="openDeletedItemsModal(); closeAdminSettingsMenu();">DELETED SHOP ITEMS</button>
             <button id="admin-toggle-flightstore-btn" onclick="toggleFlightStoreEnabled(); closeAdminSettingsMenu();">DISABLE FLIGHT STORE</button>
+            <button id="admin-manage-flights-btn" onclick="openFlightManagement(); closeAdminSettingsMenu();">MANAGE FLIGHTS</button>
           </div>
         </div>
         <button class="signout-btn signout-icon-btn" onclick="signOutUser()">🛫</button>
@@ -9291,6 +9380,13 @@ Answer: C</pre>
         return;
       }
 
+      const mainFlightSelect = document.getElementById('main-flight-select');
+      const mainFlight = mainFlightSelect && mainFlightSelect.value;
+      if (!mainFlight) {
+        showNicknameError('Please choose your Main Flight.');
+        return;
+      }
+
       btn.disabled = true;
       checking.classList.add('visible');
       checking.textContent = 'Checking availability\u2026';
@@ -9313,7 +9409,7 @@ Answer: C</pre>
         // only its hash travels to the server and lives in `user` from
         // here on.
         const flightCodeHash = await sha256Hex(flightCode);
-        const user = { ...pendingUser, nickname, avatar: selectedAvatar, flightCodeHash };
+        const user = { ...pendingUser, nickname, avatar: selectedAvatar, flightCodeHash, mainFlight };
         registerNicknameWithConfirmation(user, 0, btn, checking);
       });
     }
@@ -9343,6 +9439,7 @@ Answer: C</pre>
 
           if (saved) {
             signInWithFirebaseToken(data.firebaseToken);
+            saveMainFlightForNewSignup(user);
             checking.classList.remove('visible');
             btn.disabled = false;
             finishSignIn(user, true);
@@ -9357,11 +9454,28 @@ Answer: C</pre>
           // Couldn't confirm after retries — sign in on this device anyway
           // (it works fine locally), but be upfront that syncing may be
           // delayed, so other devices might ask again for now.
+          saveMainFlightForNewSignup(user);
           checking.classList.remove('visible');
           btn.disabled = false;
           finishSignIn(user, true);
         });
       }, 1200);
+    }
+
+    // Writes the Main Flight chosen at signup onto the brand-new account's
+    // Firebase profile node (profiles/<nickname>/mainFlight) — the
+    // Apps Script/Sheets backend that owns nickname/email/flight-code
+    // never needs to know about Flights at all, so this is the only
+    // place that field is written for a fresh signup.
+    function saveMainFlightForNewSignup(user) {
+      if (!user || !user.nickname || !user.mainFlight) return;
+      try {
+        ensureFirebaseApp();
+        profileRef(user.nickname).update({ mainFlight: user.mainFlight })
+          .catch((err) => console.error('Save Main Flight (signup) error:', err));
+      } catch (err) {
+        console.error('Save Main Flight (signup) init error:', err);
+      }
     }
 
     function completeSignIn(user, isNewSignup) {
@@ -9548,7 +9662,14 @@ Answer: C</pre>
       currentChatUser = user;
       setNeedsFlightCode(user.needsFlightCode);
       document.getElementById('chat-fab').style.display = 'flex';
-      initChat();
+      seedDefaultFlightsIfEmpty();
+      initFlightsListener();
+      try { activeFlight = localStorage.getItem(activeFlightStorageKey()) || null; } catch (err) { activeFlight = null; }
+      if (activeFlight) {
+        const label = document.getElementById('active-flight-label');
+        if (label) label.textContent = flightLabel(activeFlight);
+        initChat();
+      }
       initPresence(user);
       watchForLiveBan(user);
       initShopOverrides();
@@ -9888,6 +10009,240 @@ Answer: C</pre>
     const DB_NAMESPACE = 'aerodynadmics-aele';
     function nsRef(path) {
       return firebase.database().ref(DB_NAMESPACE + '/' + path);
+    }
+
+    // ==========================================================
+    // ---- FLIGHTS + AIRSPACE ----
+    // Data model (all under DB_NAMESPACE, same Firebase RTDB the rest of
+    // the app already uses):
+    //   flights/<id>            = { name, graduationYear, createdAt }
+    //   profiles/<nickname>/mainFlight = "<flightId>"   (added onto the
+    //     SAME profile node bio/background/flightHours already live on)
+    //   flightChats/<flightId>/messages/<pushId> = same shape as the old
+    //     single chat/messages node it replaces
+    //
+    // Suggested Firebase rules to add alongside the existing ones in the
+    // comment block below this:
+    //   "flights": { ".read": true, ".write": true },
+    //   "flightChats": {
+    //     "$flightId": {
+    //       "messages": {
+    //         ".read": true,
+    //         ".write": true,
+    //         "$msgId": {
+    //           ".validate": "newData.hasChildren(['text','ts']) && newData.hasChildren(['nickname','avatar'])"
+    //         }
+    //       }
+    //     }
+    //   }
+    // Flight creation itself is still gated client-side by isAdminUser(),
+    // same as every other admin action in this file (toggleFlightStoreEnabled,
+    // banFromChat, etc.) — there's no separate server-side admin check
+    // anywhere else in the app either, so this matches the existing model.
+    // ==========================================================
+
+    // Flights need to be readable before anyone signs in at all — the
+    // signup screen's Main Flight dropdown is filled from this — so this
+    // runs unconditionally on load rather than waiting for showSignedInUI.
+    document.addEventListener('DOMContentLoaded', () => {
+      seedDefaultFlightsIfEmpty();
+      initFlightsListener();
+    });
+
+    let allFlights = {};          // { flightId: { name, graduationYear, createdAt } }
+    let flightsLoaded = false;
+    let flightsListenerAttached = false;
+    let activeFlight = null;      // the Flight currently shown in the sidebar/chat
+    let myMainFlight = null;      // the signed-in user's OWN Main Flight (never changes just by visiting)
+
+    function flightsRef() { return nsRef('flights'); }
+    function activeFlightStorageKey() {
+      return 'activeFlight:' + ((currentChatUser && currentChatUser.nickname) || 'anon');
+    }
+    function flightLabel(flightId) {
+      if (!flightId) return '';
+      const f = allFlights[flightId];
+      return f && f.name ? f.name : ('Flight ' + flightId);
+    }
+
+    // Seeds Flight 25/26/27 exactly once, the first time this app ever
+    // talks to a Firebase project with no flights/ node yet. Never
+    // overwrites — if an admin has already created/edited flights, this
+    // does nothing, so it's always safe to call on every load.
+    function seedDefaultFlightsIfEmpty() {
+      flightsRef().once('value').then((snap) => {
+        if (snap.exists()) return;
+        const now = Date.now();
+        flightsRef().set({
+          '25': { name: 'Flight 25', graduationYear: 2025, createdAt: now },
+          '26': { name: 'Flight 26', graduationYear: 2026, createdAt: now },
+          '27': { name: 'Flight 27', graduationYear: 2027, createdAt: now }
+        }).catch((err) => console.error('Seed default flights error:', err));
+      }).catch((err) => console.error('Seed default flights check error:', err));
+    }
+
+    // Live listener: keeps allFlights current everywhere (Airspace list,
+    // signup dropdown, Flight Management, chat "Flight NN" tags) without
+    // any of those needing their own separate fetch. Newly-created
+    // Flights (admin-only, see createFlight()) show up automatically —
+    // nothing here is hardcoded to 25/26/27.
+    function initFlightsListener() {
+      if (flightsListenerAttached) return;
+      flightsListenerAttached = true;
+      try {
+        ensureFirebaseApp();
+        flightsRef().on('value', (snap) => {
+          allFlights = snap.val() || {};
+          flightsLoaded = true;
+          populateMainFlightSelect();
+          if (document.getElementById('airspace-overlay').classList.contains('visible')) renderAirspace();
+          if (document.getElementById('flight-management-overlay').classList.contains('visible')) renderFlightManagement();
+          renderNicknameListFromCache();
+        }, (err) => console.error('Flights listener error:', err));
+      } catch (err) {
+        console.error('Flights listener init error:', err);
+      }
+    }
+
+    function sortedFlightIds() {
+      return Object.keys(allFlights).sort((a, b) => {
+        const yA = (allFlights[a] && allFlights[a].graduationYear) || 0;
+        const yB = (allFlights[b] && allFlights[b].graduationYear) || 0;
+        if (yA !== yB) return yA - yB;
+        return a.localeCompare(b, undefined, { numeric: true });
+      });
+    }
+
+    // ---- signup: Main Flight dropdown ----
+    function populateMainFlightSelect() {
+      const select = document.getElementById('main-flight-select');
+      if (!select) return;
+      const ids = sortedFlightIds();
+      if (!ids.length) {
+        select.innerHTML = '<option value="">No Flights available yet</option>';
+        return;
+      }
+      const prevValue = select.value;
+      select.innerHTML = ids.map((id) => `<option value="${escapeHtml(id)}">${escapeHtml(flightLabel(id))}</option>`).join('');
+      if (ids.includes(prevValue)) select.value = prevValue;
+    }
+
+    // ---- Airspace: the Flight selector ----
+    function openAirspace() {
+      renderAirspace();
+      document.getElementById('airspace-overlay').classList.add('visible');
+    }
+    function closeAirspace() {
+      document.getElementById('airspace-overlay').classList.remove('visible');
+    }
+
+    function renderAirspace() {
+      const body = document.getElementById('airspace-body');
+      if (!body) return;
+      if (!flightsLoaded) { body.innerHTML = '<div class="nick-modal-status">Loading&hellip;</div>'; return; }
+
+      const ids = sortedFlightIds();
+      if (!ids.length) {
+        body.innerHTML = '<div class="nick-modal-status">No Flights have been created yet.</div>';
+        return;
+      }
+
+      const rowHtml = (id) => {
+        const f = allFlights[id] || {};
+        const isActive = id === activeFlight;
+        const isMain = id === myMainFlight;
+        return `
+          <div class="airspace-flight-row${isActive ? ' is-active' : ''}" onclick="enterFlight('${escapeHtml(id)}')">
+            <div>
+              <div class="airspace-flight-row-name">&#9992;&#65039; ${escapeHtml(f.name || ('Flight ' + id))}</div>
+              ${f.graduationYear ? `<div class="airspace-flight-row-sub">Graduation year ${escapeHtml(String(f.graduationYear))}</div>` : ''}
+            </div>
+            ${isMain ? '<span class="airspace-flight-row-badge">MAIN FLIGHT</span>' : (isActive ? '<span class="airspace-flight-row-badge">VIEWING</span>' : '')}
+          </div>
+        `;
+      };
+
+      const mainHtml = myMainFlight && allFlights[myMainFlight]
+        ? `<div class="airspace-section-label">YOUR MAIN FLIGHT</div>${rowHtml(myMainFlight)}`
+        : '';
+      const otherIds = ids.filter((id) => id !== myMainFlight);
+      const othersHtml = otherIds.length
+        ? `<div class="airspace-section-label">${mainHtml ? 'AVAILABLE FLIGHTS' : 'FLIGHTS'}</div>${otherIds.map(rowHtml).join('')}`
+        : '';
+
+      body.innerHTML = mainHtml + othersHtml;
+    }
+
+    // Switches which Flight the EXISTING sidebar + chat are displaying.
+    // Does NOT touch the sidebar's own markup/design — only the data
+    // feeding it (see renderNicknameListFromCache) and which chat path
+    // is subscribed to (see switchChatToFlight).
+    function enterFlight(flightId) {
+      if (!flightId || flightId === activeFlight) { closeAirspace(); return; }
+      activeFlight = flightId;
+      try { localStorage.setItem(activeFlightStorageKey(), flightId); } catch (err) {}
+      const label = document.getElementById('active-flight-label');
+      if (label) label.textContent = flightLabel(flightId);
+      closeAirspace();
+      renderNicknameListFromCache();
+      switchChatToFlight(flightId);
+    }
+
+    // ---- Flight Management (admin only) ----
+    function openFlightManagement() {
+      if (!isAdminUser(currentChatUser)) return;
+      renderFlightManagement();
+      document.getElementById('flight-management-overlay').classList.add('visible');
+    }
+    function closeFlightManagement() {
+      document.getElementById('flight-management-overlay').classList.remove('visible');
+    }
+
+    function renderFlightManagement() {
+      const body = document.getElementById('flight-management-body');
+      if (!body) return;
+      const ids = sortedFlightIds();
+      const rows = ids.map((id) => {
+        const f = allFlights[id] || {};
+        return `
+          <div class="airspace-flight-row">
+            <div>
+              <div class="airspace-flight-row-name">${escapeHtml(f.name || ('Flight ' + id))}</div>
+              ${f.graduationYear ? `<div class="airspace-flight-row-sub">Graduation year ${escapeHtml(String(f.graduationYear))}</div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+      body.innerHTML = `
+        ${rows || '<div class="nick-modal-status">No Flights yet.</div>'}
+        <button type="button" class="topbar-nav-btn" style="width:100%; margin-top:8px;" onclick="createFlight()">+ CREATE FLIGHT</button>
+      `;
+    }
+
+    // Admin-only write, gated the same way every other admin write in
+    // this file is gated (isAdminUser(currentChatUser) checked client-side
+    // before the Firebase call — see the note on Firebase rules above).
+    async function createFlight() {
+      if (!isAdminUser(currentChatUser)) return;
+      const name = await adminPrompt('New Flight name (e.g. "Flight 28"):');
+      if (!name) return;
+      const yearStr = await adminPrompt('Graduation year for this Flight (e.g. 2028):');
+      const year = parseInt(yearStr, 10) || null;
+      // Derive an id from any trailing number in the name (e.g. "Flight 28" -> "28"),
+      // falling back to the graduation year, then to a timestamp so this
+      // never collides or fails even for an unusually-named Flight.
+      const numMatch = String(name).match(/(\d+)\s*$/);
+      const id = (numMatch && numMatch[1]) || (year ? String(year) : String(Date.now()));
+      if (allFlights[id]) {
+        await adminConfirm('A Flight with that id already exists. Pick a different name/year.');
+        return;
+      }
+      try {
+        ensureFirebaseApp();
+        await flightsRef().child(id).set({ name, graduationYear: year, createdAt: Date.now() });
+      } catch (err) {
+        console.error('Create flight error:', err);
+      }
     }
 
     // ---- in-page replacement for window.alert/confirm/prompt ----
@@ -10352,9 +10707,25 @@ Answer: C</pre>
       });
     }
 
+    // Tears down the current Flight's chat subscription and re-subscribes
+    // to the newly-entered Flight's own chat (flightChats/<id>/messages),
+    // so messages stay separated by Flight per the spec — while still
+    // letting anyone visiting a non-Main Flight read and send there too
+    // (cross-Flight chat is intentional; only WHICH path is subscribed
+    // changes here, not who's allowed to use it).
+    function switchChatToFlight(flightId) {
+      resetChatForAccountSwitch();
+      if (flightId) initChat();
+    }
+
     function initChat() {
       if (chatInitialized) return;
       const statusEl = document.getElementById('chat-panel-status');
+
+      if (!activeFlight) {
+        statusEl.textContent = 'Choose a Flight in Airspace to join its chat.';
+        return;
+      }
 
       if (!chatConfigIsFilledIn()) {
         statusEl.textContent = 'Chat not configured yet.';
@@ -10363,7 +10734,7 @@ Answer: C</pre>
 
       try {
         ensureFirebaseApp();
-        chatDbRef = nsRef('chat/messages').limitToLast(100);
+        chatDbRef = nsRef('flightChats/' + activeFlight + '/messages').limitToLast(100);
         chatInitialized = true;
         statusEl.textContent = 'Connected';
 
@@ -12685,10 +13056,20 @@ Answer: C</pre>
         ? `<div class="chat-msg-reply" data-reply-key="${escapeHtml(msg.replyTo.key || '')}" onclick="scrollToChatMessage(this.dataset.replyKey)">&#8617; <b>${escapeHtml(msg.replyTo.nickname || '')}</b>: ${escapeHtml(msg.replyTo.text || '')}</div>`
         : '';
 
+      // Cross-Flight chat: this Flight's chatbox is open to anyone
+      // visiting, not just its own members — so when a sender's OWN Main
+      // Flight isn't the Flight this chat belongs to, tag their name with
+      // it (never shown for messages sent inside someone's own Main
+      // Flight chat, per the spec).
+      const senderMainFlight = (profileCache[msg.nickname] && profileCache[msg.nickname].mainFlight) || null;
+      const flightTagHtml = (senderMainFlight && senderMainFlight !== activeFlight)
+        ? `<span class="chat-msg-flight-tag">${escapeHtml(flightLabel(senderMainFlight))}</span>`
+        : '';
+
       row.innerHTML = `
         <div class="chat-msg-avatar profile-clickable${getLiveBorderClass(msg.nickname) ? ' ' + getLiveBorderClass(msg.nickname) : ''}" data-nickname="${escapeHtml(msg.nickname || '')}"${avatarStyleAttr(getLiveAvatar(msg.nickname) || msg.avatar || '✈️')} onclick="openUserProfile(this.dataset.nickname)">${escapeHtml(avatarGlyph(getLiveAvatar(msg.nickname) || msg.avatar || '✈️'))}<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span></div>
         <div class="chat-msg-body">
-          <div class="chat-msg-meta"><span data-nickname-anim="${escapeHtml(msg.nickname || '')}" data-text="${escapeHtml(msg.nickname || '')}" class="profile-clickable ${getLiveNicknameAnimClass(msg.nickname) || ''}" onclick="openUserProfile('${(msg.nickname || '').replace(/[^a-z0-9]/gi, '')}')">${escapeHtml(msg.nickname || 'anon')}</span>${time ? ' · ' + time : ''}${replyBtnHtml}${banBtnHtml}${deleteBtnHtml}</div>
+          <div class="chat-msg-meta"><span data-nickname-anim="${escapeHtml(msg.nickname || '')}" data-text="${escapeHtml(msg.nickname || '')}" class="profile-clickable ${getLiveNicknameAnimClass(msg.nickname) || ''}" onclick="openUserProfile('${(msg.nickname || '').replace(/[^a-z0-9]/gi, '')}')">${escapeHtml(msg.nickname || 'anon')}</span>${flightTagHtml}${time ? ' · ' + time : ''}${replyBtnHtml}${banBtnHtml}${deleteBtnHtml}</div>
           ${replyQuoteHtml}
           <div class="chat-msg-text">${renderMessageText(msg.text)}</div>
         </div>
@@ -13002,7 +13383,7 @@ Answer: C</pre>
       if (mentions.length) payload.mentions = mentions;
       if (replyingTo) payload.replyTo = { key: replyingTo.key, nickname: replyingTo.nickname, text: replyingTo.text };
 
-      nsRef('chat/messages').push(payload);
+      nsRef('flightChats/' + activeFlight + '/messages').push(payload);
 
       input.value = '';
       cancelReply();
@@ -13191,6 +13572,11 @@ Answer: C</pre>
         return;
       }
 
+      if (!activeFlight && myProfileLoaded) {
+        body.innerHTML = '<div class="nick-modal-status">Choose your Main Flight in Flight Alerts to see who\'s aboard.</div>';
+        return;
+      }
+
       // ---- "PILOT" (self) + "CO-PILOT" — pinned above everyone else,
       // in that order, ahead of the Crewmates/Flight Passengers groups
       // below. Self and the current Co-Pilot are excluded from those
@@ -13246,12 +13632,32 @@ Answer: C</pre>
         ? `<li class="nick-list-divider">CO-PILOT</li>${pilotRowHtml(copilotNickname)}`
         : '';
 
+      // Kick off a profile listener for EVERY known nickname up front
+      // (not just the ones that end up rendered below) so we learn each
+      // person's Main Flight even before they qualify for the active
+      // Flight's list — otherwise a person's very first appearance in
+      // this Flight would never trigger the listener that reveals they
+      // belong here. Each listener re-renders this list once its data
+      // arrives (see ensureListProfileListener), so the roster fills in
+      // progressively rather than needing a manual refresh.
+      lastNicknameListData.forEach((item) => {
+        const nick = typeof item === 'string' ? item : item.nickname;
+        ensureListProfileListener(nick);
+      });
+
       const sorted = [...lastNicknameListData]
         // Self and the current Co-Pilot already have their own pinned
         // rows above, so drop them from the Crewmates/everyone-else list.
+        // The remaining "Souls on Board" roster is scoped to whichever
+        // Flight is currently active — a person only shows up here once
+        // their Main Flight is known and matches it (see FLIGHT MEMBERS
+        // in the spec: membership = mainFlight === activeFlight).
         .filter((item) => {
           const nick = typeof item === 'string' ? item : item.nickname;
-          return nick !== myNickname && nick !== copilotNickname;
+          if (nick === myNickname || nick === copilotNickname) return false;
+          if (!activeFlight) return false;
+          const prof = profileCache[nick];
+          return !!(prof && prof.mainFlight === activeFlight);
         })
         .sort((a, b) => {
           const nickA = typeof a === 'string' ? a : a.nickname;
@@ -13461,7 +13867,7 @@ Answer: C</pre>
         ensureFirebaseApp();
         profileRef(nickname).on('value', (snap) => {
           const data = snap.val() || {};
-          profileCache[nickname] = { bio: data.bio || '', background: data.background || null, flightHours: Number(data.flightHours) || 0 };
+          profileCache[nickname] = { bio: data.bio || '', background: data.background || null, flightHours: Number(data.flightHours) || 0, mainFlight: data.mainFlight || null };
           // Keep every row in the reviewees list showing each person's
           // current equipped background in real time, same as their
           // online/offline dot already updates live.
@@ -13479,9 +13885,24 @@ Answer: C</pre>
         ensureFirebaseApp();
         profileRef(user.nickname).on('value', (snap) => {
           const data = snap.val() || {};
-          myProfile = { bio: data.bio || '', background: data.background || null, flightHours: Number(data.flightHours) || 0 };
+          myProfile = { bio: data.bio || '', background: data.background || null, flightHours: Number(data.flightHours) || 0, mainFlight: data.mainFlight || null };
           myProfileLoaded = true;
           profileCache[user.nickname] = myProfile;
+          myMainFlight = myProfile.mainFlight || null;
+          // First time we learn the Main Flight (fresh sign-in with no
+          // Flight already active on this device via localStorage), that
+          // becomes the default active Flight. Visiting another Flight
+          // later never changes myMainFlight itself — see enterFlight().
+          if (!activeFlight && myMainFlight) {
+            activeFlight = myMainFlight;
+            try { localStorage.setItem(activeFlightStorageKey(), activeFlight); } catch (err) {}
+          }
+          const flightLabelEl = document.getElementById('active-flight-label');
+          if (flightLabelEl) flightLabelEl.textContent = flightLabel(activeFlight);
+          if (activeFlight && !chatInitialized) initChat();
+          renderFlightAlerts();
+          updateFlightAlertsBadge();
+          renderNicknameListFromCache();
           // Mirror the equipped background into the sidebar's own-user
           // card as a mini profile cover. This listener only ever runs for
           // whichever user is currently signed in, so there's no need to
@@ -13776,7 +14197,8 @@ Answer: C</pre>
       const badge = document.getElementById('flight-alerts-badge');
       if (!badge) return;
       const unreadWingsCount = Object.values(myWingsAlerts || {}).filter(a => a && !a.read).length;
-      const count = Object.keys(myIncomingRequests || {}).length + Object.keys(myIncomingCopilotRequests || {}).length + (currentUserNeedsFlightCode ? 1 : 0) + unreadWingsCount;
+      const needsMainFlight = myProfileLoaded && !myMainFlight;
+      const count = Object.keys(myIncomingRequests || {}).length + Object.keys(myIncomingCopilotRequests || {}).length + (currentUserNeedsFlightCode ? 1 : 0) + unreadWingsCount + (needsMainFlight ? 1 : 0);
       if (count > 0) {
         badge.textContent = count > 9 ? '9+' : String(count);
         badge.classList.add('visible');
@@ -13789,6 +14211,27 @@ Answer: C</pre>
       const body = document.getElementById('flight-alerts-body');
       if (!body) return;
       const keys = Object.keys(myIncomingRequests || {});
+
+      // "Choose your Main Flight" — shown to existing accounts created
+      // before Flights existed (never auto-assigned, per the spec) as
+      // well as anyone who somehow still has none. Leads even ahead of
+      // the Flight Code row since without a Main Flight, the sidebar has
+      // no Flight to default into at all.
+      const mainFlightRow = (myProfileLoaded && !myMainFlight) ? `
+        <div class="flight-alert-row">
+          <span class="avatar-circle">\u2708\ufe0f</span>
+          <div class="flight-alert-info">
+            <span class="flight-alert-name">Flight Assignment</span>
+            <span class="flight-alert-sub">Choose your Main Flight</span>
+          </div>
+          <div class="flight-alert-actions" style="display:flex; align-items:center; gap:6px;">
+            <select id="flight-alert-main-flight-select" style="font-family:'IBM Plex Mono', monospace; background: var(--blueprint-dark); color:#fff; border:1px solid var(--line); border-radius:4px; padding:4px 6px; font-size:11px;">
+              ${sortedFlightIds().map((id) => `<option value="${escapeHtml(id)}">${escapeHtml(flightLabel(id))}</option>`).join('')}
+            </select>
+            <button type="button" class="flight-alert-btn confirm" onclick="saveMainFlightFromAlert();">Save</button>
+          </div>
+        </div>
+      ` : '';
 
       // The "add your Flight Code" row, when it applies, always leads —
       // it's about securing the account, so it shouldn't get buried under
@@ -13877,8 +14320,26 @@ Answer: C</pre>
         `;
       }).join('');
 
-      const allRows = flightCodeRow + copilotRowsHtml + crewmateRowsHtml + wingsRowsHtml;
+      const allRows = mainFlightRow + flightCodeRow + copilotRowsHtml + crewmateRowsHtml + wingsRowsHtml;
       body.innerHTML = allRows || '<div class="flight-alerts-empty">No Pending Flight Alerts</div>';
+    }
+
+    // Saves the chosen Main Flight onto the signed-in user's OWN profile
+    // node (profiles/<nickname>/mainFlight) — the same node bio/background
+    // already live on. Existing accounts only ever get here by explicitly
+    // picking one here; nothing assigns it for them.
+    function saveMainFlightFromAlert() {
+      const select = document.getElementById('flight-alert-main-flight-select');
+      const flightId = select && select.value;
+      if (!flightId || !currentChatUser || !currentChatUser.nickname) return;
+      try {
+        ensureFirebaseApp();
+        profileRef(currentChatUser.nickname).update({ mainFlight: flightId })
+          .then(() => { closeFlightAlerts(); })
+          .catch((err) => console.error('Save Main Flight error:', err));
+      } catch (err) {
+        console.error('Save Main Flight init error:', err);
+      }
     }
 
     // Wings alerts stay in the Flight Alerts panel indefinitely — they are
