@@ -7574,7 +7574,6 @@ C. ...
 D. ...
 
 Answer: C</pre>
-            <p>Also understands "1.", "1)", "Question 1:", "A)", "A:", "Correct Answer:", "Correct:", and "Answer - A" style formats. Lowercase answer letters (e.g. "answer: a") are normalized automatically.</p>
           </details>
           <div class="bec-step-nav">
             <button type="button" class="mockadmin-publish-btn" onclick="BEC_doParse()">PARSE QUESTIONS</button>
@@ -16828,7 +16827,7 @@ Answer: C</pre>
         el.innerHTML = '<div class="banned-list-empty">No mock exam sets yet for this subject. Click "+ NEW SET" to create one.</div>';
         return;
       }
-      groupEntries.sort((a, b) => (a[1].updatedAt || a[1].createdAt || 0) - (b[1].updatedAt || b[1].createdAt || 0));
+      groupEntries.sort((a, b) => (a[1].title || '').localeCompare(b[1].title || '', undefined, { sensitivity: 'base', numeric: true }));
       el.innerHTML = groupEntries.map(([id, group]) => renderMockAdminGroupRow(subjectKey, id, group)).join('');
     }
 
@@ -16872,7 +16871,7 @@ Answer: C</pre>
         el.innerHTML = '<div class="banned-list-empty">No exams yet in this set. Click "+ NEW EXAM" to create one.</div>';
         return;
       }
-      entries.sort((a, b) => (a[1].updatedAt || 0) - (b[1].updatedAt || 0));
+      entries.sort((a, b) => (a[1].title || '').localeCompare(b[1].title || '', undefined, { sensitivity: 'base', numeric: true }));
       el.innerHTML = entries.map(([id, exam]) => renderMockAdminExamRow(subjectKey, id, exam)).join('');
     }
 
@@ -17038,7 +17037,7 @@ Answer: C</pre>
         el.innerHTML = '<div class="banned-list-empty">No sets yet in this subject. Click "+ NEW SET" to create one.</div>';
         return;
       }
-      entries.sort((a, b) => (a[1].updatedAt || a[1].createdAt || 0) - (b[1].updatedAt || b[1].createdAt || 0));
+      entries.sort((a, b) => (a[1].title || '').localeCompare(b[1].title || '', undefined, { sensitivity: 'base', numeric: true }));
       el.innerHTML = entries.map(([id, group]) => {
         const isSameSet = mockAdminMoveMode === 'move' && subjectKey === mockAdminMoveSourceSubject && id === (mockAdminExamsCache[mockAdminMoveExamId] || {}).groupId;
         const titleAttr = (group.title || 'Untitled Set').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
@@ -17719,7 +17718,7 @@ Answer: C</pre>
         el.innerHTML = '<div class="banned-list-empty">No sets yet in this subject. Click "+ NEW SET" above to create one.</div>';
         return;
       }
-      entries.sort((a, b) => (a[1].updatedAt || a[1].createdAt || 0) - (b[1].updatedAt || b[1].createdAt || 0));
+      entries.sort((a, b) => (a[1].title || '').localeCompare(b[1].title || '', undefined, { sensitivity: 'base', numeric: true }));
       el.innerHTML = entries.map(([id, group]) => {
         const titleAttr = (group.title || 'Untitled Set').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
         const selected = BEC.groupId === id;
@@ -18466,7 +18465,7 @@ Answer: C</pre>
         updateTopbarStoreNav(tab === 'shop' ? 'shop' : null);
         if (tab === 'shop') renderShopIfVisible();
         updateSidebarVisibility();
-      }, 3000);
+      }, 1500);
     }
 
     // ---- flight store / hangar sub-navigation ----
