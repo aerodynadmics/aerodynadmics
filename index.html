@@ -2778,8 +2778,8 @@
   .group-label::after {
     content: "";
     flex: 1;
-    height: 1px;
-    background: var(--line);
+    height: 0;
+    border-top: 1px solid var(--line);
   }
   .exam-group-header {
     font-family: 'IBM Plex Mono', monospace;
@@ -2796,8 +2796,8 @@
   .exam-group-header::after {
     content: "";
     flex: 1;
-    height: 1px;
-    background: var(--line);
+    height: 0;
+    border-top: 1px solid var(--line);
   }
 
   .home-tabs-question {
@@ -6326,7 +6326,7 @@
   transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
 }
 .gform-pin-btn:hover { border-color: var(--paper); color: var(--paper); }
-.gform-pin-btn.active { background: rgba(255,255,255,0.12); border-color: var(--paper); color: var(--paper); }
+.gform-pin-btn.active { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
 .gform-option {
   display: flex; align-items: center; padding: 8px 0; cursor: pointer;
   font-size: 14px; color: var(--paper);
@@ -7134,9 +7134,12 @@
 
       <header>
         <h1>Aerodynamics</h1>
+        <p class="sub" id="aero-sub">No mock exams have been added for this subject yet.</p>
       </header>
 
       <ul class="exam-list" id="live-exam-list-aero" style="display:none;"></ul>
+
+      <div class="empty-note" id="empty-note-aero">NOTHING INDEXED HERE YET. CHECK BACK ONCE MOCK EXAMS FOR THIS SUBJECT ARE ADDED.</div>
 
     </section>
 
@@ -7149,9 +7152,12 @@
 
       <header>
         <h1>Aircraft Structures and Design</h1>
+        <p class="sub" id="structures-sub">No mock exams have been added for this subject yet.</p>
       </header>
 
       <ul class="exam-list" id="live-exam-list-structures" style="display:none;"></ul>
+
+      <div class="empty-note" id="empty-note-structures">NOTHING INDEXED HERE YET. CHECK BACK ONCE MOCK EXAMS FOR THIS SUBJECT ARE ADDED.</div>
 
     </section>
 
@@ -7165,7 +7171,6 @@
 
       <header>
         <h1>Take a Mock Exam</h1>
-        <p class="sub">Pick a subject to practice.</p>
       </header>
 
       <p class="group-label">SUBJECTS</p>
@@ -7181,7 +7186,6 @@
 
       <header>
         <h1>Review</h1>
-        <p class="sub">Standalone study notes per subject &mdash; coming soon.</p>
       </header>
 
       <p class="group-label">SUBJECTS</p>
@@ -7234,8 +7238,11 @@
 
       <header>
         <h1>Aircraft Powerplant</h1>
+        <p class="sub" id="powerplant-sub">No mock exams have been added for this subject yet.</p>
       </header>
       <ul class="exam-list" id="live-exam-list-powerplant" style="display:none;"></ul>
+
+      <div class="empty-note" id="empty-note-powerplant">NOTHING INDEXED HERE YET. CHECK BACK ONCE MOCK EXAMS FOR THIS SUBJECT ARE ADDED.</div>
 
     </section>
 
@@ -7248,7 +7255,7 @@
 
       <header>
         <h1 id="empty-title">Subject</h1>
-        <p class="sub">No mock exams have been added for this subject yet.</p>
+        <p class="sub" id="empty-sub">No mock exams have been added for this subject yet.</p>
       </header>
 
       <p class="group-label" id="empty-exam-group-label" style="display:none;">IN-APP MOCK EXAMS</p>
@@ -16588,7 +16595,7 @@ Answer: C</pre>
     // in sync with the database for as long as the page stays open —
     // regardless of which view is currently on screen.
     const liveMockExamListenerHandlers = {}; // subjectKey -> the exact 'value' callback attached, so it can be off()'d by reference instead of wiping every listener on that path
-    function attachLiveMockExamListener(subjectKey, containerId, labelId, emptyNoteId) {
+    function attachLiveMockExamListener(subjectKey, containerId, labelId, emptyNoteId, subLabelId) {
       if (!ensureFirebaseApp()) return;
       const render = () => {
         const container = document.getElementById(containerId);
@@ -16604,6 +16611,16 @@ Answer: C</pre>
         if (emptyNoteId) {
           const note = document.getElementById(emptyNoteId);
           if (note) note.style.display = html ? 'none' : '';
+        }
+        // These subjects' headers used to carry a static line claiming no
+        // mock exams exist, regardless of what's actually stored in
+        // Firebase. Keep it in sync with the same live data instead: show
+        // it only while the subject genuinely has nothing indexed yet, and
+        // hide it the moment a mock exam exists (and bring it back if every
+        // exam for that subject is later removed).
+        if (subLabelId) {
+          const sub = document.getElementById(subLabelId);
+          if (sub) sub.style.display = html ? 'none' : '';
         }
         initExamTimers();
       };
@@ -16621,9 +16638,33 @@ Answer: C</pre>
     // (view-aero, view-structures, view-powerplant) so their listeners can
     // just stay attached permanently from page load.
     function initLiveMockExamListeners() {
-      attachLiveMockExamListener('aero', 'live-exam-list-aero', null, null);
-      attachLiveMockExamListener('structures', 'live-exam-list-structures', null, null);
-      attachLiveMockExamListener('powerplant', 'live-exam-list-powerplant', null, null);
+      attachLiveMockExamListener('aero', 'live-exam-list-aero', null, 'empty-note-aero', 'aero-sub');
+      attachLiveMockExamListener('structures', 'live-exam-list-structures', null, 'empty-note-structures', 'structures-sub');
+      attachLiveMockExamListener('powerplant', 'live-exam-list-powerplant', null, 'empty-note-powerplant', 'powerplant-sub');
+      // Construction, Econ, and Math share a single on-screen container
+      // (view-empty) that only listens live while that particular subject
+      // page is open, so on its own it wouldn't have fresh data the moment
+      // "GENERATE RANDOM SET" is pressed on the Mock Board Exam page.
+      // Prime a background cache-only listener for each of them here so
+      // LIVE_MOCK_EXAM_CACHE always has every subject's latest published
+      // sets, no matter which page is currently open.
+      primeMockExamCache('construction');
+      primeMockExamCache('econ');
+      primeMockExamCache('math');
+    }
+
+    // Keeps LIVE_MOCK_EXAM_CACHE[subjectKey] fresh in the background (no
+    // on-screen rendering) for subjects that don't already have a
+    // permanently-attached listener. Safe to call once per subject key —
+    // later calls are no-ops.
+    const mockExamCachePrimedKeys = {};
+    function primeMockExamCache(subjectKey) {
+      if (!ensureFirebaseApp()) return;
+      if (mockExamCachePrimedKeys[subjectKey]) return;
+      mockExamCachePrimedKeys[subjectKey] = true;
+      nsRef('mockExamSets/' + subjectKey).on('value', (snap) => {
+        LIVE_MOCK_EXAM_CACHE[subjectKey] = snap.val() || {};
+      });
     }
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', initLiveMockExamListeners);
@@ -16640,7 +16681,7 @@ Answer: C</pre>
       teardownEmptySubjectMockExams();
       currentEmptySubjectKey = key;
       delete liveMockExamListenerKeys[key]; // force a fresh render/attach for this key
-      attachLiveMockExamListener(key, 'live-exam-list-empty', 'empty-exam-group-label', 'empty-note');
+      attachLiveMockExamListener(key, 'live-exam-list-empty', 'empty-exam-group-label', 'empty-note', 'empty-sub');
     }
     function teardownEmptySubjectMockExams() {
       if (currentEmptySubjectKey) {
@@ -18242,12 +18283,20 @@ Answer: C</pre>
 
     let currentBoardSet = {};
 
+    // Pulls one random PUBLISHED admin-created mock exam set per subject
+    // from the same live Firebase-backed cache (LIVE_MOCK_EXAM_CACHE) that
+    // feeds each subject's own "Take a Mock Exam" list. That cache is kept
+    // fresh for every subject (see primeMockExamCache / initLiveMockExamListeners
+    // below), so any set the admin adds or publishes is picked up
+    // automatically and can turn up here the very next time this button is
+    // pressed — no separate "board pool" to maintain by hand.
     function generateBoardSet() {
       currentBoardSet = {};
       subjects.forEach(s => {
-        const pool = subjectExamPools[s.key] || [];
-        currentBoardSet[s.key] = pool.length > 0
-          ? pool[Math.floor(Math.random() * pool.length)]
+        const cache = LIVE_MOCK_EXAM_CACHE[s.key] || {};
+        const entries = Object.entries(cache).filter(([, set]) => set && set.published);
+        currentBoardSet[s.key] = entries.length > 0
+          ? entries[Math.floor(Math.random() * entries.length)]
           : null;
       });
       renderBoardSet();
@@ -18275,10 +18324,11 @@ Answer: C</pre>
           const durationSec = s.hours * 3600;
           const examHtml = pick
             ? `<ul class="exam-list">
-                <li><a class="exam-card" href="${pick.href}" target="_blank" rel="noopener" data-duration-sec="${durationSec}">
+                <li><a class="exam-card" href="javascript:void(0)" data-duration-sec="${durationSec}"
+                    onclick="openInAppMockExam('live:${s.key}:${pick[0]}', this); return false;">
                   <div class="exam-row">
                     <span class="exam-idx">${s.pct}%</span>
-                    <span class="exam-name">${pick.name}</span>
+                    <span class="exam-name">${escapeHtml(pick[1].title || 'Untitled Set')}</span>
                     <span class="exam-go">OPEN FORM <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg></span>
                   </div>
                 </a></li>
