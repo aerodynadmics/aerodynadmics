@@ -2576,6 +2576,7 @@
     width: 100% !important;
     height: 100% !important;
     --poster-color: transparent;
+    --progress-bar-height: 0px;
     pointer-events: none;
   }
   .profile-aircraft-name {
@@ -2896,7 +2897,7 @@
     left: 0;
     right: 0;
     height: 1px;
-    background: repeating-linear-gradient(to right, var(--line) 0 8px, transparent 8px 16px);
+    background: var(--line);
   }
   .airplane-loading-plane {
     position: absolute;
@@ -2915,7 +2916,6 @@
     font-size: 12.5px;
     letter-spacing: 0.06em;
     color: var(--rivet);
-    text-transform: uppercase;
   }
 
   ul.subject-list, ul.exam-list {
@@ -16555,9 +16555,15 @@ Answer: C</pre>
       if (!visible.length) return '';
       visible.sort((a, b) => (a[1].updatedAt || 0) - (b[1].updatedAt || 0));
 
+      // Alphabetical (natural) sort helper — e.g. "Mock Exam 2" before
+      // "Mock Exam 10" — reused both for the ungrouped case below and for
+      // ordering titles within each group further down.
+      const byTitleAlpha = (a, b) => (a[1].title || '').localeCompare(b[1].title || '', undefined, { sensitivity: 'base', numeric: true });
+
       const hasAnyGroup = visible.some(([, set]) => set.group && set.group.trim());
       if (!hasAnyGroup) {
-        return visible.map(([id, set], i) => renderMockExamCardLi(subjectKey, id, set, i + 1)).join('');
+        const alphabetized = visible.slice().sort(byTitleAlpha);
+        return alphabetized.map(([id, set], i) => renderMockExamCardLi(subjectKey, id, set, i + 1)).join('');
       }
 
       const groupOrder = [];
@@ -16567,11 +16573,12 @@ Answer: C</pre>
         if (!buckets[groupName]) { buckets[groupName] = []; groupOrder.push(groupName); }
         buckets[groupName].push([id, set]);
       });
+      groupOrder.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true }));
 
       let counter = 0;
       return groupOrder.map(groupName => {
         const header = `<li class="exam-group-header">${escapeHtml(groupName.toUpperCase())}</li>`;
-        const cards = buckets[groupName].map(([id, set]) => {
+        const cards = buckets[groupName].slice().sort(byTitleAlpha).map(([id, set]) => {
           counter++;
           return renderMockExamCardLi(subjectKey, id, set, counter);
         }).join('');
@@ -18006,6 +18013,8 @@ Answer: C</pre>
       if (!countEl) return;
       const n = document.querySelectorAll('#gform-questions .gform-card.pinned').length;
       countEl.textContent = `(${n})`;
+      const pinsBtn = document.getElementById('gform-pins-btn');
+      if (pinsBtn) pinsBtn.classList.toggle('active', n > 0);
     }
 
     function jumpToNextPinned() {
