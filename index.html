@@ -3826,7 +3826,6 @@
   .mockadmin-publish-btn:hover { opacity: 0.85; }
 
   /* ---- bulk mock exam creator (BEC) ---- */
-  .bec-launch-btn { background: none; border: 1px solid var(--accent); color: var(--accent); }
   .bec-steps-bar {
     display: flex; flex-wrap: wrap; gap: 6px;
     margin: 4px 0 18px;
@@ -7494,7 +7493,7 @@
   <div class="banned-list-overlay" id="mockadmin-overlay">
     <div class="mockadmin-card">
       <button class="banned-list-close" onclick="closeMockExamAdmin()">&times;</button>
-      <h3>📝 Manage Mock Exams</h3>
+      <h3 id="mockadmin-main-title">📝 Manage Mock Exams</h3>
 
       <div class="mockadmin-subject-picker" id="mockadmin-subject-picker"></div>
 
@@ -7503,7 +7502,7 @@
           <span id="mockadmin-current-subject-name"></span>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <button type="button" class="mockadmin-new-btn" onclick="createMockAdminSet()">+ NEW SET</button>
-            <button type="button" class="mockadmin-new-btn bec-launch-btn" onclick="openBulkExamCreator()">&#9889; BULK CREATOR</button>
+            <button type="button" class="mockadmin-new-btn" onclick="openBulkExamCreator()">&#9889; INSTANT CREATOR</button>
           </div>
         </div>
         <div id="mockadmin-set-list"></div>
@@ -7522,7 +7521,7 @@
         <button type="button" class="mockadmin-back-btn" onclick="closeMockAdminEditor()">&larr; BACK TO EXAMS</button>
 
         <label class="mockadmin-field-label">EXAM NAME</label>
-        <input type="text" id="mockadmin-edit-title" class="mockadmin-input" placeholder="e.g. Mock Exam 1">
+        <input type="text" id="mockadmin-edit-title" class="mockadmin-input">
 
         <label class="mockadmin-field-label">TIMER (MINUTES)</label>
         <input type="number" id="mockadmin-edit-duration" class="mockadmin-input" min="1" placeholder="240" style="max-width:160px;">
@@ -7543,7 +7542,7 @@
            mockExamSets/<subject>/<examId> structure as the manual editor. -->
       <div id="mockadmin-bulk-view" style="display:none;">
         <button type="button" class="mockadmin-back-btn" onclick="closeBulkExamCreator()">&larr; BACK</button>
-        <h3 style="margin:0 0 4px; font-size:15px;">&#9889; Bulk Mock Exam Creator</h3>
+        <h3 style="margin:0 0 16px; font-size:15px;">&#9889; Instant Mock Exam Creator</h3>
         <div class="bec-steps-bar">
           <span class="bec-step-dot">1. Paste</span>
           <span class="bec-step-dot">2. Review</span>
@@ -7600,7 +7599,7 @@ Answer: C</pre>
         <!-- STEP 3 — exam settings -->
         <div id="bec-step-3" style="display:none;">
           <label class="mockadmin-field-label">EXAM NAME</label>
-          <input type="text" id="bec-exam-title" class="mockadmin-input" placeholder="e.g. Mock Exam 1">
+          <input type="text" id="bec-exam-title" class="mockadmin-input">
           <label class="mockadmin-field-label">TIMER (MINUTES)</label>
           <input type="number" id="bec-exam-duration" class="mockadmin-input" min="1" placeholder="240" style="max-width:160px;">
           <div class="bec-step-nav">
@@ -7629,7 +7628,7 @@ Answer: C</pre>
           <label class="mockadmin-field-label">FINAL REVIEW</label>
           <div id="bec-final-review" class="bec-final-review"></div>
           <label class="bec-publish-check">
-            <input type="checkbox" id="bec-publish-now"> Publish immediately (otherwise saved as a draft, same as the manual editor)
+            <input type="checkbox" id="bec-publish-now" checked> Publish immediately (otherwise saved as a draft)
           </label>
           <div class="bec-step-nav">
             <button type="button" class="mockadmin-save-btn" onclick="BEC_showStep(4)">&larr; BACK</button>
@@ -16678,6 +16677,8 @@ Answer: C</pre>
       if (!ensureFirebaseApp()) { await adminAlert('Chat/database is not configured yet.'); return; }
       document.getElementById('mockadmin-overlay').classList.add('visible');
       document.body.style.overflow = 'hidden'; // lock background scroll so the only scrollbar visible while this is open is the popup's own inset one
+      document.getElementById('mockadmin-main-title').style.display = '';
+      document.getElementById('mockadmin-subject-picker').style.display = '';
       renderMockAdminSubjectPicker();
       selectMockAdminSubject(mockAdminCurrentSubject || subjects[0].key);
     }
@@ -16801,7 +16802,7 @@ Answer: C</pre>
 
     async function createMockAdminSet() {
       if (!isAdminUser(currentChatUser)) return;
-      const name = await adminPrompt('Name this new set (e.g. "PATTS Mock Exam 2024"):');
+      const name = await adminPrompt('Name this new set:');
       if (name === null) return;
       const title = name.trim();
       if (!title) { await adminAlert('Give this set a name first.'); return; }
@@ -17055,7 +17056,7 @@ Answer: C</pre>
     }
 
     async function createMockAdminMoveTargetSet() {
-      const name = await adminPrompt('Name this new set (e.g. "PATTS Mock Exam 2024"):');
+      const name = await adminPrompt('Name this new set:');
       if (name === null) return;
       const title = name.trim();
       if (!title) { await adminAlert('Give this set a name first.'); return; }
@@ -17153,6 +17154,8 @@ Answer: C</pre>
       mockAdminCurrentExamId = examId;
       document.getElementById('mockadmin-examlist-view').style.display = 'none';
       document.getElementById('mockadmin-editor-view').style.display = '';
+      document.getElementById('mockadmin-main-title').style.display = 'none';
+      document.getElementById('mockadmin-subject-picker').style.display = 'none';
       const titleInput = document.getElementById('mockadmin-edit-title');
       const durationInput = document.getElementById('mockadmin-edit-duration');
 
@@ -17172,6 +17175,8 @@ Answer: C</pre>
 
     function closeMockAdminEditor() {
       document.getElementById('mockadmin-editor-view').style.display = 'none';
+      document.getElementById('mockadmin-main-title').style.display = '';
+      document.getElementById('mockadmin-subject-picker').style.display = '';
       if (mockAdminCurrentGroupId) {
         document.getElementById('mockadmin-examlist-view').style.display = '';
       } else {
@@ -17383,16 +17388,20 @@ Answer: C</pre>
       document.getElementById('mockadmin-examlist-view').style.display = 'none';
       document.getElementById('mockadmin-editor-view').style.display = 'none';
       document.getElementById('mockadmin-bulk-view').style.display = '';
+      document.getElementById('mockadmin-main-title').style.display = 'none';
+      document.getElementById('mockadmin-subject-picker').style.display = 'none';
       document.getElementById('bec-paste-textarea').value = '';
       document.getElementById('bec-questions-list').innerHTML = '';
       document.getElementById('bec-summary').innerHTML = '';
       const pubCheckbox = document.getElementById('bec-publish-now');
-      if (pubCheckbox) pubCheckbox.checked = false;
+      if (pubCheckbox) pubCheckbox.checked = true;
       BEC_showStep(1);
     }
 
     function closeBulkExamCreator() {
       document.getElementById('mockadmin-bulk-view').style.display = 'none';
+      document.getElementById('mockadmin-main-title').style.display = '';
+      document.getElementById('mockadmin-subject-picker').style.display = '';
       // Return to whichever view the manual editor would return to — a
       // group's exam list if one was open, otherwise the top-level set list.
       if (mockAdminCurrentGroupId) {
@@ -17530,7 +17539,7 @@ Answer: C</pre>
               <button type="button" class="mockadmin-mini-btn danger" onclick="BEC_removeQuestion(${qi})">REMOVE</button>
             </span>
           </div>
-          <div class="bec-q-body" style="${q._valid ? 'display:none;' : ''}">
+          <div class="bec-q-body" style="${(q._expanded !== undefined ? !q._expanded : q._valid) ? 'display:none;' : ''}">
             <div class="bec-issue-box" style="${q._issues.length ? '' : 'display:none;'}">${q._issues.map(i => '⚠ ' + escapeHtml(i)).join('<br>')}</div>
             <textarea class="mockadmin-input mockadmin-textarea" placeholder="Question text"
               oninput="BEC_updateField(${qi}, 'q', this.value)">${escapeHtml(q.q || '')}</textarea>
@@ -17631,10 +17640,14 @@ Answer: C</pre>
     }
     function BEC_toggleCard(qi) {
       const body = document.querySelector(`.bec-q-card[data-qi="${qi}"] .bec-q-body`);
-      if (body) body.style.display = (body.style.display === 'none') ? '' : 'none';
+      if (!body) return;
+      const nowOpen = body.style.display === 'none';
+      body.style.display = nowOpen ? '' : 'none';
+      if (BEC.questions[qi]) BEC.questions[qi]._expanded = nowOpen;
     }
     function BEC_toggleAll(expand) {
       document.querySelectorAll('.bec-q-card .bec-q-body').forEach(el => { el.style.display = expand ? '' : 'none'; });
+      BEC.questions.forEach(q => { q._expanded = expand; });
     }
 
     // ---- STEP 2 -> 3 ----
@@ -17725,7 +17738,7 @@ Answer: C</pre>
       BEC_renderDestGroupList(BEC.subjectKey, BEC.groupsCache);
     }
     async function BEC_createDestGroup() {
-      const name = await adminPrompt('Name this new set (e.g. "PATTS Mock Exam 2024"):');
+      const name = await adminPrompt('Name this new set:');
       if (name === null) return;
       const title = name.trim();
       if (!title) { await adminAlert('Give this set a name first.'); return; }
@@ -17819,7 +17832,7 @@ Answer: C</pre>
       const ref = nsRef('mockExamSets/' + subjectKey).push(); // same push()-then-set() pattern as saveMockAdminSet()
       if (subjectKey === mockAdminCurrentSubject) mockAdminExamsCache[ref.key] = payload;
       ref.set(payload).then(async () => {
-        await adminAlert(publish ? '✅ Bulk exam created and published. Live for everyone now.' : '✅ Bulk exam created as a draft (only you can see it until published).');
+        await adminAlert(publish ? '✅ Instant exam created and published. Live for everyone now.' : '✅ Instant exam created as a draft (only you can see it until published).');
         refreshMockAdminUI();
         closeBulkExamCreator();
       }).catch(err => {
