@@ -6318,7 +6318,7 @@
 }
 .gform-qhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
 .gform-qnum { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--rivet); margin: 0; letter-spacing: 0.03em; }
-.gform-qtext { font-size: 15px; font-weight: 500; margin: 0 0 14px; color: var(--paper); }
+.gform-qtext { font-size: 15px; font-weight: 500; margin: 0 0 14px; color: var(--paper); white-space: pre-line; }
 .gform-pin-btn {
   background: none; border: 1px solid var(--line); border-radius: 6px; color: var(--rivet);
   font-size: 13px; line-height: 1; cursor: pointer; padding: 5px 8px; flex-shrink: 0;
@@ -7258,7 +7258,6 @@
         <p class="sub" id="empty-sub">No mock exams have been added for this subject yet.</p>
       </header>
 
-      <p class="group-label" id="empty-exam-group-label" style="display:none;">IN-APP MOCK EXAMS</p>
       <ul class="exam-list" id="live-exam-list-empty" style="display:none;"></ul>
 
       <div class="empty-note" id="empty-note">NOTHING INDEXED HERE YET. CHECK BACK ONCE MOCK EXAMS FOR THIS SUBJECT ARE ADDED.</div>
@@ -16688,7 +16687,7 @@ Answer: C</pre>
       teardownEmptySubjectMockExams();
       currentEmptySubjectKey = key;
       delete liveMockExamListenerKeys[key]; // force a fresh render/attach for this key
-      attachLiveMockExamListener(key, 'live-exam-list-empty', 'empty-exam-group-label', 'empty-note', 'empty-sub');
+      attachLiveMockExamListener(key, 'live-exam-list-empty', null, 'empty-note', 'empty-sub');
     }
     function teardownEmptySubjectMockExams() {
       if (currentEmptySubjectKey) {
