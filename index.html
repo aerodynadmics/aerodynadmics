@@ -548,7 +548,7 @@
     margin-top: 0;
     margin-bottom: 0;
   }
-  #nickname-step > button:disabled { opacity: 0.6; cursor: default; }
+  #nickname-step > button:disabled { opacity: 0.6; cursor: default; pointer-events: none; }
   #nickname-step .nick-checking {
     display: none;
     font-family: 'IBM Plex Mono', monospace;
@@ -6702,29 +6702,136 @@
   .signin-card p.legal-agree-note .legal-inline-link { color: var(--paper); }
   .signin-card p.legal-agree-note .legal-inline-link:hover { color: var(--accent); }
 
-  /* Checkbox that gates account creation on having reached the bottom of
-     the Terms/Privacy note. Sits directly above the CREATE ACCOUNT button
-     so the note above it is read first, in order, before it can be checked. */
-  .signin-card label.legal-agree-checkbox-label {
+  /* ---- Even vertical rhythm in the sign-up form's legal area ----
+     Visible gaps are all ~12px: Confirm Flight Code -> note -> Terms row ->
+     Privacy row -> CREATE ACCOUNT. (The confirm input used to carry a 26px
+     bottom margin sized for the button that sat right under it, which made
+     the gap above the note far larger than the rest. The 8px values below
+     add up with the note's built-in line spacing to a visible 12px.) */
+  #nickname-step #flightcode-confirm-input { margin-bottom: 8px; }
+  #nickname-step p.legal-agree-note { margin: 8px 0 0; line-height: 16px; text-align: left; }
+
+  /* Hide the sign-in card's own side scrollbar (the page hides its scrollbars
+     too). The card still scrolls with the wheel, touch and keyboard. */
+  .signin-card { scrollbar-width: none; -ms-overflow-style: none; }
+  .signin-card::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+  /* Terms / Privacy acceptance checklist on the sign-up form.
+     Each row opens its own pop-up. The box is ticked ONLY from inside that
+     pop-up (scroll to the end, tick the box there), after which the pop-up
+     closes and the row shows as accepted. CREATE ACCOUNT unlocks once both
+     rows are accepted. The rows live in a wrapper <div> so the generic
+     "#nickname-step > button" pill styling does not apply to them. */
+  .legal-checklist {
     display: flex;
-    align-items: flex-start;
-    gap: 8px;
+    flex-direction: column;
+    gap: 12px;
+    margin: 7px 0 12px;
+  }
+  .legal-check-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
     text-align: left;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 10px 12px;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
-    line-height: 1.5;
+    line-height: 1.4;
     color: var(--paper);
-    margin: 4px 0 16px;
     cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
   }
-  .signin-card label.legal-agree-checkbox-label input[type="checkbox"] {
-    flex-shrink: 0;
+  .legal-check-row:hover { border-color: var(--rivet); }
+  .legal-check-row.checked {
+    border-color: var(--green);
+    background: rgba(79, 209, 160, 0.08);
+  }
+  .legal-check-box {
+    position: relative;
+    flex: 0 0 auto;
     width: 15px;
     height: 15px;
+    border: 1.5px solid var(--rivet);
+    border-radius: 3px;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .legal-check-box::after {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 0.5px;
+    width: 4px;
+    height: 8px;
+    border: solid var(--blueprint-dark);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg) scale(0);
+    transition: transform 0.15s ease;
+  }
+  .legal-check-row.checked .legal-check-box { background: var(--green); border-color: var(--green); }
+  .legal-check-row.checked .legal-check-box::after { transform: rotate(45deg) scale(1); }
+  .legal-check-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    text-decoration: underline;
+    text-decoration-color: rgba(127, 168, 201, 0.45);
+    text-underline-offset: 3px;
+  }
+  .legal-check-status {
+    flex: 0 0 auto;
+    font-size: 10px;
+    letter-spacing: 0.03em;
+    color: var(--rivet);
+  }
+  .legal-check-row.checked .legal-check-status { color: var(--green); }
+
+  /* Acceptance box at the very END of the Terms / Privacy pop-up text.
+     Only shown when the pop-up was opened from the sign-up form (the
+     homepage footer and profile "Legal & Policies" links stay read-only). */
+  .legal-accept {
+    display: none;
+    margin: 26px 0 0;
+    padding-top: 18px;
+    border-top: 1px solid rgba(63, 109, 146, 0.45);
+  }
+  .legal-accept.visible { display: block; }
+  .legal-accept-hint {
+    margin: 0 0 12px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--rivet);
+    text-align: left;
+  }
+  .legal-accept-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #fff;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+  }
+  .legal-accept-label:hover { border-color: var(--rivet); }
+  .legal-accept-label:has(input:checked) { border-color: var(--green); }
+  .legal-accept-label input[type="checkbox"] {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
     margin: 1px 0 0;
-    accent-color: var(--accent);
+    padding: 0;
+    accent-color: var(--green);
     cursor: pointer;
   }
+  .legal-accept-label span { flex: 1 1 auto; min-width: 0; }
 
   /* Legal & Policies block on the signed-in user's own profile card */
   .profile-card-legal {
@@ -6978,11 +7085,19 @@
         </div>
         <div class="nick-error" id="flightcode-error"></div>
 
-        <p class="legal-agree-note">Before creating your account, please read our <button type="button" class="legal-inline-link" onclick="openTermsAndConditions(this)">Terms and Conditions</button> and <button type="button" class="legal-inline-link" onclick="openPrivacyPolicy(this)">Privacy Policy</button>.</p>
-        <label class="legal-agree-checkbox-label" for="nickname-terms-checkbox">
-          <input type="checkbox" id="nickname-terms-checkbox">
-          <span>I have read and agree to the Terms and Conditions and Privacy Policy.</span>
-        </label>
+        <p class="legal-agree-note">Before creating your account, please read and accept both of these:</p>
+        <div class="legal-checklist" role="group" aria-label="Terms and Conditions and Privacy Policy">
+          <button type="button" class="legal-check-row" id="legal-check-terms" role="checkbox" aria-checked="false" aria-haspopup="dialog" onclick="openTermsAndConditions(this)">
+            <span class="legal-check-box" aria-hidden="true"></span>
+            <span class="legal-check-name">Terms and Conditions</span>
+            <span class="legal-check-status">Read &amp; accept</span>
+          </button>
+          <button type="button" class="legal-check-row" id="legal-check-privacy" role="checkbox" aria-checked="false" aria-haspopup="dialog" onclick="openPrivacyPolicy(this)">
+            <span class="legal-check-box" aria-hidden="true"></span>
+            <span class="legal-check-name">Privacy Policy</span>
+            <span class="legal-check-status">Read &amp; accept</span>
+          </button>
+        </div>
         <div class="nick-error" id="terms-checkbox-error"></div>
 
         <button id="nickname-submit" onclick="submitNickname()" disabled>CREATE ACCOUNT</button>
@@ -7138,7 +7253,15 @@
         <h3 id="terms-modal-title">Terms and Conditions</h3>
         <button type="button" class="ai-note-modal-close" onclick="closeTermsAndConditions()" aria-label="Close Terms and Conditions">&times;</button>
       </div>
-      <div class="ai-note-body terms-body" id="terms-body" tabindex="0"></div>
+      <div class="ai-note-body terms-body" id="terms-body" tabindex="0">
+        <div class="legal-accept" id="terms-accept">
+          <div class="legal-accept-hint">You have reached the end. Tick the box below to accept and close this window.</div>
+          <label class="legal-accept-label" for="terms-accept-checkbox">
+            <input type="checkbox" id="terms-accept-checkbox">
+            <span>I have read and agree to the Terms and Conditions.</span>
+          </label>
+        </div>
+      </div>
     </div>
   </div>
   <!-- SINGLE SOURCE OF TRUTH for the Terms and Conditions text. Rendered into #terms-body on first open. -->
@@ -7454,7 +7577,15 @@ If you do not agree with these Terms, you should discontinue use of the platform
         <h3 id="privacy-modal-title">Privacy Policy</h3>
         <button type="button" class="ai-note-modal-close" onclick="closePrivacyPolicy()" aria-label="Close Privacy Policy">&times;</button>
       </div>
-      <div class="ai-note-body terms-body" id="privacy-body" tabindex="0"></div>
+      <div class="ai-note-body terms-body" id="privacy-body" tabindex="0">
+        <div class="legal-accept" id="privacy-accept">
+          <div class="legal-accept-hint">You have reached the end. Tick the box below to accept and close this window.</div>
+          <label class="legal-accept-label" for="privacy-accept-checkbox">
+            <input type="checkbox" id="privacy-accept-checkbox">
+            <span>I have read and agree to the Privacy Policy.</span>
+          </label>
+        </div>
+      </div>
     </div>
   </div>
   <!-- SINGLE SOURCE OF TRUTH for the Privacy Policy text. Rendered into #privacy-body on first open. -->
@@ -9663,8 +9794,8 @@ Answer: C</pre>
       document.getElementById('flightcode-input').value = '';
       document.getElementById('flightcode-confirm-input').value = '';
       clearFlightCodeError();
-      const termsCheckbox = document.getElementById('nickname-terms-checkbox');
-      if (termsCheckbox) termsCheckbox.checked = false;
+      // Terms + Privacy must be re-accepted (from inside their pop-ups) each time
+      if (window.AeroLegalAccept) window.AeroLegalAccept.reset();
       clearTermsCheckboxError();
       document.getElementById('nickname-submit').disabled = true;
       document.getElementById('nickname-step').classList.add('visible');
@@ -10068,16 +10199,9 @@ Answer: C</pre>
       if (fcInput) fcInput.addEventListener('input', clearFlightCodeError);
       if (fcConfirm) fcConfirm.addEventListener('input', clearFlightCodeError);
 
-      // CREATE ACCOUNT stays disabled until the Terms/Privacy checkbox,
-      // placed at the very bottom of the form below the note, is checked.
-      const termsCheckbox = document.getElementById('nickname-terms-checkbox');
-      const createBtn = document.getElementById('nickname-submit');
-      if (termsCheckbox && createBtn) {
-        termsCheckbox.addEventListener('change', () => {
-          createBtn.disabled = !termsCheckbox.checked;
-          if (termsCheckbox.checked) clearTermsCheckboxError();
-        });
-      }
+      // CREATE ACCOUNT stays disabled until BOTH the Terms and the Privacy
+      // Policy have been accepted from inside their pop-ups. That state and
+      // the button toggling live in the "Legal" script at the end of the page.
     });
 
     function submitNickname() {
@@ -10111,10 +10235,11 @@ Answer: C</pre>
         return;
       }
 
-      const termsCheckbox = document.getElementById('nickname-terms-checkbox');
       clearTermsCheckboxError();
-      if (!termsCheckbox || !termsCheckbox.checked) {
-        showTermsCheckboxError('Please read and agree to the Terms and Conditions and Privacy Policy before creating your account.');
+      const legalAccept = window.AeroLegalAccept;
+      if (!legalAccept || !legalAccept.isComplete()) {
+        const missing = legalAccept ? legalAccept.missing() : ['Terms and Conditions', 'Privacy Policy'];
+        showTermsCheckboxError('Please open and accept the ' + missing.join(' and the ') + ' before creating your account.');
         return;
       }
 
@@ -21177,8 +21302,46 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   // Each legal doc: its plain-text source id, its overlay id, its rendered-
   // body id, and the state (last opener + scroll position) it restores on close.
   var DOCS = {
-    terms: { sourceId: 'aero-terms-source', overlayId: 'terms-overlay', bodyId: 'terms-body', state: { opener: null, scrollX: 0, scrollY: 0 } },
-    privacy: { sourceId: 'aero-privacy-source', overlayId: 'privacy-overlay', bodyId: 'privacy-body', state: { opener: null, scrollX: 0, scrollY: 0 } }
+    terms: { key: 'terms', sourceId: 'aero-terms-source', overlayId: 'terms-overlay', bodyId: 'terms-body', acceptId: 'terms-accept', checkboxId: 'terms-accept-checkbox', rowId: 'legal-check-terms', label: 'Terms and Conditions', state: { opener: null, scrollX: 0, scrollY: 0 } },
+    privacy: { key: 'privacy', sourceId: 'aero-privacy-source', overlayId: 'privacy-overlay', bodyId: 'privacy-body', acceptId: 'privacy-accept', checkboxId: 'privacy-accept-checkbox', rowId: 'legal-check-privacy', label: 'Privacy Policy', state: { opener: null, scrollX: 0, scrollY: 0 } }
+  };
+
+  // ---- sign-up acceptance state --------------------------------------
+  // The person accepts each document from INSIDE its own pop-up (tick the
+  // box at the end of the text). Both must be accepted before CREATE
+  // ACCOUNT unlocks. Reset every time the sign-up form is (re)shown.
+  var ACCEPT = { terms: false, privacy: false };
+
+  function syncAcceptUI() {
+    Object.keys(DOCS).forEach(function (k) {
+      var d = DOCS[k];
+      var row = el(d.rowId);
+      if (row) {
+        row.classList.toggle('checked', !!ACCEPT[k]);
+        row.setAttribute('aria-checked', ACCEPT[k] ? 'true' : 'false');
+        var st = row.querySelector('.legal-check-status');
+        if (st) st.textContent = ACCEPT[k] ? 'Accepted' : 'Read & accept';
+      }
+      var cb = el(d.checkboxId);
+      if (cb) cb.checked = !!ACCEPT[k];
+    });
+    var both = ACCEPT.terms && ACCEPT.privacy;
+    var btn = el('nickname-submit');
+    var checking = el('nickname-checking');
+    // never touch the button while an account-creation request is in flight
+    if (btn && !(checking && checking.classList.contains('visible'))) btn.disabled = !both;
+    if (both) {
+      var err = el('terms-checkbox-error');
+      if (err) { err.textContent = ''; err.classList.remove('visible'); }
+    }
+  }
+
+  window.AeroLegalAccept = {
+    reset: function () { ACCEPT.terms = false; ACCEPT.privacy = false; syncAcceptUI(); },
+    isComplete: function () { return !!(ACCEPT.terms && ACCEPT.privacy); },
+    missing: function () {
+      return Object.keys(DOCS).filter(function (k) { return !ACCEPT[k]; }).map(function (k) { return DOCS[k].label; });
+    }
   };
 
   function el(id) { return document.getElementById(id); }
@@ -21270,7 +21433,10 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
       appendLines(frag, lines);
     });
 
-    body.appendChild(frag);
+    // the acceptance box (already in the markup) must stay at the very end
+    var acceptBox = el(doc.acceptId);
+    if (acceptBox && acceptBox.parentNode === body) body.insertBefore(frag, acceptBox);
+    else body.appendChild(frag);
     body.setAttribute('data-rendered', '1');
   }
 
@@ -21283,6 +21449,12 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     doc.state.scrollY = window.pageYOffset || 0;
     renderDocOnce(doc);
     var body = el(doc.bodyId);
+    // Acceptance box only when opened from the sign-up form; the homepage
+    // footer / profile "Legal & Policies" links keep the pop-up read-only.
+    var fromSignup = !!(doc.state.opener && doc.state.opener.closest && doc.state.opener.closest('#nickname-step'));
+    var acceptBox = el(doc.acceptId);
+    if (acceptBox) acceptBox.classList.toggle('visible', fromSignup);
+    syncAcceptUI();
     document.documentElement.classList.add('legal-scroll-lock');
     ov.classList.add('visible');
     ov.setAttribute('aria-hidden', 'false');
@@ -21328,6 +21500,22 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     if (cfg.copyrightConcernsUrl) window.open(cfg.copyrightConcernsUrl, '_blank', 'noopener,noreferrer');
   };
 
+  // ---- ticking the box inside a pop-up: record it, then close the pop-up so
+  // the person lands back on the form with that row shown as accepted ----
+  Object.keys(DOCS).forEach(function (k) {
+    var cb = el(DOCS[k].checkboxId);
+    if (!cb) return;
+    cb.addEventListener('change', function () {
+      ACCEPT[k] = cb.checked;
+      syncAcceptUI();
+      if (cb.checked) {
+        // short pause so the tick is seen before the window closes
+        setTimeout(function () { if (ACCEPT[k]) closeDoc(DOCS[k]); }, 350);
+      }
+    });
+  });
+  syncAcceptUI();
+
   // ---- wiring ----
   // Each modal can ONLY be closed with the X button in its header: no backdrop
   // click, no Escape. While either is open, Escape is swallowed here (capture
@@ -21348,7 +21536,9 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
       return;
     }
     if (e.key === 'Tab') {
-      var stops = [ov.querySelector('.ai-note-modal-close'), el(openDocEntry.bodyId)].filter(Boolean);
+      var acceptCb = el(openDocEntry.checkboxId);
+      var stops = [ov.querySelector('.ai-note-modal-close'), el(openDocEntry.bodyId),
+                   (acceptCb && acceptCb.offsetParent !== null) ? acceptCb : null].filter(Boolean);
       if (!stops.length) return;
       var idx = stops.indexOf(document.activeElement);
       if (idx === -1) { e.preventDefault(); stops[0].focus(); return; }
