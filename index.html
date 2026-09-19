@@ -2015,6 +2015,55 @@
   .confirm-dialog-btn.affirm:hover { background: rgba(255, 111, 176, 0.22); }
 
 
+  /* ---- site-wide custom tooltip for every native title="" tooltip ----
+     Driven by the script at the end of the page: on hover it takes the
+     element's title text, removes the title attribute (so the plain
+     browser tooltip never appears) and shows this floating box instead,
+     styled to match the "Add Crewmate" tooltip. ---- */
+  #app-tooltip {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 2147483000;
+    max-width: 260px;
+    background: var(--blueprint-dark);
+    color: var(--paper);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    line-height: 1.4;
+    letter-spacing: 0.02em;
+    white-space: pre-line;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-4px);
+    transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+  }
+  #app-tooltip.above { transform: translateY(4px); }
+  #app-tooltip.visible { opacity: 1; visibility: visible; transform: translateY(0); }
+  #app-tooltip .app-tooltip-arrow {
+    position: absolute;
+    top: -5px;
+    width: 8px;
+    height: 8px;
+    background: var(--blueprint-dark);
+    border-left: 1px solid var(--line);
+    border-top: 1px solid var(--line);
+    transform: rotate(45deg);
+  }
+  #app-tooltip.above .app-tooltip-arrow {
+    top: auto;
+    bottom: -5px;
+    border-left: none;
+    border-top: none;
+    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+
   /* ---- custom floating tooltip, site-wide (replaces the plain browser
      title tooltip) — triggered via [data-tooltip] instead of [title],
      styled to match the app's blueprint theme. The "Add Crewmate" button
@@ -3721,6 +3770,14 @@
     margin-bottom: 8px;
     flex-wrap: wrap;
   }
+  /* a set row opens the set when the whole box is clicked */
+  .mockadmin-set-row-clickable { cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease; }
+  /* highlight the box only while the pointer is on the box itself — not
+     while it is on a button/toggle inside it */
+  .mockadmin-set-row-clickable:hover:not(:has(button:hover, label:hover, input:hover)),
+  .mockadmin-set-row-clickable:focus-visible {
+    border-color: var(--accent); background: rgba(255,255,255,0.06); outline: none;
+  }
   .mockadmin-set-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
   .mockadmin-set-title { font-weight: 600; font-size: 13px; color: var(--paper); }
   .mockadmin-set-meta { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--rivet); }
@@ -3798,9 +3855,32 @@
   .mockadmin-image-preview-wrap img {
     max-width: 120px; max-height: 80px; border-radius: 4px; border: 1px solid var(--line); display: block;
   }
+  /* Shown at 20% of the uploaded image's own size (set on load, see the
+     <img> onload -> sizeQuestionImage), capped at 340px wide / 40% of the
+     screen height, using one scale factor for both sides so the ratio is
+     always the same as the original and nothing is cropped. */
   .gform-question-image {
-    display: block; width: 220px; height: 220px; object-fit: cover;
+    display: block; width: auto; height: auto; max-width: 100%;
+    object-fit: contain;
     border-radius: 6px; border: 1px solid var(--line); margin: 0 0 14px;
+  }
+  /* click an exam question image to see it at its original size */
+  .gform-question-image { cursor: zoom-in; }
+  #qimg-preview-overlay {
+    position: fixed; inset: 0; z-index: 2100;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(3, 14, 26, 0.85);
+    padding: 24px;
+  }
+  .qimg-preview-scroll {
+    max-width: 100%; max-height: 100%;
+    overflow: auto;
+    border-radius: 8px; border: 1px solid var(--line);
+    background: var(--blueprint-dark);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.55);
+  }
+  .qimg-preview-scroll img {
+    display: block; max-width: none; width: auto; height: auto; margin: 0;
   }
   .mockadmin-editor-actions {
     display: flex;
@@ -4426,17 +4506,18 @@
     color: var(--rivet);
     letter-spacing: 0.04em;
   }
-  .board-grade-input {
-    width: 90px;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid var(--line);
-    border-radius: 3px;
-    color: var(--paper);
+  .board-grade-value {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 13px;
-    padding: 7px 9px;
+    color: var(--rivet);
+    opacity: 0.8;
   }
-  .board-grade-input:focus { outline: none; border-color: var(--accent); }
+  .board-grade-value.has-score {
+    color: var(--paper);
+    opacity: 1;
+    font-weight: 600;
+  }
+  .board-grade-value .board-grade-pct { color: var(--accent); margin-left: 6px; }
 
   .board-result-box {
     margin-top: 12px;
@@ -6318,7 +6399,125 @@
 }
 .gform-qhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
 .gform-qnum { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--rivet); margin: 0; letter-spacing: 0.03em; }
-.gform-qtext { font-size: 15px; font-weight: 500; margin: 0 0 14px; color: var(--paper); white-space: pre-line; }
+.gform-qtext { font-size: 15px; font-weight: 500; margin: 0 0 14px; color: var(--paper); white-space: pre-wrap; }
+
+/* ---- lightweight math markup: \frac{}{}, \sqrt{}, ^{}, _{} ---- */
+.mx-frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: middle;
+  margin: 0 3px;
+  font-size: 0.92em;
+  line-height: 1.2;
+  text-align: center;
+}
+.mx-frac-num, .mx-frac-den { display: block; padding: 0 4px; white-space: nowrap; }
+.mx-frac-num { border-bottom: 1.5px solid currentColor; padding-bottom: 2px; }
+.mx-frac-den { padding-top: 2px; }
+.mx-sqrt { display: inline-flex; align-items: flex-start; vertical-align: middle; margin: 0 2px; }
+.mx-sqrt-sym { font-size: 1.15em; line-height: 1; margin-right: 1px; transform: translateY(1px); }
+.mx-sqrt-content { border-top: 1.5px solid currentColor; padding: 1px 3px 0; white-space: nowrap; }
+.mx-sqrt-idx { font-size: 0.55em; margin-right: -5px; position: relative; top: -2px; z-index: 1; }
+/* definite integral: \int_{a}^{b} -> tall integral sign with the upper limit
+   stacked above the lower limit at its right */
+.mx-int { display: inline-flex; align-items: stretch; vertical-align: middle; margin: 0 3px; }
+.mx-int-sym { font-size: 1.9em; line-height: 1; align-self: center; margin-right: 1px; }
+.mx-int-lims { display: inline-flex; flex-direction: column; justify-content: space-between; font-size: 0.68em; line-height: 1.15; margin-left: -2px; }
+.mx-int-up, .mx-int-low { display: block; white-space: nowrap; }
+.mx-int-up { margin-bottom: 0.7em; }
+
+/* ---- visual (editable) math structures used inside the ∑ Math-enabled
+   editor fields — same \frac/\sqrt/^/_  markup as above, but rendered as
+   live, directly-editable structures (see MATH INPUT TOOLBAR script). ---- */
+.mx-editable {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+  cursor: text;
+}
+.mx-editable:empty:before {
+  content: attr(data-placeholder);
+  color: var(--rivet);
+  pointer-events: none;
+}
+.mx-slot { display: inline-block; min-width: 10px; }
+.mx-frac-num.mx-slot:empty:before,
+.mx-frac-den.mx-slot:empty:before,
+.mx-sqrt-content.mx-slot:empty:before,
+.mx-int-up.mx-slot:empty:before,
+.mx-int-low.mx-slot:empty:before,
+.mx-editslot:empty:before {
+  content: "\25A1";
+  opacity: 0.4;
+}
+/* an emptied root-index slot (e.g. the "3" of a cube root, deleted) keeps a
+   visible, clickable placeholder instead of collapsing to nothing */
+.mx-sqrt-idx.mx-slot:empty:before {
+  content: "\25A1";
+  opacity: 0.4;
+}
+.mx-editsup, .mx-editsub { font-size: 0.72em; }
+.mx-editsup { vertical-align: super; }
+.mx-editsub { vertical-align: sub; }
+.gform-qtext sup, .gform-qtext sub,
+.gform-option sup, .gform-option sub,
+.gform-correct-answer sup, .gform-correct-answer sub {
+  font-size: 0.7em;
+}
+
+/* ---- math input toolbar (question/choice editors) ---- */
+.mockadmin-qtext-row { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 10px; }
+.mockadmin-qtext-row .mockadmin-textarea { flex: 1; min-width: 0; margin-bottom: 0; }
+.math-toolbar-btn {
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--line);
+  color: var(--paper);
+  border-radius: 4px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  padding: 7px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  align-self: flex-start;
+}
+.math-toolbar-btn:hover { border-color: var(--accent); color: var(--accent); }
+.math-toolbox {
+  position: fixed;
+  z-index: 5000;
+  width: 372px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
+  background: var(--blueprint-dark);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 10px 8px;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.5);
+}
+.math-toolbox-row { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+.math-toolbox-row:last-child { margin-bottom: 0; }
+.math-toolbox-row button {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--line);
+  color: var(--paper);
+  border-radius: 4px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13px;
+  padding: 6px 4px;
+  min-width: 27px;
+  cursor: pointer;
+}
+.math-toolbox-row button:hover { border-color: var(--accent); color: var(--accent); }
+.math-toolbox-labeled-row button {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  padding: 6px 8px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
 .gform-pin-btn {
   background: none; border: 1px solid var(--line); border-radius: 6px; color: var(--rivet);
   font-size: 13px; line-height: 1; cursor: pointer; padding: 5px 8px; flex-shrink: 0;
@@ -6332,9 +6531,26 @@
   font-size: 14px; color: var(--paper);
 }
 .gform-option input { margin-right: 12px; width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; }
+/* The clickable area of a choice is just the radio + its text, not the whole
+   row — so clicking empty space beside a choice (or on "Clear selection")
+   never selects it by accident. (Once graded, the highlight spans the row.) */
+.gform-card:not(.correct):not(.incorrect) .gform-option {
+  width: fit-content; max-width: 100%; padding-right: 10px;
+}
+.gform-option-row {
+  /* line "Clear selection" up with the choice's TEXT baseline (not just the
+     box center), so the two always read as sitting on the same line */
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+}
+.gform-option-row .gform-option { flex: 0 1 auto; min-width: 0; }
+.gform-option-row .gform-option > span { align-self: baseline; }
+.gform-card.correct .gform-option-row .gform-option,
+.gform-card.incorrect .gform-option-row .gform-option { flex: 1 1 auto; }
 .gform-clear-btn {
   background: none; border: none; color: var(--rivet); font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px; cursor: pointer; padding: 8px 0 0; text-decoration: underline; text-underline-offset: 2px;
+  font-size: 11px; cursor: pointer; padding: 8px 0; margin-left: auto; flex-shrink: 0;
+  white-space: nowrap; text-decoration: underline; text-underline-offset: 2px;
+  position: relative; top: 4px; /* nudged down so it lines up with the choice circle */
 }
 .gform-clear-btn:hover { color: var(--accent); }
 .gform-card.correct {
@@ -6460,6 +6676,15 @@
     width: 100%;
     height: 100%;
     --poster-color: transparent;
+  }
+  /* hide model-viewer's built-in loading progress bar (the thick dark line
+     across the top while a model loads) — for every model-viewer on the page */
+  model-viewer {
+    --progress-bar-color: transparent;
+    --progress-bar-height: 0px;
+  }
+  model-viewer::part(default-progress-bar) {
+    display: none;
   }
   .mig-viewer-title {
     position: absolute;
@@ -7208,7 +7433,7 @@
         <ul>
           <li>&#128204; Treat each day as a full board day, not two separate practice sessions.</li>
           <li>&#128204; Pace yourself within each subject&rsquo;s time limit. Some carry more weight and more hours than others.</li>
-          <li>&#128204; Record your scores honestly. This is where you&rsquo;ll see your true standing across all six subjects.</li>
+          <li>&#128204; Your score for each subject is recorded automatically once you finish its exam. This is where you&rsquo;ll see your true standing across all six subjects.</li>
         </ul>
         <p>This is a full simulation of what your actual board days will feel like, not just isolated practice. Use it to build stamina across the day, not just knowledge for a single subject.</p>
         <p>Stay consistent. Stay honest with your scores. Trust the process.</p>
@@ -7560,7 +7785,7 @@
         <!-- STEP 1 — paste -->
         <div id="bec-step-1">
           <label class="mockadmin-field-label">PASTE EXAM QUESTIONS</label>
-          <textarea id="bec-paste-textarea" class="mockadmin-input bec-paste-textarea" placeholder="Paste the full exam here (20, 50, 100, 200+ questions supported)&#10;&#10;Question 1. Highest Thrust Setting without time limitation&#10;A. Max. Take-off thrust&#10;B. Max. Go-around thrust&#10;C. Max. Continuous thrust&#10;D. Max. Climb thrust&#10;Answer: C"></textarea>
+          <textarea id="bec-paste-textarea" class="mockadmin-input bec-paste-textarea"></textarea>
           <details class="bec-format-guide">
             <summary>Formatting Guide</summary>
             <pre>Question 1. What is lift?
@@ -11233,8 +11458,10 @@ Answer: C</pre>
     let dailyRewardsAutoShown = false;
 
     function dailyWingsForStreak(streak) {
-      // 1 wing on day 1, growing with the streak, capped at day 7 (7 🪽/day).
-      return Math.min(Math.max(streak, 1), 7);
+      // 1 wing on day 1, growing by 1 each day up to 7 🪽 on day 7. The
+      // reward cycles: the day after Day 7 is Day 1 again (1 🪽).
+      const s = Math.max(streak, 1);
+      return ((s - 1) % 7) + 1;
     }
 
     // Calendar-day string in the visitor's own local time zone, so the
@@ -11393,7 +11620,10 @@ Answer: C</pre>
       const yesterday = localDateStr(new Date(Date.now() - 86400000));
       // Continuous (claimed yesterday) -> streak continues. Any gap, including
       // never having claimed before, restarts the streak at Day 1.
-      const nextStreak = (userWallet.lastLoginDate === yesterday) ? userWallet.loginStreak + 1 : 1;
+      // After Day 7 the cycle wraps back to Day 1 (older accounts may have a
+      // stored streak above 7, so it's folded into the 1-7 cycle first).
+      const prevCycleDay = userWallet.loginStreak > 0 ? ((userWallet.loginStreak - 1) % 7) + 1 : 0;
+      const nextStreak = (userWallet.lastLoginDate === yesterday) ? (prevCycleDay % 7) + 1 : 1;
       pendingDailyClaim = { streak: nextStreak, reward: dailyWingsForStreak(nextStreak) };
       updateDailyClaimButton();
       renderDailyRewardsGrid();
@@ -15098,6 +15328,24 @@ Answer: C</pre>
           // list instantly, not on the next 1s tick.
           tickAllExamTimers();
           if (formPopupTimerKey === key) stopFormPopupTimer();
+
+          // RESET also wipes every answer/pin/graded state saved for this
+          // exam (and its Mock Board score), not just the timer — so the
+          // next time it's opened every question is blank again.
+          const m = /openInAppMockExam\('([^']+)'/.exec(card.getAttribute('onclick') || '');
+          if (m) {
+            const examId = m[1];
+            if (currentExamId === examId) {
+              // its popup is open right now — close it without re-saving
+              hideScoreModal();
+              const openOverlay = document.getElementById('gform-overlay');
+              if (openOverlay) openOverlay.remove();
+              stopGformPopupTimer();
+              currentExamId = null;
+            }
+            try { localStorage.removeItem(userScopedKey(GFORM_PROGRESS_PREFIX + examId)); } catch (err) {}
+            clearBoardScore(examId);
+          }
         });
 
         const goEl = row.querySelector('.exam-go');
@@ -16506,6 +16754,279 @@ Answer: C</pre>
       return String(str).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     }
 
+    /* ============ LIGHTWEIGHT MATH MARKUP (fractions, roots, sup/sub) ============
+       Self-contained (no external math library, so it renders identically in
+       every browser with no font/CDN dependency). Supports a small LaTeX-ish
+       syntax typed straight into question text or choice text:
+         \frac{a}{b}   -> a real stacked fraction (a over a line over b)
+         \sqrt{a}      -> square root, \sqrt[3]{a} for a cube root etc.
+         ^{a} or ^a    -> superscript (braces needed for more than one character)
+         _{a} or _a    -> subscript (braces needed for more than one character)
+       Everything else is shown as plain text. Nesting works, e.g.
+       \frac{1}{\sqrt{2}}. Input is expected to already be HTML-escaped
+       (see escapeHtml above) before being handed to mathMarkupToHtml, since
+       none of the trigger characters (\ { } ^ _ [ ]) are affected by that
+       escaping. */
+    function mathMarkupToHtml(s) {
+      function readBraceArg(str, openPos) {
+        // str[openPos] must be '{'; returns the inner content and the index
+        // just past the matching closing brace, or null if unmatched.
+        let depth = 0;
+        for (let j = openPos; j < str.length; j++) {
+          if (str[j] === '\\' && (str[j + 1] === '{' || str[j + 1] === '}')) { j++; continue; } // escaped literal brace
+          if (str[j] === '{') depth++;
+          else if (str[j] === '}') {
+            depth--;
+            if (depth === 0) return { content: str.slice(openPos + 1, j), end: j + 1 };
+          }
+        }
+        return null;
+      }
+
+      let out = '';
+      let i = 0;
+      const n = s.length;
+      while (i < n) {
+        if (s[i] === '\\' && (s[i + 1] === '{' || s[i + 1] === '}')) { out += s[i + 1]; i += 2; continue; } // \{ \} -> literal brace
+        if (s.startsWith('\\frac', i) && s[i + 5] === '{') {
+          const num = readBraceArg(s, i + 5);
+          if (num && s[num.end] === '{') {
+            const den = readBraceArg(s, num.end);
+            if (den) {
+              out += `<span class="mx-frac"><span class="mx-frac-num">${mathMarkupToHtml(num.content)}</span><span class="mx-frac-den">${mathMarkupToHtml(den.content)}</span></span>`;
+              i = den.end;
+              continue;
+            }
+          }
+        }
+        if (s.startsWith('\\sqrt', i)) {
+          let j = i + 5;
+          let idxContent = null;
+          if (s[j] === '[') {
+            const closeBr = s.indexOf(']', j);
+            if (closeBr !== -1) { idxContent = s.slice(j + 1, closeBr); j = closeBr + 1; }
+          }
+          if (s[j] === '{') {
+            const arg = readBraceArg(s, j);
+            if (arg) {
+              out += `<span class="mx-sqrt">${idxContent ? `<sup class="mx-sqrt-idx">${mathMarkupToHtml(idxContent)}</sup>` : ''}<span class="mx-sqrt-sym">&radic;</span><span class="mx-sqrt-content">${mathMarkupToHtml(arg.content)}</span></span>`;
+              i = arg.end;
+              continue;
+            }
+          }
+        }
+        if (s.startsWith('\\int_{', i)) {
+          const lo = readBraceArg(s, i + 5);
+          if (lo && s[lo.end] === '^' && s[lo.end + 1] === '{') {
+            const up = readBraceArg(s, lo.end + 1);
+            if (up) {
+              out += `<span class="mx-int"><span class="mx-int-sym">&int;</span><span class="mx-int-lims"><span class="mx-int-up">${mathMarkupToHtml(up.content)}</span><span class="mx-int-low">${mathMarkupToHtml(lo.content)}</span></span></span>`;
+              i = up.end;
+              continue;
+            }
+          }
+        }
+        if (s[i] === '^') {
+          if (s[i + 1] === '{') {
+            const arg = readBraceArg(s, i + 1);
+            if (arg) { out += `<sup>${mathMarkupToHtml(arg.content)}</sup>`; i = arg.end; continue; }
+          } else if (i + 1 < n && s[i + 1] !== ' ') {
+            out += `<sup>${s[i + 1]}</sup>`; i += 2; continue;
+          }
+        }
+        if (s[i] === '_') {
+          if (s[i + 1] === '{') {
+            const arg = readBraceArg(s, i + 1);
+            if (arg) { out += `<sub>${mathMarkupToHtml(arg.content)}</sub>`; i = arg.end; continue; }
+          } else if (i + 1 < n && s[i + 1] !== ' ') {
+            out += `<sub>${s[i + 1]}</sub>`; i += 2; continue;
+          }
+        }
+        out += s[i];
+        i++;
+      }
+      return out;
+    }
+
+    // HTML-escapes raw user-typed text, then renders any \frac / \sqrt / ^ / _
+    // math markup in it. Use this (instead of plain escapeHtml) anywhere a
+    // question or choice's text is displayed to a test-taker.
+    function renderMathText(str) {
+      return mathMarkupToHtml(escapeHtml(str));
+    }
+
+    /* ============ VISUAL (EDITABLE) MATH — mirrors mathMarkupToHtml above ============
+       Same \frac{}{}, \sqrt{}, ^{}, _{} markup, same storage format, but this
+       version renders LIVE, DIRECTLY-EDITABLE structures for use inside a
+       contenteditable question/option field (see the "MATH INPUT TOOLBAR"
+       section near the end of the file), instead of a static read-only
+       display span. Each structure's "chrome" (fraction bar, radical sign)
+       is contenteditable="false" so it can't be typed/backspaced into
+       character by character, while the numerator/denominator/root
+       content/exponent are nested contenteditable="true" regions ("slots")
+       the user types directly into — a standard nested-contenteditable
+       pattern. mxDomToMarkup (below) walks that live DOM back into the same
+       markup string mathMarkupToHtml expects, so storage/rendering
+       elsewhere in the app (renderMathText, Firebase-saved questions) never
+       needs to change. */
+    function mxParseToEditableHtml(s) {
+      function readBraceArg(str, openPos) {
+        let depth = 0;
+        for (let j = openPos; j < str.length; j++) {
+          if (str[j] === '\\' && (str[j + 1] === '{' || str[j + 1] === '}')) { j++; continue; } // escaped literal brace
+          if (str[j] === '{') depth++;
+          else if (str[j] === '}') {
+            depth--;
+            if (depth === 0) return { content: str.slice(openPos + 1, j), end: j + 1 };
+          }
+        }
+        return null;
+      }
+
+      let out = '';
+      let i = 0;
+      const n = s.length;
+      while (i < n) {
+        if (s[i] === '\\' && (s[i + 1] === '{' || s[i + 1] === '}')) { out += s[i + 1]; i += 2; continue; } // \{ \} -> literal brace
+        if (s.startsWith('\\frac', i) && s[i + 5] === '{') {
+          const num = readBraceArg(s, i + 5);
+          if (num && s[num.end] === '{') {
+            const den = readBraceArg(s, num.end);
+            if (den) {
+              out += `<span class="mx-frac" contenteditable="false"><span class="mx-frac-num mx-slot" contenteditable="true">${mxParseToEditableHtml(num.content)}</span><span class="mx-frac-den mx-slot" contenteditable="true">${mxParseToEditableHtml(den.content)}</span></span>`;
+              i = den.end;
+              continue;
+            }
+          }
+        }
+        if (s.startsWith('\\sqrt', i)) {
+          let j = i + 5;
+          let idxContent = null;
+          if (s[j] === '[') {
+            const closeBr = s.indexOf(']', j);
+            if (closeBr !== -1) { idxContent = s.slice(j + 1, closeBr); j = closeBr + 1; }
+          }
+          if (s[j] === '{') {
+            const arg = readBraceArg(s, j);
+            if (arg) {
+              out += `<span class="mx-sqrt" contenteditable="false">${idxContent ? `<sup class="mx-sqrt-idx mx-slot" contenteditable="true">${mxParseToEditableHtml(idxContent)}</sup>` : ''}<span class="mx-sqrt-sym" contenteditable="false">&radic;</span><span class="mx-sqrt-content mx-slot" contenteditable="true">${mxParseToEditableHtml(arg.content)}</span></span>`;
+              i = arg.end;
+              continue;
+            }
+          }
+        }
+        if (s.startsWith('\\int_{', i)) {
+          const lo = readBraceArg(s, i + 5);
+          if (lo && s[lo.end] === '^' && s[lo.end + 1] === '{') {
+            const up = readBraceArg(s, lo.end + 1);
+            if (up) {
+              out += `<span class="mx-int" contenteditable="false"><span class="mx-int-sym" contenteditable="false">&int;</span><span class="mx-int-lims"><span class="mx-editslot mx-slot mx-int-up" contenteditable="true">${mxParseToEditableHtml(up.content)}</span><span class="mx-editslot mx-slot mx-int-low" contenteditable="true">${mxParseToEditableHtml(lo.content)}</span></span></span>`;
+              i = up.end;
+              continue;
+            }
+          }
+        }
+        if (s[i] === '^') {
+          if (s[i + 1] === '{') {
+            const arg = readBraceArg(s, i + 1);
+            if (arg) { out += `<sup class="mx-editsup" contenteditable="false"><span class="mx-editslot mx-slot" contenteditable="true">${mxParseToEditableHtml(arg.content)}</span></sup>`; i = arg.end; continue; }
+          } else if (i + 1 < n && s[i + 1] !== ' ') {
+            out += `<sup class="mx-editsup" contenteditable="false"><span class="mx-editslot mx-slot" contenteditable="true">${s[i + 1]}</span></sup>`; i += 2; continue;
+          }
+        }
+        if (s[i] === '_') {
+          if (s[i + 1] === '{') {
+            const arg = readBraceArg(s, i + 1);
+            if (arg) { out += `<sub class="mx-editsub" contenteditable="false"><span class="mx-editslot mx-slot" contenteditable="true">${mxParseToEditableHtml(arg.content)}</span></sub>`; i = arg.end; continue; }
+          } else if (i + 1 < n && s[i + 1] !== ' ') {
+            out += `<sub class="mx-editsub" contenteditable="false"><span class="mx-editslot mx-slot" contenteditable="true">${s[i + 1]}</span></sub>`; i += 2; continue;
+          }
+        }
+        out += s[i];
+        i++;
+      }
+      return out;
+    }
+
+    // HTML-escapes str, then converts it into the live editable structures
+    // above. Use this as the initial innerHTML for any ∑ Math-enabled
+    // question/option field (both on first render and whenever a field is
+    // rebuilt from stored data).
+    function mxRenderEditable(str) {
+      return mxParseToEditableHtml(escapeHtml(str || ''));
+    }
+
+    // Walks a ∑ Math-enabled field's live DOM (after edits) back into the
+    // plain \frac{}{}/\sqrt{}/^{}/_{} markup string the rest of the app
+    // already stores and renders. Inverse of mxParseToEditableHtml.
+    // A literal "{" or "}" typed/inserted as plain text (toolbox buttons) is
+    // harmless while its partner is in the same run of text, but a lone one
+    // inside a fraction/root/exponent slot would unbalance that slot's
+    // {...} argument and corrupt the stored markup. So any brace with no
+    // partner in its run is written as \{ or \} (parsed back to a plain
+    // brace by both parsers above). Matched pairs are left exactly as typed.
+    function mxEscapeStrayBraces(str) {
+      if (str.indexOf('{') === -1 && str.indexOf('}') === -1) return str;
+      const stray = new Set();
+      const open = [];
+      for (let i = 0; i < str.length; i++) {
+        const c = str[i];
+        if (c === '\\' && (str[i + 1] === '{' || str[i + 1] === '}')) { i++; continue; } // already escaped
+        if (c === '{') open.push(i);
+        else if (c === '}') { if (open.length) open.pop(); else stray.add(i); }
+      }
+      open.forEach((i) => stray.add(i));
+      if (!stray.size) return str;
+      let out = '';
+      for (let i = 0; i < str.length; i++) out += (stray.has(i) ? '\\' : '') + str[i];
+      return out;
+    }
+
+    function mxDomToMarkup(root) {
+      let out = '';
+      let run = ''; // consecutive plain text (text nodes + <br>) between structures
+      const flushRun = () => { if (run) { out += mxEscapeStrayBraces(run); run = ''; } };
+      root.childNodes.forEach((node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          run += node.nodeValue;
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+          if (node.tagName === 'BR') {
+            run += '\n';
+          } else if (node.classList && node.classList.contains('mx-frac')) {
+            flushRun();
+            const num = node.querySelector('.mx-frac-num');
+            const den = node.querySelector('.mx-frac-den');
+            out += `\\frac{${num ? mxDomToMarkup(num) : ''}}{${den ? mxDomToMarkup(den) : ''}}`;
+          } else if (node.classList && node.classList.contains('mx-sqrt')) {
+            flushRun();
+            const idx = node.querySelector('.mx-sqrt-idx');
+            const content = node.querySelector('.mx-sqrt-content');
+            out += `\\sqrt${idx ? `[${mxDomToMarkup(idx)}]` : ''}{${content ? mxDomToMarkup(content) : ''}}`;
+          } else if (node.classList && node.classList.contains('mx-int')) {
+            flushRun();
+            const up = node.querySelector('.mx-int-up');
+            const low = node.querySelector('.mx-int-low');
+            out += `\\int_{${low ? mxDomToMarkup(low) : ''}}^{${up ? mxDomToMarkup(up) : ''}}`;
+          } else if (node.classList && node.classList.contains('mx-editsup')) {
+            flushRun();
+            const slot = node.querySelector('.mx-editslot') || node;
+            out += `^{${mxDomToMarkup(slot)}}`;
+          } else if (node.classList && node.classList.contains('mx-editsub')) {
+            flushRun();
+            const slot = node.querySelector('.mx-editslot') || node;
+            out += `_{${mxDomToMarkup(slot)}}`;
+          } else {
+            // Unrecognized wrapper (e.g. a stray <div> some browsers create
+            // on paste) — just flatten its text/structure content in place.
+            flushRun();
+            out += mxDomToMarkup(node);
+          }
+        }
+      });
+      flushRun();
+      return out;
+    }
+
     // ============================================================
     // ADMIN-MANAGED MOCK EXAM SETS (Firebase Realtime Database)
     // ============================================================
@@ -16882,13 +17403,14 @@ Answer: C</pre>
       const exams = Object.values(mockAdminExamsCache || {}).filter(e => e && e.groupId === id);
       const publishedCount = exams.filter(e => e.published).length;
       return `
-        <div class="mockadmin-set-row">
-          <div class="mockadmin-set-info" style="cursor:pointer;" onclick="openMockAdminGroup('${id}')">
+        <div class="mockadmin-set-row mockadmin-set-row-clickable" role="button" tabindex="0"
+             onclick="if (!event.target.closest('button')) openMockAdminGroup('${id}')"
+             onkeydown="if (event.target === this && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); openMockAdminGroup('${id}'); }">
+          <div class="mockadmin-set-info">
             <span class="mockadmin-set-title">${escapeHtml(group.title || 'Untitled Set')}</span>
             <span class="mockadmin-set-meta">${exams.length} exam${exams.length === 1 ? '' : 's'} &middot; ${publishedCount} published</span>
           </div>
           <div class="mockadmin-set-controls">
-            <button type="button" class="mockadmin-mini-btn" onclick="openMockAdminGroup('${id}')">OPEN</button>
             <button type="button" class="mockadmin-mini-btn" onclick="renameMockAdminSet('${subjectKey}','${id}')">RENAME</button>
             <button type="button" class="mockadmin-mini-btn danger" onclick="deleteMockAdminSet('${subjectKey}','${id}')">DELETE</button>
           </div>
@@ -16924,7 +17446,9 @@ Answer: C</pre>
 
     function renderMockAdminExamRow(subjectKey, id, exam) {
       return `
-        <div class="mockadmin-set-row">
+        <div class="mockadmin-set-row mockadmin-set-row-clickable" role="button" tabindex="0"
+             onclick="if (!event.target.closest('button, label, input')) openMockAdminEditor('${id}')"
+             onkeydown="if (event.target === this && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); openMockAdminEditor('${id}'); }">
           <div class="mockadmin-set-info">
             <span class="mockadmin-set-title">${escapeHtml(exam.title || 'Untitled Exam')}</span>
             <span class="mockadmin-set-meta">${(exam.questions || []).length} question${(exam.questions || []).length === 1 ? '' : 's'} &middot; ${Math.round((exam.durationSec || EXAM_DURATION_SEC) / 60)} min timer</span>
@@ -16934,7 +17458,6 @@ Answer: C</pre>
               <input type="checkbox" ${exam.published ? 'checked' : ''} onchange="toggleMockAdminPublish('${subjectKey}','${id}', this.checked)">
               ${exam.published ? 'PUBLISHED' : 'DRAFT'}
             </label>
-            <button type="button" class="mockadmin-mini-btn" onclick="openMockAdminEditor('${id}')">EDIT</button>
             <button type="button" class="mockadmin-mini-btn" onclick="openMockAdminMoveModal('${subjectKey}','${id}','move')">MOVE</button>
             <button type="button" class="mockadmin-mini-btn" onclick="openMockAdminMoveModal('${subjectKey}','${id}','copy')">COPY</button>
             <button type="button" class="mockadmin-mini-btn danger" onclick="deleteMockAdminExam('${subjectKey}','${id}')">DELETE</button>
@@ -17244,8 +17767,14 @@ Answer: C</pre>
             <span>QUESTION ${qi + 1}</span>
             <button type="button" class="mockadmin-mini-btn danger" onclick="removeMockAdminQuestion(${qi})">REMOVE</button>
           </div>
-          <textarea class="mockadmin-input mockadmin-textarea" placeholder="Question text"
-            oninput="updateMockAdminQuestionField(${qi}, 'q', this.value)">${escapeHtml(q.q || '')}</textarea>
+          <div class="mockadmin-qtext-row">
+            <div class="mockadmin-input mockadmin-textarea mx-editable" contenteditable="true"
+             
+              data-mx-scope="manual" data-mx-role="q" data-mx-qi="${qi}"
+              oninput="mxHandleInput(this)" onkeydown="mxHandleKeydown(event, this)" onpaste="mxHandlePaste(event, this)"
+              >${mxRenderEditable(q.q || '')}</div>
+            <button type="button" class="math-toolbar-btn" onclick="toggleMathToolbox(this)">&sum; Math</button>
+          </div>
           <div class="mockadmin-image-row">
             <input type="file" accept="image/*" id="mockadmin-image-input-${qi}" style="display:none;"
               onchange="handleMockAdminImageSelect(${qi}, this)">
@@ -17264,8 +17793,11 @@ Answer: C</pre>
             <div class="mockadmin-option-row">
               <input type="radio" name="mockadmin-correct-${qi}" ${opt !== '' && q.correct === opt ? 'checked' : ''}
                 title="Mark as correct answer" onchange="setMockAdminCorrect(${qi}, ${oi})">
-              <input type="text" class="mockadmin-input" value="${escapeHtml(opt)}" placeholder="Option ${oi + 1}"
-                oninput="updateMockAdminOption(${qi}, ${oi}, this.value)">
+              <div class="mockadmin-input mx-editable" contenteditable="true" data-placeholder="Option ${oi + 1}"
+                data-mx-scope="manual" data-mx-role="opt" data-mx-qi="${qi}" data-mx-oi="${oi}"
+                oninput="mxHandleInput(this)" onkeydown="mxHandleKeydown(event, this)" onpaste="mxHandlePaste(event, this)"
+                >${mxRenderEditable(opt)}</div>
+              <button type="button" class="math-toolbar-btn" onclick="toggleMathToolbox(this)">&sum; Math</button>
               <button type="button" class="mockadmin-mini-btn danger" title="Remove option" onclick="removeMockAdminOption(${qi}, ${oi})">&times;</button>
             </div>
           `).join('')}
@@ -17587,14 +18119,23 @@ Answer: C</pre>
           </div>
           <div class="bec-q-body" style="${(q._expanded !== undefined ? !q._expanded : q._valid) ? 'display:none;' : ''}">
             <div class="bec-issue-box" style="${q._issues.length ? '' : 'display:none;'}">${q._issues.map(i => '⚠ ' + escapeHtml(i)).join('<br>')}</div>
-            <textarea class="mockadmin-input mockadmin-textarea" placeholder="Question text"
-              oninput="BEC_updateField(${qi}, 'q', this.value)">${escapeHtml(q.q || '')}</textarea>
+            <div class="mockadmin-qtext-row">
+              <div class="mockadmin-input mockadmin-textarea mx-editable" contenteditable="true"
+               
+                data-mx-scope="bec" data-mx-role="q" data-mx-qi="${qi}"
+                oninput="mxHandleInput(this)" onkeydown="mxHandleKeydown(event, this)" onpaste="mxHandlePaste(event, this)"
+                >${mxRenderEditable(q.q || '')}</div>
+              <button type="button" class="math-toolbar-btn" onclick="toggleMathToolbox(this)">&sum; Math</button>
+            </div>
             ${(q.options || []).map((opt, oi) => `
               <div class="mockadmin-option-row">
                 <input type="radio" name="bec-correct-${qi}" ${opt !== '' && q.correct === opt ? 'checked' : ''}
                   title="Mark as correct answer" onchange="BEC_setCorrect(${qi}, ${oi})">
-                <input type="text" class="mockadmin-input" value="${escapeHtml(opt)}" placeholder="Option ${oi + 1}"
-                  oninput="BEC_updateOption(${qi}, ${oi}, this.value)">
+                <div class="mockadmin-input mx-editable" contenteditable="true" data-placeholder="Option ${oi + 1}"
+                  data-mx-scope="bec" data-mx-role="opt" data-mx-qi="${qi}" data-mx-oi="${oi}"
+                  oninput="mxHandleInput(this)" onkeydown="mxHandleKeydown(event, this)" onpaste="mxHandlePaste(event, this)"
+                  >${mxRenderEditable(opt)}</div>
+                <button type="button" class="math-toolbar-btn" onclick="toggleMathToolbox(this)">&sum; Math</button>
                 <button type="button" class="mockadmin-mini-btn danger" title="Remove option" onclick="BEC_removeOption(${qi}, ${oi})">&times;</button>
               </div>
             `).join('')}
@@ -17658,6 +18199,7 @@ Answer: C</pre>
       const q = BEC.questions[qi];
       if (!q) return;
       q.options.push('');
+      BEC_validateQuestion(q); // refresh the warning/badge for the new choice count
       BEC_renderQuestions();
     }
     function BEC_removeOption(qi, oi) {
@@ -17666,6 +18208,7 @@ Answer: C</pre>
       const removed = q.options[oi];
       q.options.splice(oi, 1);
       if (q.correct === removed) q.correct = '';
+      BEC_validateQuestion(q); // re-check so the "5 choices detected" warning clears at 4
       BEC_renderQuestions();
     }
     function BEC_addQuestion() {
@@ -18026,6 +18569,37 @@ Answer: C</pre>
       setTimeout(() => target.classList.remove('jump-flash'), 1600);
     }
 
+    // Sizes a question image in the exam: 20% of its own size, but never
+    // wider than 340px or taller than 40% of the screen height. One single
+    // scale factor is applied to both sides, so the width/height ratio always
+    // stays exactly the same as the original and nothing is cropped.
+    function sizeQuestionImage(img) {
+      const w = img.naturalWidth, h = img.naturalHeight;
+      if (!w || !h) return;
+      const factor = Math.min(0.2, 340 / w, (window.innerHeight * 0.4) / h);
+      img.style.width = Math.round(w * factor) + 'px';
+    }
+
+    // Click a question image in the exam to see it at its original size.
+    // No X button: it closes when you click anywhere outside the image.
+    function openQuestionImagePreview(img) {
+      closeQuestionImagePreview();
+      const overlay = document.createElement('div');
+      overlay.id = 'qimg-preview-overlay';
+      overlay.addEventListener('click', (e) => {
+        if (!e.target.closest('.qimg-preview-scroll')) closeQuestionImagePreview();
+      });
+      overlay.innerHTML = `
+        <div class="qimg-preview-scroll"><img src="${img.src}" alt="${escapeHtml(img.alt || 'Question image')} (original size)"></div>
+      `;
+      document.body.appendChild(overlay);
+    }
+
+    function closeQuestionImagePreview() {
+      const overlay = document.getElementById('qimg-preview-overlay');
+      if (overlay) overlay.remove();
+    }
+
     function openInAppMockExam(examId, examCard) {
       const exam = getMockExam(examId);
       if (!exam) return;
@@ -18040,15 +18614,20 @@ Answer: C</pre>
             <p class="gform-qnum">Question ${i + 1} of ${exam.questions.length}</p>
             <button type="button" class="gform-pin-btn" id="gform-pin-${i}" aria-pressed="false" onclick="togglePinQuestion(${i})">&#128204; Pin</button>
           </div>
-          <p class="gform-qtext">${escapeHtml(item.q)}</p>
-          ${item.image ? `<img class="gform-question-image" src="${item.image}" alt="Question ${i + 1} image">` : ''}
-          ${item.options.map((opt, j) => `
+          <p class="gform-qtext">${renderMathText(item.q)}</p>
+          ${item.image ? `<img class="gform-question-image" src="${item.image}" alt="Question ${i + 1} image" onload="sizeQuestionImage(this)" onclick="openQuestionImagePreview(this)">` : ''}
+          ${item.options.map((opt, j) => {
+            const optionHtml = `
             <label class="gform-option">
               <input type="radio" name="gform-q-${i}" value="${escapeHtml(opt)}" onchange="document.getElementById('gform-card-${i}').classList.add('answered'); saveExamProgress('${examId}')">
-              <span>${escapeHtml(opt)}</span>
-            </label>
-          `).join('')}
-          <button type="button" class="gform-clear-btn" id="gform-clear-${i}" onclick="clearSelection(${i})">Clear selection</button>
+              <span>${renderMathText(opt)}</span>
+            </label>`;
+            // "Clear selection" sits on the right, on the same line as the last choice
+            if (j !== item.options.length - 1) return optionHtml;
+            return `<div class="gform-option-row">${optionHtml}
+              <button type="button" class="gform-clear-btn" id="gform-clear-${i}" onclick="clearSelection(${i})">Clear selection</button>
+            </div>`;
+          }).join('')}
           <div class="gform-feedback" id="gform-feedback-${i}" style="display:none;"></div>
         </div>
       `).join('');
@@ -18129,6 +18708,7 @@ Answer: C</pre>
       // the X button) restores exactly where the reviewee left off.
       saveExamProgress(currentExamId);
       hideScoreModal();
+      closeQuestionImagePreview();
       const overlay = document.getElementById('gform-overlay');
       if (overlay) overlay.remove();
       stopGformPopupTimer();
@@ -18158,6 +18738,7 @@ Answer: C</pre>
       // close and reopen it so every question comes back blank and
       // re-enabled instead of showing the old graded state.
       try { localStorage.removeItem(userScopedKey(GFORM_PROGRESS_PREFIX + examId)); } catch (e) {}
+      clearBoardScore(examId); // the Mock Board score for this exam resets on retake
       const overlay = document.getElementById('gform-overlay');
       if (overlay) overlay.remove();
       currentExamId = null;
@@ -18249,7 +18830,7 @@ Answer: C</pre>
         feedback.style.display = 'block';
         feedback.innerHTML = isCorrect
           ? `<span class="correct-text">Correct!</span>`
-          : `<span class="incorrect-text">Incorrect.</span><div class="gform-correct-answer">Correct answer: ${escapeHtml(item.correct)}</div>`;
+          : `<span class="incorrect-text">Incorrect.</span><div class="gform-correct-answer">Correct answer: ${renderMathText(item.correct)}</div>`;
 
         Array.from(document.getElementsByName(`gform-q-${i}`)).forEach(r => r.disabled = true);
         if (clearBtn) clearBtn.style.display = 'none';
@@ -18258,6 +18839,7 @@ Answer: C</pre>
       document.getElementById('gform-submit-area').style.display = 'none';
       document.getElementById('gform-questions').scrollTop = 0;
       saveExamProgress(examId);
+      recordBoardScore(examId, score, exam.questions.length);
       showScoreModal(examId, score, exam.questions.length);
     }
 
@@ -18300,6 +18882,7 @@ Answer: C</pre>
     // pressed — no separate "board pool" to maintain by hand.
     function generateBoardSet() {
       currentBoardSet = {};
+      boardScores = {}; // a fresh random set starts with no scores
       subjects.forEach(s => {
         const cache = LIVE_MOCK_EXAM_CACHE[s.key] || {};
         const entries = Object.entries(cache).filter(([, set]) => set && set.published);
@@ -18337,7 +18920,7 @@ Answer: C</pre>
                   <div class="exam-row">
                     <span class="exam-idx">${s.pct}%</span>
                     <span class="exam-name">${escapeHtml(pick[1].title || 'Untitled Set')}</span>
-                    <span class="exam-go">OPEN FORM <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg></span>
+                    <span class="exam-go">TAKE EXAM <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg></span>
                   </div>
                 </a></li>
               </ul>`
@@ -18347,8 +18930,8 @@ Answer: C</pre>
             <p class="group-label">${s.name} &mdash; ${s.pct}% OF BOARD &middot; ${s.hours} HRS</p>
             ${examHtml}
             <div class="board-grade-row">
-              <label class="board-grade-label" for="grade-${s.key}">YOUR SCORE (%)</label>
-              <input class="board-grade-input" type="number" min="0" max="100" step="0.01" id="grade-${s.key}" placeholder="0–100">
+              <span class="board-grade-label">YOUR SCORE</span>
+              <span class="board-grade-value" id="grade-${s.key}"></span>
             </div>
           `;
           dayBlock.appendChild(block);
@@ -18356,6 +18939,8 @@ Answer: C</pre>
 
         container.appendChild(dayBlock);
       });
+
+      updateBoardScoreDisplays();
 
       const resultBox = document.getElementById('board-result');
       resultBox.style.display = 'none';
@@ -18366,35 +18951,90 @@ Answer: C</pre>
         calcBtn.className = 'board-btn';
         calcBtn.style.marginTop = '6px';
         calcBtn.innerHTML = '<span>CALCULATE RESULT</span>';
-        calcBtn.onclick = calculateBoardResult;
+        calcBtn.onclick = () => calculateBoardResult(false);
         container.parentNode.insertBefore(calcBtn, resultBox);
       }
 
       initExamTimers();
     }
 
-    function calculateBoardResult() {
+    // ---- Mock Board scores are filled in automatically ----
+    // Each subject's score is taken from the exam the reviewee just
+    // finished (see submitInAppMockExam), not typed in. Scores live only
+    // for the current random set: generating a new set, or retaking an
+    // exam, clears them.
+    let boardScores = {};
+
+    function boardSubjectKeyForExam(examId) {
+      for (const s of subjects) {
+        const pick = currentBoardSet[s.key];
+        if (pick && ('live:' + s.key + ':' + pick[0]) === examId) return s.key;
+      }
+      return null;
+    }
+
+    function updateBoardScoreDisplays() {
+      subjects.forEach(s => {
+        const el = document.getElementById(`grade-${s.key}`);
+        if (!el) return;
+        const sc = boardScores[s.key];
+        if (sc) {
+          el.classList.add('has-score');
+          el.innerHTML = `${sc.score} / ${sc.total}<span class="board-grade-pct">${+sc.percent.toFixed(2)}%</span>`;
+        } else {
+          el.classList.remove('has-score');
+          el.textContent = currentBoardSet[s.key] ? 'Finish the exam to see your score' : '—';
+        }
+      });
+    }
+
+    // Called when an exam is graded. If it is one of the exams in the
+    // current Mock Board set, its score shows up on the board, and once all
+    // six subjects are done the overall result appears by itself.
+    function recordBoardScore(examId, score, total) {
+      const key = boardSubjectKeyForExam(examId);
+      if (!key) return;
+      boardScores[key] = { score, total, percent: total > 0 ? (score / total) * 100 : 0 };
+      updateBoardScoreDisplays();
+      calculateBoardResult(true);
+    }
+
+    // Called when an exam is retaken: its board score goes back to blank.
+    function clearBoardScore(examId) {
+      const key = boardSubjectKeyForExam(examId);
+      if (!key) return;
+      delete boardScores[key];
+      updateBoardScoreDisplays();
+      const resultBox = document.getElementById('board-result');
+      if (resultBox) resultBox.style.display = 'none';
+    }
+
+    // auto = true: called by itself after an exam is finished — shows the
+    // overall result only once every subject has a score (no warning, no
+    // confetti). auto = false: the CALCULATE RESULT button.
+    function calculateBoardResult(auto) {
       let total = 0;
       let allAtOrAbove50 = true;
-      let missing = false;
+      let missingCount = 0;
 
       subjects.forEach(s => {
-        const input = document.getElementById(`grade-${s.key}`);
-        const raw = input ? parseFloat(input.value) : NaN;
-        if (isNaN(raw)) { missing = true; return; }
-        const clamped = Math.max(0, Math.min(100, raw));
-        total += clamped * (s.pct / 100);
-        if (clamped < 50) allAtOrAbove50 = false;
+        const sc = boardScores[s.key];
+        if (!sc) { missingCount++; return; }
+        total += sc.percent * (s.pct / 100);
+        if (sc.percent < 50) allAtOrAbove50 = false;
       });
 
       const resultBox = document.getElementById('board-result');
-      resultBox.style.display = 'block';
+      if (!resultBox) return;
 
-      if (missing) {
+      if (missingCount) {
+        if (auto) return;
+        resultBox.style.display = 'block';
         resultBox.className = 'board-result-box warn';
-        resultBox.innerHTML = 'Please enter a score for every subject before calculating.';
+        resultBox.innerHTML = `Finish the exam for every subject first (${missingCount} left). Scores fill in automatically.`;
         return;
       }
+      resultBox.style.display = 'block';
 
       const passed = total >= 75 && allAtOrAbove50;
       resultBox.className = 'board-result-box ' + (passed ? 'pass' : 'fail');
@@ -18410,7 +19050,7 @@ Answer: C</pre>
         }</div>
       `;
 
-      if (passed) {
+      if (passed && !auto) {
         launchConfetti();
       }
     }
@@ -18966,6 +19606,700 @@ Answer: C</pre>
         openGoogleFormPopup(href, examCard);
       }
     });
+
+    /* ============ MATH INPUT TOOLBAR (visual equation editor, no preview) ============
+       A single shared floating toolbox (#math-toolbox in the markup near the
+       end of <body>) is reused by every "∑ Math" button next to a question
+       or choice field, in both the manual question editor and the BEC
+       editor. Clicking "∑ Math" opens it next to that field and remembers
+       the field as mathToolboxTarget.
+
+       The fields themselves (see renderMockAdminQuestionsEditor /
+       BEC_renderQuestions) are contenteditable="true" divs with class
+       "mx-editable", initially filled via mxRenderEditable() — so a stored
+       \frac{}{}/\sqrt{}/^{}/_{}  question is already shown as a real visual
+       fraction/root/exponent, never as raw LaTeX-looking text.
+
+       Clicking a *symbol* button (π, ≤, ×, sin, Σ, α, …) inserts that
+       literal text at the cursor, replacing any selected text
+       (mathToolboxInsertText).
+       Clicking a *structure* button (x², x³, xⁿ, √x, ∛x, ⁿ√x, a/b, 10ˣ,
+       eˣ, sin⁻¹ … tanh⁻¹, x₁, x₂, xₙ) builds an actual live DOM structure —
+       a fraction with an editable numerator/denominator, a root (with an
+       optional index) around an editable radicand, a superscript/subscript
+       with an editable slot — and inserts it at the cursor, again replacing
+       any selection (mxToolboxInsert -> mxInsertParts). The caret then lands
+       in the new shape (placeholder selected, so typing replaces it) or
+       right after it, so the admin keeps typing directly. Empty slots show
+       a faint "□" via CSS (.mx-slot:empty) until the admin types something.
+
+       Every edit (typing, pasting, or a toolbox insertion) re-serializes
+       the field's live DOM back into the same plain \frac{}{}/\sqrt{}/^{}/_{}
+       markup string via mxDomToMarkup, and hands it to the SAME data
+       functions the plain textarea/input used to call
+       (updateMockAdminQuestionField/Option, BEC_updateField/Option) — so
+       storage, Firebase sync, and the exam-taking display (renderMathText /
+       mathMarkupToHtml) are completely unchanged; only the editing surface
+       became visual. Nothing here renders a "preview" — the editable field
+       IS the visual math, all the time, with no separate preview step. */
+    let mathToolboxTarget = null;
+
+    function toggleMathToolbox(btn) {
+      const field = btn.previousElementSibling;
+      const box = document.getElementById('math-toolbox');
+      if (!field || !box) return;
+      if (box.style.display !== 'none' && mathToolboxTarget === field) {
+        closeMathToolbox();
+        return;
+      }
+      mathToolboxTarget = field;
+      const rect = btn.getBoundingClientRect();
+      box.style.display = 'block'; // needs to be visible before we can measure its size
+      const boxWidth = box.offsetWidth;
+      let left = rect.left;
+      if (left + boxWidth > window.innerWidth - 8) left = window.innerWidth - boxWidth - 8;
+      if (left < 8) left = 8;
+      let top = rect.bottom + 6;
+      const boxHeight = box.offsetHeight;
+      if (top + boxHeight > window.innerHeight - 8) top = Math.max(8, rect.top - boxHeight - 6);
+      box.style.left = left + 'px';
+      box.style.top = top + 'px';
+    }
+
+    function closeMathToolbox() {
+      const box = document.getElementById('math-toolbox');
+      if (box) box.style.display = 'none';
+      mathToolboxTarget = null;
+    }
+
+    // Returns the current Selection's Range if it actually lives inside
+    // `field` (including inside a nested fraction/root/sup/sub slot);
+    // otherwise falls back to the end of the field's content, mirroring
+    // the old textarea behaviour of appending when nothing was selected.
+    function mxGetActiveRange(field) {
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0) {
+        const r = sel.getRangeAt(0);
+        if (field.contains(r.commonAncestorContainer) || field === r.commonAncestorContainer) return r.cloneRange();
+      }
+      const r = document.createRange();
+      r.selectNodeContents(field);
+      r.collapse(false);
+      return r;
+    }
+
+    // Pushes a ∑ Math-enabled field's current (post-edit) content into the
+    // same data model / functions the plain textarea & input used to call.
+    function mxSyncField(field) {
+      const markup = mxDomToMarkup(field);
+      const scope = field.dataset.mxScope;
+      const role = field.dataset.mxRole;
+      const qi = field.dataset.mxQi !== undefined ? Number(field.dataset.mxQi) : null;
+      const oi = field.dataset.mxOi !== undefined ? Number(field.dataset.mxOi) : null;
+      if (scope === 'manual') {
+        if (role === 'q') updateMockAdminQuestionField(qi, 'q', markup);
+        else if (role === 'opt') updateMockAdminOption(qi, oi, markup);
+      } else if (scope === 'bec') {
+        if (role === 'q') BEC_updateField(qi, 'q', markup);
+        else if (role === 'opt') BEC_updateOption(qi, oi, markup);
+      }
+    }
+
+    // Some browsers leave a lone <br> inside a slot after it's emptied out
+    // (e.g. backspacing all the way), which would stop the CSS ":empty"
+    // placeholder ("□") from matching. Strip it so the placeholder shows.
+    function mxSanitizeSlots(field) {
+      // same quirk on the field itself: once fully emptied, the browser leaves a
+      // lone <br>, which would be stored as "\n" and hide the placeholder text.
+      if (field.childNodes.length === 1 && field.firstChild.nodeName === 'BR') {
+        field.removeChild(field.firstChild);
+      }
+      field.querySelectorAll('.mx-slot').forEach((slot) => {
+        if (slot.childNodes.length === 1 && slot.firstChild.nodeName === 'BR') {
+          slot.removeChild(slot.firstChild);
+        }
+      });
+    }
+
+    // oninput handler shared by every ∑ Math-enabled field.
+    function mxHandleInput(field) {
+      mxSanitizeSlots(field);
+      mxSyncField(field);
+    }
+
+    // Inserts plain text (a symbol, a pasted string, or a manual line
+    // break) at the current cursor position inside `field`, then re-syncs.
+    function mxInsertText(field, text) {
+      const range = mxGetActiveRange(field);
+      range.deleteContents();
+      const node = document.createTextNode(text);
+      range.insertNode(node);
+      const after = document.createRange();
+      after.setStartAfter(node);
+      after.setEndAfter(node);
+      if (document.activeElement !== field) field.focus();
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(after);
+      mxSyncField(field);
+    }
+
+    // Builds a fresh, empty (or prefilled) live math structure and its
+    // "focus" slot — the element the cursor should land inside once it's
+    // inserted. atEnd=true places the cursor after any prefilled content
+    // (e.g. the "2" in x²) instead of at the very start of the slot.
+    function mxBuildSlot(prefill) {
+      const span = document.createElement('span');
+      span.className = 'mx-editslot mx-slot';
+      span.contentEditable = 'true';
+      if (prefill) span.textContent = prefill;
+      return span;
+    }
+    function mxBuildFrac() {
+      const wrap = document.createElement('span');
+      wrap.className = 'mx-frac';
+      wrap.contentEditable = 'false';
+      const num = mxBuildSlot(); num.classList.add('mx-frac-num');
+      const den = mxBuildSlot(); den.classList.add('mx-frac-den');
+      wrap.appendChild(num);
+      wrap.appendChild(den);
+      return { node: wrap, focus: num, atEnd: false };
+    }
+    function mxBuildSqrt(idxPrefill, contentPrefill) {
+      const wrap = document.createElement('span');
+      wrap.className = 'mx-sqrt';
+      wrap.contentEditable = 'false';
+      if (idxPrefill) {
+        // optional root index (the 3 of a cube root), same element the
+        // parser builds for \sqrt[3]{...}
+        const idx = document.createElement('sup');
+        idx.className = 'mx-sqrt-idx mx-slot';
+        idx.contentEditable = 'true';
+        idx.textContent = idxPrefill;
+        wrap.appendChild(idx);
+      }
+      const sym = document.createElement('span');
+      sym.className = 'mx-sqrt-sym';
+      sym.contentEditable = 'false';
+      sym.innerHTML = '&radic;';
+      const content = mxBuildSlot(contentPrefill); content.classList.add('mx-sqrt-content');
+      wrap.appendChild(sym);
+      wrap.appendChild(content);
+      return { node: wrap, focus: content, atEnd: !!contentPrefill };
+    }
+    function mxBuildInt(loPrefill, upPrefill) {
+      const wrap = document.createElement('span');
+      wrap.className = 'mx-int';
+      wrap.contentEditable = 'false';
+      const sym = document.createElement('span');
+      sym.className = 'mx-int-sym';
+      sym.contentEditable = 'false';
+      sym.innerHTML = '&int;';
+      const lims = document.createElement('span');
+      lims.className = 'mx-int-lims';
+      const up = mxBuildSlot(upPrefill); up.classList.add('mx-int-up');
+      const low = mxBuildSlot(loPrefill); low.classList.add('mx-int-low');
+      lims.appendChild(up);
+      lims.appendChild(low);
+      wrap.appendChild(sym);
+      wrap.appendChild(lims);
+      // caret starts in the upper limit (b), selected so typing replaces it
+      return { node: wrap, focus: up, atEnd: false };
+    }
+    function mxBuildSup(prefill) {
+      const wrap = document.createElement('sup');
+      wrap.className = 'mx-editsup';
+      wrap.contentEditable = 'false';
+      const slot = mxBuildSlot(prefill);
+      wrap.appendChild(slot);
+      return { node: wrap, focus: slot, atEnd: !!prefill };
+    }
+    function mxBuildSub(prefill) {
+      const wrap = document.createElement('sub');
+      wrap.className = 'mx-editsub';
+      wrap.contentEditable = 'false';
+      const slot = mxBuildSlot(prefill);
+      wrap.appendChild(slot);
+      return { node: wrap, focus: slot, atEnd: !!prefill };
+    }
+
+    // Inserts a structure (from one of the mxBuild* helpers above) into
+    // mathToolboxTarget at the current cursor position and drops the
+    // cursor into its editable slot.
+    function mxInsertStructure(built) {
+      const field = mathToolboxTarget;
+      if (!field) return;
+      const range = mxGetActiveRange(field);
+      range.deleteContents();
+      range.insertNode(built.node);
+      if (document.activeElement !== field) field.focus();
+      const fr = document.createRange();
+      fr.selectNodeContents(built.focus);
+      fr.collapse(!built.atEnd);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(fr);
+      mxSyncField(field);
+    }
+
+    // Inserts a literal symbol (π, ≤, ×, sin, …) into mathToolboxTarget.
+    function mathToolboxInsertText(text) {
+      const field = mathToolboxTarget;
+      if (!field) return;
+      mxInsertText(field, text);
+    }
+
+    // Inserts a short run of pieces — plain text strings and/or live
+    // structures from the mxBuild* helpers — at the caret of
+    // mathToolboxTarget, replacing any selected text, then re-syncs the
+    // field. Used by the structure buttons (x², √x, sin⁻¹, x₁, …) so each
+    // becomes a real superscript/subscript/root/fraction, never linear text.
+    //   caret = null                        -> caret lands right after the inserted expression
+    //   caret = { part, mode: 'select' }    -> that part's slot content is selected (typing replaces
+    //                                          the placeholder, e.g. the n of xⁿ or x of √x)
+    //   caret = { part, mode: 'start'|'end' } -> caret inside that part's slot
+    function mxInsertParts(parts, caret) {
+      const field = mathToolboxTarget;
+      if (!field) return;
+      const range = mxGetActiveRange(field);
+      range.deleteContents();
+      const frag = document.createDocumentFragment();
+      let last = null;
+      parts.forEach((p) => {
+        last = (typeof p === 'string') ? document.createTextNode(p) : p.node;
+        frag.appendChild(last);
+      });
+      range.insertNode(frag);
+      if (document.activeElement !== field) field.focus();
+      const r = document.createRange();
+      if (caret) {
+        const built = parts[caret.part];
+        r.selectNodeContents(built.focus);
+        if (caret.mode !== 'select') r.collapse(caret.mode === 'start');
+      } else {
+        r.setStartAfter(last);
+        r.collapse(true);
+      }
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(r);
+      mxSyncField(field);
+    }
+
+    // Structure buttons of the math toolbox. Every one of these builds real
+    // editable structures through the same mxBuild* helpers the parser's
+    // output matches, so what is inserted is stored/rendered exactly like
+    // \frac{}{}, \sqrt[]{}, ^{} and _{} markup typed or loaded any other way.
+    function mxToolboxInsert(key) {
+      let s, r;
+      switch (key) {
+        case 'sq':     return mxInsertParts(['x', mxBuildSup('2')]);
+        case 'cube':   return mxInsertParts(['x', mxBuildSup('3')]);
+        case 'pow':    return mxInsertParts(['x', mxBuildSup('n')], { part: 1, mode: 'select' });
+        case 'tenpow': return mxInsertParts(['10', mxBuildSup('x')], { part: 1, mode: 'select' });
+        case 'epow':   return mxInsertParts(['e', mxBuildSup('x')], { part: 1, mode: 'select' });
+        case 'sqrt':   return mxInsertParts([mxBuildSqrt(null, 'x')], { part: 0, mode: 'select' });
+        case 'cbrt':   return mxInsertParts([mxBuildSqrt('3', 'x')], { part: 0, mode: 'select' });
+        case 'nroot':  return mxInsertParts([mxBuildSqrt('n', 'x')], { part: 0, mode: 'select' });
+        case 'frac':   return mxInsertParts([mxBuildFrac()], { part: 0, mode: 'start' });
+        case 'defint': return mxInsertParts([mxBuildInt('a', 'b')], { part: 0, mode: 'select' });
+        case 'sub1':   return mxInsertParts(['x', mxBuildSub('1')]);
+        case 'sub2':   return mxInsertParts(['x', mxBuildSub('2')]);
+        case 'subn':   return mxInsertParts(['x', mxBuildSub('n')]);
+        default:
+          // "inv:sin", "inv:cosh", … -> the function name followed by a real superscript −1
+          if (key.indexOf('inv:') === 0) return mxInsertParts([key.slice(4), mxBuildSup('\u22121')]);
+      }
+    }
+
+    // Shared keydown handler for ∑ Math-enabled fields: Enter inserts a
+    // real line break in the multi-line question field (never a stray
+    // <div>-per-line), and is swallowed in the single-line option fields —
+    // matching the plain <textarea>/<input> this replaced.
+    function mxHandleKeydown(e, field) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (field.classList.contains('mockadmin-textarea')) mxInsertText(field, '\n');
+        return;
+      }
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        mxHandleStructureDelete(e, field);
+      }
+    }
+
+    /* ---- Backspace/Delete around a fraction/root/exponent structure ----
+       Because each structure's outer "chrome" is contenteditable="false"
+       wrapping a nested contenteditable="true" slot, browsers don't
+       reliably treat it as one atomic unit for Backspace/Delete the way a
+       plain contenteditable="false" leaf would — the caret can end up
+       stuck, or a keystroke can get swallowed with nothing visibly
+       deleted. So this is handled explicitly instead of relying on native
+       behaviour:
+         - Caret just outside a structure (in the surrounding text),
+           Backspace/Delete removes the WHOLE structure in one step.
+         - Caret inside one of its slots, sitting at the very edge that key
+           would normally act on, AND every slot in the structure is empty
+           (the user has already cleared its contents) — that same
+           keystroke removes the now-empty shell too, so a second Backspace
+           finishes the job instead of doing nothing forever. */
+    function mxIsStructureWrapper(node) {
+      return !!(node && node.nodeType === Node.ELEMENT_NODE && node.classList &&
+        (node.classList.contains('mx-frac') || node.classList.contains('mx-sqrt') || node.classList.contains('mx-int') ||
+         node.classList.contains('mx-editsup') || node.classList.contains('mx-editsub')));
+    }
+
+    function mxStructureSlots(wrapper) {
+      if (wrapper.classList.contains('mx-frac')) {
+        return [wrapper.querySelector(':scope > .mx-frac-num'), wrapper.querySelector(':scope > .mx-frac-den')].filter(Boolean);
+      }
+      if (wrapper.classList.contains('mx-sqrt')) {
+        return [wrapper.querySelector(':scope > .mx-sqrt-content'), wrapper.querySelector(':scope > .mx-sqrt-idx')].filter(Boolean);
+      }
+      if (wrapper.classList.contains('mx-int')) {
+        return Array.prototype.slice.call(wrapper.querySelectorAll('.mx-int-up, .mx-int-low'));
+      }
+      return [wrapper.querySelector(':scope > .mx-editslot')].filter(Boolean);
+    }
+
+    function mxStructureIsEmpty(wrapper) {
+      return mxStructureSlots(wrapper).every((s) => s.textContent.trim() === '' && !s.querySelector('.mx-frac, .mx-sqrt, .mx-int, .mx-editsup, .mx-editsub'));
+    }
+
+    // Node immediately before (dir=-1) or after (dir=1) a collapsed
+    // caret position, at the given container/offset.
+    function mxNodeAdjacent(container, offset, dir) {
+      if (container.nodeType === Node.TEXT_NODE) {
+        if (dir === -1) return offset === 0 ? container.previousSibling : null;
+        return offset === container.nodeValue.length ? container.nextSibling : null;
+      }
+      if (dir === -1) return offset > 0 ? container.childNodes[offset - 1] : null;
+      return offset < container.childNodes.length ? container.childNodes[offset] : null;
+    }
+
+    // True if nothing but whitespace-free empty content lies between the
+    // start of slotEl and the given range (i.e. the caret is effectively
+    // at the very start of that slot's content).
+    function mxCaretAtSlotStart(range, slotEl) {
+      const test = document.createRange();
+      test.setStart(slotEl, 0);
+      test.setEnd(range.startContainer, range.startOffset);
+      return test.toString().length === 0;
+    }
+    function mxCaretAtSlotEnd(range, slotEl) {
+      const test = document.createRange();
+      test.setStart(range.startContainer, range.startOffset);
+      test.setEnd(slotEl, slotEl.childNodes.length);
+      return test.toString().length === 0;
+    }
+
+    // Removes `wrapper` from the DOM and leaves the caret where it used to
+    // sit (end of the preceding text if there is one, else the start of
+    // whatever now follows), then re-syncs the field's stored value.
+    function mxRemoveStructure(wrapper, field) {
+      const parent = wrapper.parentNode;
+      const idx = Array.prototype.indexOf.call(parent.childNodes, wrapper);
+      parent.removeChild(wrapper);
+      const r = document.createRange();
+      const prev = idx > 0 ? parent.childNodes[idx - 1] : null;
+      if (prev && prev.nodeType === Node.TEXT_NODE) {
+        r.setStart(prev, prev.nodeValue.length);
+        r.setEnd(prev, prev.nodeValue.length);
+      } else {
+        r.setStart(parent, Math.min(idx, parent.childNodes.length));
+        r.setEnd(parent, Math.min(idx, parent.childNodes.length));
+      }
+      if (document.activeElement !== field) field.focus();
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(r);
+      mxSanitizeSlots(field);
+      mxSyncField(field);
+    }
+
+    function mxHandleStructureDelete(e, field) {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      const range = sel.getRangeAt(0);
+      if (!range.collapsed) return; // let native selection-delete run; oninput will re-sync afterward
+
+      const container = range.startContainer;
+      const offset = range.startOffset;
+      const nearEl = (container.nodeType === Node.ELEMENT_NODE) ? container : container.parentElement;
+      const slotEl = nearEl ? nearEl.closest('.mx-editslot, .mx-frac-num, .mx-frac-den, .mx-sqrt-content, .mx-sqrt-idx, .mx-int-up, .mx-int-low') : null;
+
+      // Caret inside a structure's own slot, at the edge Backspace/Delete
+      // would act on, and the whole structure is already empty.
+      if (slotEl) {
+        const wrapper = slotEl.closest('.mx-frac, .mx-sqrt, .mx-int, .mx-editsup, .mx-editsub');
+        if (wrapper) {
+          const atEdge = (e.key === 'Backspace') ? mxCaretAtSlotStart(range, slotEl) : mxCaretAtSlotEnd(range, slotEl);
+          if (atEdge && mxStructureIsEmpty(wrapper)) {
+            e.preventDefault();
+            mxRemoveStructure(wrapper, field);
+          }
+          return; // inside a slot: never fall through to the "adjacent" check below
+        }
+      }
+
+      // Caret in ordinary text, directly touching a whole structure —
+      // remove it as one unit regardless of what it contains.
+      if (e.key === 'Backspace') {
+        const before = mxNodeAdjacent(container, offset, -1);
+        if (mxIsStructureWrapper(before)) {
+          e.preventDefault();
+          mxRemoveStructure(before, field);
+        }
+      } else {
+        const after = mxNodeAdjacent(container, offset, 1);
+        if (mxIsStructureWrapper(after)) {
+          e.preventDefault();
+          mxRemoveStructure(after, field);
+        }
+      }
+    }
+
+    // Shared paste handler: always insert as plain text (never rich
+    // HTML/formatting from the clipboard), splitting into a real line break
+    // for the multi-line question field only.
+    function mxHandlePaste(e, field) {
+      e.preventDefault();
+      const cd = e.clipboardData || window.clipboardData;
+      let text = cd ? cd.getData('text/plain') : '';
+      if (!field.classList.contains('mockadmin-textarea')) text = text.replace(/[\r\n]+/g, ' ');
+      mxInsertText(field, text);
+    }
+
+    // Clicking "∑ Math" or anything inside the toolbox must NOT steal focus
+    // away from whichever field/slot currently has the cursor — otherwise
+    // the browser's Selection would move before mxInsertStructure/
+    // mathToolboxInsertText can read it. preventDefault on mousedown (fired
+    // before focus changes) keeps the field focused and its caret intact.
+    document.addEventListener('mousedown', function(e) {
+      if (e.target.closest && (e.target.closest('.math-toolbar-btn') || e.target.closest('#math-toolbox'))) {
+        e.preventDefault();
+      }
+    });
+
+    document.addEventListener('click', function(e) {
+      const box = document.getElementById('math-toolbox');
+      if (!box || box.style.display === 'none') return;
+      if (box.contains(e.target)) return;
+      if (e.target.closest && e.target.closest('.math-toolbar-btn')) return; // its own onclick already handled this
+      closeMathToolbox();
+    }, true); // capture phase: closes on any outside click, even if another element stops propagation
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeMathToolbox();
+    });
   </script>
+
+  <!-- Shared math-input toolbox: a single floating panel reused by every
+       "∑ Math" button in the manual question editor and the BEC editor.
+       It only inserts into whichever field opened it — it never renders or
+       previews anything itself. Symbol buttons insert text; the structure
+       buttons (x², √x, a/b, sin⁻¹, x₁, …) insert real live math structures. -->
+  <div class="math-toolbox" id="math-toolbox" style="display:none;" onclick="event.stopPropagation();">
+    <div class="math-toolbox-row">
+      <button type="button" title="Squared" onclick="mxToolboxInsert('sq')">x²</button>
+      <button type="button" title="Cubed" onclick="mxToolboxInsert('cube')">x³</button>
+      <button type="button" title="Power (x to the n)" onclick="mxToolboxInsert('pow')">xⁿ</button>
+      <button type="button" title="Square root" onclick="mxToolboxInsert('sqrt')">√x</button>
+      <button type="button" title="Cube root" onclick="mxToolboxInsert('cbrt')">∛x</button>
+      <button type="button" title="nth root" onclick="mxToolboxInsert('nroot')">ⁿ√x</button>
+      <button type="button" title="Fraction" onclick="mxToolboxInsert('frac')">a/b</button>
+    </div>
+    <div class="math-toolbox-row">
+      <button type="button" title="Pi" onclick="mathToolboxInsertText('π')">π</button>
+      <button type="button" title="Infinity" onclick="mathToolboxInsertText('∞')">∞</button>
+      <button type="button" title="Plus or minus" onclick="mathToolboxInsertText('±')">±</button>
+      <button type="button" title="Minus or plus" onclick="mathToolboxInsertText('∓')">∓</button>
+      <button type="button" title="Multiplication" onclick="mathToolboxInsertText('×')">×</button>
+      <button type="button" title="Division" onclick="mathToolboxInsertText('÷')">÷</button>
+    </div>
+    <div class="math-toolbox-row">
+      <button type="button" title="Equals" onclick="mathToolboxInsertText('=')">=</button>
+      <button type="button" title="Not equal to" onclick="mathToolboxInsertText('≠')">≠</button>
+      <button type="button" title="Approximately equal to" onclick="mathToolboxInsertText('≈')">≈</button>
+      <button type="button" title="Less than" onclick="mathToolboxInsertText('&lt;')">&lt;</button>
+      <button type="button" title="Greater than" onclick="mathToolboxInsertText('&gt;')">&gt;</button>
+      <button type="button" title="Less than or equal to" onclick="mathToolboxInsertText('≤')">≤</button>
+      <button type="button" title="Greater than or equal to" onclick="mathToolboxInsertText('≥')">≥</button>
+    </div>
+    <div class="math-toolbox-row">
+      <button type="button" title="Left parenthesis" onclick="mathToolboxInsertText('(')">(</button>
+      <button type="button" title="Right parenthesis" onclick="mathToolboxInsertText(')')">)</button>
+      <button type="button" title="Left bracket" onclick="mathToolboxInsertText('[')">[</button>
+      <button type="button" title="Right bracket" onclick="mathToolboxInsertText(']')">]</button>
+      <button type="button" title="Left brace" onclick="mathToolboxInsertText('{')">{</button>
+      <button type="button" title="Right brace" onclick="mathToolboxInsertText('}')">}</button>
+      <button type="button" title="Vertical bar (absolute value)" onclick="mathToolboxInsertText('|')">|</button>
+      <button type="button" title="Percent" onclick="mathToolboxInsertText('%')">%</button>
+      <button type="button" title="Degree" onclick="mathToolboxInsertText('°')">°</button>
+      <button type="button" title="Prime (minutes / feet)" onclick="mathToolboxInsertText('′')">′</button>
+      <button type="button" title="Double prime (seconds / inches)" onclick="mathToolboxInsertText('″')">″</button>
+    </div>
+    <div class="math-toolbox-row">
+      <button type="button" title="10 to the power x" onclick="mxToolboxInsert('tenpow')">10ˣ</button>
+      <button type="button" title="e to the power x" onclick="mxToolboxInsert('epow')">eˣ</button>
+      <button type="button" title="Natural logarithm" onclick="mathToolboxInsertText('ln')">ln</button>
+      <button type="button" title="Logarithm" onclick="mathToolboxInsertText('log')">log</button>
+    </div>
+    <div class="math-toolbox-row">
+      <button type="button" title="Sine" onclick="mathToolboxInsertText('sin')">sin</button>
+      <button type="button" title="Cosine" onclick="mathToolboxInsertText('cos')">cos</button>
+      <button type="button" title="Tangent" onclick="mathToolboxInsertText('tan')">tan</button>
+      <button type="button" title="Inverse sine" onclick="mxToolboxInsert('inv:sin')">sin⁻¹</button>
+      <button type="button" title="Inverse cosine" onclick="mxToolboxInsert('inv:cos')">cos⁻¹</button>
+      <button type="button" title="Inverse tangent" onclick="mxToolboxInsert('inv:tan')">tan⁻¹</button>
+    </div>
+    <div class="math-toolbox-row">
+      <button type="button" title="Hyperbolic sine" onclick="mathToolboxInsertText('sinh')">sinh</button>
+      <button type="button" title="Hyperbolic cosine" onclick="mathToolboxInsertText('cosh')">cosh</button>
+      <button type="button" title="Hyperbolic tangent" onclick="mathToolboxInsertText('tanh')">tanh</button>
+      <button type="button" title="Inverse hyperbolic sine" onclick="mxToolboxInsert('inv:sinh')">sinh⁻¹</button>
+      <button type="button" title="Inverse hyperbolic cosine" onclick="mxToolboxInsert('inv:cosh')">cosh⁻¹</button>
+      <button type="button" title="Inverse hyperbolic tangent" onclick="mxToolboxInsert('inv:tanh')">tanh⁻¹</button>
+    </div>
+    <div class="math-toolbox-row">
+      <button type="button" title="Capital sigma" onclick="mathToolboxInsertText('Σ')">Σ</button>
+      <button type="button" title="Summation" onclick="mathToolboxInsertText('∑')">∑</button>
+      <button type="button" title="Product" onclick="mathToolboxInsertText('∏')">∏</button>
+      <button type="button" title="Integral" onclick="mathToolboxInsertText('∫')">∫</button>
+      <button type="button" title="Definite integral (from a to b)" onclick="mxToolboxInsert('defint')">&int;<sub>a</sub><sup>b</sup></button>
+      <button type="button" title="Partial derivative" onclick="mathToolboxInsertText('∂')">∂</button>
+      <button type="button" title="Delta" onclick="mathToolboxInsertText('Δ')">Δ</button>
+    </div>
+    <div class="math-toolbox-row">
+      <button type="button" title="Theta" onclick="mathToolboxInsertText('θ')">θ</button>
+      <button type="button" title="Alpha" onclick="mathToolboxInsertText('α')">α</button>
+      <button type="button" title="Beta" onclick="mathToolboxInsertText('β')">β</button>
+      <button type="button" title="Gamma" onclick="mathToolboxInsertText('γ')">γ</button>
+      <button type="button" title="Delta (lowercase)" onclick="mathToolboxInsertText('δ')">δ</button>
+      <button type="button" title="Lambda" onclick="mathToolboxInsertText('λ')">λ</button>
+      <button type="button" title="Mu" onclick="mathToolboxInsertText('μ')">μ</button>
+      <button type="button" title="Rho" onclick="mathToolboxInsertText('ρ')">ρ</button>
+      <button type="button" title="Sigma (lowercase)" onclick="mathToolboxInsertText('σ')">σ</button>
+      <button type="button" title="Omega" onclick="mathToolboxInsertText('ω')">ω</button>
+    </div>
+    <div class="math-toolbox-row">
+      <button type="button" title="x sub 1" onclick="mxToolboxInsert('sub1')">x₁</button>
+      <button type="button" title="x sub 2" onclick="mxToolboxInsert('sub2')">x₂</button>
+      <button type="button" title="x sub n" onclick="mxToolboxInsert('subn')">xₙ</button>
+    </div>
+  </div>
+
+<script>
+/* ============ Custom tooltip (replaces every native title="" tooltip) ============
+   Works for any element with a title attribute — including ones created
+   later by the app's render functions — because it acts on hover/focus:
+   the title text is moved to data-app-tip (so the browser never shows its
+   own tooltip) and displayed in the styled #app-tooltip box. Elements that
+   already use the CSS [data-tooltip] tooltip are left as they are. */
+(function () {
+  const tip = document.createElement('div');
+  tip.id = 'app-tooltip';
+  tip.setAttribute('role', 'tooltip');
+  const tipText = document.createElement('span');
+  const tipArrow = document.createElement('span');
+  tipArrow.className = 'app-tooltip-arrow';
+  tip.appendChild(tipText);
+  tip.appendChild(tipArrow);
+  document.body.appendChild(tip);
+
+  let current = null;
+  let showTimer = null;
+
+  function stashTitle(el) {
+    const t = el.getAttribute('title');
+    if (t === null) return;
+    el.removeAttribute('title');
+    if (el.hasAttribute('data-tooltip')) return; // has its own CSS tooltip already
+    if (t.trim()) {
+      el.setAttribute('data-app-tip', t);
+      // keep an accessible name for icon-only controls that relied on title
+      if (!el.hasAttribute('aria-label') && !el.textContent.trim()) el.setAttribute('aria-label', t);
+    }
+  }
+
+  function place(el) {
+    const r = el.getBoundingClientRect();
+    const vw = document.documentElement.clientWidth;
+    const vh = document.documentElement.clientHeight;
+    tip.style.left = '0px';
+    tip.style.top = '0px';
+    const tw = tip.offsetWidth;
+    const th = tip.offsetHeight;
+    const cx = r.left + r.width / 2;
+    let left = Math.min(Math.max(8, cx - tw / 2), Math.max(8, vw - tw - 8));
+    let top = r.bottom + 9;
+    const above = top + th > vh - 8 && r.top - th - 9 >= 8;
+    if (above) top = r.top - th - 9;
+    tip.classList.toggle('above', above);
+    tip.style.left = Math.round(left) + 'px';
+    tip.style.top = Math.round(top) + 'px';
+    const arrowLeft = Math.min(Math.max(8, cx - left - 4), Math.max(8, tw - 16));
+    tipArrow.style.left = Math.round(arrowLeft) + 'px';
+  }
+
+  function show(el) {
+    const text = el.getAttribute('data-app-tip');
+    if (!text) return;
+    tipText.textContent = text;
+    place(el);
+    tip.classList.add('visible');
+  }
+
+  function hide() {
+    clearTimeout(showTimer);
+    tip.classList.remove('visible');
+    current = null;
+  }
+
+  function canHover() {
+    return window.matchMedia && window.matchMedia('(hover: hover)').matches;
+  }
+
+  function target(e) {
+    return e.target && e.target.closest ? e.target.closest('[title], [data-app-tip]') : null;
+  }
+
+  document.addEventListener('mouseover', function (e) {
+    if (!canHover()) return;
+    const el = target(e);
+    if (!el) return;
+    if (el === current) { stashTitle(el); return; }
+    hide();
+    current = el;
+    stashTitle(el);
+    if (!el.getAttribute('data-app-tip')) { current = null; return; }
+    showTimer = setTimeout(function () { if (current === el) show(el); }, 120);
+  });
+
+  document.addEventListener('mouseout', function (e) {
+    if (!current) return;
+    if (e.relatedTarget && current.contains(e.relatedTarget)) return;
+    hide();
+  });
+
+  document.addEventListener('focusin', function (e) {
+    const el = target(e);
+    if (!el || !el.matches(':focus-visible')) return;
+    hide();
+    current = el;
+    stashTitle(el);
+    if (el.getAttribute('data-app-tip')) show(el); else current = null;
+  });
+  document.addEventListener('focusout', hide);
+  document.addEventListener('mousedown', hide, true);
+  document.addEventListener('scroll', hide, true);
+  window.addEventListener('resize', hide);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') hide(); });
+
+  // If the hovered element gets re-rendered/removed while its tooltip is up,
+  // the browser never sends mouseout for it — clear the stuck tooltip.
+  setInterval(function () {
+    if (current && !document.body.contains(current)) hide();
+  }, 500);
+})();
+</script>
 </body>
 </html>
