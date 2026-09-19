@@ -741,7 +741,7 @@
     line-height: 1.6;
     color: #b9cee0;
   }
-  .ai-note-body p { margin: 0 0 10px; }
+  .ai-note-body p { margin: 0 0 10px; text-align: justify; }
   .ai-note-body p:last-child { margin-bottom: 0; }
 
   .account-badge {
@@ -1108,6 +1108,7 @@
     min-width: 0;
     max-width: 100%;
     overflow-wrap: break-word;
+    text-align: justify;
   }
 
   .top-bar {
@@ -3185,7 +3186,7 @@
   .timer-info-note.collapsed > *:not(.note-title) {
     display: none;
   }
-  .timer-info-note p { margin: 8px 0; }
+  .timer-info-note p { margin: 8px 0; text-align: justify; }
   .timer-info-note ul {
     list-style: none;
     margin: 10px 0;
@@ -3222,6 +3223,7 @@
     font-size: 13px;
     line-height: 1.6;
     color: #dcebf7;
+    text-align: justify;
   }
   .trivia-next-btn {
     display: inline-flex;
@@ -3529,6 +3531,7 @@
     line-height: 1.65;
     color: #dcebf7;
     margin: 0 0 14px;
+    text-align: justify;
   }
   .chat-guidelines-card ul {
     margin: 0 0 14px;
@@ -3662,6 +3665,7 @@
     font-size: 11px;
     color: var(--rivet);
     margin: 0 0 10px;
+    text-align: justify;
   }
   .banned-list-manual button {
     background: none;
@@ -4605,11 +4609,15 @@
     line-height: 1.65;
     color: #c9dbea;
     max-width: 58ch;
+    text-align: justify;
+    text-justify: inter-word;
   }
   .support-card p + p { margin-top: 2px; }
   .support-card .thanks {
     color: #fff;
     font-weight: 500;
+    width: 100%;
+    text-align: left;
   }
 
   .disclaimer-box {
@@ -4629,6 +4637,7 @@
     font-size: 12.5px;
     line-height: 1.65;
     color: #a9c2d8;
+    text-align: justify;
   }
   .disclaimer-box p:last-child {
     margin-bottom: 0;
@@ -5999,6 +6008,7 @@
     font-size: 11px;
     color: var(--rivet);
     margin: 0 0 14px;
+    text-align: justify;
   }
   #shop-pay-buttons-container {
     min-height: 44px;
@@ -6550,7 +6560,7 @@
   background: none; border: none; color: var(--rivet); font-family: 'IBM Plex Mono', monospace;
   font-size: 11px; cursor: pointer; padding: 8px 0; margin-left: auto; flex-shrink: 0;
   white-space: nowrap; text-decoration: underline; text-underline-offset: 2px;
-  position: relative; top: 4px; /* nudged down so it lines up with the choice circle */
+  position: relative; top: 5px; /* nudged down so it lines up with the choice circle */
 }
 .gform-clear-btn:hover { color: var(--accent); }
 .gform-card.correct {
@@ -6639,6 +6649,195 @@
   .gform-modal { height: calc(100vh - 16px); }
   .gform-title { font-size: 16px; }
 }
+
+  /* =====================================================================
+     TERMS AND CONDITIONS / LEGAL LINKS
+     One shared modal (#terms-overlay) that reuses the existing
+     .ai-note-overlay / .ai-note-modal look. Every entry point (homepage
+     footer, sign-up notes, own-profile "Legal & Policies") opens that same
+     modal — see the "Legal" script at the end of the page.
+     ===================================================================== */
+  html.legal-scroll-lock,
+  html.legal-scroll-lock body { overflow: hidden !important; }
+
+  .legal-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 6px 10px;
+    margin: 26px 0 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--rivet);
+    text-align: center;
+  }
+  .legal-link,
+  .legal-inline-link,
+  .profile-card-legal-link {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-color: rgba(127, 168, 201, 0.45);
+    text-underline-offset: 3px;
+  }
+  .legal-link:hover,
+  .legal-inline-link:hover,
+  .profile-card-legal-link:hover { color: var(--accent); text-decoration-color: var(--accent); }
+  .legal-sep { opacity: 0.55; user-select: none; }
+
+  /* "By creating an account, you agree to ..." note on the sign-up steps.
+     Scoped under .signin-card p so it wins over the generic 26px-margin rule. */
+  .signin-card p.legal-agree-note {
+    font-size: 10.5px;
+    line-height: 1.55;
+    margin: 14px 0 0;
+  }
+  .signin-card p.legal-agree-note .legal-inline-link { color: var(--paper); }
+  .signin-card p.legal-agree-note .legal-inline-link:hover { color: var(--accent); }
+
+  /* Checkbox that gates account creation on having reached the bottom of
+     the Terms/Privacy note. Sits directly above the CREATE ACCOUNT button
+     so the note above it is read first, in order, before it can be checked. */
+  .signin-card label.legal-agree-checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    text-align: left;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--paper);
+    margin: 4px 0 16px;
+    cursor: pointer;
+  }
+  .signin-card label.legal-agree-checkbox-label input[type="checkbox"] {
+    flex-shrink: 0;
+    width: 15px;
+    height: 15px;
+    margin: 1px 0 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  /* Legal & Policies block on the signed-in user's own profile card */
+  .profile-card-legal {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--paper);
+  }
+
+  /* The Terms modal itself (also styles the Privacy Policy modal, which
+     reuses the same .terms-modal / .terms-body markup pattern). */
+  #terms-overlay, #privacy-overlay { z-index: 2500; }
+  #terms-overlay .terms-modal, #privacy-overlay .terms-modal {
+    max-width: 720px;
+    max-height: 86vh;
+    max-height: 86dvh;
+    outline: none;
+  }
+  #terms-overlay .terms-body, #privacy-overlay .terms-body {
+    font-size: 12px;
+    line-height: 1.7;
+    padding: 18px 22px 22px;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    /* long document: keep a visible (thin) scrollbar, unlike the short notes */
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+    outline: none;
+  }
+  #terms-overlay .terms-body::-webkit-scrollbar, #privacy-overlay .terms-body::-webkit-scrollbar { display: block; width: 8px; }
+  #terms-overlay .terms-body::-webkit-scrollbar-thumb, #privacy-overlay .terms-body::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+  #terms-overlay .terms-body::-webkit-scrollbar-track, #privacy-overlay .terms-body::-webkit-scrollbar-track { background: transparent; }
+  #terms-overlay .terms-body:focus, #privacy-overlay .terms-body:focus,
+  #terms-overlay .terms-body:focus-visible, #privacy-overlay .terms-body:focus-visible { outline: none; box-shadow: none; }
+  #terms-overlay .terms-body p, #privacy-overlay .terms-body p { text-align: justify; margin: 0 0 12px; }
+  #terms-overlay .terms-body p:last-child, #privacy-overlay .terms-body p:last-child { margin-bottom: 0; }
+  #terms-overlay .terms-brand, #privacy-overlay .terms-brand {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--rivet);
+    margin: 0 0 2px;
+  }
+  #terms-overlay .terms-title, #privacy-overlay .terms-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #fff;
+    margin: 0 0 8px;
+    line-height: 1.25;
+  }
+  #terms-overlay .terms-updated, #privacy-overlay .terms-updated { color: var(--accent); }
+  #terms-overlay .terms-section-title, #privacy-overlay .terms-section-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1.4;
+    color: #fff;
+    margin: 22px 0 8px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(63, 109, 146, 0.45);
+  }
+  #terms-overlay .terms-section-title .terms-num, #privacy-overlay .terms-section-title .terms-num { color: var(--accent); margin-right: 6px; }
+  #terms-overlay .terms-body ul, #privacy-overlay .terms-body ul { margin: 0 0 12px; padding-left: 20px; }
+  #terms-overlay .terms-body li, #privacy-overlay .terms-body li { margin: 0 0 5px; }
+  #terms-overlay .terms-body li::marker, #privacy-overlay .terms-body li::marker { color: var(--accent); }
+  #terms-overlay .ai-note-modal-close, #privacy-overlay .ai-note-modal-close { padding: 4px 10px; font-size: 22px; }
+
+  /* Tiny notice (used when the Privacy Policy link is clicked before a
+     Privacy Policy exists). Sits above the sign-in gate and every modal. */
+  .legal-notice-toast {
+    position: fixed;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    max-width: calc(100vw - 32px);
+    background: var(--blueprint-dark);
+    border: 1px solid var(--accent);
+    color: var(--paper);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    text-align: center;
+    padding: 10px 18px;
+    border-radius: 999px;
+    z-index: 2600;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+  }
+  .legal-notice-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Narrow screens (the sidebar squeezes the content column): stack the
+     three footer links instead of letting the "|" separators wrap. */
+  @media (max-width: 720px) {
+    .legal-links { flex-direction: column; gap: 8px; }
+    .legal-links .legal-sep { display: none; }
+  }
+  @media (max-width: 600px) {
+    #terms-overlay, #privacy-overlay { padding: 10px; }
+    #terms-overlay .terms-modal, #privacy-overlay .terms-modal { max-height: 94vh; max-height: 94dvh; }
+    #terms-overlay .terms-body, #privacy-overlay .terms-body { padding: 14px 14px 18px; }
+    #terms-overlay .terms-title, #privacy-overlay .terms-title { font-size: 18px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .legal-notice-toast { transition: none; }
+  }
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js" defer></script>
@@ -6733,6 +6932,7 @@
       <div id="google-step" style="display:none;">
         <p class="google-step-hint" id="google-step-hint">Continue with Google to create your Callsign and Flight Code</p>
         <div class="signin-btn-wrap" id="g_id_signin"></div>
+        <p class="legal-agree-note">By creating an account, you agree to the <button type="button" class="legal-inline-link" onclick="openTermsAndConditions(this)">Terms and Conditions</button> and <button type="button" class="legal-inline-link" onclick="openPrivacyPolicy(this)">Privacy Policy</button>.</p>
         <button type="button" class="google-back-btn" onclick="showDirectSigninStep()">&larr; Back to Sign In</button>
       </div>
 
@@ -6778,7 +6978,14 @@
         </div>
         <div class="nick-error" id="flightcode-error"></div>
 
-        <button id="nickname-submit" onclick="submitNickname()">CREATE ACCOUNT</button>
+        <p class="legal-agree-note">Before creating your account, please read our <button type="button" class="legal-inline-link" onclick="openTermsAndConditions(this)">Terms and Conditions</button> and <button type="button" class="legal-inline-link" onclick="openPrivacyPolicy(this)">Privacy Policy</button>.</p>
+        <label class="legal-agree-checkbox-label" for="nickname-terms-checkbox">
+          <input type="checkbox" id="nickname-terms-checkbox">
+          <span>I have read and agree to the Terms and Conditions and Privacy Policy.</span>
+        </label>
+        <div class="nick-error" id="terms-checkbox-error"></div>
+
+        <button id="nickname-submit" onclick="submitNickname()" disabled>CREATE ACCOUNT</button>
         <div class="nick-checking" id="nickname-checking">Checking availability&hellip;</div>
       </div>
 
@@ -6923,6 +7130,589 @@
       </div>
     </div>
   </div>
+
+  <!-- ---- Terms and Conditions (one modal, opened from every entry point) ---- -->
+  <div class="ai-note-overlay" id="terms-overlay" role="dialog" aria-modal="true" aria-labelledby="terms-modal-title" aria-hidden="true">
+    <div class="ai-note-modal terms-modal">
+      <div class="ai-note-modal-head">
+        <h3 id="terms-modal-title">Terms and Conditions</h3>
+        <button type="button" class="ai-note-modal-close" onclick="closeTermsAndConditions()" aria-label="Close Terms and Conditions">&times;</button>
+      </div>
+      <div class="ai-note-body terms-body" id="terms-body" tabindex="0"></div>
+    </div>
+  </div>
+  <!-- SINGLE SOURCE OF TRUTH for the Terms and Conditions text. Rendered into #terms-body on first open. -->
+  <script type="text/plain" id="aero-terms-source">
+aerodynadmics
+TERMS AND CONDITIONS
+
+Last Updated: September 2026
+
+
+1. ACCEPTANCE OF TERMS
+
+By accessing or using aerodynadmics, you agree to be bound by these Terms and Conditions. If you do not agree with these Terms, please do not use the platform.
+
+These Terms apply to all users of aerodynadmics, including visitors, registered users, contributors, and users who interact with any of its features or services.
+
+
+2. ABOUT aerodynadmics
+
+aerodynadmics is an online platform created for Aeronautical Engineering students and graduates, providing learning resources, review materials, mock examinations, educational explanations, interactive learning features, and community-based study tools.
+
+The platform is intended to support learning, studying, and preparation for the Aeronautical Engineering Licensure Examination (AELE).
+
+aerodynadmics is an independent educational platform and is not affiliated with, operated by, or officially endorsed by any government agency, licensing authority, educational institution, review center, examination provider, or other organization unless expressly stated.
+
+
+3. FREE EDUCATIONAL MATERIALS
+
+The learning and review resources provided on aerodynadmics are intended to remain free and accessible to users.
+
+This includes, where available:
+
+• Lessons and educational materials
+• Explanations and study resources
+• Mock examinations
+• Practice questions
+• Computer-based examination practice
+• Interactive learning features
+• Other educational resources provided through the platform
+
+Users are not required to purchase anything from the Flight Store in order to access the platform's learning and review resources.
+
+
+4. ACCOUNTS
+
+When creating an account, you agree to provide information that is accurate and to keep your account information reasonably secure.
+
+Accounts may use a Callsign and Flight Code or another supported authentication method.
+
+You are responsible for activity conducted through your account and should not knowingly allow another person to use your account in a manner that violates these Terms.
+
+You may not impersonate another person or create an account intended to misrepresent your identity or affiliation with another individual.
+
+
+5. CALLSIGN AND FLIGHT CODE
+
+Your Callsign and Flight Code are used as part of the platform's account and community system.
+
+You are responsible for choosing information that does not intentionally impersonate another user, organization, public figure, or other individual.
+
+aerodynadmics may modify, restrict, or remove account identifiers that violate these Terms or create confusion, impersonation, harassment, or other community concerns.
+
+
+6. USER-SUBMITTED CONTENT
+
+Users may have the ability to submit or contribute review materials, mock examinations, questions, files, images, messages, or other content.
+
+By submitting content, you represent that you have the right to submit and share that content.
+
+You should not upload or distribute material that you do not have permission to share.
+
+When you submit content for publication or use on aerodynadmics, you grant the platform permission to host, store, reproduce, display, format, organize, and make that content available as necessary to operate the platform and provide its educational features.
+
+This permission does not transfer ownership of your original content to aerodynadmics.
+
+
+7. COPYRIGHT AND INTELLECTUAL PROPERTY
+
+Users retain ownership of content they legitimately own and submit to the platform.
+
+aerodynadmics respects the intellectual property rights of others.
+
+Educational materials, questions, images, documents, logos, graphics, software, designs, and other content may be protected by copyright or other intellectual property laws.
+
+The presence of material on the platform does not automatically mean that the material is owned by aerodynadmics or that users are free to redistribute it elsewhere.
+
+Users must not knowingly upload, reproduce, distribute, or publish copyrighted material without appropriate permission or a lawful basis for doing so.
+
+
+8. CONTRIBUTED REVIEW MATERIALS AND MOCK EXAMS
+
+aerodynadmics may accept review materials and mock examinations contributed by users or obtained from other sources.
+
+Some materials may be provided for educational and practice purposes only.
+
+Because contributed materials may originate from different sources, aerodynadmics cannot guarantee that every question, answer key, explanation, or source document is completely accurate.
+
+Users should use appropriate judgment and verify important information against reliable references, textbooks, official materials, or other authoritative sources when necessary.
+
+
+9. CONTENT REMOVAL AND COPYRIGHT CONCERNS
+
+If you believe that material available on aerodynadmics infringes your copyright or should not be hosted on the platform, you may submit a concern or removal request through the designated reporting channel.
+
+aerodynadmics may review reported material and may remove, restrict, replace, or modify content when appropriate.
+
+Submitting a report does not automatically guarantee removal. The platform may consider the circumstances, available information, ownership claims, permissions, and other relevant factors when reviewing a report.
+
+
+10. COMMUNITY CONDUCT
+
+Users are expected to interact with other members respectfully.
+
+You may not use aerodynadmics to:
+
+• Harass, threaten, or intentionally intimidate other users
+• Impersonate another person
+• Distribute malicious software or harmful code
+• Attempt to gain unauthorized access to another user's account
+• Abuse, exploit, or intentionally disrupt platform features
+• Upload content that violates applicable laws
+• Spam or intentionally flood community features
+• Use the platform to conduct fraudulent or deceptive activity
+• Circumvent security or access restrictions
+• Intentionally interfere with another user's use of the platform
+
+Additional community rules may apply to specific features of aerodynadmics.
+
+
+11. PUBLIC PROFILES AND COMMUNITY FEATURES
+
+Certain account information, including a user's Callsign, profile appearance, or other profile information, may be visible to other users depending on the platform's features and settings.
+
+By using community features, you understand that information intended to be publicly displayed within the platform may be visible to other members.
+
+Users should avoid sharing sensitive personal information through public profiles, chats, or other community features.
+
+
+12. CUSTOM PROFILE MEDIA
+
+aerodynadmics may allow users to customize certain aspects of their profiles using images, backgrounds, decorations, animations, or other media.
+
+Users are responsible for ensuring that media they upload or use does not violate copyright, applicable laws, or these Terms.
+
+aerodynadmics may remove or restrict profile media that violates these Terms or creates a community, legal, security, or operational concern.
+
+
+13. FLIGHT STORE
+
+The Flight Store may offer optional cosmetic items, profile customization features, decorations, backgrounds, animations, or other digital items.
+
+Flight Store purchases are not required to access the platform's free learning and review resources.
+
+Purchasing from the Flight Store is completely optional.
+
+Users may choose to make a purchase as a way of supporting the continued development and operation of aerodynadmics.
+
+Flight Store purchases may provide digital or cosmetic benefits as described at the time of purchase.
+
+
+14. OPTIONAL SUPPORT
+
+The Flight Store may also serve as a way for users who appreciate aerodynadmics to voluntarily support the project.
+
+Purchasing an item from the Flight Store may be considered an optional form of financial support for the platform.
+
+There is no obligation to purchase anything.
+
+The free educational and review resources are intended to remain available regardless of whether a user makes a Flight Store purchase.
+
+
+15. WINGS AND DIGITAL CREDITS
+
+aerodynadmics may use a digital credit system such as Wings for certain platform or Flight Store features.
+
+Wings are platform-specific digital credits and are not intended to represent real-world currency unless expressly stated otherwise.
+
+Wings may not be transferred, exchanged, redeemed, or converted into cash except where expressly permitted by the platform.
+
+aerodynadmics may modify the availability, use, pricing, or functionality of Wings as the platform develops.
+
+
+16. PROHIBITED CONTENT
+
+Users may not upload, publish, or distribute content that is unlawful, fraudulent, malicious, threatening, abusive, excessively hateful, sexually explicit in inappropriate contexts, or otherwise prohibited by applicable law or these Terms.
+
+Content may also be removed when it creates a significant risk to users, the platform, or the rights of others.
+
+
+17. MODERATION
+
+aerodynadmics may moderate content and community activity to maintain a safe, functional, and educational environment.
+
+Depending on the circumstances, moderation actions may include:
+
+• Removing content
+• Restricting content visibility
+• Restricting access to certain features
+• Suspending an account
+• Terminating an account
+• Taking other reasonable actions necessary to protect the platform and its users
+
+Moderation decisions may be made based on violations of these Terms, applicable law, security concerns, abuse reports, or other legitimate platform needs.
+
+
+18. ACCOUNT SUSPENSION OR TERMINATION
+
+aerodynadmics may suspend or terminate an account when there is a violation of these Terms, abuse of the platform, security concerns, unlawful activity, or other circumstances that reasonably require action.
+
+Users may also stop using the platform at any time.
+
+Termination or suspension may result in the loss of access to account features, community features, digital items, or other platform functionality associated with the account.
+
+
+19. THIRD-PARTY SERVICES
+
+aerodynadmics may rely on third-party services to provide certain features, including authentication, hosting, databases, payment processing, storage, analytics, or other technical services.
+
+Third-party services may have their own terms, policies, and privacy practices.
+
+aerodynadmics is not responsible for the independent operation, availability, or policies of third-party services.
+
+
+20. EDUCATIONAL DISCLAIMER
+
+aerodynadmics is provided as an educational and study-support platform.
+
+The platform is not a substitute for formal education, professional instruction, official examination materials, or authoritative guidance from the relevant licensing and regulatory authorities.
+
+Information provided through the platform may contain errors, omissions, outdated information, or mistakes in contributed materials.
+
+Users are responsible for verifying important information before relying on it.
+
+Use of aerodynadmics does not guarantee passing the AELE or achieving any particular examination result.
+
+
+21. EXAMINATION INFORMATION
+
+Mock examinations and practice questions provided through aerodynadmics are intended to help users practice and become more familiar with examination-style questions and computerized setup.
+
+They should not be interpreted as official AELE examination questions unless explicitly identified as such from an authorized source.
+
+The platform does not guarantee that its practice questions will appear on an actual examination.
+
+
+22. PLATFORM AVAILABILITY
+
+aerodynadmics is provided on an ongoing development basis.
+
+The platform may experience interruptions, maintenance, technical problems, updates, feature changes, or temporary unavailability.
+
+aerodynadmics does not guarantee that the platform or every feature will always be available, uninterrupted, or error-free.
+
+
+23. CHANGES TO THE PLATFORM
+
+aerodynadmics may add, modify, remove, or discontinue features as the platform develops.
+
+This may include changes to account systems, community features, educational resources, Flight Store items, digital credits, or other platform functionality.
+
+
+24. CHANGES TO THESE TERMS
+
+These Terms and Conditions may be updated from time to time.
+
+When changes are made, the updated version may be posted on the platform with a revised "Last Updated" date.
+
+Continued use of aerodynadmics after updated Terms become effective constitutes acceptance of the updated Terms.
+
+
+25. PRIVACY
+
+aerodynadmics may collect and process information necessary to provide accounts, authentication, platform features, community functionality, security, and other services.
+
+Users should review the platform's applicable Privacy Policy for information about how personal information is collected, used, stored, and protected.
+
+
+26. LIMITATION OF RESPONSIBILITY
+
+To the extent permitted by applicable law, aerodynadmics and its operator are not responsible for losses, damages, interruptions, inaccurate information, user-generated content, third-party services, or other consequences arising from use of the platform.
+
+Nothing in these Terms is intended to exclude rights or protections that cannot legally be excluded under applicable law.
+
+
+27. USER RESPONSIBILITY
+
+By using aerodynadmics, you agree to use the platform responsibly and in accordance with these Terms and applicable laws.
+
+You are responsible for your own account activity, submissions, interactions, and use of information obtained through the platform.
+
+
+28. ACKNOWLEDGMENT & ACCEPTANCE
+
+By using aerodynadmics, you acknowledge that:
+
+• The platform is intended for educational and study purposes.
+• Learning and review resources are provided free of charge.
+• Flight Store purchases are optional.
+• Flight Store purchases are a way to support the continued development of the platform.
+• Materials may contain errors and may come from different sources.
+• You are responsible for verifying important information.
+• You agree to follow these Terms and respect other members of the community.
+
+By accessing, registering for, or using aerodynadmics, you acknowledge that you have read, understood, and agreed to these Terms and Conditions.
+
+If you do not agree with these Terms, you should discontinue use of the platform.
+</script>
+
+  <!-- ---- Privacy Policy (one modal, opened from every entry point) ---- -->
+  <div class="ai-note-overlay" id="privacy-overlay" role="dialog" aria-modal="true" aria-labelledby="privacy-modal-title" aria-hidden="true">
+    <div class="ai-note-modal terms-modal">
+      <div class="ai-note-modal-head">
+        <h3 id="privacy-modal-title">Privacy Policy</h3>
+        <button type="button" class="ai-note-modal-close" onclick="closePrivacyPolicy()" aria-label="Close Privacy Policy">&times;</button>
+      </div>
+      <div class="ai-note-body terms-body" id="privacy-body" tabindex="0"></div>
+    </div>
+  </div>
+  <!-- SINGLE SOURCE OF TRUTH for the Privacy Policy text. Rendered into #privacy-body on first open. -->
+  <script type="text/plain" id="aero-privacy-source">
+aerodynadmics
+PRIVACY POLICY
+
+Last Updated: September 2026
+
+
+1. INTRODUCTION
+
+This Privacy Policy explains what information aerodynadmics collects and how that information is used when you access or use the platform.
+
+aerodynadmics is an educational platform for Aeronautical Engineering students and graduates, providing learning resources, review materials, mock examinations, community features, and other educational tools.
+
+By using aerodynadmics, you acknowledge that you have read and understood this Privacy Policy.
+
+
+2. INFORMATION WE COLLECT
+
+aerodynadmics is designed to keep account information to a minimum.
+
+For a regular aerodynadmics account, users are asked to provide:
+
+• Callsign
+• Flight Code
+
+If you choose to use Google Sign-In, Google may provide aerodynadmics with information associated with your Google account that is necessary for authentication and account management.
+
+Users may also voluntarily provide or create information when using certain platform features, such as:
+
+• Profile customization
+• Messages and community interactions
+• Review materials, questions, mock examinations, files, or other submitted content
+• Flight Store transactions
+• Wings or other digital credit activity
+
+aerodynadmics does not require users to provide information such as their home address, phone number, government identification number, or similar information for ordinary account creation.
+
+
+3. GOOGLE SIGN-IN
+
+If you choose to use Google Sign-In, aerodynadmics may receive information provided by Google as part of the authentication process.
+
+This may include information such as your Google account identifier, name, email address, and profile information, depending on the information made available by Google.
+
+Google Sign-In is used to authenticate your account and allow you to access your aerodynadmics account.
+
+aerodynadmics does not receive your Google account password through Google Sign-In.
+
+
+4. CALLSIGNS AND FLIGHT CODES
+
+When creating an aerodynadmics account, users are asked to create a Callsign and provide a Flight Code.
+
+These are used to identify and manage your aerodynadmics account and to support community features.
+
+Your Callsign may be displayed to other users through community features.
+
+Users should avoid using their real name, contact information, or other sensitive information as their Callsign.
+
+
+5. PROFILE AND COMMUNITY FEATURES
+
+aerodynadmics may store information that you choose to create or use through profile and community features.
+
+This may include profile appearance, backgrounds, decorations, animations, messages, and other content you voluntarily use on the platform.
+
+Information intentionally displayed through community features may be visible to other users.
+
+
+6. USER-SUBMITTED CONTENT
+
+Users may voluntarily submit review materials, mock examinations, questions, files, images, messages, or other content.
+
+Submitted content may be stored and displayed as necessary to provide the relevant educational or community feature.
+
+Users are responsible for the content they submit and should avoid including information they do not want to share with others.
+
+
+7. FLIGHT STORE AND PAYMENTS
+
+The Flight Store is optional and is separate from the free learning and review resources provided by aerodynadmics.
+
+If you voluntarily make a purchase through the Flight Store, information necessary to process and record the transaction may be handled by the payment provider and aerodynadmics.
+
+Payment card information and other payment credentials may be handled directly by the third-party payment provider rather than being stored by aerodynadmics.
+
+aerodynadmics may receive information such as transaction references, purchase details, and information needed to provide the purchased digital item.
+
+
+8. WINGS AND DIGITAL CREDITS
+
+aerodynadmics may record information relating to Wings or other platform-specific digital credits, such as balances, transactions, purchases, or use of credits.
+
+Wings are platform-specific digital credits and are not intended to represent real-world currency unless expressly stated otherwise.
+
+
+9. TECHNICAL INFORMATION
+
+Certain technical information may be automatically processed by the services used to operate aerodynadmics.
+
+This may include information necessary for authentication, security, database operation, hosting, error handling, or other technical functions.
+
+The exact technical information processed depends on the third-party services and technologies used by the platform.
+
+
+10. HOW INFORMATION IS USED
+
+The information collected or generated through aerodynadmics may be used to:
+
+• Create and manage accounts
+• Authenticate users
+• Provide platform features
+• Display Callsigns and profile information through community features
+• Provide related community functionality
+• Store and display user-submitted content
+• Process optional Flight Store transactions
+• Manage Wings and digital credits
+• Maintain platform security
+• Prevent abuse or unauthorized account activity
+• Troubleshoot technical problems
+• Maintain and improve aerodynadmics
+• Communicate with users when necessary
+• Comply with applicable legal requirements
+
+
+11. INFORMATION VISIBLE TO OTHER USERS
+
+Certain information is intentionally made visible to other users as part of the platform's community features.
+
+Depending on the features being used, this may include:
+
+• Callsign
+• Profile appearance
+• Public profile information
+• Content intentionally shared with the community
+• Messages or other information posted through community features
+
+Information used for authentication or account management is not intended to be publicly displayed through ordinary platform use.
+
+
+12. SHARING OF INFORMATION
+
+aerodynadmics may use third-party services to operate certain features of the platform.
+
+These services may include:
+
+• Google authentication
+• Firebase
+• Database and hosting services
+• Storage services
+• Payment providers
+• Other technical services required to operate the platform
+
+Information may be processed by these services only as reasonably necessary for the features they provide.
+
+aerodynadmics does not sell user account information.
+
+
+13. THIRD-PARTY SERVICES
+
+aerodynadmics may rely on third-party services, including Google, Firebase, payment providers, hosting providers, storage providers, and other technical services.
+
+These services may process information according to their own privacy policies and terms.
+
+Users should review the policies of relevant third-party services when appropriate.
+
+
+14. FIREBASE AND DATA STORAGE
+
+aerodynadmics may use Firebase or related Google services for functions such as authentication, database storage, hosting, or other platform operations.
+
+Information stored through these services is handled according to the services and configurations used by aerodynadmics.
+
+
+15. SECURITY
+
+aerodynadmics takes reasonable measures to protect account information and platform data against unauthorized access, misuse, alteration, or destruction.
+
+However, no online platform or electronic storage system can guarantee absolute security.
+
+Users are responsible for keeping their Callsign, Flight Code, and account access information secure.
+
+
+16. DATA RETENTION
+
+Account information and other platform data may be kept for as long as reasonably necessary to operate the platform, maintain accounts, provide features, maintain security, keep necessary transaction records, or comply with applicable legal requirements.
+
+When information is no longer reasonably necessary, it may be deleted or otherwise removed as appropriate.
+
+Some information may remain temporarily in backups or technical records after deletion.
+
+
+17. ACCOUNT DELETION
+
+Users may request deletion of their aerodynadmics account.
+
+Deleting an account may result in the loss of access to account features, community features, Flight Store items, Wings, and other content associated with the account.
+
+Certain records may need to remain temporarily or be retained when reasonably necessary for security, transaction records, legal requirements, or other legitimate operational purposes.
+
+
+18. ACCOUNT INFORMATION REQUESTS
+
+If you have a question or concern about information associated with your aerodynadmics account, you may contact the platform through its designated contact or reporting channels.
+
+Reasonable verification may be required before making changes to an account or providing account-related information.
+
+
+19. AGE REQUIREMENT
+
+aerodynadmics is intended only for users who are 18 years of age or older.
+
+Individuals under 18 years of age are not permitted to create or use an aerodynadmics account or use the platform's services.
+
+By creating or using an aerodynadmics account, you confirm that you are at least 18 years old.
+
+If aerodynadmics becomes aware that an account is being used by a person under 18 years of age, the account may be restricted, suspended, or removed.
+
+
+20. COOKIES AND SIMILAR TECHNOLOGIES
+
+aerodynadmics or the third-party services used by the platform may use cookies, local storage, session technologies, or similar technologies where necessary for authentication, security, preferences, functionality, or platform operation.
+
+These technologies may also be used by third-party services integrated into the platform.
+
+
+21. PRIVACY AND DATA PROTECTION
+
+aerodynadmics is designed to collect only limited account information needed to operate the platform.
+
+Users may contact aerodynadmics regarding questions or concerns about information associated with their account.
+
+
+22. CHANGES TO THIS PRIVACY POLICY
+
+This Privacy Policy may be updated from time to time as aerodynadmics develops or as applicable requirements change.
+
+When changes are made, the updated version may be posted on the platform with a revised "Last Updated" date.
+
+Continued use of aerodynadmics after an updated Privacy Policy becomes effective constitutes acknowledgment of the updated policy.
+
+
+23. CONTACT
+
+If you have questions, concerns, requests, or complaints regarding this Privacy Policy or the handling of account information on aerodynadmics, you may contact the platform through its designated contact or reporting channels.
+
+
+24. ACKNOWLEDGMENT AND ACCEPTANCE
+
+By accessing, registering for, or using aerodynadmics, you acknowledge that you have read, understood, and agree to this Privacy Policy.
+
+By creating or using an aerodynadmics account, you acknowledge and accept the collection, use, storage, and handling of account information as described in this Privacy Policy.
+
+If you do not agree with this Privacy Policy, you should discontinue use of the platform.
+</script>
 
   <div class="reviewees-sidebar" id="reviewees-sidebar">
     <div class="reviewees-sidebar-head">
@@ -7261,7 +8051,7 @@
             <button id="admin-toggle-flightstore-btn" onclick="toggleFlightStoreEnabled(); closeAdminSettingsMenu();">DISABLE FLIGHT STORE</button>
           </div>
         </div>
-        <button class="signout-btn signout-icon-btn" onclick="signOutUser()">🛫</button>
+        <button class="signout-btn signout-icon-btn" title="Depart" onclick="signOutUser()">🛫</button>
       </div>
     </div>
 
@@ -7323,12 +8113,17 @@
           <span>&#128172; A NOTE FROM THE CREATOR</span>
           <span class="collapsible-arrow" id="support-arrow">&#9660;</span>
         </div>
-        <div class="collapsible-body" id="support-body">        <p>This platform was created from a simple hope: to make AELE preparation a little more accessible, organized, and manageable for those working toward the same goal. It is being developed into a more comprehensive review platform, with structured lessons, detailed explanations, and interactive animations to help make difficult concepts, especially in Aerodynamics, easier to understand, visualize, and remember.</p>
-        <p>The platform is also meant to help Souls on Board become more comfortable with answering exams in a computerized environment. Since the AELE is conducted through a Computer-Based Licensure Examination (CBLE) setup, I hope that practicing in a similar format can make the experience a little less unfamiliar when the actual examination day comes.</p>
-        <p>If you find this platform helpful in your AELE preparation and would like to support the project, visiting the Flight Store is one way you can help. Every purchase contributes to keeping the platform running and gives me the opportunity to continue improving it, adding new features, and creating more resources for future examinees.</p>
-        <p>There is absolutely no obligation to purchase anything. Simply using the reviewer, sharing it with a fellow Soul on Board, or leaving <a href="https://forms.gle/BRZW2QFN5WGyUXAg8" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline; text-underline-offset:3px;">feedback</a> already means more than you might realize. Your feedback helps me understand how this platform can become better and more useful for the people who need it.</p>
-        <p>If you have your own review materials or mock exams that you would be willing to share, I would also be grateful to have them become part of this growing collection. Feel free to <a href="https://forms.gle/GRHoKWEkkoHpCbwM8" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline; text-underline-offset:3px;">contribute a file</a>, and I’ll work on getting it published. The goal is to build a place where future examinees can find mock exams and review materials from different sources, so no one has to feel like they are preparing alone or searching everywhere for something to practice with.</p>
-        <p>Thank you for taking the time to use this platform, for supporting it in whatever way you can, and for being part of its journey. I hope it can be even a small help as you work toward the day you can finally call yourself a licensed Aeronautical Engineer.</p>
+        <div class="collapsible-body" id="support-body">        <p>This platform was created from a simple hope: to make learning, reviewing, and preparing for the AELE a little more accessible, organized, and manageable for Aeronautical Engineering students and graduates.</p>
+        <p>aerodynadmics is being developed into a more comprehensive platform for the Aeronautical Engineering community, with structured lessons, detailed explanations, and interactive animations to help make difficult concepts, especially in Aerodynamics, easier to understand and visualize.</p>
+        <p>For students, the goal is to provide a place where you can strengthen your understanding of subjects throughout your studies, explore concepts beyond the classroom, and gradually build a stronger foundation for the AELE. For AELE reviewees, the platform aims to provide accessible resources that can support your continued review and preparation for the licensure examination.</p>
+        <p>Beyond being a review and learning platform, aerodynadmics is also being developed as an online space for group study and collaboration. The idea is to give Aeronautical Engineering students and AELE reviewees an online space where they can study, exchange knowledge, discuss difficult topics, and share useful materials with others. Through an accessible online platform, studying can become more connected and less isolated.</p>
+        <p>The platform is also meant to help AELE reviewees become more comfortable with answering exams in a computerized environment. Since the AELE is conducted through a Computer-Based Licensure Examination (CBLE) setup, I hope that practicing in a similar format can make the experience a little less unfamiliar when the actual examination day comes.</p>
+        <p>Everything provided for learning and review on aerodynadmics is completely free and accessible to everyone. There is no need to pay to access lessons, explanations, study resources, mock exams, or practice materials.</p>
+        <p>However, if you find aerodynadmics helpful and would like to support the project, you can make an optional donation by purchasing an item from the Flight Store. These purchases are not required to access any of the learning or review resources. They are simply a way for those who wish to support the platform to contribute to its continued development and maintenance.</p>
+        <p>I would genuinely appreciate any support. Your contribution helps me keep the platform running, improve its features, and create more learning and review resources for Aeronautical Engineering students and AELE reviewees.</p>
+        <p>There is absolutely no obligation to purchase anything. Whether you choose to donate through the Flight Store or simply use and share aerodynadmics, your support already means a lot.</p>
+        <p>If you have your own review materials or mock exams that you would be willing to share, I would also be grateful to have them become part of this growing collection. Feel free to <a href="https://forms.gle/GRHoKWEkkoHpCbwM8" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline; text-underline-offset:3px;">contribute a file</a>, and I’ll work on getting it published. The goal is to build a place where Aeronautical Engineering students and AELE reviewees can find mock exams and review materials from different sources, so no one has to feel like they are preparing alone or searching everywhere for something to practice with.</p>
+        <p>Thank you for taking the time to use this platform, for supporting it in whatever way you can, and for being part of its journey. I hope it can be even a small help as you work toward your goals in Aeronautical Engineering, whether you are still studying or preparing for the AELE.</p>
                 <p class="thanks">Thank you, and best of luck to all future Aeronautical Engineers ✈️!</p>
         </div>
       </div>
@@ -7347,6 +8142,14 @@
         <p>Thank you for your understanding and for helping maintain a respectful learning environment for everyone.</p>
         </div>
       </div>
+
+      <nav class="legal-links" id="home-legal-links" aria-label="Legal">
+        <button type="button" class="legal-link" onclick="openTermsAndConditions(this)">Terms and Conditions</button>
+        <span class="legal-sep" aria-hidden="true">|</span>
+        <button type="button" class="legal-link" onclick="openPrivacyPolicy(this)">Privacy Policy</button>
+        <span class="legal-sep" aria-hidden="true">|</span>
+        <button type="button" class="legal-link" onclick="openCopyrightConcerns()">Copyright / Concerns</button>
+      </nav>
 
     </section>
 
@@ -8860,6 +9663,10 @@ Answer: C</pre>
       document.getElementById('flightcode-input').value = '';
       document.getElementById('flightcode-confirm-input').value = '';
       clearFlightCodeError();
+      const termsCheckbox = document.getElementById('nickname-terms-checkbox');
+      if (termsCheckbox) termsCheckbox.checked = false;
+      clearTermsCheckboxError();
+      document.getElementById('nickname-submit').disabled = true;
       document.getElementById('nickname-step').classList.add('visible');
       document.getElementById('nickname-input').focus();
     }
@@ -8918,6 +9725,16 @@ Answer: C</pre>
       const el = document.getElementById('flightcode-error');
       el.textContent = '';
       el.classList.remove('visible');
+    }
+
+    function showTermsCheckboxError(msg) {
+      const el = document.getElementById('terms-checkbox-error');
+      if (el) { el.textContent = msg; el.classList.add('visible'); }
+    }
+
+    function clearTermsCheckboxError() {
+      const el = document.getElementById('terms-checkbox-error');
+      if (el) { el.textContent = ''; el.classList.remove('visible'); }
     }
 
     // ---- normal login: Callsign + Flight Code ----
@@ -9250,6 +10067,17 @@ Answer: C</pre>
       const fcConfirm = document.getElementById('flightcode-confirm-input');
       if (fcInput) fcInput.addEventListener('input', clearFlightCodeError);
       if (fcConfirm) fcConfirm.addEventListener('input', clearFlightCodeError);
+
+      // CREATE ACCOUNT stays disabled until the Terms/Privacy checkbox,
+      // placed at the very bottom of the form below the note, is checked.
+      const termsCheckbox = document.getElementById('nickname-terms-checkbox');
+      const createBtn = document.getElementById('nickname-submit');
+      if (termsCheckbox && createBtn) {
+        termsCheckbox.addEventListener('change', () => {
+          createBtn.disabled = !termsCheckbox.checked;
+          if (termsCheckbox.checked) clearTermsCheckboxError();
+        });
+      }
     });
 
     function submitNickname() {
@@ -9280,6 +10108,13 @@ Answer: C</pre>
 
       if (!selectedAvatar) {
         showNicknameError('Please choose an avatar.');
+        return;
+      }
+
+      const termsCheckbox = document.getElementById('nickname-terms-checkbox');
+      clearTermsCheckboxError();
+      if (!termsCheckbox || !termsCheckbox.checked) {
+        showTermsCheckboxError('Please read and agree to the Terms and Conditions and Privacy Policy before creating your account.');
         return;
       }
 
@@ -17719,6 +18554,14 @@ Answer: C</pre>
       }
     }
 
+    // Subjects whose mock exam timer should default to 3 hours (180 min)
+    // instead of the usual 4-hour (240 min) default. Keyed by the same
+    // `key` values used in the `subjects` array above.
+    const MOCKADMIN_3HR_SUBJECTS = ['math', 'construction', 'econ'];
+    function getDefaultMockExamMinutes(subjectKey) {
+      return MOCKADMIN_3HR_SUBJECTS.includes(subjectKey) ? 180 : 240;
+    }
+
     function openMockAdminEditor(examId) {
       mockAdminCurrentExamId = examId;
       document.getElementById('mockadmin-examlist-view').style.display = 'none';
@@ -17727,16 +18570,18 @@ Answer: C</pre>
       document.getElementById('mockadmin-subject-picker').style.display = 'none';
       const titleInput = document.getElementById('mockadmin-edit-title');
       const durationInput = document.getElementById('mockadmin-edit-duration');
+      const defaultMinutes = getDefaultMockExamMinutes(mockAdminCurrentSubject);
+      durationInput.placeholder = String(defaultMinutes);
 
       if (examId && mockAdminExamsCache[examId]) {
         const exam = mockAdminExamsCache[examId];
         titleInput.value = exam.title || '';
-        durationInput.value = Math.round((exam.durationSec || EXAM_DURATION_SEC) / 60);
+        durationInput.value = Math.round((exam.durationSec || (defaultMinutes * 60)) / 60);
         mockAdminEditingQuestions = Array.isArray(exam.questions) ? JSON.parse(JSON.stringify(exam.questions)) : [];
       } else {
         mockAdminCurrentExamId = null;
         titleInput.value = '';
-        durationInput.value = 240;
+        durationInput.value = defaultMinutes;
         mockAdminEditingQuestions = [];
       }
       renderMockAdminQuestionsEditor();
@@ -17900,7 +18745,7 @@ Answer: C</pre>
         if (!q.correct || !q.options.includes(q.correct) || !q.correct.trim()) { await adminAlert('Every question needs a correct answer selected (click the circle next to it).'); return; }
       }
 
-      const durationSec = (Number.isFinite(minutes) && minutes > 0) ? Math.round(minutes * 60) : EXAM_DURATION_SEC;
+      const durationSec = (Number.isFinite(minutes) && minutes > 0) ? Math.round(minutes * 60) : (getDefaultMockExamMinutes(mockAdminCurrentSubject) * 60);
       const groupId = mockAdminCurrentGroupId;
       const groupTitle = (mockAdminGroupsCache[groupId] && mockAdminGroupsCache[groupId].title) || '';
       const payload = {
@@ -20299,6 +21144,218 @@ Answer: C</pre>
   setInterval(function () {
     if (current && !document.body.contains(current)) hide();
   }, 500);
+})();
+</script>
+<script>
+/* ============ Legal: Terms and Conditions, Privacy Policy, Copyright / Concerns ============
+   Both legal documents follow the same pattern: the text lives in exactly one
+   place — a <script type="text/plain"> source block above the sidebar markup
+   (id="aero-terms-source" for the Terms, id="aero-privacy-source" for the
+   Privacy Policy) — and is rendered into its own overlay (#terms-overlay /
+   #privacy-overlay) the first time that modal opens. EVERY entry point
+   (homepage footer, sign-up notes, own-profile "Legal & Policies") calls
+   openTermsAndConditions() or openPrivacyPolicy() — nothing else contains a
+   copy of either text.
+
+   Each modal only shows/hides its own overlay. Neither touches Firebase, the
+   sign-in steps, form fields, views or scroll containers, so closing one puts
+   the person back exactly where they were. */
+window.AERO_LEGAL = window.AERO_LEGAL || {
+  // The Privacy Policy now renders in-page from #aero-privacy-source, same as
+  // the Terms. These overrides stay for cases where a hosted page or a custom
+  // opener should be used instead — set one and it takes priority below.
+  privacyPolicyUrl: '',
+  openPrivacyPolicy: null,
+  // The existing content-removal / copyright concerns form (the same one
+  // linked from "Notice Regarding Mock Exam Materials" on the homepage).
+  copyrightConcernsUrl: 'https://forms.gle/Xc6HyAYFMp183DLR6'
+};
+
+(function () {
+  'use strict';
+
+  // Each legal doc: its plain-text source id, its overlay id, its rendered-
+  // body id, and the state (last opener + scroll position) it restores on close.
+  var DOCS = {
+    terms: { sourceId: 'aero-terms-source', overlayId: 'terms-overlay', bodyId: 'terms-body', state: { opener: null, scrollX: 0, scrollY: 0 } },
+    privacy: { sourceId: 'aero-privacy-source', overlayId: 'privacy-overlay', bodyId: 'privacy-body', state: { opener: null, scrollX: 0, scrollY: 0 } }
+  };
+
+  function el(id) { return document.getElementById(id); }
+
+  // ---- turn the plain-text doc into DOM (textContent only, so the wording
+  // is shown exactly as written) ----
+  function parseDoc(raw) {
+    var lines = String(raw || '').replace(/\r\n?/g, '\n').split('\n');
+    var blocks = [];
+    var cur = [];
+    lines.forEach(function (line) {
+      var t = line.trim();
+      if (!t) { if (cur.length) { blocks.push(cur); cur = []; } }
+      else { cur.push(t); }
+    });
+    if (cur.length) blocks.push(cur);
+    return blocks;
+  }
+
+  function appendLines(container, lines) {
+    // consecutive "• ..." lines become a list; other lines are paragraphs
+    var i = 0;
+    while (i < lines.length) {
+      if (lines[i].charAt(0) === '\u2022') {
+        var ul = document.createElement('ul');
+        while (i < lines.length && lines[i].charAt(0) === '\u2022') {
+          var li = document.createElement('li');
+          li.textContent = lines[i].replace(/^\u2022\s*/, '');
+          ul.appendChild(li);
+          i++;
+        }
+        container.appendChild(ul);
+      } else {
+        var p = document.createElement('p');
+        p.textContent = lines[i];
+        container.appendChild(p);
+        i++;
+      }
+    }
+  }
+
+  function renderDocOnce(doc) {
+    var body = el(doc.bodyId);
+    var src = el(doc.sourceId);
+    if (!body || !src || body.getAttribute('data-rendered') === '1') return;
+    var blocks = parseDoc(src.textContent);
+    var frag = document.createDocumentFragment();
+    var seenSection = false;
+    var headerBlocks = 0;
+
+    blocks.forEach(function (lines) {
+      var isHeading = lines.length === 1 && /^\d{1,2}(?:\.\d{1,2})?\.?\s+\S/.test(lines[0]);
+      if (isHeading) {
+        seenSection = true;
+        var m = lines[0].match(/^(\d{1,2}(?:\.\d{1,2})?)\.?\s+(.*)$/);
+        var h = document.createElement('h4');
+        h.className = 'terms-section-title';
+        h.id = doc.bodyId + '-sec-' + m[1];
+        var num = document.createElement('span');
+        num.className = 'terms-num';
+        num.textContent = m[1] + '.';
+        h.appendChild(num);
+        h.appendChild(document.createTextNode(m[2]));
+        frag.appendChild(h);
+        return;
+      }
+      if (!seenSection) {
+        // Document header: [brand, title] then "Last Updated: ..."
+        if (headerBlocks === 0) {
+          var brand = document.createElement('p');
+          brand.className = 'terms-brand';
+          brand.textContent = lines[0];
+          frag.appendChild(brand);
+          if (lines[1]) {
+            var title = document.createElement('p');
+            title.className = 'terms-title';
+            title.textContent = lines.slice(1).join(' ');
+            frag.appendChild(title);
+          }
+        } else {
+          var meta = document.createElement('p');
+          meta.className = 'terms-updated';
+          meta.textContent = lines.join(' ');
+          frag.appendChild(meta);
+        }
+        headerBlocks++;
+        return;
+      }
+      appendLines(frag, lines);
+    });
+
+    body.appendChild(frag);
+    body.setAttribute('data-rendered', '1');
+  }
+
+  // ---- generic open / close, shared by Terms and Privacy Policy ----
+  function openDoc(doc, opener) {
+    var ov = el(doc.overlayId);
+    if (!ov || ov.classList.contains('visible')) return;
+    doc.state.opener = (opener && opener.nodeType === 1) ? opener : document.activeElement;
+    doc.state.scrollX = window.pageXOffset || 0;
+    doc.state.scrollY = window.pageYOffset || 0;
+    renderDocOnce(doc);
+    var body = el(doc.bodyId);
+    document.documentElement.classList.add('legal-scroll-lock');
+    ov.classList.add('visible');
+    ov.setAttribute('aria-hidden', 'false');
+    if (body) {
+      body.scrollTop = 0; // must happen once the overlay is displayed, or the reset is ignored
+      try { body.focus({ preventScroll: true }); } catch (e) { body.focus(); }
+    }
+  }
+
+  function closeDoc(doc) {
+    var ov = el(doc.overlayId);
+    if (!ov || !ov.classList.contains('visible')) return;
+    ov.classList.remove('visible');
+    ov.setAttribute('aria-hidden', 'true');
+    document.documentElement.classList.remove('legal-scroll-lock');
+    // safety net: land the page exactly where it was before the modal opened
+    if ((window.pageXOffset || 0) !== doc.state.scrollX || (window.pageYOffset || 0) !== doc.state.scrollY) {
+      window.scrollTo(doc.state.scrollX, doc.state.scrollY);
+    }
+    var opener = doc.state.opener;
+    doc.state.opener = null;
+    if (opener && document.body.contains(opener) && typeof opener.focus === 'function') {
+      try { opener.focus({ preventScroll: true }); } catch (e) { /* ignore */ }
+    }
+  }
+
+  window.openTermsAndConditions = function (opener) { openDoc(DOCS.terms, opener); };
+  window.closeTermsAndConditions = function () { closeDoc(DOCS.terms); };
+
+  // ---- Privacy Policy: opens the in-page modal by default; an explicit
+  // AERO_LEGAL.openPrivacyPolicy or .privacyPolicyUrl override still wins ----
+  window.openPrivacyPolicy = function (opener) {
+    var cfg = window.AERO_LEGAL || {};
+    if (typeof cfg.openPrivacyPolicy === 'function') { cfg.openPrivacyPolicy(); return; }
+    if (cfg.privacyPolicyUrl) { window.open(cfg.privacyPolicyUrl, '_blank', 'noopener,noreferrer'); return; }
+    openDoc(DOCS.privacy, opener);
+  };
+  window.closePrivacyPolicy = function () { closeDoc(DOCS.privacy); };
+
+  // ---- Copyright / Concerns / Content Removal ----
+  window.openCopyrightConcerns = function () {
+    var cfg = window.AERO_LEGAL || {};
+    if (cfg.copyrightConcernsUrl) window.open(cfg.copyrightConcernsUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  // ---- wiring ----
+  // Each modal can ONLY be closed with the X button in its header: no backdrop
+  // click, no Escape. While either is open, Escape is swallowed here (capture
+  // phase on window) so the page's other Escape handlers can't close whatever
+  // is underneath it (e.g. the profile card it was opened from).
+  window.addEventListener('keydown', function (e) {
+    var openDocEntry = null;
+    for (var key in DOCS) {
+      var ov = el(DOCS[key].overlayId);
+      if (ov && ov.classList.contains('visible')) { openDocEntry = DOCS[key]; break; }
+    }
+    if (!openDocEntry) return;
+    var ov = el(openDocEntry.overlayId);
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      return;
+    }
+    if (e.key === 'Tab') {
+      var stops = [ov.querySelector('.ai-note-modal-close'), el(openDocEntry.bodyId)].filter(Boolean);
+      if (!stops.length) return;
+      var idx = stops.indexOf(document.activeElement);
+      if (idx === -1) { e.preventDefault(); stops[0].focus(); return; }
+      if (e.shiftKey && idx === 0) { e.preventDefault(); stops[stops.length - 1].focus(); }
+      else if (!e.shiftKey && idx === stops.length - 1) { e.preventDefault(); stops[0].focus(); }
+    }
+  }, true);
 })();
 </script>
 </body>
