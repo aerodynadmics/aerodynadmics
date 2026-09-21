@@ -708,6 +708,7 @@
     animation: profile-card-pop 0.18s ease;
     overflow: hidden;
   }
+  #ai-note-overlay .ai-note-modal { max-width: 460px; }
   .ai-note-modal-head {
     display: flex;
     align-items: center;
@@ -3230,18 +3231,19 @@
     align-items: center;
     gap: 6px;
     margin-top: 12px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid var(--paper);
-    color: var(--paper);
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    color: var(--blueprint-dark);
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
+    font-weight: 600;
     letter-spacing: 0.02em;
     padding: 7px 12px;
     border-radius: 3px;
     cursor: pointer;
-    transition: background 0.15s ease, transform 0.15s ease;
+    transition: filter 0.15s ease, transform 0.15s ease;
   }
-  .trivia-next-btn:hover { background: rgba(255, 255, 255, 0.14); transform: translateX(2px); }
+  .trivia-next-btn:hover { filter: brightness(1.1); transform: translateX(2px); }
 
   /* ---- mock board exam ---- */
   .board-btn {
@@ -7168,7 +7170,7 @@
         <button type="button" class="ai-note-modal-close" onclick="document.getElementById('ai-note-overlay').classList.remove('visible')">&times;</button>
       </div>
       <div class="ai-note-body">
-        <p>This site was built with the help of Artificial Intelligence. I'm an Aeronautical Engineering graduate, not a coder, and AI helped me turn an idea into something usable for fellow AELE Souls on Board.</p>
+        <p>This site was built with the help of Artificial Intelligence. I'm an Aeronautical Engineering graduate, not a coder, and AI helped me turn an idea into something usable for fellow Aeronautical Engineering students/graduates.</p>
         <p>I know AI use isn't environmentally free, and I don't want to brush past that. But I believe how and why we use a tool matters as much as whether we use it at all. Here, it went toward making review materials easier to access and organize.</p>
         <p style="font-style: italic; color: var(--accent);">&ldquo;Maybe it's less about AI being good or bad, and more about the purpose we choose to use it for, while still acknowledging its impact on our environment and starting the change with ourselves to help protect it.&rdquo;<br><span style="display: inline-block; margin-top: 8px; color: var(--paper);">- aerodynadmics</span></p>
       </div>
@@ -7182,7 +7184,7 @@
         <button type="button" class="ai-note-modal-close" onclick="document.getElementById('shop-note-overlay').classList.remove('visible')">&times;</button>
       </div>
       <div class="ai-note-body">
-        <p>When you spend Wings in the Flight Store, that amount is treated as a voluntary contribution supporting this platform's continued development, maintenance, and hosting costs. It is not a direct commercial purchase of goods or services in the traditional sense. This platform is a passion project built and maintained independently, and every contribution helps keep it running and improving for the AELE Soul on Board community.</p>
+        <p>When you spend Wings in the Flight Store, that amount is treated as a voluntary contribution supporting this platform's continued development, maintenance, and hosting costs. It is not a direct commercial purchase of goods or services in the traditional sense. This platform is a passion project built and maintained independently, and every contribution helps keep it running and improving for the aerodynadmics community.</p>
         <p>That said, the cosmetic item associated with your contribution (avatar decoration, callsign animation, or profile background) remains yours. Once unlocked, it stays tied to your account and is available for you to equip, unequip, and use freely within the platform for as long as your account exists here.</p>
         <p>By purchasing an item, you acknowledge that this platform does not claim ownership over the cosmetic assets made available here. These cosmetics are provided for decorative, non-commercial use within the platform only, and neither the platform nor you, as a supporter, hold proprietary rights over them. What your contribution supports is the platform itself, not the acquisition of a proprietary asset. Through continued support from the community, the developer intends to eventually introduce original, first-party items that are genuinely owned and offered for sale, distinct from the cosmetics currently available.</p>
         <p>Use of these items is granted under fair use within this platform only. They are intended for personal display and enjoyment while using this site, are non-transferable between accounts, and may not be extracted, redistributed, resold, or used outside this platform. Access to an item may be revoked in cases of account bans, abuse, or violation of the platform's community guidelines, since it remains part of the shared system rather than a separately owned asset.</p>
@@ -7222,7 +7224,7 @@
         <button type="button" class="ai-note-modal-close" onclick="closeShopAckModal()">&times;</button>
       </div>
       <div class="ai-note-body">
-        <p>When you spend Wings in the Flight Store, that amount is treated as a voluntary contribution supporting this platform's continued development, maintenance, and hosting costs. It is not a direct commercial purchase of goods or services in the traditional sense. This platform is a passion project built and maintained independently, and every contribution helps keep it running and improving for the AELE Soul on Board community.</p>
+        <p>When you spend Wings in the Flight Store, that amount is treated as a voluntary contribution supporting this platform's continued development, maintenance, and hosting costs. It is not a direct commercial purchase of goods or services in the traditional sense. This platform is a passion project built and maintained independently, and every contribution helps keep it running and improving for the aerodynadmics community.</p>
         <p>That said, the cosmetic item associated with your contribution (avatar decoration, callsign animation, or profile background) remains yours. Once unlocked, it stays tied to your account and is available for you to equip, unequip, and use freely within the platform for as long as your account exists here.</p>
         <p>By purchasing an item, you acknowledge that this platform does not claim ownership over the cosmetic assets made available here. These cosmetics are provided for decorative, non-commercial use within the platform only, and neither the platform nor you, as a supporter, hold proprietary rights over them. What your contribution supports is the platform itself, not the acquisition of a proprietary asset. Through continued support from the community, the developer intends to eventually introduce original, first-party items that are genuinely owned and offered for sale, distinct from the cosmetics currently available.</p>
         <p>Use of these items is granted under fair use within this platform only. They are intended for personal display and enjoyment while using this site, are non-transferable between accounts, and may not be extracted, redistributed, resold, or used outside this platform. Access to an item may be revoked in cases of account bans, abuse, or violation of the platform's community guidelines, since it remains part of the shared system rather than a separately owned asset.</p>
