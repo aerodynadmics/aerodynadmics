@@ -991,7 +991,9 @@
   header {
     margin-bottom: 36px;
     border-bottom: 1px solid var(--line);
-    padding-bottom: 28px;
+    /* Was 28px. Keeps the page title (or its subtitle) sitting right
+       on top of the divider line instead of floating far above it. */
+    padding-bottom: 2px;
   }
 
   .tag {
@@ -1009,6 +1011,9 @@
     margin: 0 0 12px;
     color: #fff;
   }
+  /* Title-only headers (Review, Take a Mock Exam, Mock Board Exam):
+     no extra margin under the title, so it hugs the divider line. */
+  header > h1:last-child { margin-bottom: 0; }
 
   .site-title {
     position: relative;
@@ -1018,26 +1023,6 @@
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid var(--line);
     border-radius: 4px;
-  }
-  .site-title::before,
-  .site-title::after {
-    content: "";
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    border: 2px solid var(--accent);
-  }
-  .site-title::before {
-    top: -2px;
-    left: -2px;
-    border-right: none;
-    border-bottom: none;
-  }
-  .site-title::after {
-    bottom: -2px;
-    right: -2px;
-    border-left: none;
-    border-top: none;
   }
 
   header p.sub {
@@ -1066,6 +1051,13 @@
   }
   .back-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateX(-3px); }
   .back-btn svg { width: 14px; height: 14px; }
+
+  /* Review / Take a Mock Exam / Mock Board Exam have no back button above
+     their title. They used to get an extra 40px margin-top here; removed
+     so the title sits close under the top bar like the other pages. */
+  #view-review > header:first-child,
+  #view-mock-exam > header:first-child,
+  #view-board > header:first-child { margin-top: 0; }
 
   /* ---- beta notice ---- */
   .beta-notice {
@@ -1125,7 +1117,9 @@
   .nick-modal-overlay {
     position: fixed;
     inset: 0;
-    z-index: 1500;
+    /* 1501 (not 1500): the chat panel is now at 1500, and some of these
+       modals come earlier in the page, so they'd otherwise fall behind it. */
+    z-index: 1501;
     display: none;
     align-items: center;
     justify-content: center;
@@ -1186,34 +1180,52 @@
   }
 
   /* ---- flight store / hangar popup ---- */
+  /* Pops up exactly like the in-app mock exam (.gform-overlay/.gform-modal):
+     it fills the whole gap between the reviewees sidebar and the chat strip
+     (282px = 16px margin + 250px sidebar + 16px gap; 76px = 16px margin +
+     44px collapsed chat strip + 16px gap), full height with the same 16px
+     top/bottom inset, no dimmed backdrop, and one level below the chat panel
+     (1500) so the chat always stays above it. Clicks pass through the empty
+     backdrop; only the card itself catches them. */
   .store-popup-overlay {
     position: fixed;
-    inset: 0;
-    z-index: 1500;
+    top: 0;
+    bottom: 0;
+    left: 282px;
+    right: 76px;
+    z-index: 1499;
     display: none;
-    align-items: center;
+    align-items: stretch;
     justify-content: center;
-    background: rgba(4, 18, 32, 0.72);
-    padding: 24px;
+    background: none;
+    padding: 16px 0;
+    pointer-events: none;
+  }
+  @media (max-width: 900px) {
+    /* mirrors the sidebar's narrower, viewport-scaled width on phones */
+    .store-popup-overlay { left: calc(clamp(130px, 42vw, 220px) + 32px); }
   }
   .store-popup-overlay.visible { display: flex; }
   .store-popup {
     width: 100%;
-    max-width: 880px;
-    /* calc(100dvh - 48px) accounts for mobile browsers whose chrome
+    /* calc(100dvh - 32px) accounts for mobile browsers whose chrome
        (address bar, etc.) changes the viewport dynamically; falls back
        to the 100vh line above on browsers that don't support dvh. */
-    height: calc(100vh - 48px);
-    height: calc(100dvh - 48px);
-    max-height: calc(100vh - 48px);
-    max-height: calc(100dvh - 48px);
+    height: calc(100vh - 32px);
+    height: calc(100dvh - 32px);
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
     display: flex;
     flex-direction: column;
     background: var(--blueprint-dark);
-    
-    border-radius: 6px;
-    box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+    border-radius: 14px;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.3);
     overflow: hidden;
+    pointer-events: auto;
+  }
+  @media (max-width: 600px) {
+    .store-popup-overlay { padding: 8px 0; }
+    .store-popup { height: calc(100vh - 16px); height: calc(100dvh - 16px); max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px); }
   }
   .store-popup-head {
     display: flex;
@@ -1227,6 +1239,16 @@
     flex-shrink: 0;
   }
   .store-popup-head .site-title { margin: 0; }
+  /* Flight Store only: thin vertical divider (same line colour as the top
+     bar's icon divider) between the note link and the close button. */
+  #view-shop .store-popup-head .nick-modal-close {
+    display: inline-flex;
+    align-items: center;
+    height: 24px;
+    margin: -3px 0; /* line is 24px tall but doesn't make the header taller */
+    padding: 0 4px 0 14px;
+    border-left: 1px solid var(--line);
+  }
   .store-popup-head h3 {
     margin: 0;
     font-size: 14px;
@@ -1439,11 +1461,6 @@
     color: var(--green);
     background: rgba(79, 209, 160, 0.15);
     border-color: rgba(79, 209, 160, 0.4);
-  }
-  .nick-list .nick-status-tag.listening {
-    color: #ff8fc0;
-    background: rgba(255, 105, 180, 0.15);
-    border-color: rgba(255, 105, 180, 0.4);
   }
   .nick-list .nick-status-tag.shopping {
     color: var(--accent);
@@ -1676,6 +1693,71 @@
   }
   @media (min-width: 901px) {
     body.sidebar-active { padding-left: 282px; padding-right: 282px; }
+  }
+
+  /* ALL PAGES (desktop): widen the page content so it fills the free
+     space between the left sidebar and the right chatbox strip instead of
+     sitting in a narrow 780px column. The right gutter is cut from 282px
+     down to 76px (16px margin + 44px collapsed chat strip + 16px gap, the
+     same numbers .gform-overlay uses), the .wrap max-width cap is removed,
+     and the wrap's side padding is dropped so the 16px gap beside the
+     sidebar matches the gap beside the chat strip. Phones (900px and
+     narrower) keep their own layout. */
+  @media (min-width: 901px) {
+    body.sidebar-active { padding-right: 76px; }
+    body.sidebar-active .wrap {
+      max-width: none;
+      padding-left: 0;
+      padding-right: 0;
+    }
+    body.sidebar-active .support-card p { max-width: none; }
+
+    /* TOP HEADER (every page): the wings balance / Flight Store / Hangar / Admin /
+       Depart row becomes a header card pinned to the top of the page. It
+       uses the same card look as the sidebar (dark blueprint fill, 14px
+       radius, soft shadow), lines up with the sidebar's 16px top inset, and
+       spans exactly the gap between the sidebar and the chatbox strip.
+       The wrap's top padding is raised so the page content starts below
+       the header instead of underneath it. */
+    body.sidebar-active .wrap { padding-top: 96px; }
+    body.sidebar-active .top-bar {
+      position: fixed;
+      top: 16px;
+      left: 282px;
+      right: 76px;
+      z-index: 80;
+      min-height: 54px;
+      margin: 0;
+      padding: 0 16px;
+    }
+    /* Opaque cover behind the header: it reaches from the very top of the
+       screen to a little below the header and repaints the page's own
+       background gradient (fixed to the viewport, so it lines up exactly),
+       which means the scrolling homepage disappears under the header
+       instead of showing through or peeking out around it. */
+    body.sidebar-active .top-bar::before {
+      content: '';
+      position: absolute;
+      top: -16px;
+      bottom: -14px;
+      left: -8px;
+      right: -8px;
+      z-index: -2;
+      pointer-events: none;
+      background: radial-gradient(ellipse at 50% 35%, rgb(18, 58, 94), rgb(3, 14, 26) 70%);
+      background-attachment: fixed;
+    }
+    /* The header card itself, solid (no see-through) and drawn above the cover. */
+    body.sidebar-active .top-bar::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background: var(--blueprint-dark);
+      border-radius: 14px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
   }
   @media (max-width: 900px) {
     /* Match the PC layout instead of collapsing into a horizontal bar
@@ -2452,11 +2534,6 @@
     background: rgba(79, 209, 160, 0.15);
     border-color: rgba(79, 209, 160, 0.4);
   }
-  .profile-card-status-row .nick-status-tag.listening {
-    color: #ff8fc0;
-    background: rgba(255, 105, 180, 0.15);
-    border-color: rgba(255, 105, 180, 0.4);
-  }
   .profile-card-status-row .nick-status-tag.shopping {
     color: var(--accent);
     background: rgba(255, 177, 0, 0.15);
@@ -2924,51 +3001,6 @@
   .home-tab-btn.tab-music:hover { border-color: #ff8fc0; background: rgba(255, 143, 192, 0.1); }
   .home-tab-btn.tab-music .home-tab-btn-title { color: #ff8fc0; }
 
-  .airplane-loading-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 3000;
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 22px;
-    background: radial-gradient(ellipse at 50% 35%, rgb(18, 58, 94), rgb(3, 14, 26) 70%);
-  }
-  .airplane-loading-overlay.visible { display: flex; }
-  .airplane-loading-track {
-    position: relative;
-    width: min(70vw, 320px);
-    height: 40px;
-  }
-  .airplane-loading-track::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: var(--line);
-  }
-  .airplane-loading-plane {
-    position: absolute;
-    top: 50%;
-    left: 0;
-    font-size: 30px;
-    transform: translate(0, -50%);
-    animation: airplane-fly 1.5s linear forwards;
-  }
-  @keyframes airplane-fly {
-    0% { left: 0%; transform: translate(0, -50%); }
-    100% { left: 100%; transform: translate(-100%, -50%); }
-  }
-  .airplane-loading-text {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12.5px;
-    letter-spacing: 0.06em;
-    color: var(--rivet);
-  }
-
   ul.subject-list, ul.exam-list {
     list-style: none;
     margin: 0;
@@ -3265,59 +3297,13 @@
   .board-btn:hover { background: rgba(255, 177, 0, 0.16); transform: translateX(2px); }
   .board-btn svg { width: 14px; height: 14px; }
 
-  .music-player {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 50;
-    width: 300px;
-    background: var(--blueprint-dark);
-    border: 1px solid #ff8fc4;
-    border-radius: 6px;
-    box-shadow: 0 8px 28px rgba(0,0,0,0.45);
-    overflow: hidden;
-    display: none;
-  }
-  .music-player.visible { display: block; }
-  .music-player-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 10px;
-    background: rgba(255, 105, 180, 0.1);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    color: #ff8fc4;
-    letter-spacing: 0.04em;
-  }
-  .music-player-close {
-    background: none;
-    border: none;
-    color: #ff8fc4;
-    cursor: pointer;
-    font-size: 15px;
-    line-height: 1;
-    padding: 0 4px;
-  }
-  .music-player-close:hover { color: #fff; }
-  .music-player iframe {
-    display: block;
-    width: 100%;
-    height: 169px;
-    border: none;
-  }
-
-  @media (max-width: 480px) {
-    .music-player { width: calc(100vw - 32px); right: 16px; top: 16px; }
-    .music-player iframe { height: calc((100vw - 32px) * 0.5625); }
-  }
-
   /* ---- in-page Google Form popup (no separate browser window, so the
      address bar is never shown at all) ---- */
   .form-popup-overlay {
     position: fixed;
     inset: 0;
-    z-index: 1500;
+    /* 1499: one below the chat panel (1500), so the chat is always above it. */
+    z-index: 1499;
     display: none;
     align-items: center;
     justify-content: center;
@@ -3389,36 +3375,152 @@
   }
 
   /* ---- reviewee chat ---- */
-  .chat-fab {
+  /* Large side panel pinned to the right edge. It uses the same vertical
+     footprint as .reviewees-sidebar (16px inset from the top and bottom of
+     the viewport), so its height always follows the sidebar's height, at
+     every screen size, with no fixed pixel height.
+
+     This is now a plain off-canvas popup: closed, the whole panel sits
+     just past the right edge of the viewport (translateX so its own left
+     edge clears the viewport) and is fully invisible; open, it slides to
+     translateX(0). No clip-path is involved at all — earlier versions
+     kept the panel in place and used clip-path to crop it down to a 44px
+     "peek" strip while collapsed, which needed the crop to be timed to
+     only apply once the slide finished (otherwise the cropped strip
+     itself visibly slides across the page). That timing is exactly the
+     kind of thing browsers are inconsistent about close up (see the old
+     write-up this replaced, in git history), even after fixing the
+     specific transition-property mismatch that caused it — some browsers
+     still show a brief flash of whatever's underneath while the panel's
+     compositing layer gets set up, especially with clip-path involved
+     (clip-path with rounded corners often forces software rasterization,
+     which is slower to paint than a plain transform). A true popup
+     doesn't have this problem because there's nothing to crop: closed,
+     the panel is simply positioned somewhere a plain transform can't
+     accidentally reveal, so there's no cropped sliver that could flash.
+
+     The always-visible "peek" strip (.chat-panel-peek below) that used to
+     be the cropped-down remainder of THIS element is now its own
+     completely separate, statically-positioned element that sits in the
+     same corner. It isn't part of what's sliding at all, so it can't
+     glitch from the slide. It's simply covered by this panel (higher
+     z-index) whenever the panel is open, and uncovered when the panel
+     slides off past the edge. */
+  .chat-panel {
+    --chat-slide: 300ms;
     position: fixed;
+    top: 16px;
     bottom: 16px;
-    right: 20px;
-    z-index: 60;
-    width: 52px;
-    height: 52px;
-    border: none;
-    border-radius: 50%;
+    right: 16px;
+    /* Same level as .form-popup-overlay (1500). The chat panel comes later in
+       the page, so at equal z-index it is drawn ON TOP of the exam/form popup
+       instead of behind it. Modals that are meant to cover the chat (guidelines,
+       shop, etc.) are either later in the page or have a higher z-index. */
+    z-index: 1500;
+    /* Desktop: the open panel stretches from the right edge all the way to
+       just beside the sidebar. 298px = 16px left margin + 250px sidebar +
+       16px gap between the sidebar and the chat + 16px right margin. Phones
+       (max-width: 900px) keep their own width rule further down. */
+    width: calc(100vw - 298px);
+    max-width: calc(100vw - 32px);
     background: var(--blueprint-dark);
-    color: var(--paper);
-    font-size: 22px;
-    cursor: pointer;
-    box-shadow: 0 8px 22px rgba(0,0,0,0.45);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    border-radius: 14px;
+    box-shadow: -4px 0 20px rgba(0,0,0,0.3);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    /* Closed: slide fully clear of the viewport. 100% (of the panel's own
+       width) moves its left edge exactly to where its right edge started,
+       i.e. just past the screen's right boundary; the extra 40px covers
+       its own box-shadow so no blurred edge peeks onto the page. */
+    transform: translateX(calc(100% + 40px));
+    transition: transform var(--chat-slide) cubic-bezier(0.22, 0.61, 0.36, 1);
   }
-  .chat-fab.mention { animation: chatFabPulse 1.4s ease-in-out infinite; }
-  @keyframes chatFabPulse {
-    0%, 100% { box-shadow: 0 8px 22px rgba(0,0,0,0.45), 0 0 0 0 rgba(255,177,0,0.55); }
-    50% { box-shadow: 0 8px 22px rgba(0,0,0,0.45), 0 0 0 8px rgba(255,177,0,0); }
+  .chat-panel.available { display: flex; }
+  .chat-panel.visible {
+    transform: translateX(0);
+  }
+  /* Added by toggleChatPanel() one frame before the slide starts (open or
+     close) and removed once it finishes. Promotes the panel to its own
+     GPU compositing layer ahead of time so the transform transition
+     doesn't have to trigger that promotion reactively mid-slide — a
+     reactive promotion can cost a single composited frame where whatever
+     is behind the panel shows through before its layer is fully painted.
+     Not left on permanently (unlike a plain "will-change: transform" on
+     the base rule) because that keeps the whole panel on its own layer
+     even at rest, which makes browsers render its text with flatter,
+     dimmer grayscale smoothing than the rest of the site. */
+  .chat-panel.animating {
+    will-change: transform;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .chat-panel { --chat-slide: 1ms; }
+  }
+
+  /* Hidden (and unfocusable) once fully closed and at rest — but not
+     while .animating is still present, so it stays visible/focusable for
+     the whole slide-out, same as before. This is a plain conditional
+     rule rather than a transition-delay, so there's no cross-rule timing
+     to get wrong: by the time toggleChatPanel()'s JS timer removes
+     .animating, the panel has already finished sliding off past the
+     viewport edge, so there's nothing to see regardless of exactly when
+     visibility flips. */
+  .chat-panel:not(.visible):not(.animating) {
+    visibility: hidden;
+  }
+
+  /* The collapsed-state strip. A separate, statically-positioned element
+     (not a cropped-down sliver of .chat-panel — see the comment on that
+     rule above) that sits in the same bottom-right corner the panel
+     occupies. It doesn't move or animate at all; it's simply covered by
+     the panel (z-index 1500 vs. 1499 here) whenever the panel is open. */
+  .chat-panel-peek {
+    --chat-peek: 44px;
+    position: fixed;
+    top: 16px;
+    bottom: 16px;
+    right: 16px;
+    width: var(--chat-peek);
+    z-index: 1499;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 0;
+    background: var(--blueprint-dark);
+    border-radius: 14px;
+    box-shadow: -4px 0 20px rgba(0,0,0,0.3);
+    color: var(--paper);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .chat-panel-peek.available { display: flex; }
+  .chat-panel-peek:hover {
+    background-image: linear-gradient(rgba(255,255,255,0.06), rgba(255,255,255,0.06));
+  }
+  .chat-panel-peek:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+  .chat-peek-icon { font-size: 20px; line-height: 1; }
+  .chat-peek-label {
+    writing-mode: vertical-rl;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--rivet);
+    white-space: nowrap;
+  }
+  .chat-panel-peek.has-mention {
+    animation: chatPeekPulse 1.4s ease-in-out infinite;
+  }
+  @keyframes chatPeekPulse {
+    0%, 100% { box-shadow: inset 3px 0 0 0 rgba(255,177,0,0); }
+    50% { box-shadow: inset 3px 0 0 0 var(--accent); }
   }
   .chat-unread-badge {
-    position: absolute;
-    top: -4px;
-    right: -4px;
-    min-width: 18px;
-    height: 18px;
-    padding: 0 4px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
     border-radius: 999px;
     background: #ff6b6b;
     color: #ffffff;
@@ -3428,34 +3530,18 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--blueprint-dark);
   }
   .chat-unread-badge.mention { background: var(--accent); color: var(--blueprint-dark); }
-
-  .chat-panel {
-    position: fixed;
-    bottom: 80px;
-    right: 20px;
-    z-index: 60;
-    width: 320px;
-    max-height: 440px;
-    background: var(--blueprint-dark);
-        border-radius: 6px;
-    box-shadow: 0 8px 28px rgba(0,0,0,0.45);
-    display: none;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  .chat-panel.visible { display: flex; }
   .chat-panel-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 12px;
+    gap: 14px;
+    padding: 14px 18px;
     background: rgba(255,255,255,0.04);
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 14px;
     border-bottom: 1px solid var(--line);
     flex-shrink: 0;
   }
@@ -3466,26 +3552,57 @@
     font-size: 18px;
     cursor: pointer;
     line-height: 1;
-    padding: 0 2px;
+    padding: 0 4px;
   }
-  .chat-panel-status-row {
+  .chat-panel-close:hover { color: var(--accent); }
+  /* thin vertical divider between "Chatbox Guidelines" and the » button,
+     matching the Flight Store header */
+  .chat-panel-head .chat-panel-close {
+    display: inline-flex;
+    align-items: center;
+    height: 22px;
+    padding: 0 4px 0 14px;
+    border-left: 1px solid var(--line);
+  }
+  /* Title on the left, "Chatbox Guidelines" on the right of the same line
+     (same look as the note link in the Flight Store header). Only on very
+     narrow phones, where both can't fit, does the link wrap under the title. */
+  .chat-panel-head-text {
     display: flex;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    padding: 6px 12px;
-    border-bottom: 1px solid rgba(63,109,146,0.4);
-    flex-shrink: 0;
+    gap: 4px 14px;
+    min-width: 0;
   }
-  .chat-panel-status {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    color: var(--green);
-    background: rgba(79, 209, 160, 0.12);
-    border: 1px solid rgba(79, 209, 160, 0.5);
-    border-radius: 999px;
-    padding: 3px 10px;
-    white-space: nowrap;
+  /* Both header spans and the collapse button glyph share one rule: give
+     each a fixed 22px-tall box, but let the actual text/glyph keep its own
+     natural (tight) line-height so it's SMALLER than that box. That gives
+     flexbox's align-items:center real room to center the visible ink
+     geometrically. Forcing line-height to exactly match the box height (as
+     before) removes that room, so any glyph/font sits wherever its own
+     internal ascent/descent metrics happen to place it — which differs by
+     font and is what produced the mismatched gaps. */
+  .chat-panel-head-text > span {
+    display: inline-flex;
+    align-items: center;
+    height: 22px;
+    line-height: normal;
+  }
+  .chat-panel-head .chat-guidelines-link {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--rivet);
+    letter-spacing: 0.02em;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    height: 22px;
+    line-height: normal;
+    position: relative;
+    top: 0.5px;
   }
   .chat-guidelines-link {
     font-family: 'IBM Plex Mono', monospace;
@@ -3497,7 +3614,6 @@
     white-space: nowrap;
     flex-shrink: 0;
   }
-  .chat-guidelines-link:hover { opacity: 0.8; }
 
   .chat-guidelines-overlay {
     position: fixed;
@@ -4185,46 +4301,70 @@
   .chat-messages {
     flex: 1;
     overflow-y: auto;
-    padding: 10px 12px;
+    padding: 14px 18px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    min-height: 180px;
+    gap: 16px;
+    min-height: 0;
   }
   .chat-msg {
+    position: relative;
     display: flex;
-    gap: 8px;
-    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .chat-msg-reply-thread {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 50px;
+    height: 32px;
+    overflow: visible;
+    pointer-events: none;
+  }
+  .chat-msg-reply-thread path {
+    fill: none;
+    stroke: var(--line);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+  }
+  .chat-msg:has(.chat-msg-reply:hover) .chat-msg-reply-thread path {
+    stroke: var(--accent);
+  }
+  .chat-msg-row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
   }
   .chat-msg-avatar {
     position: relative;
+    top: 8px;
     flex-shrink: 0;
-    width: 24px;
-    height: 24px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
     box-shadow: 0 0 0 3px var(--line);
     background: rgba(255,255,255,0.04);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1;
   }
   .chat-msg-body { min-width: 0; }
   .chat-msg-meta {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
+    font-size: 11px;
     color: var(--rivet);
     margin-bottom: 2px;
   }
   .chat-msg-text {
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 13px;
-    line-height: 1.4;
+    font-size: 14px;
+    line-height: 1.45;
     color: var(--paper);
     word-break: break-word;
   }
-  .chat-msg.own .chat-msg-meta { color: var(--paper); }
   .chat-msg.system {
     justify-content: center;
     align-items: center;
@@ -4253,23 +4393,35 @@
     color: var(--accent);
   }
   .chat-msg-reply {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: 42px;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10.5px;
     color: var(--rivet);
-    background: rgba(255,255,255,0.03);
-    border-left: 2px solid var(--line);
-    border-radius: 4px;
-    padding: 4px 8px;
-    margin-bottom: 3px;
     cursor: pointer;
-    max-width: 220px;
+    max-width: 380px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .chat-msg-reply:hover { border-left-color: var(--accent); color: var(--paper); }
-  .chat-msg-reply b { color: var(--accent); font-weight: normal; }
-  .chat-msg.own .chat-msg-reply { margin-left: auto; }
+  .chat-msg-reply-avatar {
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    line-height: 1;
+    overflow: hidden;
+  }
+  .chat-msg-reply:hover { color: var(--paper); }
+  .chat-msg-reply b { color: var(--paper); font-weight: normal; }
   .chat-reply-btn {
     background: none;
     border: none;
@@ -4301,16 +4453,13 @@
     line-height: 1;
   }
   .chat-delete-btn:hover { opacity: 1; }
-  .chat-msg.own {
-    flex-direction: row-reverse;
-  }
   .chat-msg.own .chat-msg-body {
-    text-align: right;
+    text-align: left;
   }
   .chat-msg.own .chat-msg-text {
     background: rgba(255,255,255,0.04);
     border: 1px solid var(--line);
-    border-radius: 10px 10px 2px 10px;
+    border-radius: 10px 10px 10px 2px;
     padding: 6px 10px;
     display: inline-block;
   }
@@ -4326,7 +4475,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    padding: 6px 12px;
+    padding: 8px 18px;
     border-top: 1px solid var(--line);
     background: rgba(255,177,0,0.06);
   }
@@ -4379,8 +4528,8 @@
   }
   .chat-input-row {
     display: flex;
-    gap: 6px;
-    padding: 10px 12px;
+    gap: 8px;
+    padding: 12px 18px;
     border-top: 1px solid var(--line);
     flex-shrink: 0;
   }
@@ -4392,8 +4541,8 @@
     border-radius: 3px;
     color: var(--paper);
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 13px;
-    padding: 8px 10px;
+    font-size: 14px;
+    padding: 10px 12px;
   }
   .chat-input-row input:focus { outline: none; border-color: var(--accent); }
   .chat-input-row button {
@@ -4452,10 +4601,10 @@
   .chat-emoji-tab.active { opacity: 1; border-bottom-color: var(--accent); }
   .chat-emoji-grid {
     display: grid;
-    grid-template-columns: repeat(8, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
     gap: 2px;
     padding: 8px;
-    max-height: 180px;
+    max-height: 220px;
     overflow-y: auto;
   }
   .chat-emoji-item {
@@ -4470,9 +4619,10 @@
   }
   .chat-emoji-item:hover { background: rgba(255,177,0,0.15); }
 
-  @media (max-width: 480px) {
-    .chat-panel { width: calc(100vw - 32px); right: 16px; bottom: 80px; max-height: 55vh; }
-    .chat-fab { right: 16px; bottom: 76px; }
+  @media (max-width: 900px) {
+    /* stays inside the viewport with the same 16px margins; sits above the
+       (also fixed) sidebar so it is fully usable on phones */
+    .chat-panel { width: min(calc(100vw - 32px), 560px); }
   }
 
   .board-day-block {
@@ -4745,6 +4895,69 @@
   .topbar-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
   .topbar-nav-btn.locked { color: var(--rivet); opacity: 0.85; }
   .topbar-nav-btn.locked:hover { border-color: var(--line); color: var(--rivet); }
+
+  /* Review / Mock Exam / Mock Board Exam icon buttons in the homepage
+     header. They sit on the right, just before the Depart button. */
+  .topbar-icon-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    padding-right: 10px;
+    margin-right: 2px;
+    border-right: 1px solid var(--line);
+  }
+  .account-badge .topbar-icon-nav + .signout-icon-btn { margin-left: 8px; }
+  .topbar-icon-btn {
+    --tab-color: var(--accent);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 38px;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 10px;
+    color: var(--rivet);
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+  .topbar-icon-btn svg {
+    width: 23px;
+    height: 23px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    pointer-events: none;
+  }
+  .topbar-icon-btn:hover,
+  .topbar-icon-btn:focus-visible { color: var(--tab-color); background: rgba(255,255,255,0.07); }
+  .topbar-icon-btn.tab-home       { --tab-color: var(--accent); }
+  .topbar-icon-btn.tab-review     { --tab-color: #ff6b6b; }
+  .topbar-icon-btn.tab-mock-exam  { --tab-color: #8b5cf6; }
+  .topbar-icon-btn.tab-mock-board { --tab-color: #5aa8ff; }
+
+  /* Title row: the page title on the left, an optional button on the right. */
+  .site-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .site-title-row h1 { margin: 0; }
+  /* Subject pages: the Back to Subjects button now lives in this row,
+     on the right of the title, instead of stacked above it. */
+  .site-title-row .back-btn { margin-bottom: 0; flex-shrink: 0; }
+  /* The app hides the subtitle (display:none) once a subject has exams.
+     The 12px title->subtitle gap therefore belongs on the subtitle, not on
+     the row, otherwise it stays behind as empty space above the divider. */
+  header.has-back .site-title-row { margin-bottom: 0; }
+  header.has-back p.sub { margin-top: 12px; }
   .wings-balance-card {
     display: flex;
     align-items: center;
@@ -6311,12 +6524,28 @@
   }
 /* ============ IN-APP MOCK EXAM (site theme, sidebar-height popup) ============ */
 .gform-overlay {
-  position: fixed; inset: 0; background: none;
+  position: fixed; top: 0; bottom: 0; background: none;
+  /* Bounded to the gap between the reviewees sidebar and the chat panel
+     (open, or collapsed to its peek strip) instead of the full viewport,
+     so .gform-modal below can stretch edge-to-edge and cover that gap
+     instead of floating centered with visible slivers of the page on both
+     sides. 282px = 16px sidebar margin + 250px sidebar width + 16px gap
+     (matches body.sidebar-active's own padding-left). 76px = 16px
+     chat-panel margin + 44px collapsed peek width + 16px gap. */
+  left: 282px; right: 76px;
   /* Match .form-popup-overlay's stacking (1500), not a high modal-blocking
      value — otherwise things that should layer above a popup, like the
      sidebar's profile card (z-index 1700), get stuck behind it instead. */
-  z-index: 1500; display: flex; justify-content: center; align-items: stretch;
-  padding: 16px;
+  /* 1499, one below the chat panel (1500): this overlay is created by JS and
+     appended to <body> AFTER the chat panel, so at an equal z-index it would
+     be drawn on top of the chat. Being 1 lower keeps the chat above it. */
+  z-index: 1499; display: flex; justify-content: center; align-items: stretch;
+  /* Vertical-only padding: horizontal padding here would add an extra inset
+     on top of the left/right bounds above, leaving the same unwanted gap
+     we're trying to remove. The open chat panel sits flush against its
+     16px gap from the sidebar with no extra padding, so this matches that
+     by letting .gform-modal fill left/right edge-to-edge. */
+  padding: 16px 0;
   /* Let clicks pass straight through the backdrop to whatever's behind it
      (the reviewees sidebar, chat FAB/panel, etc.) — same approach as
      .form-popup-overlay — only the modal card itself should catch clicks.
@@ -6324,8 +6553,14 @@
      side panel over the page, not a blocking modal. */
   pointer-events: none;
 }
+@media (max-width: 900px) {
+  /* Mirrors the sidebar's own narrower, viewport-scaled width on phones
+     (see body.sidebar-active's max-width:900px rule) so the popup still
+     starts right beside it instead of leaving a gap. */
+  .gform-overlay { left: calc(clamp(130px, 42vw, 220px) + 32px); }
+}
 .gform-modal {
-  background: var(--blueprint-dark); width: 100%; max-width: 720px;
+  background: var(--blueprint-dark); width: 100%;
   height: calc(100vh - 32px);
   border-radius: 14px;
   box-shadow: 4px 0 20px rgba(0,0,0,0.3);
@@ -6947,6 +7182,61 @@
   @media (prefers-reduced-motion: reduce) {
     .legal-notice-toast { transition: none; }
   }
+
+  /* ---- close (×) buttons: drawn X, exactly centred ----
+     The × used to be a text glyph, so where it landed inside its button
+     depended on the visitor's system font (often a pixel or two high or
+     low). The glyph is now made invisible (the button keeps its exact size
+     and hit area) and a geometric X in the button's own colour is centred
+     on the button box, so it is dead centre everywhere and hover colours
+     still work. */
+  .nick-modal-close,
+  .ai-note-modal-close,
+  .form-popup-close,
+  .chat-reply-preview-close,
+  .wings-alert-delete-btn,
+  .gform-close {
+    position: relative;
+  }
+  .nick-modal-close,
+  .ai-note-modal-close,
+  .form-popup-close,
+  .chat-reply-preview-close,
+  .shop-pay-x,
+  .chat-guidelines-close,
+  .banned-list-close,
+  .gift-wings-close,
+  .profile-card-close,
+  .wings-alert-delete-btn,
+  .gform-close {
+    -webkit-text-fill-color: transparent;
+  }
+  .nick-modal-close::after,
+  .ai-note-modal-close::after,
+  .form-popup-close::after,
+  .chat-reply-preview-close::after,
+  .shop-pay-x::after,
+  .chat-guidelines-close::after,
+  .banned-list-close::after,
+  .gift-wings-close::after,
+  .profile-card-close::after,
+  .wings-alert-delete-btn::after,
+  .gform-close::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0.5em;
+    height: 0.5em;
+    transform: translate(-50%, -50%);
+    background-color: currentColor;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1 1L9 9M9 1L1 9' stroke='black' stroke-width='1.3' stroke-linecap='round' fill='none'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1 1L9 9M9 1L1 9' stroke='black' stroke-width='1.3' stroke-linecap='round' fill='none'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+    pointer-events: none;
+  }
+  /* Flight Store close button has 14px of left padding (for its divider) and
+     4px on the right, so its X is centred in the space right of the divider. */
+  #view-shop .store-popup-head .nick-modal-close::after { left: calc(50% + 5px); }
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js" defer></script>
@@ -8091,13 +8381,6 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
     </div>
   </div>
 
-  <div class="airplane-loading-overlay" id="airplane-loading-overlay">
-    <div class="airplane-loading-track">
-      <span class="airplane-loading-plane">🛬</span>
-    </div>
-    <p class="airplane-loading-text" id="airplane-loading-text">Taking off&hellip;</p>
-  </div>
-
   <div class="form-popup-overlay" id="form-popup-overlay">
     <div class="form-popup-card">
       <div class="form-popup-head">
@@ -8109,28 +8392,22 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
     </div>
   </div>
 
-  <div class="music-player" id="music-player">
-    <div class="music-player-head">
-      <a href="https://youtube.com/playlist?list=PLczapfHDz7DM&si=6PP2CmpxP64BojX9" target="_blank" rel="noopener" style="color:inherit; text-decoration:none;">🎵 kanta ni inang playlist by aerodynadmics</a>
-      <button class="music-player-close" onclick="stopTaylorSwift()">&times;</button>
-    </div>
-    <div id="music-player-frame"></div>
-  </div>
-
-  <button class="chat-fab" id="chat-fab" onclick="toggleChatPanel()" style="display:none;">
-    💬
+  <div class="chat-panel-peek" id="chat-panel-peek" role="button" tabindex="0" aria-label="Open Black Box" onclick="toggleChatPanel()" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleChatPanel(); }">
+    <span class="chat-peek-icon">💬</span>
     <span class="chat-unread-badge" id="chat-unread-badge" style="display:none;">0</span>
-  </button>
-
+    <span class="chat-peek-label">Black Box</span>
+  </div>
   <div class="chat-panel" id="chat-panel">
     <div class="chat-panel-head">
-      <span>💬 Souls on Board Discussion Chatbox</span>
-      <button class="chat-panel-close" onclick="toggleChatPanel()">&times;</button>
+      <div class="chat-panel-head-text">
+        <span>💬 Black Box</span>
+        <span class="chat-guidelines-link" onclick="openChatGuidelines()">Chatbox Guidelines</span>
+      </div>
+      <button class="chat-panel-close" onclick="toggleChatPanel()" title="Collapse chatbox" aria-label="Collapse chatbox"><span class="chat-panel-close-glyph">&raquo;</span></button>
     </div>
-    <div class="chat-panel-status-row">
-      <span class="chat-guidelines-link" onclick="openChatGuidelines()">Chatbox Guidelines</span>
-      <div class="chat-panel-status" id="chat-panel-status">Connecting&hellip;</div>
-    </div>
+    <!-- The "Connected" pill was removed from view. This hidden element stays
+         only because the chat code writes its status text into it. -->
+    <div id="chat-panel-status" hidden></div>
     <div class="chat-messages" id="chat-messages"></div>
     <div class="chat-reply-preview" id="chat-reply-preview">
       <div class="chat-reply-preview-text">
@@ -8184,6 +8461,20 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
             <button id="admin-toggle-flightstore-btn" onclick="toggleFlightStoreEnabled(); closeAdminSettingsMenu();">DISABLE FLIGHT STORE</button>
           </div>
         </div>
+        <div class="topbar-icon-nav" id="topbar-icon-nav">
+          <button type="button" class="topbar-icon-btn tab-home" title="Homepage" aria-label="Homepage" onclick="goHomeFromHeader()">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9v11a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9"/></svg>
+          </button>
+          <button type="button" class="topbar-icon-btn tab-review" title="Review" aria-label="Review" onclick="navigateHomeTab('review')">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 5.5C4.5 4.2 8 4.2 12 6c4-1.8 7.5-1.8 10-.5V19c-2.5-1.3-6-1.3-10 .5-4-1.8-7.5-1.8-10-.5V5.5z"/><path d="M12 6v13.5"/></svg>
+          </button>
+          <button type="button" class="topbar-icon-btn tab-mock-exam" title="Take a Mock Exam" aria-label="Take a Mock Exam" onclick="navigateHomeTab('mock-exam')">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 13.5l2 2 4-4.5"/></svg>
+          </button>
+          <button type="button" class="topbar-icon-btn tab-mock-board" title="Take a Mock Board Exam" aria-label="Take a Mock Board Exam" onclick="navigateHomeTab('mock-board')">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5-10-5z"/><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/><path d="M22 9v6"/></svg>
+          </button>
+        </div>
         <button class="signout-btn signout-icon-btn" title="Depart" onclick="signOutUser()">🛫</button>
       </div>
     </div>
@@ -8204,7 +8495,9 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         </div>
       </div>
       <header>
-        <h1 class="site-title nick-blueprint">aerodynadmics</h1>
+        <div class="site-title-row">
+          <h1 class="site-title nick-blueprint">aerodynadmics</h1>
+        </div>
         <p class="sub" style="max-width:none;">a Platform for Aeronautical Engineering Students and Graduates, made by <a href="https://www.facebook.com/nadburanday" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline; text-underline-offset:3px;">Nad</a></p>
         <p class="sub" style="margin-top:10px; font-style:italic;">sic itur ad astra ⭐!</p>
       </header>
@@ -8219,26 +8512,6 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         <span class="note-title">&#128204; A NOTE TO EVERYONE</span>
         <p>You may forget today what you studied yesterday, and you may forget tomorrow what you studied today, and that is okay. Think of every lesson you study as someone you&rsquo;ve just met along the way. The first meeting may leave you knowing only a name, a face, and a few words. But when you meet them again and again, you begin to recognize them, remember them, and eventually, they no longer feel like a stranger. Learning works the same way. What feels unfamiliar today may become something you know by heart tomorrow, simply because you chose to meet it again.</p>
         <p>So keep showing up. Every encounter leaves a trace, and one day, what once felt unfamiliar will feel like something you&rsquo;ve always known.</p>
-      </div>
-
-      <h2 class="home-tabs-question">What do you want to do?</h2>
-      <div class="home-tabs" id="home-tabs">
-        <button class="home-tab-btn tab-review" data-tab="review" onclick="navigateHomeTab('review')">
-          <span class="home-tab-btn-title">REVIEW</span>
-          <span class="home-tab-btn-sub">Browse subjects &amp; study notes</span>
-        </button>
-        <button class="home-tab-btn tab-mock-exam" data-tab="mock-exam" onclick="navigateHomeTab('mock-exam')">
-          <span class="home-tab-btn-title">TAKE A MOCK EXAM</span>
-          <span class="home-tab-btn-sub">Practice per subject</span>
-        </button>
-        <button class="home-tab-btn tab-mock-board" data-tab="mock-board" onclick="navigateHomeTab('mock-board')">
-          <span class="home-tab-btn-title">TAKE A MOCK BOARD EXAM</span>
-          <span class="home-tab-btn-sub">Full simulated board exam</span>
-        </button>
-        <button class="home-tab-btn tab-music" onclick="playTaylorSwift()">
-          <span class="home-tab-btn-title">PLAY A TAYLOR SWIFT SONG</span>
-          <span class="home-tab-btn-sub">Because why not</span>
-        </button>
       </div>
 
       <div class="support-card">
@@ -8288,13 +8561,14 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
 
     <!-- ============ AERODYNAMICS VIEW ============ -->
     <section id="view-aero" class="view">
-      <button class="back-btn" onclick="backToSubjects()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-        BACK TO SUBJECTS
-      </button>
-
-      <header>
-        <h1>Aerodynamics</h1>
+      <header class="has-back">
+        <div class="site-title-row">
+          <h1>Aerodynamics</h1>
+          <button class="back-btn" onclick="backToSubjects()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+            BACK TO SUBJECTS
+          </button>
+        </div>
         <p class="sub" id="aero-sub">No mock exams have been added for this subject yet.</p>
       </header>
 
@@ -8306,13 +8580,14 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
 
     <!-- ============ AIRCRAFT STRUCTURES VIEW ============ -->
     <section id="view-structures" class="view">
-      <button class="back-btn" onclick="backToSubjects()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-        BACK TO SUBJECTS
-      </button>
-
-      <header>
-        <h1>Aircraft Structures and Design</h1>
+      <header class="has-back">
+        <div class="site-title-row">
+          <h1>Aircraft Structures and Design</h1>
+          <button class="back-btn" onclick="backToSubjects()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+            BACK TO SUBJECTS
+          </button>
+        </div>
         <p class="sub" id="structures-sub">No mock exams have been added for this subject yet.</p>
       </header>
 
@@ -8325,11 +8600,6 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
     <!-- ============ MOCK BOARD EXAM VIEW ============ -->
     <!-- ============ TAKE A MOCK EXAM VIEW ============ -->
     <section id="view-mock-exam" class="view">
-      <button class="back-btn" onclick="showHome()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-        BACK TO HOMEPAGE
-      </button>
-
       <header>
         <h1>Take a Mock Exam</h1>
       </header>
@@ -8340,11 +8610,6 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
 
     <!-- ============ REVIEW VIEW ============ -->
     <section id="view-review" class="view">
-      <button class="back-btn" onclick="showHome()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-        BACK TO HOMEPAGE
-      </button>
-
       <header>
         <h1>Review</h1>
       </header>
@@ -8354,11 +8619,6 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
     </section>
 
     <section id="view-board" class="view">
-      <button class="back-btn" onclick="showHome()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-        BACK TO HOMEPAGE
-      </button>
-
       <header>
         <h1>Mock Board Exam</h1>
       </header>
@@ -8367,12 +8627,12 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         <span class="note-title" onclick="this.parentElement.classList.toggle('collapsed')">&#9201;&#65039; MOCK BOARD EXAM REMINDER</span>
         <p>The actual AELE is conducted over 3 exam days, with two subjects scheduled each day. This mock board exam mirrors that setup. Each subject keeps its own timer, and the countdown starts automatically the moment you open its form.</p>
         <ul>
-          <li>&#128204; Treat each day as a full board day, not two separate practice sessions.</li>
+          <li>&#128204; Treat each day as a full board day, not separate practice sessions.</li>
           <li>&#128204; Pace yourself within each subject&rsquo;s time limit. Some carry more weight and more hours than others.</li>
           <li>&#128204; Your score for each subject is recorded automatically once you finish its exam. This is where you&rsquo;ll see your true standing across all six subjects.</li>
         </ul>
         <p>This is a full simulation of what your actual board days will feel like, not just isolated practice. Use it to build stamina across the day, not just knowledge for a single subject.</p>
-        <p>Stay consistent. Stay honest with your scores. Trust the process.</p>
+        <p>Stay consistent. Stay honest with your answers. Trust the process.</p>
         <p>Three days. Six subjects. One goal.</p>
         <p class="note-signoff">Good luck, future Aeronautical Engineers &#9992;&#65039;!</p>
         <p>May this mock board exam bring you one step closer to that license.</p>
@@ -8392,13 +8652,14 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
 
     <!-- ============ AIRCRAFT POWERPLANT VIEW ============ -->
     <section id="view-powerplant" class="view">
-      <button class="back-btn" onclick="backToSubjects()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-        BACK TO SUBJECTS
-      </button>
-
-      <header>
-        <h1>Aircraft Powerplant</h1>
+      <header class="has-back">
+        <div class="site-title-row">
+          <h1>Aircraft Powerplant</h1>
+          <button class="back-btn" onclick="backToSubjects()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+            BACK TO SUBJECTS
+          </button>
+        </div>
         <p class="sub" id="powerplant-sub">No mock exams have been added for this subject yet.</p>
       </header>
       <ul class="exam-list" id="live-exam-list-powerplant" style="display:none;"></ul>
@@ -8409,13 +8670,14 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
 
     <!-- ============ EMPTY SUBJECT VIEW (template) ============ -->
     <section id="view-empty" class="view">
-      <button class="back-btn" onclick="backToSubjects()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-        BACK TO SUBJECTS
-      </button>
-
-      <header>
-        <h1 id="empty-title">Subject</h1>
+      <header class="has-back">
+        <div class="site-title-row">
+          <h1 id="empty-title">Subject</h1>
+          <button class="back-btn" onclick="backToSubjects()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+            BACK TO SUBJECTS
+          </button>
+        </div>
         <p class="sub" id="empty-sub">No mock exams have been added for this subject yet.</p>
       </header>
 
@@ -8578,7 +8840,7 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
   <div class="chat-guidelines-overlay" id="chat-guidelines-overlay">
     <div class="chat-guidelines-card">
       <button class="chat-guidelines-close" onclick="closeChatGuidelines()">&times;</button>
-      <h3>&#9888;&#65039; Souls on Board Discussion Chatbox</h3>
+      <h3>&#9888;&#65039; Black Box</h3>
       <p>This chatbox is intended for respectful and collaborative discussion among Souls on Board. You may use it to ask questions, share knowledge, discuss difficult topics, and help fellow Souls on Board with their AELE preparation.</p>
       <p><strong>Please observe the following:</strong></p>
       <ul>
@@ -9769,8 +10031,7 @@ Answer: C</pre>
       document.getElementById('nickname-step').classList.remove('visible');
       document.getElementById('connection-issue-step').classList.remove('visible');
       document.getElementById('banned-step').classList.add('visible');
-      document.getElementById('chat-fab').style.display = 'none';
-      document.getElementById('chat-panel').classList.remove('visible');
+      setChatPanelAvailable(false);
       markPresenceOffline();
       stopWatchingForLiveBan();
       currentChatUser = null;
@@ -10501,7 +10762,7 @@ Answer: C</pre>
       updateFlightStoreButtonVisibility();
       currentChatUser = user;
       setNeedsFlightCode(user.needsFlightCode);
-      document.getElementById('chat-fab').style.display = 'flex';
+      setChatPanelAvailable(true);
       initChat();
       initPresence(user);
       watchForLiveBan(user);
@@ -10737,8 +10998,7 @@ Answer: C</pre>
       // is what was firing the +wings toast on every login/logout).
       lastKnownWings = null;
       currentChatUser = null;
-      document.getElementById('chat-fab').style.display = 'none';
-      document.getElementById('chat-panel').classList.remove('visible');
+      setChatPanelAvailable(false);
       unreadChatCount = 0;
       updateUnreadBadge();
       resetChatForAccountSwitch();
@@ -11237,6 +11497,12 @@ Answer: C</pre>
     let chatInitialized = false;
     let chatDbRef = null;
     let chatHistoryLoadTimestamp = 0;
+    // JS-timed handle for the chat panel's animation states (see
+    // toggleChatPanel below) — a plain setTimeout instead of relying on
+    // transition-delay, since browsers don't reliably honor a CSS
+    // transition-delay on a property whose transition-property list
+    // differs between the two class states being toggled.
+    let chatPanelAnimTimer = null;
     let unreadChatCount = 0;
     let hasUnreadMention = false;
     const messageCache = {};
@@ -11510,7 +11776,6 @@ Answer: C</pre>
           if (snap.val() !== true) return;
           myPresenceRef.onDisconnect().update({
             online: false,
-            listeningToTaylor: false,
             lastSeen: firebase.database.ServerValue.TIMESTAMP
           });
           myPresenceRef.set({
@@ -11599,7 +11864,6 @@ Answer: C</pre>
       try {
         nsRef('presence/' + presenceKey(currentChatUser.nickname)).update({
           online: false,
-          listeningToTaylor: false,
           lastSeen: firebase.database.ServerValue.TIMESTAMP
         });
       } catch (err) {}
@@ -13640,16 +13904,22 @@ Answer: C</pre>
       const deleteBtnHtml = (isAdmin && key)
         ? `<button class="chat-delete-btn" data-key="${escapeHtml(key)}" onclick="deleteChatMessage(this.dataset.key)">&#128465;&#65039;</button>`
         : '';
+      const replyThreadSvg = msg.replyTo
+        ? `<svg class="chat-msg-reply-thread" viewBox="0 0 50 30" width="50" height="30" aria-hidden="true"><path d="M13,26 L13,17 Q13,8 22,8 L42,8"/></svg>`
+        : '';
       const replyQuoteHtml = msg.replyTo
-        ? `<div class="chat-msg-reply" data-reply-key="${escapeHtml(msg.replyTo.key || '')}" onclick="scrollToChatMessage(this.dataset.replyKey)">&#8617; <b>${escapeHtml(msg.replyTo.nickname || '')}</b>: ${escapeHtml(msg.replyTo.text || '')}</div>`
+        ? `<div class="chat-msg-reply" data-reply-key="${escapeHtml(msg.replyTo.key || '')}" onclick="scrollToChatMessage(this.dataset.replyKey)"><span class="chat-msg-reply-avatar"${avatarStyleAttr(getLiveAvatar(msg.replyTo.nickname) || msg.replyTo.avatar || '✈️')}>${escapeHtml(avatarGlyph(getLiveAvatar(msg.replyTo.nickname) || msg.replyTo.avatar || '✈️'))}</span><b>${escapeHtml(msg.replyTo.nickname || '')}</b>${escapeHtml(msg.replyTo.text ? ': ' + msg.replyTo.text : '')}</div>`
         : '';
 
       row.innerHTML = `
-        <div class="chat-msg-avatar profile-clickable${getLiveBorderClass(msg.nickname) ? ' ' + getLiveBorderClass(msg.nickname) : ''}" data-nickname="${escapeHtml(msg.nickname || '')}"${avatarStyleAttr(getLiveAvatar(msg.nickname) || msg.avatar || '✈️')} onclick="openUserProfile(this.dataset.nickname)">${escapeHtml(avatarGlyph(getLiveAvatar(msg.nickname) || msg.avatar || '✈️'))}<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span></div>
-        <div class="chat-msg-body">
-          <div class="chat-msg-meta"><span data-nickname-anim="${escapeHtml(msg.nickname || '')}" data-text="${escapeHtml(msg.nickname || '')}" class="profile-clickable ${getLiveNicknameAnimClass(msg.nickname) || ''}" onclick="openUserProfile('${(msg.nickname || '').replace(/[^a-z0-9]/gi, '')}')">${escapeHtml(msg.nickname || 'anon')}</span>${time ? ' · ' + time : ''}${replyBtnHtml}${banBtnHtml}${deleteBtnHtml}</div>
-          ${replyQuoteHtml}
-          <div class="chat-msg-text">${renderMessageText(msg.text)}</div>
+        ${replyThreadSvg}
+        ${replyQuoteHtml}
+        <div class="chat-msg-row">
+          <div class="chat-msg-avatar profile-clickable${getLiveBorderClass(msg.nickname) ? ' ' + getLiveBorderClass(msg.nickname) : ''}" data-nickname="${escapeHtml(msg.nickname || '')}"${avatarStyleAttr(getLiveAvatar(msg.nickname) || msg.avatar || '✈️')} onclick="openUserProfile(this.dataset.nickname)">${escapeHtml(avatarGlyph(getLiveAvatar(msg.nickname) || msg.avatar || '✈️'))}<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span></div>
+          <div class="chat-msg-body">
+            <div class="chat-msg-meta"><span data-nickname-anim="${escapeHtml(msg.nickname || '')}" data-text="${escapeHtml(msg.nickname || '')}" class="profile-clickable ${getLiveNicknameAnimClass(msg.nickname) || ''}" onclick="openUserProfile('${(msg.nickname || '').replace(/[^a-z0-9]/gi, '')}')">${escapeHtml(msg.nickname || 'anon')}</span>${time ? ' · ' + time : ''}${replyBtnHtml}${banBtnHtml}${deleteBtnHtml}</div>
+            <div class="chat-msg-text">${renderMessageText(msg.text)}</div>
+          </div>
         </div>
       `;
 
@@ -13691,7 +13961,7 @@ Answer: C</pre>
     function startReplyTo(key) {
       const msg = messageCache[key];
       if (!msg) return;
-      replyingTo = { key, nickname: msg.nickname, text: (msg.text || '').slice(0, 140) };
+      replyingTo = { key, nickname: msg.nickname, text: (msg.text || '').slice(0, 140), avatar: msg.avatar };
       showReplyPreview();
       document.getElementById('chat-input').focus();
     }
@@ -13959,7 +14229,7 @@ Answer: C</pre>
 
       const mentions = extractMentions(text);
       if (mentions.length) payload.mentions = mentions;
-      if (replyingTo) payload.replyTo = { key: replyingTo.key, nickname: replyingTo.nickname, text: replyingTo.text };
+      if (replyingTo) payload.replyTo = { key: replyingTo.key, nickname: replyingTo.nickname, text: replyingTo.text, avatar: replyingTo.avatar || '✈️' };
 
       nsRef('chat/messages').push(payload);
 
@@ -13973,17 +14243,31 @@ Answer: C</pre>
 
     function updateUnreadBadge() {
       const badge = document.getElementById('chat-unread-badge');
-      const fab = document.getElementById('chat-fab');
+      const peek = document.getElementById('chat-panel-peek');
       if (!badge) return;
       if (unreadChatCount > 0) {
         badge.textContent = unreadChatCount > 99 ? '99+' : String(unreadChatCount);
         badge.style.display = 'flex';
         badge.classList.toggle('mention', hasUnreadMention);
-        if (fab) fab.classList.toggle('mention', hasUnreadMention);
+        if (peek) peek.classList.toggle('has-mention', hasUnreadMention);
       } else {
         badge.style.display = 'none';
         badge.classList.remove('mention');
-        if (fab) fab.classList.remove('mention');
+        if (peek) peek.classList.remove('has-mention');
+      }
+    }
+
+    // Signed in: the chat side panel exists (collapsed to its edge strip until
+    // opened). Signed out / banned: it is removed entirely.
+    function setChatPanelAvailable(on) {
+      const panel = document.getElementById('chat-panel');
+      const peek = document.getElementById('chat-panel-peek');
+      if (!panel) return;
+      panel.classList.toggle('available', !!on);
+      if (peek) peek.classList.toggle('available', !!on);
+      if (!on) {
+        panel.classList.remove('visible', 'animating');
+        if (peek) peek.classList.remove('has-mention');
       }
     }
 
@@ -13997,15 +14281,59 @@ Answer: C</pre>
 
     function toggleChatPanel() {
       const panel = document.getElementById('chat-panel');
-      panel.classList.toggle('visible');
-      if (panel.classList.contains('visible')) {
+      const peek = document.getElementById('chat-panel-peek');
+      const opening = !panel.classList.contains('visible');
+      clearTimeout(chatPanelAnimTimer);
+      // Promote the panel to its own GPU layer a frame before the slide
+      // actually starts (.chat-panel.animating below just sets
+      // will-change: transform). Without this, the browser only promotes
+      // the panel reactively once the transform itself starts changing,
+      // and that reactive promotion can cost a single composited frame
+      // where whatever is underneath briefly shows through before the
+      // panel's new layer is fully painted over it — quick enough to
+      // catch with the eye but usually too short for a screen recording
+      // (which samples the screen at a fixed, lower rate than the display
+      // actually renders at) to catch. Belt-and-suspenders alongside the
+      // panel now being a true off-canvas popup (see the CSS): there's no
+      // clip-path left to flash a cropped sliver of, but this still
+      // avoids the promotion hitch itself.
+      panel.classList.add('animating');
+      // While the panel is open it visually covers the peek strip (higher
+      // z-index, same corner), but the peek element is still technically
+      // in the page, so keep it out of the tab order and off screen
+      // readers while it's covered — no timing subtlety needed here since
+      // it's purely for keyboard/AT users, not anything visual.
+      if (peek) {
+        peek.setAttribute('aria-hidden', opening ? 'true' : 'false');
+        peek.tabIndex = opening ? -1 : 0;
+      }
+      // Double rAF: the first callback runs right before the next paint,
+      // so by the time it fires, "animating" has been committed and
+      // painted at least once — only THEN do we flip .visible on the
+      // following frame, which is what actually starts the slide.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => startChatPanelSlide(panel, opening));
+      });
+    }
+
+    function startChatPanelSlide(panel, opening) {
+      if (opening) {
+        panel.classList.add('visible');
         initChat();
         const messagesEl = document.getElementById('chat-messages');
         messagesEl.scrollTop = messagesEl.scrollHeight;
         unreadChatCount = 0;
         hasUnreadMention = false;
         updateUnreadBadge();
+      } else {
+        panel.classList.remove('visible');
       }
+      // Read --chat-slide live rather than hardcoding 300 so this still
+      // lines up correctly under prefers-reduced-motion (1ms).
+      const slideMs = parseFloat(getComputedStyle(panel).getPropertyValue('--chat-slide')) || 300;
+      chatPanelAnimTimer = setTimeout(() => {
+        panel.classList.remove('animating');
+      }, slideMs);
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -14311,11 +14639,9 @@ Answer: C</pre>
     function getPresenceStatusInfo(nickname) {
       const isOnline = onlineNicknames.has(nickname);
       const presenceEntry = latestPresenceData[presenceKey(nickname)];
-      const isListening = isOnline && !!(presenceEntry && presenceEntry.listeningToTaylor);
       const section = presenceEntry && presenceEntry.section;
 
       if (!isOnline) return { statusClass: 'sleeping', statusLabel: 'sleeping' };
-      if (isListening) return { statusClass: 'listening', statusLabel: 'listening to taylor swift' };
       if (section === 'taking a mock exam') return { statusClass: 'mock-exam', statusLabel: 'taking a mock exam' };
       if (section === 'taking a mock board exam') return { statusClass: 'mock-board', statusLabel: 'taking a mock board exam' };
       if (section === 'still sleeping, but in homepage') return { statusClass: 'homepage-idle', statusLabel: 'online' };
@@ -16278,7 +16604,7 @@ Answer: C</pre>
         resetBtn.type = 'button';
         resetBtn.className = 'exam-timer-reset';
         resetBtn.textContent = 'RESET';
-        resetBtn.title = 'Reset this exam timer';
+        resetBtn.title = 'Reset this mock exam';
         resetBtn.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -20073,7 +20399,7 @@ Answer: C</pre>
       const topBar = document.querySelector('.top-bar');
       const onHome = document.getElementById('view-home').classList.contains('visible');
       sidebar.style.display = '';
-      if (topBar) topBar.style.display = onHome ? '' : 'none';
+      if (topBar) topBar.style.display = '';
       document.body.classList.add('sidebar-active');
     }
 
@@ -20082,12 +20408,6 @@ Answer: C</pre>
       'mock-exam': 'view-mock-exam',
       'mock-board': 'view-board',
       'shop': 'view-shop'
-    };
-    const HOME_TAB_LOADING_TEXT = {
-      'review': 'Preparing the Aircraft…',
-      'mock-exam': 'Performing Preflight Checks…',
-      'mock-board': 'Conducting a Test Flight…',
-      'shop': 'Opening the Flight Store…'
     };
     const HOME_TAB_SECTION_LABEL = {
       'review': 'reviewing',
@@ -20120,22 +20440,13 @@ Answer: C</pre>
       // homepage" can return them here instead of jumping to the top.
       homeScrollY = window.scrollY;
 
-      const overlay = document.getElementById('airplane-loading-overlay');
-      document.getElementById('airplane-loading-text').textContent = HOME_TAB_LOADING_TEXT[tab] || 'Taking off…';
-      overlay.classList.add('visible');
-
-      // Cosmetic delay so the flying-airplane animation is fully seen
-      // before the page switches — the navigation itself is instant.
-      setTimeout(() => {
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('visible'));
-        document.getElementById(targetViewId).classList.add('visible');
-        window.scrollTo(0, 0);
-        overlay.classList.remove('visible');
-        updatePresenceSection(HOME_TAB_SECTION_LABEL[tab] || 'reviewing');
-        updateTopbarStoreNav(tab === 'shop' ? 'shop' : null);
-        if (tab === 'shop') renderShopIfVisible();
-        updateSidebarVisibility();
-      }, 1500);
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('visible'));
+      document.getElementById(targetViewId).classList.add('visible');
+      window.scrollTo(0, 0);
+      updatePresenceSection(HOME_TAB_SECTION_LABEL[tab] || 'reviewing');
+      updateTopbarStoreNav(tab === 'shop' ? 'shop' : null);
+      if (tab === 'shop') renderShopIfVisible();
+      updateSidebarVisibility();
     }
 
     // ---- flight store / hangar sub-navigation ----
@@ -20184,30 +20495,13 @@ Answer: C</pre>
       updatePresenceSection(preOverlaySectionLabel || 'still sleeping, but in homepage');
     }
 
-    function playTaylorSwift() {
-      const frame = document.getElementById('music-player-frame');
-      frame.innerHTML = '<iframe src="https://www.youtube.com/embed/videoseries?list=PLczapfHDz7DM&autoplay=1" title="Taylor Swift Playlist" allow="autoplay; encrypted-media"></iframe>';
-      document.getElementById('music-player').classList.add('visible');
-      setListeningToTaylor(true);
-    }
-
-    function stopTaylorSwift() {
-      document.getElementById('music-player-frame').innerHTML = '';
-      document.getElementById('music-player').classList.remove('visible');
-      setListeningToTaylor(false);
-    }
-
-    function setListeningToTaylor(isListening) {
-      // Broadcasts to everyone's "active reviewees" list in real time, same
-      // as the online/offline dot — see the listening/reviewing/sleeping
-      // status tag in renderNicknameListFromCache().
-      if (!presenceInitialized || !currentChatUser || !currentChatUser.nickname) return;
-      try {
-        nsRef('presence/' + presenceKey(currentChatUser.nickname)).update({
-          listeningToTaylor: isListening
-        });
-      } catch (err) {
-        console.error('Listening-status update error:', err);
+    // Header "Homepage" icon: from any other page it goes back to the
+    // homepage; if you are already on the homepage it scrolls to the top.
+    function goHomeFromHeader() {
+      if (document.getElementById('view-home').classList.contains('visible')) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        showHome();
       }
     }
 
