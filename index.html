@@ -1011,7 +1011,7 @@
     margin: 0 0 12px;
     color: #fff;
   }
-  /* Title-only headers (Review, Take a Mock Exam, Mock Board Exam):
+  /* Title-only headers (Review, Mock Exam, Mock Board Exam):
      no extra margin under the title, so it hugs the divider line. */
   header > h1:last-child { margin-bottom: 0; }
 
@@ -1049,10 +1049,10 @@
     margin-bottom: 28px;
     transition: border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
   }
-  .back-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateX(-3px); }
+  .back-btn:hover { border-color: var(--accent); color: var(--accent); }
   .back-btn svg { width: 14px; height: 14px; }
 
-  /* Review / Take a Mock Exam / Mock Board Exam have no back button above
+  /* Review / Mock Exam / Mock Board Exam have no back button above
      their title. They used to get an extra 40px margin-top here; removed
      so the title sits close under the top bar like the other pages. */
   #view-review > header:first-child,
@@ -1696,7 +1696,7 @@
   }
 
   /* ALL PAGES (desktop): widen the page content so it fills the free
-     space between the left sidebar and the right chatbox strip instead of
+     space between the left sidebar and the right black box strip instead of
      sitting in a narrow 780px column. The right gutter is cut from 282px
      down to 76px (16px margin + 44px collapsed chat strip + 16px gap, the
      same numbers .gform-overlay uses), the .wrap max-width cap is removed,
@@ -1716,7 +1716,7 @@
        Depart row becomes a header card pinned to the top of the page. It
        uses the same card look as the sidebar (dark blueprint fill, 14px
        radius, soft shadow), lines up with the sidebar's 16px top inset, and
-       spans exactly the gap between the sidebar and the chatbox strip.
+       spans exactly the gap between the sidebar and the black box strip.
        The wrap's top padding is raised so the page content starts below
        the header instead of underneath it. */
     body.sidebar-active .wrap { padding-top: 96px; }
@@ -3024,7 +3024,6 @@
   .subject-card.active:hover {
     background: rgba(255, 177, 0, 0.08);
     border-color: var(--accent);
-    transform: translateX(4px);
   }
   .subject-card.disabled {
     cursor: default;
@@ -3092,10 +3091,9 @@
     padding: 16px 18px;
     transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
   }
-  .exam-card:hover {
+  .exam-card:hover:not(:has(.exam-timer-reset:hover)) {
     background: rgba(255, 177, 0, 0.08);
     border-color: var(--accent);
-    transform: translateX(4px);
   }
   .exam-card:focus-visible, .subject-card:focus-visible, .back-btn:focus-visible {
     outline: 2px solid var(--accent);
@@ -3142,9 +3140,9 @@
     align-items: center;
     gap: 6px;
   }
-  .exam-card:hover .exam-go { color: var(--accent); }
+  .exam-card:hover:not(:has(.exam-timer-reset:hover)) .exam-go { color: var(--accent); }
   .exam-go svg { width: 12px; height: 12px; transition: transform 0.15s ease; }
-  .exam-card:hover .exam-go svg { transform: translate(2px, -2px); }
+  .exam-card:hover:not(:has(.exam-timer-reset:hover)) .exam-go svg { transform: translate(2px, -2px); }
 
   .exam-timer {
     font-family: 'IBM Plex Mono', monospace;
@@ -3275,16 +3273,16 @@
     cursor: pointer;
     transition: filter 0.15s ease, transform 0.15s ease;
   }
-  .trivia-next-btn:hover { filter: brightness(1.1); transform: translateX(2px); }
+  .trivia-next-btn:hover { filter: brightness(1.1); }
 
   /* ---- mock board exam ---- */
   .board-btn {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: rgba(255, 177, 0, 0.08);
+    background: var(--accent);
     border: 1px solid var(--accent);
-    color: var(--accent);
+    color: var(--blueprint-dark);
     font-family: 'IBM Plex Mono', monospace;
     font-size: 12px;
     letter-spacing: 0.02em;
@@ -3294,7 +3292,7 @@
     margin: 16px 0 28px;
     transition: background 0.15s ease, transform 0.15s ease;
   }
-  .board-btn:hover { background: rgba(255, 177, 0, 0.16); transform: translateX(2px); }
+  .board-btn:hover { background: #ffc233; }
   .board-btn svg { width: 14px; height: 14px; }
 
   /* ---- in-page Google Form popup (no separate browser window, so the
@@ -3555,7 +3553,7 @@
     padding: 0 4px;
   }
   .chat-panel-close:hover { color: var(--accent); }
-  /* thin vertical divider between "Chatbox Guidelines" and the » button,
+  /* thin vertical divider between "Black Box Guidelines" and the » button,
      matching the Flight Store header */
   .chat-panel-head .chat-panel-close {
     display: inline-flex;
@@ -3564,7 +3562,7 @@
     padding: 0 4px 0 14px;
     border-left: 1px solid var(--line);
   }
-  /* Title on the left, "Chatbox Guidelines" on the right of the same line
+  /* Title on the left, "Black Box Guidelines" on the right of the same line
      (same look as the note link in the Flight Store header). Only on very
      narrow phones, where both can't fit, does the link wrap under the title. */
   .chat-panel-head-text {
@@ -4317,8 +4315,6 @@
     position: absolute;
     top: 0;
     left: 0;
-    width: 50px;
-    height: 32px;
     overflow: visible;
     pointer-events: none;
   }
@@ -6646,7 +6642,7 @@
 }
 .gform-qhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
 .gform-qnum { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--rivet); margin: 0; letter-spacing: 0.03em; }
-.gform-qtext { font-size: 15px; font-weight: 500; margin: 0 0 14px; color: var(--paper); white-space: pre-wrap; }
+.gform-qtext { font-size: 15px; font-weight: 400; margin: 0 0 14px; color: var(--paper); white-space: pre-wrap; }
 
 /* ---- lightweight math markup: \frac{}{}, \sqrt{}, ^{}, _{} ---- */
 .mx-frac {
@@ -6843,7 +6839,7 @@
 .gform-submit-btn {
   background: var(--accent); color: #082744; border: none; border-radius: 6px;
   padding: 10px 22px; font-family: 'Space Grotesk', sans-serif; font-size: 14px;
-  font-weight: 700; cursor: pointer;
+  font-weight: 400; cursor: pointer;
 }
 .gform-submit-btn:hover { filter: brightness(1.08); }
 .gform-score-overlay {
@@ -7446,7 +7442,7 @@
       <div id="banned-step">
         <p class="banned-icon">&#128683;</p>
         <p class="banned-title">Account banned</p>
-        <p class="banned-msg">This Google account has been banned from the aerodynadmics | AELE Review Platform for violating the chatbox guidelines. It cannot be used to sign in or create a new account here.</p>
+        <p class="banned-msg">This Google account has been banned from the aerodynadmics | AELE Review Platform for violating the black box guidelines. It cannot be used to sign in or create a new account here.</p>
       </div>
 
       <button type="button" class="ai-note-link" id="ai-note-link-btn" onclick="document.getElementById('ai-note-overlay').classList.add('visible')">A note about this website</button>
@@ -8401,9 +8397,9 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
     <div class="chat-panel-head">
       <div class="chat-panel-head-text">
         <span>💬 Black Box</span>
-        <span class="chat-guidelines-link" onclick="openChatGuidelines()">Chatbox Guidelines</span>
+        <span class="chat-guidelines-link" onclick="openChatGuidelines()">Black Box Guidelines</span>
       </div>
-      <button class="chat-panel-close" onclick="toggleChatPanel()" title="Collapse chatbox" aria-label="Collapse chatbox"><span class="chat-panel-close-glyph">&raquo;</span></button>
+      <button class="chat-panel-close" onclick="toggleChatPanel()" title="Collapse black box" aria-label="Collapse black box"><span class="chat-panel-close-glyph">&raquo;</span></button>
     </div>
     <!-- The "Connected" pill was removed from view. This hidden element stays
          only because the chat code writes its status text into it. -->
@@ -8468,10 +8464,10 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
           <button type="button" class="topbar-icon-btn tab-review" title="Review" aria-label="Review" onclick="navigateHomeTab('review')">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 5.5C4.5 4.2 8 4.2 12 6c4-1.8 7.5-1.8 10-.5V19c-2.5-1.3-6-1.3-10 .5-4-1.8-7.5-1.8-10-.5V5.5z"/><path d="M12 6v13.5"/></svg>
           </button>
-          <button type="button" class="topbar-icon-btn tab-mock-exam" title="Take a Mock Exam" aria-label="Take a Mock Exam" onclick="navigateHomeTab('mock-exam')">
+          <button type="button" class="topbar-icon-btn tab-mock-exam" title="Mock Exam" aria-label="Mock Exam" onclick="navigateHomeTab('mock-exam')">
             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 13.5l2 2 4-4.5"/></svg>
           </button>
-          <button type="button" class="topbar-icon-btn tab-mock-board" title="Take a Mock Board Exam" aria-label="Take a Mock Board Exam" onclick="navigateHomeTab('mock-board')">
+          <button type="button" class="topbar-icon-btn tab-mock-board" title="Mock Board Exam" aria-label="Mock Board Exam" onclick="navigateHomeTab('mock-board')">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5-10-5z"/><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/><path d="M22 9v6"/></svg>
           </button>
         </div>
@@ -8598,10 +8594,10 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
     </section>
 
     <!-- ============ MOCK BOARD EXAM VIEW ============ -->
-    <!-- ============ TAKE A MOCK EXAM VIEW ============ -->
+    <!-- ============ MOCK EXAM VIEW ============ -->
     <section id="view-mock-exam" class="view">
       <header>
-        <h1>Take a Mock Exam</h1>
+        <h1>Mock Exam</h1>
       </header>
 
       <p class="group-label">SUBJECTS</p>
@@ -8644,7 +8640,6 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
       </button>
 
       <div id="board-subjects">
-        <div class="empty-note">Click "GENERATE RANDOM SET" to pull one random mock exam per subject and start your mock board exam.</div>
       </div>
 
       <div class="board-result-box" id="board-result" style="display:none;"></div>
@@ -8841,7 +8836,7 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
     <div class="chat-guidelines-card">
       <button class="chat-guidelines-close" onclick="closeChatGuidelines()">&times;</button>
       <h3>&#9888;&#65039; Black Box</h3>
-      <p>This chatbox is intended for respectful and collaborative discussion among Souls on Board. You may use it to ask questions, share knowledge, discuss difficult topics, and help fellow Souls on Board with their AELE preparation.</p>
+      <p>This black box is intended for respectful and collaborative discussion among Souls on Board. You may use it to ask questions, share knowledge, discuss difficult topics, and help fellow Souls on Board with their AELE preparation.</p>
       <p><strong>Please observe the following:</strong></p>
       <ul>
         <li>Be respectful to everyone. Personal attacks, insults, harassment, discrimination, and disrespectful behavior are not allowed.</li>
@@ -11018,7 +11013,7 @@ Answer: C</pre>
     // would just leave every existing message bubble on screen exactly as
     // it was drawn for the PREVIOUS account — including which messages
     // were flagged "own" (right-aligned) and who saw ban/delete buttons —
-    // which is what made the chatbox look like it still belonged to the
+    // which is what made the black box look like it still belonged to the
     // account that just signed out, until a manual page refresh forced
     // initChat() to run fresh.
     function resetChatForAccountSwitch() {
@@ -11096,7 +11091,7 @@ Answer: C</pre>
     // would otherwise land in the exact same top-level nodes as this app's
     // (e.g. both writing to "chat/messages"), so switching Google accounts
     // between the two sites in one browser would show the *other* site's
-    // chatbox/wings/etc. — not a caching bug, just one shared database.
+    // black box/wings/etc. — not a caching bug, just one shared database.
     // Keeping this app's own root key here isolates it regardless of what
     // any other clone of this file does with its own copy of this constant.
     const DB_NAMESPACE = 'aerodynadmics-aele';
@@ -11809,7 +11804,7 @@ Answer: C</pre>
           // added to the sidebar list without a full page refresh
           // re-fetching the roster from scratch. Patch new arrivals into
           // the cached roster as they're seen, so the sidebar picks them
-          // up live, same as the chatbox already does.
+          // up live, same as the black box already does.
           mergeNewPresenceNicknamesIntoList();
           recomputeOnlinePresence();
           refreshAllChatAvatarsInDom();
@@ -13861,6 +13856,43 @@ Answer: C</pre>
     }
 
 
+    // Measures the real, currently-rendered positions of the reply-preview
+    // avatar and the sender avatar below it, then draws the connector path
+    // between their exact centers/edges — instead of guessing fixed pixel
+    // offsets, which drift out of alignment depending on font metrics or
+    // whether either avatar is an emoji glyph vs. an uploaded image.
+    function positionReplyThreadLine(row) {
+      const svg = row.querySelector('.chat-msg-reply-thread');
+      const pathEl = svg && svg.querySelector('path');
+      const replyAvatarEl = row.querySelector('.chat-msg-reply-avatar');
+      const avatarEl = row.querySelector('.chat-msg-avatar');
+      if (!svg || !pathEl || !replyAvatarEl || !avatarEl) return;
+
+      const rowRect = row.getBoundingClientRect();
+      const raRect = replyAvatarEl.getBoundingClientRect();
+      const avRect = avatarEl.getBoundingClientRect();
+      // Nothing has laid out yet (e.g. row not yet attached/visible) — bail
+      // rather than draw a path at 0,0.
+      if (!rowRect.width && !rowRect.height) return;
+
+      const startX = (avRect.left + avRect.width / 2) - rowRect.left;   // sender avatar center X
+      const startY = avRect.top - rowRect.top;                         // sender avatar top edge
+      const endX = raRect.left - rowRect.left;                         // reply avatar left edge
+      const endY = (raRect.top + raRect.height / 2) - rowRect.top;     // reply avatar center Y
+      const bendY = endY + (startY - endY) * 0.55;                     // where the vertical stem starts curving
+      const dir = endX >= startX ? 1 : -1;                             // curve bends toward wherever the reply avatar actually sits
+      const cornerRadius = Math.max(4, Math.min(10, Math.abs(startX - endX) * 0.4 || 9));
+
+      const d = `M${startX},${startY} L${startX},${bendY} Q${startX},${endY} ${startX + cornerRadius * dir},${endY} L${endX},${endY}`;
+      pathEl.setAttribute('d', d);
+
+      const w = Math.max(startX, endX) + 4;
+      const h = Math.max(startY, endY) + 4;
+      svg.setAttribute('width', w);
+      svg.setAttribute('height', h);
+      svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    }
+
     function renderChatMessage(msg, key) {
       if (!msg || !msg.text) return;
       if (key) messageCache[key] = msg;
@@ -13905,10 +13937,13 @@ Answer: C</pre>
         ? `<button class="chat-delete-btn" data-key="${escapeHtml(key)}" onclick="deleteChatMessage(this.dataset.key)">&#128465;&#65039;</button>`
         : '';
       const replyThreadSvg = msg.replyTo
-        ? `<svg class="chat-msg-reply-thread" viewBox="0 0 50 30" width="50" height="30" aria-hidden="true"><path d="M13,26 L13,17 Q13,8 22,8 L42,8"/></svg>`
+        ? `<svg class="chat-msg-reply-thread" aria-hidden="true"><path/></svg>`
         : '';
+      const replyAvatar = msg.replyTo
+        ? (msg.replyTo.avatar || getLiveAvatar(msg.replyTo.nickname) || '✈️')
+        : null;
       const replyQuoteHtml = msg.replyTo
-        ? `<div class="chat-msg-reply" data-reply-key="${escapeHtml(msg.replyTo.key || '')}" onclick="scrollToChatMessage(this.dataset.replyKey)"><span class="chat-msg-reply-avatar"${avatarStyleAttr(getLiveAvatar(msg.replyTo.nickname) || msg.replyTo.avatar || '✈️')}>${escapeHtml(avatarGlyph(getLiveAvatar(msg.replyTo.nickname) || msg.replyTo.avatar || '✈️'))}</span><b>${escapeHtml(msg.replyTo.nickname || '')}</b>${escapeHtml(msg.replyTo.text ? ': ' + msg.replyTo.text : '')}</div>`
+        ? `<div class="chat-msg-reply" data-reply-key="${escapeHtml(msg.replyTo.key || '')}" onclick="scrollToChatMessage(this.dataset.replyKey)"><span class="chat-msg-reply-avatar"${avatarStyleAttr(replyAvatar)}>${escapeHtml(avatarGlyph(replyAvatar))}</span><b>${escapeHtml(msg.replyTo.nickname || '')}</b>${escapeHtml(msg.replyTo.text ? ': ' + msg.replyTo.text : '')}</div>`
         : '';
 
       row.innerHTML = `
@@ -13924,6 +13959,7 @@ Answer: C</pre>
       `;
 
       messagesEl.appendChild(row);
+      if (msg.replyTo) positionReplyThreadLine(row);
       messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
@@ -13961,7 +13997,8 @@ Answer: C</pre>
     function startReplyTo(key) {
       const msg = messageCache[key];
       if (!msg) return;
-      replyingTo = { key, nickname: msg.nickname, text: (msg.text || '').slice(0, 140), avatar: msg.avatar };
+      const liveAvatar = getLiveAvatar(msg.nickname) || msg.avatar || '✈️';
+      replyingTo = { key, nickname: msg.nickname, text: (msg.text || '').slice(0, 140), avatar: liveAvatar };
       showReplyPreview();
       document.getElementById('chat-input').focus();
     }
@@ -14126,7 +14163,7 @@ Answer: C</pre>
           // Image avatars (uploaded photos) must be applied as a CSS
           // background, never as text — dumping the raw Firebase Storage
           // URL into the DOM as a text node (the old behavior here) made
-          // the full URL show up as literal visible text in the chatbox.
+          // the full URL show up as literal visible text in the black box.
           if (isImageAvatar(avatar)) {
             el.style.backgroundImage = `url('${avatar.replace(/'/g, "%27")}')`;
             el.style.backgroundSize = 'cover';
@@ -20173,7 +20210,7 @@ Answer: C</pre>
 
     // Pulls one random PUBLISHED admin-created mock exam set per subject
     // from the same live Firebase-backed cache (LIVE_MOCK_EXAM_CACHE) that
-    // feeds each subject's own "Take a Mock Exam" list. That cache is kept
+    // feeds each subject's own "Mock Exam" list. That cache is kept
     // fresh for every subject (see primeMockExamCache / initLiveMockExamListeners
     // below), so any set the admin adds or publishes is picked up
     // automatically and can turn up here the very next time this button is
@@ -20517,7 +20554,7 @@ Answer: C</pre>
       teardownEmptySubjectMockExams();
     }
 
-    // Remembers which SUBJECTS list (Take a Mock Exam or Review) a subject
+    // Remembers which SUBJECTS list (Mock Exam or Review) a subject
     // page was opened from, so its "BACK TO SUBJECTS" button returns there
     // instead of jumping all the way out to the homepage.
     let lastSubjectsOrigin = 'view-mock-exam';
