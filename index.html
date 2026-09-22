@@ -829,8 +829,7 @@
     cursor: pointer;
   }
   .account-badge .signout-btn:hover {
-    border-color: var(--accent);
-    color: var(--accent);
+    background: rgba(255,255,255,0.07);
   }
   .account-badge .signout-icon-btn {
     display: inline-flex;
@@ -3795,6 +3794,54 @@
   }
   .banned-list-manual button:hover { border-color: var(--accent); color: var(--accent); }
 
+  /* ---- "Manage Mock Exams" admin popup, widened to match the
+     .store-popup-overlay (Flight Store/Hangar) and .gform-overlay
+     (in-app mock exam) popups: edge-to-edge within the sidebar/chat
+     gutters instead of a small centered card. Scoped to #mockadmin-overlay
+     only, so the smaller confirm/move modals that reuse .mockadmin-card
+     elsewhere are untouched. */
+  #mockadmin-overlay {
+    left: 282px;
+    right: 76px;
+    /* Same reasoning as .store-popup-overlay above: sit one level below
+       the chat panel (z-index 1500) so opening chat while this is open
+       still shows the chat panel on top instead of behind it. */
+    z-index: 1499;
+    align-items: stretch;
+    justify-content: center;
+    background: none;
+    padding: 16px 0;
+    pointer-events: none;
+  }
+  #mockadmin-overlay .mockadmin-card { pointer-events: auto; }
+  @media (max-width: 900px) {
+    #mockadmin-overlay { left: calc(clamp(130px, 42vw, 220px) + 32px); }
+  }
+  #mockadmin-overlay .mockadmin-card {
+    width: 100%;
+    max-width: none;
+    height: calc(100vh - 32px);
+    height: calc(100dvh - 32px);
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+  }
+  @media (max-width: 600px) {
+    #mockadmin-overlay { padding: 8px 0; }
+    #mockadmin-overlay .mockadmin-card {
+      height: calc(100vh - 16px); height: calc(100dvh - 16px);
+      max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px);
+    }
+  }
+  /* The rename/delete confirm prompt (admin-modal-overlay) and the "Move
+     Exam" popup (mockadmin-moveto-overlay) render on top of the now
+     backdrop-less mockadmin-overlay above. Drop their own dark scrim too,
+     so clicking a set's RENAME/DELETE/NEW SET (or Move) doesn't flash a
+     solid dark box over the widened panel behind them. */
+  #admin-modal-overlay,
+  #mockadmin-moveto-overlay {
+    background: none;
+  }
+
   /* ---- admin mock exam manager ---- */
   .mockadmin-card {
     position: relative;
@@ -4857,7 +4904,7 @@
     transition: border-color 0.15s ease, color 0.15s ease;
     flex-shrink: 0;
   }
-  .account-wings-badge:hover { border-color: var(--accent); color: var(--accent); }
+  .account-wings-badge:hover { background: rgba(255,255,255,0.07); }
   .daily-claim-btn {
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 700;
@@ -4888,9 +4935,9 @@
     white-space: nowrap;
     transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
   }
-  .topbar-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .topbar-nav-btn:hover { background: rgba(255,255,255,0.07); }
   .topbar-nav-btn.locked { color: var(--rivet); opacity: 0.85; }
-  .topbar-nav-btn.locked:hover { border-color: var(--line); color: var(--rivet); }
+  .topbar-nav-btn.locked:hover { background: rgba(255,255,255,0.03); }
 
   /* Review / Mock Exam / Mock Board Exam icon buttons in the homepage
      header. They sit on the right, just before the Depart button. */
@@ -4930,11 +4977,7 @@
     pointer-events: none;
   }
   .topbar-icon-btn:hover,
-  .topbar-icon-btn:focus-visible { color: var(--tab-color); background: rgba(255,255,255,0.07); }
-  .topbar-icon-btn.tab-home       { --tab-color: var(--accent); }
-  .topbar-icon-btn.tab-review     { --tab-color: #ff6b6b; }
-  .topbar-icon-btn.tab-mock-exam  { --tab-color: #8b5cf6; }
-  .topbar-icon-btn.tab-mock-board { --tab-color: #5aa8ff; }
+  .topbar-icon-btn:focus-visible { background: rgba(255,255,255,0.07); outline: none; }
 
   /* Title row: the page title on the left, an optional button on the right. */
   .site-title-row {
@@ -6839,7 +6882,7 @@
 .gform-submit-btn {
   background: var(--accent); color: #082744; border: none; border-radius: 6px;
   padding: 10px 22px; font-family: 'Space Grotesk', sans-serif; font-size: 14px;
-  font-weight: 400; cursor: pointer;
+  font-weight: 600; cursor: pointer;
 }
 .gform-submit-btn:hover { filter: brightness(1.08); }
 .gform-score-overlay {
@@ -19283,7 +19326,7 @@ Answer: C</pre>
     // collision with the manual editor's mockAdmin* code.
     // ======================================================================
 
-    let BEC = { step: 1, questions: [], title: '', minutes: 240, subjectKey: null, groupId: null, groupTitle: '', groupsCache: {} };
+    let BEC = { step: 1, questions: [], title: '', minutes: null, subjectKey: null, groupId: null, groupTitle: '', groupsCache: {} };
 
     function openBulkExamCreator() {
       if (!isAdminUser(currentChatUser)) return;
@@ -19291,7 +19334,10 @@ Answer: C</pre>
         step: 1,
         questions: [],
         title: '',
-        minutes: 240,
+        // null = "not yet chosen" so the settings step can fill in the
+        // right subject-based default (see getDefaultMockExamMinutes)
+        // instead of always showing 240.
+        minutes: null,
         subjectKey: mockAdminCurrentSubject || (subjects[0] && subjects[0].key),
         groupId: null,
         groupTitle: '',
@@ -19584,7 +19630,10 @@ Answer: C</pre>
         if (!ok) return;
       }
       document.getElementById('bec-exam-title').value = BEC.title || '';
-      document.getElementById('bec-exam-duration').value = BEC.minutes || 240;
+      // Subject-aware default (180 min for math/construction/econ, 240 for
+      // everything else) instead of always showing 240 — mirrors the
+      // manual editor's behavior via getDefaultMockExamMinutes().
+      document.getElementById('bec-exam-duration').value = BEC.minutes || getDefaultMockExamMinutes(BEC.subjectKey);
       BEC_showStep(3);
     }
 
@@ -19595,7 +19644,7 @@ Answer: C</pre>
       const minutes = Number(document.getElementById('bec-exam-duration').value);
       if (!title) { adminAlert('Give this exam a name first.'); return; }
       BEC.title = title;
-      BEC.minutes = (Number.isFinite(minutes) && minutes > 0) ? minutes : 240;
+      BEC.minutes = (Number.isFinite(minutes) && minutes > 0) ? minutes : getDefaultMockExamMinutes(BEC.subjectKey);
       BEC_renderDestSubjectPicker();
       BEC_loadDestGroups(BEC.subjectKey);
       BEC_showStep(4);
@@ -20208,6 +20257,67 @@ Answer: C</pre>
 
     let currentBoardSet = {};
 
+    // The generated board set and its scores used to live only in these
+    // in-memory JS variables, so refreshing the page (or just coming back
+    // to it later) wiped both the picked exams and any scores already
+    // recorded — even though the reminder note above says this is meant to
+    // be worked across 3 exam days. Persist it to localStorage (per signed
+    // in account, same scoping as the exam timers/progress above) so it
+    // survives reloads, and expire it after 3 days to match that window.
+    const BOARD_SET_STORAGE_KEY = 'boardExamSet';
+    const BOARD_SET_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
+    let boardSetGeneratedAt = null;
+
+    function saveBoardState() {
+      try {
+        const pickedIds = {};
+        subjects.forEach(s => {
+          const pick = currentBoardSet[s.key];
+          pickedIds[s.key] = pick ? pick[0] : null;
+        });
+        localStorage.setItem(userScopedKey(BOARD_SET_STORAGE_KEY), JSON.stringify({
+          generatedAt: boardSetGeneratedAt,
+          pickedIds,
+          boardScores
+        }));
+      } catch (e) {}
+    }
+
+    // Rebuilds currentBoardSet/boardScores from localStorage, resolving each
+    // stored exam id back against the live Firebase cache so the content
+    // shown always reflects the exam's current title/questions rather than
+    // a frozen snapshot. Returns true only if a still-valid set was found.
+    function loadBoardState() {
+      try {
+        const raw = localStorage.getItem(userScopedKey(BOARD_SET_STORAGE_KEY));
+        if (!raw) return false;
+        const data = JSON.parse(raw);
+        if (!data || !data.generatedAt || (Date.now() - data.generatedAt) > BOARD_SET_TTL_MS) {
+          localStorage.removeItem(userScopedKey(BOARD_SET_STORAGE_KEY));
+          return false;
+        }
+        currentBoardSet = {};
+        let anyPicked = false;
+        subjects.forEach(s => {
+          const examId = data.pickedIds ? data.pickedIds[s.key] : null;
+          const cache = LIVE_MOCK_EXAM_CACHE[s.key] || {};
+          currentBoardSet[s.key] = (examId && cache[examId]) ? [examId, cache[examId]] : null;
+          if (currentBoardSet[s.key]) anyPicked = true;
+        });
+        boardScores = data.boardScores || {};
+        boardSetGeneratedAt = data.generatedAt;
+        return anyPicked;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    // Called when the Mock Board Exam page is opened. Restores a still-valid
+    // (< 3 days old) generated set instead of showing a blank page.
+    function restoreBoardSetIfAny() {
+      if (loadBoardState()) renderBoardSet();
+    }
+
     // Pulls one random PUBLISHED admin-created mock exam set per subject
     // from the same live Firebase-backed cache (LIVE_MOCK_EXAM_CACHE) that
     // feeds each subject's own "Mock Exam" list. That cache is kept
@@ -20218,6 +20328,7 @@ Answer: C</pre>
     function generateBoardSet() {
       currentBoardSet = {};
       boardScores = {}; // a fresh random set starts with no scores
+      boardSetGeneratedAt = Date.now();
       subjects.forEach(s => {
         const cache = LIVE_MOCK_EXAM_CACHE[s.key] || {};
         const entries = Object.entries(cache).filter(([, set]) => set && set.published);
@@ -20225,6 +20336,7 @@ Answer: C</pre>
           ? entries[Math.floor(Math.random() * entries.length)]
           : null;
       });
+      saveBoardState();
       renderBoardSet();
     }
 
@@ -20330,6 +20442,7 @@ Answer: C</pre>
       const key = boardSubjectKeyForExam(examId);
       if (!key) return;
       boardScores[key] = { score, total, percent: total > 0 ? (score / total) * 100 : 0 };
+      saveBoardState();
       updateBoardScoreDisplays();
       calculateBoardResult(true);
     }
@@ -20339,6 +20452,7 @@ Answer: C</pre>
       const key = boardSubjectKeyForExam(examId);
       if (!key) return;
       delete boardScores[key];
+      saveBoardState();
       updateBoardScoreDisplays();
       const resultBox = document.getElementById('board-result');
       if (resultBox) resultBox.style.display = 'none';
@@ -20483,6 +20597,7 @@ Answer: C</pre>
       updatePresenceSection(HOME_TAB_SECTION_LABEL[tab] || 'reviewing');
       updateTopbarStoreNav(tab === 'shop' ? 'shop' : null);
       if (tab === 'shop') renderShopIfVisible();
+      if (tab === 'mock-board') restoreBoardSetIfAny();
       updateSidebarVisibility();
     }
 
