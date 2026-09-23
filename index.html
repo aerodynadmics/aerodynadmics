@@ -56,7 +56,7 @@
 
   * { box-sizing: border-box; }
   button:focus { outline: none; }
-  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button:focus-visible { outline: none; }
 
   html, body {
     margin: 0;
@@ -68,12 +68,64 @@
     min-height: 100vh;
     max-width: 100vw;
     overflow-x: hidden;
+    /* The real browser scrollbar always renders at the true edge of the
+       viewport — there's no CSS way to move it inward next to the content
+       column, so it stays hidden here. A custom, purely visual indicator
+       (.app-scrollbar-track/-thumb below) is drawn at the content's own
+       edge instead; it mirrors the page's real scroll position but never
+       touches how the page actually scrolls. */
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
+  /* html's overflow-x:hidden above (with no overflow-y set) triggers a CSS
+     quirk: the UA computes overflow-y as "auto" on BOTH html and body,
+     since neither has an explicit overflow-y. That silently turns <body>
+     into its own scroll container (distinct from the real page scroller,
+     <html>) even though body never actually needs to scroll on its own.
+     Any position:sticky element (e.g. .gform-sticky-head, the in-app mock
+     exam header) then anchors to body's scrollport instead of the page's,
+     and since body itself never scrolls, the sticky element never sticks —
+     it just scrolls away with the page. Restoring body's overflow to
+     visible removes it from the scroll-container chain so sticky elements
+     correctly anchor to <html> (the actual scrolling element), with no
+     visible change: <html> still clips horizontal overflow exactly as
+     before. */
+  body { overflow-x: visible; overflow-y: visible; }
   html::-webkit-scrollbar, body::-webkit-scrollbar {
     display: none;
   }
+  /* ---- custom page scroll indicator (mock exam screen only) ----
+     Sits just to the right of the content column (.wrap's own right edge)
+     instead of the far edge of the screen, and only while an in-app exam
+     (Mock Exam / Mock Board Exam / a Review exam) is actually on screen.
+     Clickable/draggable like a real scrollbar, but it drives the page's
+     real scroll (window.scrollTo) rather than being one itself, so normal
+     scrolling (wheel, touch, keyboard) still works exactly as before —
+     this is just another way to move the same scroll position. */
+  #app-scrollbar-track {
+    position: fixed;
+    top: 0;
+    width: 8px;
+    z-index: 30;
+    pointer-events: none;
+    opacity: 0;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+    background: rgba(255,255,255,0.03);
+    border-radius: 4px;
+  }
+  #app-scrollbar-track.visible { opacity: 1; pointer-events: auto; }
+  #app-scrollbar-thumb {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    border-radius: 4px;
+    background: var(--line);
+    cursor: grab;
+    touch-action: none;
+  }
+  #app-scrollbar-thumb:hover, #app-scrollbar-thumb.dragging { background: var(--rivet); }
+  #app-scrollbar-thumb.dragging { cursor: grabbing; }
 
   /* ---- sign-in gate ---- */
   body.gate-active {
@@ -1004,7 +1056,7 @@
   }
 
   h1 {
-    font-size: clamp(28px, 5vw, 40px);
+    font-size: clamp(18px, 3.4vw, 26px);
     font-weight: 700;
     line-height: 1.15;
     margin: 0 0 12px;
@@ -1048,7 +1100,7 @@
     margin-bottom: 28px;
     transition: border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
   }
-  .back-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .back-btn:hover { color: var(--accent); }
   .back-btn svg { width: 14px; height: 14px; }
 
   /* Review / Mock Exam / Mock Board Exam have no back button above
@@ -2406,8 +2458,7 @@
     background: rgba(255,255,255,0.04);
   }
   .flight-alert-row.wings-alert-row:focus-visible {
-    outline: 1px solid var(--accent);
-    outline-offset: -1px;
+    outline: none;
   }
   .flight-alert-row.wings-alert-row.unread {
     box-shadow: inset 3px 0 0 var(--rivet);
@@ -3000,6 +3051,196 @@
   .home-tab-btn.tab-music:hover { border-color: #ff8fc0; background: rgba(255, 143, 192, 0.1); }
   .home-tab-btn.tab-music .home-tab-btn-title { color: #ff8fc0; }
 
+  /* ============ QUIZ (Quizizz-style, per exam) ============ */
+  .quiz-play-head {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    margin-bottom: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--rivet);
+  }
+  .quiz-play-head .quiz-settings-btn {
+    justify-self: end;
+    margin-left: 0;
+  }
+  .quiz-score-pill {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 4px 12px;
+    color: var(--paper);
+    justify-self: center;
+  }
+  .quiz-question-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 20px;
+  }
+  .quiz-question-text {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.5;
+    margin: 0 0 16px;
+  }
+  .quiz-choices-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 4px;
+  }
+  @media (max-width: 640px) {
+    .quiz-choices-grid { grid-template-columns: 1fr; }
+  }
+  .quiz-settings-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    margin-left: auto;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--paper);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .quiz-settings-btn svg { width: 17px; height: 17px; }
+  .quiz-settings-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .quiz-settings-note {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--rivet);
+    line-height: 1.6;
+    margin: 0 0 14px;
+  }
+  #quiz-autonext-input {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    color: var(--paper);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    letter-spacing: 0.03em;
+    padding: 10px 12px;
+    margin-bottom: 4px;
+  }
+  #quiz-autonext-input:focus { outline: none; border-color: var(--accent); }
+  .quiz-autonext-hint {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: var(--rivet);
+    margin: 0 0 16px;
+  }
+  .quiz-choice-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 84px;
+    padding: 14px 16px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.08);
+    cursor: pointer;
+    text-align: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 14.5px;
+    color: #fff;
+    background: var(--blueprint-dark);
+    transition: transform 0.1s ease, opacity 0.15s ease, background 0.1s ease;
+  }
+  .quiz-choice-btn:hover:not(:disabled) { transform: scale(1.02); background: #0d3860; }
+  .quiz-choice-btn:disabled { cursor: default; }
+  .quiz-choice-btn.correct {
+    background: var(--green) !important;
+    box-shadow: 0 0 0 3px rgba(79, 209, 160, 0.4);
+  }
+  .quiz-choice-btn.correct .quiz-choice-text::after { content: " ✓"; }
+  .quiz-choice-btn.wrong {
+    background: #ff6b6b !important;
+    box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.4);
+  }
+  .quiz-choice-btn.wrong .quiz-choice-text::after { content: " ✗"; }
+  .quiz-choice-btn.dim { opacity: 0.35; }
+  .quiz-nav-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 18px;
+  }
+  .quiz-nav-btn {
+    border: none;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.03em;
+    padding: 10px 24px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .quiz-nav-btn.quiz-next-btn {
+    background: var(--accent);
+    color: var(--blueprint-dark);
+  }
+  .quiz-nav-btn.quiz-prev-btn {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--paper);
+  }
+  .quiz-nav-btn.quiz-prev-btn:hover { color: var(--accent); }
+  .quiz-results-card {
+    max-width: 420px;
+    margin: 22px auto;
+    padding: 28px 24px;
+    text-align: center;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  .quiz-results-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    margin: 0 0 6px;
+  }
+  .quiz-results-score {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 44px;
+    color: var(--accent);
+    margin: 6px 0;
+  }
+  .quiz-results-sub {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    color: var(--rivet);
+    margin: 0 0 20px;
+  }
+  .quiz-results-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+  .quiz-start-btn {
+    background: var(--accent);
+    border: none;
+    color: var(--blueprint-dark);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.03em;
+    padding: 11px 22px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .quiz-start-btn.quiz-secondary-btn {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--paper);
+  }
+  .quiz-start-btn.quiz-secondary-btn:hover { border-color: var(--accent); }
+
   ul.subject-list, ul.exam-list {
     list-style: none;
     margin: 0;
@@ -3094,10 +3335,10 @@
     background: rgba(255, 177, 0, 0.08);
     border-color: var(--accent);
   }
-  .exam-card:focus-visible, .subject-card:focus-visible, .back-btn:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
+  .exam-card:focus-visible, .subject-card:focus-visible {
+    outline: none;
   }
+  .back-btn:focus-visible { outline: none; }
 
   .exam-row {
     display: flex;
@@ -3496,7 +3737,7 @@
   .chat-panel-peek:hover {
     background-image: linear-gradient(rgba(255,255,255,0.06), rgba(255,255,255,0.06));
   }
-  .chat-panel-peek:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+  .chat-panel-peek:focus-visible { outline: none; }
   .chat-peek-icon { font-size: 20px; line-height: 1; }
   .chat-peek-label {
     writing-mode: vertical-rl;
@@ -3508,11 +3749,7 @@
     white-space: nowrap;
   }
   .chat-panel-peek.has-mention {
-    animation: chatPeekPulse 1.4s ease-in-out infinite;
-  }
-  @keyframes chatPeekPulse {
-    0%, 100% { box-shadow: inset 3px 0 0 0 rgba(255,177,0,0); }
-    50% { box-shadow: inset 3px 0 0 0 var(--accent); }
+    animation: none;
   }
   .chat-unread-badge {
     min-width: 20px;
@@ -4426,11 +4663,7 @@
     font-weight: normal;
   }
   .chat-msg.flash-highlight .chat-msg-text {
-    animation: chatFlashOutline 1.2s ease;
-  }
-  @keyframes chatFlashOutline {
-    0% { box-shadow: 0 0 0 3px rgba(255,177,0,0.6); }
-    100% { box-shadow: 0 0 0 0 rgba(255,177,0,0); }
+    animation: none;
   }
   .chat-mention {
     color: var(--accent);
@@ -4916,11 +5149,6 @@
     padding: 4px 12px;
     cursor: pointer;
     white-space: nowrap;
-    animation: dailyClaimPulse 1.6s ease-in-out infinite;
-  }
-  @keyframes dailyClaimPulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 177, 0, 0.55); }
-    50% { box-shadow: 0 0 0 6px rgba(255, 177, 0, 0); }
   }
   .topbar-nav-btn {
     font-family: 'Space Grotesk', sans-serif;
@@ -4984,11 +5212,25 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 12px;
     margin-bottom: 12px;
   }
-  .site-title-row h1 { margin: 0; }
+  .site-title-row h1 {
+    margin: 0;
+    min-width: 0;
+    flex: 1 1 auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* The homepage logo (the only h1 with the bordered/background .site-title
+     box) has nothing else sharing its row, so it must NOT grow to fill the
+     row's full width like a plain title does — that stretched the box out
+     to the edge of the header instead of hugging the word "aerodynadmics". */
+  .site-title-row .site-title {
+    flex: 0 1 auto;
+  }
   /* Subject pages: the Back to Subjects button now lives in this row,
      on the right of the title, instead of stacked above it. */
   .site-title-row .back-btn { margin-bottom: 0; flex-shrink: 0; }
@@ -4996,6 +5238,10 @@
      The 12px title->subtitle gap therefore belongs on the subtitle, not on
      the row, otherwise it stays behind as empty space above the divider. */
   header.has-back .site-title-row { margin-bottom: 0; }
+  /* Positioning context for .gform-timer-centered below — the exam
+     timer needs to sit at the true horizontal center of this row
+     regardless of the title's length or the Pins button's width. */
+  .gform-sticky-head .site-title-row { position: relative; }
   header.has-back p.sub { margin-top: 12px; }
   .wings-balance-card {
     display: flex;
@@ -6530,7 +6776,6 @@
   .daily-reward-card.today {
     border-color: var(--accent);
     background: rgba(255, 177, 0, 0.14);
-    animation: dailyClaimPulse 1.6s ease-in-out infinite;
   }
   .daily-reward-card.today .day-wings { color: var(--accent); }
   .daily-reward-card.locked { opacity: 0.4; }
@@ -6561,60 +6806,155 @@
     cursor: pointer;
     text-decoration: underline;
   }
-/* ============ IN-APP MOCK EXAM (site theme, sidebar-height popup) ============ */
+/* ============ IN-APP MOCK EXAM (site theme, now an in-page view — not a popup) ============ */
 .gform-overlay {
-  position: fixed; top: 0; bottom: 0; background: none;
-  /* Bounded to the gap between the reviewees sidebar and the chat panel
-     (open, or collapsed to its peek strip) instead of the full viewport,
-     so .gform-modal below can stretch edge-to-edge and cover that gap
-     instead of floating centered with visible slivers of the page on both
-     sides. 282px = 16px sidebar margin + 250px sidebar width + 16px gap
-     (matches body.sidebar-active's own padding-left). 76px = 16px
-     chat-panel margin + 44px collapsed peek width + 16px gap. */
-  left: 282px; right: 76px;
-  /* Match .form-popup-overlay's stacking (1500), not a high modal-blocking
-     value — otherwise things that should layer above a popup, like the
-     sidebar's profile card (z-index 1700), get stuck behind it instead. */
-  /* 1499, one below the chat panel (1500): this overlay is created by JS and
-     appended to <body> AFTER the chat panel, so at an equal z-index it would
-     be drawn on top of the chat. Being 1 lower keeps the chat above it. */
-  z-index: 1499; display: flex; justify-content: center; align-items: stretch;
-  /* Vertical-only padding: horizontal padding here would add an extra inset
-     on top of the left/right bounds above, leaving the same unwanted gap
-     we're trying to remove. The open chat panel sits flush against its
-     16px gap from the sidebar with no extra padding, so this matches that
-     by letting .gform-modal fill left/right edge-to-edge. */
-  padding: 16px 0;
-  /* Let clicks pass straight through the backdrop to whatever's behind it
-     (the reviewees sidebar, chat FAB/panel, etc.) — same approach as
-     .form-popup-overlay — only the modal card itself should catch clicks.
-     No dimming either, to match .form-popup-overlay exactly: this is a
-     side panel over the page, not a blocking modal. */
-  pointer-events: none;
-}
-@media (max-width: 900px) {
-  /* Mirrors the sidebar's own narrower, viewport-scaled width on phones
-     (see body.sidebar-active's max-width:900px rule) so the popup still
-     starts right beside it instead of leaving a gap. */
-  .gform-overlay { left: calc(clamp(130px, 42vw, 220px) + 32px); }
+  /* This used to be a fixed, floating side-panel (position:fixed, its own
+     z-index stacking above the page) rendered as a boxed card. It's now a
+     plain in-page view like Mock Exam / Quiz / Review: no card background,
+     no rounded box, no shadow — the header and questions sit directly on
+     the page the same way every other view's content does, and the whole
+     page scrolls normally instead of a boxed area scrolling on its own. */
+  width: 100%;
 }
 .gform-modal {
-  background: var(--blueprint-dark); width: 100%;
-  height: calc(100vh - 32px);
-  border-radius: 14px;
-  box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+  width: 100%;
   font-family: 'Space Grotesk', sans-serif; color: var(--paper);
-  display: flex; flex-direction: column; overflow: hidden;
-  pointer-events: auto;
-  position: relative;
+  display: flex; flex-direction: column;
 }
-.gform-head {
-  display: flex; align-items: center; justify-content: space-between;
-  /* Match .form-popup-head exactly (12px 16px, 14px gap). */
-  gap: 14px; padding: 12px 16px; border-bottom: 1px solid var(--line);
-  flex-shrink: 0;
+/* Small row under the page header for the countdown timer + Pins button —
+   the header itself (title, "BACK TO LIST") now reuses the site's own
+   <header class="has-back"> / .site-title-row / .back-btn markup so it
+   looks exactly like every other view's header, not a separate popup bar. */
+/* Sticky exam header: title/BACK button + timer/Pins stay pinned to the
+   top of the page while the question list scrolls underneath, instead of
+   scrolling away with the rest of the exam. Solid background so scrolled
+   question cards don't show through underneath it.
+   Overrides the generic `header { margin-bottom: 36px; border-bottom: 1px
+   solid ...; padding-bottom: 2px }` rule: that margin-bottom sits OUTSIDE
+   this element's own painted box, so once stuck, it was an unpainted gap
+   directly beneath the header — question cards scrolling past showed
+   through that gap instead of staying hidden behind the header. Folding
+   the same space into padding-bottom (inside the painted box, so it's
+   covered) removes the leak, and the symmetric top/bottom padding also
+   centers the title/timer/Pins/Back row vertically in the bar. Rounded
+   corners + shadow match the site's own top-bar card look directly above
+   it, instead of a flush-edged, sharp-cornered strip. */
+.gform-sticky-head {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-radius: 14px;
+  /* All spacing below the title row lives in padding-bottom (inside this
+     element's own painted box) rather than margin-bottom — a margin here,
+     or on the next sibling, sits OUTSIDE the sticky box's paint area, so
+     it isn't covered, and question cards bleed through it as they scroll
+     past. padding-bottom is part of the painted box, so it stays covered
+     and doubles as the gap before the first question card.
+     Slimmer than before (was 16px 20px 24px), and slimmer again than the
+     first pass (was 12px 20px 16px) — trimmed to match the top-bar's
+     thinness. Equal top/bottom (was 10px/14px, uneven) so the title/
+     timer/Pins/Back row sits truly centered in the bar instead of
+     pushed up by extra padding underneath it. */
+  padding: 12px 20px 12px;
+  margin-bottom: 0;
+  border-bottom: none;
 }
-.gform-head-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+/* The visible card (fill + rounded corners + shadow) now lives entirely
+   on ::after, painted as ONE unbroken shape, the same way the site's own
+   fixed top-bar splits its background (top-bar::before, plain, matches
+   the page) from its card front (top-bar::after, rounded + shadow) — see
+   body.sidebar-active .top-bar::before/::after above. Previously this
+   element painted its own background/radius/shadow directly AND had a
+   separate ::before strip with its own independent top corners; the two
+   sets of corners didn't line up, leaving a sliver of the page's
+   background poking through at each top corner (the "overlapping seam").
+   Giving the whole card to a single ::after removes that seam outright. */
+.gform-sticky-head::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--blueprint-dark);
+  border-radius: 14px;
+  /* Smaller blur than the top-bar's own 0 4px 20px — this bar now sits
+     much closer underneath the top-bar than before, and a big soft
+     shadow reaching that far up is what made the gap look messy/cropped
+     in an earlier pass. A tighter shadow stays contained under its own
+     box instead of bleeding into the top-bar above it. */
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+}
+/* On desktop this header sticks at top:96px (see the top:96px rule below),
+   clearing the fixed top-bar, whose own opaque cover (.top-bar::before)
+   only reaches a little past the top-bar's own bottom edge — leaving a
+   thin unpainted strip between the two fixed/sticky bars. Question cards
+   scrolling past show through that strip. This pseudo-element extends
+   behind the header's own card (z-index -2, one layer further back than
+   ::after's -1) to close that strip — plain and unrounded, filled with
+   the page's own background instead of the header's solid color, so
+   wherever ::after's rounded corners recede, this shows the correct
+   matching background instead of a mismatched hard edge. */
+.gform-sticky-head::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -26px;
+  bottom: 0;
+  z-index: -2;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 35%, rgb(18, 58, 94), rgb(3, 14, 26) 70%);
+  background-attachment: fixed;
+}
+@media (max-width: 900px) {
+  /* Mobile/narrow: the header sticks at top:0 with nothing fixed above it
+     (the site's own top-bar isn't fixed below 901px), so there's no gap to
+     bridge — an extended cover here would just show as a stray strip
+     above the header instead of fixing anything. */
+  .gform-sticky-head::before { display: none; }
+}
+/* The site's own top bar (wings/Flight Store/Hangar/Admin row) becomes a
+   fixed header of its own once the sidebar is active (see
+   body.sidebar-active .top-bar), occupying the top 96px of the page — the
+   same clearance body.sidebar-active .wrap adds above its content. Without
+   this, sticking at top:0 would tuck this header underneath that fixed
+   bar instead of just below it. */
+@media (min-width: 901px) {
+  /* This now behaves exactly like the top-bar above it: NEVER moves,
+     at any scroll position — not "sticks after a bit of scrolling,"
+     just permanently parked under the top-bar like it's part of it.
+     The trick: `top` (86px) is set to the EXACT same value that
+     `margin-top: -10px` already puts it at, at rest, before any
+     scrolling (.wrap's 96px clearance, minus this 10px). When a
+     sticky element's resting spot and its "stuck" spot are the same
+     pixel, there is no gap between the two for it to slide through —
+     it's already at the sticking point from the moment the page loads,
+     so it stays there for the ENTIRE scroll range, both scrolling down
+     and back up, with nothing to visibly transition. (Two earlier
+     attempts each got half of this: `top` alone without a matching
+     margin let it slide/settle for a few pixels at the start of every
+     scroll — the "moving when I scroll" you saw; and margin without
+     enough real distance from the top-bar overlapped its shadow and
+     looked cropped. This pairs a safe 16px gap with the shadow fix
+     above, so both are solved together.) */
+  body.sidebar-active .gform-sticky-head { top: 86px; margin-top: -10px; }
+}
+.gform-head-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.gform-head-actions .back-btn {
+  margin-bottom: 0;
+  /* Smaller than the site's normal back button — this one sits inline in
+     a slim sticky bar meant to read like the top-bar's own compact pill
+     buttons, not a full-size page back button. */
+  padding: 5px 10px;
+  font-size: 11px;
+}
+.gform-head-actions .back-btn svg { width: 12px; height: 12px; }
+/* The title itself, not just the padding around it, was the biggest
+   contributor to this bar reading as "thick" next to the top-bar's own
+   12px pill-button text — the site's normal clamp(18px,3.4vw,26px) h1 is
+   sized for a full page heading, not a slim sticky strip. Fixed and
+   noticeably smaller here only. */
+.gform-sticky-head h1 { font-size: 16px; }
 .gform-timer {
   font-family: 'IBM Plex Mono', monospace;
   font-weight: 600;
@@ -6623,29 +6963,21 @@
   white-space: nowrap;
 }
 .gform-timer.expired { color: #ff6b6b; }
-.gform-close {
-  background: none; border: none; color: var(--paper);
-  font-size: 18px; line-height: 1; cursor: pointer; padding: 2px 6px; flex-shrink: 0;
+/* Centers the countdown timer in the sticky exam header regardless of
+   how long the exam title is or how wide the Pins button is — sits at
+   the row's true midpoint instead of being pushed around by its
+   neighbors' widths. */
+.gform-timer-centered {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
 }
-.gform-close:hover { color: var(--accent); }
-/* Match .form-popup-head span exactly: small muted monospace label,
-   instead of a large bold white heading, so both popup headers read the
-   same way. The "Pins" button stays put on the right (see .gform-head-actions). */
-.gform-title {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  font-weight: 400;
-  margin: 0;
-  color: var(--rivet);
-}
-/* Title + timer share a row on the left, matching .form-popup-head where
-   the timer sits beside the label instead of over on the right. */
 .gform-title-row { display: flex; align-items: center; gap: 14px; }
-.gform-title + .gform-desc { margin-top: 4px; }
-.gform-desc { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--rivet); margin: 0; }
+.gform-desc { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--rivet); margin: 0 0 24px; }
 .gform-warning-toast {
-  position: absolute; top: 16px; left: 50%;
+  position: fixed; top: 16px; left: 50%;
   transform: translateX(-50%) translateY(-14px);
   z-index: 2200; max-width: 90%;
   display: flex; align-items: center; gap: 10px;
@@ -6661,24 +6993,14 @@
 }
 .gform-warning-toast .gform-warning-toast-icon { flex-shrink: 0; }
 .gform-body {
-  overflow-y: auto; padding: 16px 8px 16px 18px; flex: 1;
-  /* Themed scrollbar (matches the Manage Mock Exams popup) instead of the
-     hidden one this used to have. Right padding is trimmed from the
-     original 18px to 8px because the ~10px scrollbar below renders in
-     addition to the padding rather than inside it — so 8px + ~10px
-     scrollbar keeps the content-to-border distance matching the left
-     side's plain 18px. */
-  scrollbar-width: thin;
-  scrollbar-color: var(--line) var(--blueprint-dark);
+  /* No inner scroll box anymore — this flows with the page like every
+     other view's content, so the page itself scrolls. */
+  padding: 0;
+  /* Breathing room between the sticky header's bottom edge and the first
+     question card — without this the header's border and "Question 1 of
+     X" sat right on top of each other as soon as the page scrolled. */
+  padding-top: 18px;
 }
-.gform-body::-webkit-scrollbar { width: 10px; }
-.gform-body::-webkit-scrollbar-track { background: var(--blueprint-dark); }
-.gform-body::-webkit-scrollbar-thumb {
-  background-color: var(--line);
-  border-radius: 6px;
-  border: 2px solid var(--blueprint-dark);
-}
-.gform-body::-webkit-scrollbar-thumb:hover { background-color: var(--rivet); }
 .gform-card {
   background: rgba(255,255,255,0.04); border: 1px solid var(--line); border-radius: 8px;
   padding: 18px; margin-bottom: 14px; transition: border-color 0.15s ease, outline-color 0.15s ease;
@@ -6806,11 +7128,16 @@
 }
 .gform-pin-btn {
   background: none; border: 1px solid var(--line); border-radius: 6px; color: var(--rivet);
-  font-size: 13px; line-height: 1; cursor: pointer; padding: 5px 8px; flex-shrink: 0;
+  font-size: 12px; line-height: 1; cursor: pointer; padding: 4px 8px; flex-shrink: 0;
   display: flex; align-items: center; gap: 5px; font-family: 'IBM Plex Mono', monospace;
   transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
 }
-.gform-pin-btn:hover { border-color: var(--paper); color: var(--paper); }
+/* Only the header's own standalone Pins button (top-right, next to the
+   timer/Back) needs the slimmer size above — the per-question "Pin" button
+   inside each question card reuses .gform-pin-btn too and should keep its
+   original, easier-to-tap size there. */
+.gform-card .gform-pin-btn { font-size: 13px; padding: 5px 8px; }
+.gform-pin-btn:hover { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
 .gform-pin-btn.active { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
 .gform-option {
   display: flex; align-items: center; padding: 8px 0; cursor: pointer;
@@ -6921,9 +7248,20 @@
 }
 .gform-score-modal .gform-score-leave-btn:hover { border-color: var(--accent); }
 @media (max-width: 600px) {
-  .gform-overlay { padding: 8px; }
-  .gform-modal { height: calc(100vh - 16px); }
   .gform-title { font-size: 16px; }
+  /* Title + timer/Pins/Back can't all fit on one line on a phone —
+     let them wrap to a second line instead of crowding or overflowing. */
+  .gform-sticky-head .site-title-row { flex-wrap: wrap; row-gap: 8px; }
+  /* The absolute centering above assumes a single-line row; once the row
+     wraps here, an absolutely positioned timer would float independently
+     over both wrapped lines instead of sitting in the flow. Drop it back
+     into normal flow so it wraps along with the title/Pins row. */
+  .gform-timer-centered {
+    position: static;
+    transform: none;
+    margin-left: auto;
+  }
+  .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; width: 100%; }
 }
 
   /* =====================================================================
@@ -8371,6 +8709,27 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
     <div class="mig-viewer-hint">Drag to rotate · Scroll to zoom · Right-click drag to pan</div>
   </div>
 
+  <!-- ---- quiz settings modal (preferred auto-next delay, saved to the
+       signed-in user's profile so it applies on every future quiz) ---- -->
+  <div class="nick-modal-overlay" id="quiz-settings-overlay">
+    <div class="nick-modal">
+      <div class="nick-modal-head">
+        <h3>Quiz Settings</h3>
+        <button class="nick-modal-back" onclick="closeQuizSettings()" aria-label="Back">&lsaquo;</button>
+      </div>
+      <div class="nick-modal-body">
+        <div style="padding: 4px 16px 16px;">
+          <p class="profile-edit-label">Auto-next delay (seconds)</p>
+          <input type="text" id="quiz-autonext-input" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="1–11" onkeydown="return quizAutoNextKeydown(event);" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); if (this.value !== '' && parseInt(this.value, 10) > 11) this.value = '11';">
+          <p class="quiz-autonext-hint">How long to wait after you answer before the next question loads automatically. 1–11 seconds only. Saved to your profile.</p>
+
+          <button type="button" class="profile-edit-save-btn" id="quiz-settings-save-btn" onclick="saveQuizAutoNextSeconds()">SAVE</button>
+          <div class="profile-edit-status" id="quiz-settings-status"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ---- edit profile modal ---- -->
   <div class="nick-modal-overlay" id="profile-edit-bio-overlay">
     <div class="nick-modal">
@@ -8504,13 +8863,16 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
           <button type="button" class="topbar-icon-btn tab-home" title="Homepage" aria-label="Homepage" onclick="goHomeFromHeader()">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9v11a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9"/></svg>
           </button>
-          <button type="button" class="topbar-icon-btn tab-review" title="Review" aria-label="Review" onclick="navigateHomeTab('review')">
+          <button type="button" class="topbar-icon-btn tab-review" id="topbar-review-btn" title="Review" aria-label="Review" onclick="handleTopbarTabClick('review')">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 5.5C4.5 4.2 8 4.2 12 6c4-1.8 7.5-1.8 10-.5V19c-2.5-1.3-6-1.3-10 .5-4-1.8-7.5-1.8-10-.5V5.5z"/><path d="M12 6v13.5"/></svg>
           </button>
-          <button type="button" class="topbar-icon-btn tab-mock-exam" title="Mock Exam" aria-label="Mock Exam" onclick="navigateHomeTab('mock-exam')">
+          <button type="button" class="topbar-icon-btn tab-quiz" id="topbar-quiz-btn" title="Quiz" aria-label="Quiz" onclick="handleTopbarTabClick('quiz')">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+          </button>
+          <button type="button" class="topbar-icon-btn tab-mock-exam" id="topbar-mock-exam-btn" title="Mock Exam" aria-label="Mock Exam" onclick="handleTopbarTabClick('mock-exam')">
             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 13.5l2 2 4-4.5"/></svg>
           </button>
-          <button type="button" class="topbar-icon-btn tab-mock-board" title="Mock Board Exam" aria-label="Mock Board Exam" onclick="navigateHomeTab('mock-board')">
+          <button type="button" class="topbar-icon-btn tab-mock-board" id="topbar-mock-board-btn" title="Mock Board Exam" aria-label="Mock Board Exam" onclick="handleTopbarTabClick('mock-board')">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5-10-5z"/><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/><path d="M22 9v6"/></svg>
           </button>
         </div>
@@ -8603,10 +8965,6 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
       <header class="has-back">
         <div class="site-title-row">
           <h1>Aerodynamics</h1>
-          <button class="back-btn" onclick="backToSubjects()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-            BACK TO SUBJECTS
-          </button>
         </div>
         <p class="sub" id="aero-sub">No mock exams have been added for this subject yet.</p>
       </header>
@@ -8622,10 +8980,6 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
       <header class="has-back">
         <div class="site-title-row">
           <h1>Aircraft Structures and Design</h1>
-          <button class="back-btn" onclick="backToSubjects()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-            BACK TO SUBJECTS
-          </button>
         </div>
         <p class="sub" id="structures-sub">No mock exams have been added for this subject yet.</p>
       </header>
@@ -8688,15 +9042,59 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
       <div class="board-result-box" id="board-result" style="display:none;"></div>
     </section>
 
+    <!-- ============ QUIZ VIEW (Quizizz-style, per exam) ============ -->
+    <section id="view-quiz" class="view">
+      <header class="has-back" id="quiz-header">
+        <div class="site-title-row">
+          <h1 id="quiz-header-title">Quiz</h1>
+        </div>
+      </header>
+
+      <div id="quiz-subjects-panel">
+        <p class="group-label">SUBJECTS</p>
+        <ul class="subject-list" id="quiz-subject-list"></ul>
+      </div>
+
+      <div id="quiz-exam-list-panel" style="display:none;">
+        <ul class="exam-list" id="quiz-exam-list" style="display:none;"></ul>
+        <div class="empty-note" id="quiz-exam-list-empty" style="display:none;">NO PUBLISHED MOCK EXAMS FOR THIS SUBJECT YET.</div>
+      </div>
+
+      <div class="quiz-play-area" id="quiz-play-area" style="display:none;">
+        <div class="quiz-play-head">
+          <span class="quiz-progress" id="quiz-progress">Question 1 of 50</span>
+          <span class="quiz-score-pill" id="quiz-score-pill">Score: 0</span>
+          <button class="quiz-settings-btn" id="quiz-settings-btn" onclick="openQuizSettings()" aria-label="Quiz settings" title="Quiz settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          </button>
+        </div>
+        <div class="quiz-question-card" id="quiz-question-card">
+          <p class="quiz-question-text" id="quiz-question-text"></p>
+          <img class="gform-question-image" id="quiz-question-image" style="display:none;" onload="sizeQuestionImage(this)" onclick="openQuestionImagePreview(this)">
+          <div class="quiz-choices-grid" id="quiz-choices-grid"></div>
+          <div class="quiz-nav-row">
+            <button type="button" class="quiz-nav-btn quiz-prev-btn" id="quiz-prev-btn" style="display:none;" onclick="prevQuizQuestion()">&#8592; BACK</button>
+            <button type="button" class="quiz-nav-btn quiz-next-btn" id="quiz-next-btn" style="display:none;" onclick="nextQuizQuestion()">NEXT &#8594;</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="quiz-results-card" id="quiz-results-card" style="display:none;">
+        <p class="quiz-results-title">Quiz Complete!</p>
+        <p class="quiz-results-score" id="quiz-results-score">0%</p>
+        <p class="quiz-results-sub" id="quiz-results-sub"></p>
+        <div class="quiz-results-actions">
+          <button type="button" class="quiz-start-btn" onclick="retakeCurrentQuizExam()">RETAKE</button>
+          <button type="button" class="quiz-start-btn quiz-secondary-btn" onclick="backToQuizExamList()">CHOOSE ANOTHER EXAM</button>
+        </div>
+      </div>
+    </section>
+
     <!-- ============ AIRCRAFT POWERPLANT VIEW ============ -->
     <section id="view-powerplant" class="view">
       <header class="has-back">
         <div class="site-title-row">
           <h1>Aircraft Powerplant</h1>
-          <button class="back-btn" onclick="backToSubjects()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-            BACK TO SUBJECTS
-          </button>
         </div>
         <p class="sub" id="powerplant-sub">No mock exams have been added for this subject yet.</p>
       </header>
@@ -8711,10 +9109,6 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
       <header class="has-back">
         <div class="site-title-row">
           <h1 id="empty-title">Subject</h1>
-          <button class="back-btn" onclick="backToSubjects()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-            BACK TO SUBJECTS
-          </button>
         </div>
         <p class="sub" id="empty-sub">No mock exams have been added for this subject yet.</p>
       </header>
@@ -11118,6 +11512,12 @@ Answer: C</pre>
     // Firebase Auth token (this app doesn't currently use Firebase Auth —
     // Google Sign-In here is separate) or move writes through a Cloud
     // Function the way createWingsCheckout/paymongoWebhook already do.
+    //
+    // The Quiz tab (see "QUIZ SECTION" below) doesn't use a separate data
+    // path at all — it reads the exact same mockExamSets data (via the
+    // LIVE_MOCK_EXAM_CACHE that's already kept live for the regular Mock
+    // Exam list) and just renders it Quizizz-style instead of Google-Form
+    // style, so there's nothing extra to add here.
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyD4mtstgvr5licATfJjjA6gJPvcz4G9-bw",
       authDomain: "aele-mock-exam-hub.firebaseapp.com",
@@ -12521,6 +12921,47 @@ Answer: C</pre>
 
     function wingsCheckoutIsConfigured() {
       return CREATE_WINGS_CHECKOUT_URL && !CREATE_WINGS_CHECKOUT_URL.startsWith('PASTE_');
+    }
+
+    // ---- opportunistic safety-net cleanup for stale pendingWingsPurchases ----
+    // That node is created server-side by the createWingsCheckout Cloud
+    // Function while a PayMongo checkout is in flight, and is normally
+    // cleared by the paymongoWebhook Cloud Function once payment
+    // completes. Neither Cloud Function lives in this file (they're
+    // deployed separately, outside this HTML), so there's no way to add
+    // a true server-side TTL from here. As a safety net, any signed-in
+    // client quietly checks once per page load and deletes entries older
+    // than the threshold below — this only catches abandoned/incomplete
+    // checkouts (closed tab, expired session, back button) that the
+    // webhook never got the chance to clean up. Requires your Firebase
+    // rules to allow client writes to this path — if they don't (likely,
+    // since it's payment-related and probably locked to the Admin SDK
+    // only), this silently no-ops and the real fix is a scheduled Cloud
+    // Function doing the same sweep server-side.
+    const PENDING_WINGS_PURCHASE_MAX_AGE_MS = 2 * 60 * 60 * 1000; // 2 hours
+
+    function sweepStalePendingWingsPurchases() {
+      if (!ensureFirebaseApp()) return;
+      nsRef('pendingWingsPurchases').once('value').then(snap => {
+        const val = snap.val();
+        if (!val) return;
+        const now = Date.now();
+        Object.entries(val).forEach(([key, entry]) => {
+          if (!entry || typeof entry !== 'object') return;
+          const ts = entry.createdAt || entry.created_at || entry.ts || entry.timestamp;
+          if (typeof ts !== 'number') return; // no timestamp we can trust — leave it alone
+          if (now - ts > PENDING_WINGS_PURCHASE_MAX_AGE_MS) {
+            nsRef('pendingWingsPurchases/' + key).remove().catch(err => {
+              console.error('Pending Wings purchase sweep error (permission rules may block this path):', err);
+            });
+          }
+        });
+      }).catch(err => console.error('Pending Wings purchase sweep read error:', err));
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', sweepStalePendingWingsPurchases);
+    } else {
+      sweepStalePendingWingsPurchases();
     }
 
     let userWallet = { wings: 0, ownedBorders: {}, ownedAnimations: {}, ownedModels: {}, modelOrder: [], equippedBorder: null, equippedAnimation: null, equippedModel: null };
@@ -14709,6 +15150,7 @@ Answer: C</pre>
       if (e.key === 'Escape') {
         if (document.getElementById('bg-fee-note-overlay').classList.contains('visible')) { closeBgFeeNoteModal(); return; }
         if (document.getElementById('bg-upload-confirm-overlay').classList.contains('visible')) { cancelProfileBackgroundUpload(); return; }
+        if (document.getElementById('quiz-settings-overlay').classList.contains('visible')) { closeQuizSettings(); return; }
         closeNicknameList(); closeUserProfile(); closeEditBio(); closeEditBackground(); closeFlightAlerts();
       }
     });
@@ -14806,7 +15248,7 @@ Answer: C</pre>
       return nsRef('profiles/' + presenceKey(nickname));
     }
 
-    let myProfile = { bio: '', background: null, flightHours: 0 };
+    let myProfile = { bio: '', background: null, flightHours: 0, quizAutoNextSeconds: 2 };
     let myProfileLoaded = false;
     const profileCache = {};
     // Nicknames we've already attached a live profile listener for, so the
@@ -14844,7 +15286,9 @@ Answer: C</pre>
         ensureFirebaseApp();
         profileRef(user.nickname).on('value', (snap) => {
           const data = snap.val() || {};
-          myProfile = { bio: data.bio || '', background: data.background || null, flightHours: Number(data.flightHours) || 0 };
+          const rawAutoNext = Number(data.quizAutoNextSeconds);
+          const autoNext = (Number.isFinite(rawAutoNext) && rawAutoNext >= 1 && rawAutoNext <= 11) ? Math.round(rawAutoNext) : 2;
+          myProfile = { bio: data.bio || '', background: data.background || null, flightHours: Number(data.flightHours) || 0, quizAutoNextSeconds: autoNext };
           myProfileLoaded = true;
           profileCache[user.nickname] = myProfile;
           // Mirror the equipped background into the sidebar's own-user
@@ -16704,12 +17148,16 @@ Answer: C</pre>
           if (m) {
             const examId = m[1];
             if (currentExamId === examId) {
-              // its popup is open right now — close it without re-saving
+              // it's open right now — close it without re-saving, and
+              // bring back whichever view it had taken over.
               hideScoreModal();
               const openOverlay = document.getElementById('gform-overlay');
               if (openOverlay) openOverlay.remove();
               stopGformPopupTimer();
               currentExamId = null;
+              const backView = document.getElementById(gformReturnViewId || 'view-mock-exam');
+              if (backView) backView.classList.add('visible');
+              gformReturnViewId = null;
             }
             try { localStorage.removeItem(userScopedKey(GFORM_PROGRESS_PREFIX + examId)); } catch (err) {}
             clearBoardScore(examId);
@@ -18567,6 +19015,440 @@ Answer: C</pre>
       initLiveMockExamListeners();
     }
 
+    /* ============ QUIZ SECTION (Quizizz-style, per exam) ============
+       Structured exactly like the regular Mock Exam tab — pick a subject,
+       then pick one of its exams — except opening an exam here drops into
+       a Quizizz-style player instead of the Google-Form one: one question
+       on screen at a time, 4 choices in a 2x2 grid, instant correct/wrong
+       feedback on tap. Each exam is still taken in full (e.g. all 50
+       items), just in this different format.
+
+       No separate data path needed: this reads the exact same
+       mockExamSets data already kept live in LIVE_MOCK_EXAM_CACHE by
+       attachLiveMockExamListener()/primeMockExamCache() above (the same
+       cache the normal Mock Exam list renders from), so a published exam
+       shows up here automatically — no admin action required. */
+
+    // ---- subject picker (mirrors the Mock Exam tab's subject-list, but
+    // leads into the Quizizz-style player instead of the Google-Form one) ----
+    function renderQuizSubjectList() {
+      const listEl = document.getElementById('quiz-subject-list');
+      if (!listEl) return;
+      listEl.innerHTML = '';
+      subjects.forEach(s => {
+        const li = document.createElement('li');
+        const isActive = !!s.active;
+        li.innerHTML = `
+          <div class="subject-card ${isActive ? 'active' : 'disabled'}" tabindex="0" role="button"
+               onclick="${isActive ? `openQuizSubject('${s.key}')` : ''}"
+               onkeydown="if(${isActive} && (event.key==='Enter'||event.key===' ')){openQuizSubject('${s.key}')}">
+            <div class="subject-row">
+              <span class="subject-pct">${s.pct}%</span>
+              <span class="subject-name">${s.name}</span>
+              <span class="subject-status">
+                ${isActive
+                  ? `QUIZ <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg>`
+                  : `COMING SOON`}
+              </span>
+            </div>
+            <div class="bar-track"><div class="bar-fill" style="width:${s.pct * 3}%"></div></div>
+          </div>`;
+        listEl.appendChild(li);
+      });
+    }
+    renderQuizSubjectList();
+
+    // ---- exam picker for one subject: same published sets shown in the
+    // regular Mock Exam list for that subject (pulled from the same
+    // LIVE_MOCK_EXAM_CACHE that's already kept live by
+    // attachLiveMockExamListener/primeMockExamCache above), each still the
+    // full set (e.g. 50 items) it is in the real mock exam ----
+    let currentQuizSubjectKey = null;
+    // Remembers scroll position on the quiz subjects list and on a
+    // subject's exam list, so the back buttons restore that spot instead
+    // of jumping to the top.
+    let quizSubjectsScrollY = 0;
+    let quizExamListScrollY = 0;
+
+    function collectPublishedExamsForSubject(subjectKey) {
+      const sets = LIVE_MOCK_EXAM_CACHE[subjectKey] || {};
+      const isAdmin = isAdminUser(currentChatUser);
+      return Object.entries(sets)
+        .filter(([, set]) => set && (set.published || isAdmin) && Array.isArray(set.questions) && set.questions.length)
+        .sort((a, b) => (a[1].title || '').localeCompare(b[1].title || '', undefined, { sensitivity: 'base', numeric: true }));
+    }
+
+    function openQuizSubject(key) {
+      quizSubjectsScrollY = window.scrollY;
+      currentQuizSubjectKey = key;
+      const s = subjects.find(x => x.key === key);
+      document.getElementById('quiz-header-title').textContent = s ? s.name : 'Quiz';
+      document.getElementById('quiz-subjects-panel').style.display = 'none';
+      document.getElementById('quiz-play-area').style.display = 'none';
+      document.getElementById('quiz-results-card').style.display = 'none';
+      renderQuizExamList();
+      document.getElementById('quiz-exam-list-panel').style.display = '';
+      window.scrollTo(0, 0);
+      refreshTopbarTabIcons();
+    }
+
+    function renderQuizExamCardsHTML(subjectKey, entries) {
+      // Alphabetical (natural) sort — e.g. "Mock Exam 2" before "Mock Exam 10"
+      const byTitleAlpha = (a, b) => (a[1].title || '').localeCompare(b[1].title || '', undefined, { sensitivity: 'base', numeric: true });
+
+      const hasAnyGroup = entries.some(([, set]) => set.group && set.group.trim());
+      if (!hasAnyGroup) {
+        const alphabetized = entries.slice().sort(byTitleAlpha);
+        return alphabetized.map(([id, set], i) => renderQuizExamCardLi(subjectKey, id, set, i + 1)).join('');
+      }
+
+      const groupOrder = [];
+      const buckets = {};
+      entries.forEach(([id, set]) => {
+        const groupName = (set.group && set.group.trim()) || 'Other';
+        if (!buckets[groupName]) { buckets[groupName] = []; groupOrder.push(groupName); }
+        buckets[groupName].push([id, set]);
+      });
+      groupOrder.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true }));
+
+      let counter = 0;
+      return groupOrder.map(groupName => {
+        const header = `<li class="exam-group-header">${escapeHtml(groupName.toUpperCase())}</li>`;
+        const cards = buckets[groupName].slice().sort(byTitleAlpha).map(([id, set]) => {
+          counter++;
+          return renderQuizExamCardLi(subjectKey, id, set, counter);
+        }).join('');
+        return header + cards;
+      }).join('');
+    }
+
+    function renderQuizExamCardLi(subjectKey, id, set, index) {
+      const draftTag = !set.published ? ' <span style="color:var(--accent);">[DRAFT]</span>' : '';
+      return `<li><a class="exam-card" href="javascript:void(0)" onclick="openQuizModeExam('${subjectKey}', '${id}'); return false;">
+          <div class="exam-row"><span class="exam-idx">${String(index).padStart(2, '0')}</span>
+            <span class="exam-name">${escapeHtml(set.title || 'Untitled Set')}${draftTag}</span>
+            <span class="exam-go">QUIZ ME <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg></span>
+          </div>
+        </a></li>`;
+    }
+
+    function renderQuizExamList() {
+      const listEl = document.getElementById('quiz-exam-list');
+      const emptyEl = document.getElementById('quiz-exam-list-empty');
+      if (!listEl || !currentQuizSubjectKey) return;
+      const entries = collectPublishedExamsForSubject(currentQuizSubjectKey);
+      if (!entries.length) {
+        listEl.innerHTML = '';
+        listEl.style.display = 'none';
+        if (emptyEl) emptyEl.style.display = '';
+        return;
+      }
+      listEl.style.display = '';
+      if (emptyEl) emptyEl.style.display = 'none';
+      listEl.innerHTML = renderQuizExamCardsHTML(currentQuizSubjectKey, entries);
+    }
+
+    function handleQuizBackClick() {
+      // While a quiz is being played, or its results are showing, "back"
+      // means back to that subject's exam list, not all the way out to
+      // the subjects screen.
+      const playing = document.getElementById('quiz-play-area').style.display !== 'none';
+      const onResults = document.getElementById('quiz-results-card').style.display !== 'none';
+      if (playing || onResults) backToQuizExamList();
+      else backToQuizSubjects();
+    }
+
+    function backToQuizSubjects() {
+      clearQuizAutoAdvance();
+      document.getElementById('quiz-header-title').textContent = 'Quiz';
+      document.getElementById('quiz-exam-list-panel').style.display = 'none';
+      document.getElementById('quiz-play-area').style.display = 'none';
+      document.getElementById('quiz-results-card').style.display = 'none';
+      document.getElementById('quiz-subjects-panel').style.display = '';
+      currentQuizSubjectKey = null;
+      renderQuizSubjectList(); // refresh in case admin state changed (draft tags)
+      // Return to wherever the user was scrolled instead of jumping to the top.
+      window.scrollTo(0, quizSubjectsScrollY);
+      refreshTopbarTabIcons();
+    }
+
+    function backToQuizExamList() {
+      clearQuizAutoAdvance();
+      document.getElementById('quiz-results-card').style.display = 'none';
+      document.getElementById('quiz-play-area').style.display = 'none';
+      document.getElementById('quiz-header-title').textContent = (subjects.find(x => x.key === currentQuizSubjectKey) || {}).name || 'Quiz';
+      renderQuizExamList();
+      document.getElementById('quiz-exam-list-panel').style.display = '';
+      // Return to wherever the user was scrolled instead of jumping to the top.
+      window.scrollTo(0, quizExamListScrollY);
+      refreshTopbarTabIcons();
+    }
+
+    // Re-syncs whatever the Quiz tab should show whenever its topbar icon is
+    // clicked. Leaves an in-progress quiz (or its results screen) alone —
+    // only refreshes list contents, never yanks the player out from under
+    // someone mid-quiz.
+    function refreshQuizViewOnOpen() {
+      const playing = document.getElementById('quiz-play-area').style.display !== 'none';
+      const onResults = document.getElementById('quiz-results-card').style.display !== 'none';
+      if (playing || onResults) return;
+      if (currentQuizSubjectKey && document.getElementById('quiz-exam-list-panel').style.display !== 'none') {
+        renderQuizExamList();
+      } else {
+        renderQuizSubjectList();
+      }
+    }
+
+    // ---- taking the quiz, Quizizz-style: the full exam (all ~50 items),
+    // one question on screen at a time, 4 choices in a 2x2 grid, instant
+    // correct/wrong feedback on tap. No auto-advance — the person moves
+    // between questions themselves with BACK/NEXT, and can freely revisit
+    // an already-answered question (it just shows locked-in, read-only). ----
+    let quizQuestions = [];
+    let quizItemChoices = []; // choices per question, generated once per attempt so BACK/NEXT always show the same layout
+    let quizUserAnswers = []; // chosen choice-index per question, or null if unanswered yet
+    let quizIndex = 0;
+    let quizScore = 0;
+    let currentQuizExamRef = null; // { subjectKey, setId } — so Retake can reload the same exam
+    let quizAutoAdvanceTimer = null; // pending auto-next timeout after answering
+    function clearQuizAutoAdvance() {
+      if (quizAutoAdvanceTimer) { clearTimeout(quizAutoAdvanceTimer); quizAutoAdvanceTimer = null; }
+    }
+
+    function getQuizAutoNextSeconds() {
+      const v = myProfileLoaded ? Number(myProfile.quizAutoNextSeconds) : 2;
+      return (Number.isFinite(v) && v >= 1 && v <= 11) ? Math.round(v) : 2;
+    }
+
+    // Blocks, at the keystroke level, any digit that would push the
+    // auto-next field's value out of the 1–11 range or past two digits —
+    // so an out-of-range number is never even briefly visible.
+    function quizAutoNextKeydown(e) {
+      const navKeys = ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'Enter'];
+      if (navKeys.indexOf(e.key) !== -1 || e.ctrlKey || e.metaKey) return true;
+      if (!/^[0-9]$/.test(e.key)) { e.preventDefault(); return false; }
+      const el = e.target;
+      const start = el.selectionStart, end = el.selectionEnd;
+      const nextVal = el.value.slice(0, start) + e.key + el.value.slice(end);
+      if (nextVal.length > 2 || (nextVal.length === 2 && parseInt(nextVal, 10) > 11)) {
+        e.preventDefault();
+        return false;
+      }
+      return true;
+    }
+
+    function openQuizSettings() {
+      const status = document.getElementById('quiz-settings-status');
+      status.textContent = '';
+      status.classList.remove('visible');
+      document.getElementById('quiz-autonext-input').value = getQuizAutoNextSeconds();
+      document.getElementById('quiz-settings-overlay').classList.add('visible');
+    }
+
+    function closeQuizSettings() {
+      document.getElementById('quiz-settings-overlay').classList.remove('visible');
+    }
+
+    function saveQuizAutoNextSeconds() {
+      const btn = document.getElementById('quiz-settings-save-btn');
+      const status = document.getElementById('quiz-settings-status');
+      const input = document.getElementById('quiz-autonext-input');
+      const parsed = Math.round(Number(input.value));
+      const val = Number.isFinite(parsed) ? Math.min(11, Math.max(1, parsed)) : 2;
+
+      if (!currentChatUser || !currentChatUser.nickname) {
+        // Not signed in — nothing to persist to, just apply for this session.
+        myProfile = { ...myProfile, quizAutoNextSeconds: val };
+        closeQuizSettings();
+        return;
+      }
+
+      const nickname = currentChatUser.nickname;
+      const newProfile = { ...myProfile, quizAutoNextSeconds: val };
+
+      btn.disabled = true;
+      status.textContent = 'Saving\u2026';
+      status.classList.add('visible');
+
+      if (!chatConfigIsFilledIn()) {
+        // No live database configured — just keep it client-side for this session.
+        myProfile = newProfile;
+        myProfileLoaded = true;
+        profileCache[nickname] = newProfile;
+        btn.disabled = false;
+        closeQuizSettings();
+        return;
+      }
+
+      try {
+        ensureFirebaseApp();
+        profileRef(nickname).update({ quizAutoNextSeconds: val }).then(() => {
+          btn.disabled = false;
+          myProfile = newProfile;
+          myProfileLoaded = true;
+          profileCache[nickname] = newProfile;
+          closeQuizSettings();
+        }).catch((err) => {
+          console.error('Quiz settings save error:', err);
+          btn.disabled = false;
+          status.textContent = 'Could not save right now. Try again.';
+        });
+      } catch (err) {
+        console.error('Quiz settings save init error:', err);
+        btn.disabled = false;
+        status.textContent = 'Could not save right now. Try again.';
+      }
+    }
+
+    function buildQuizChoicesForItem(item) {
+      // Quizizz-style: always show up to 4 boxes. If a question was
+      // authored with more than 4 choices, keep the correct one plus 3
+      // random distractors; if it has fewer, just show however many it has.
+      let choices = item.options.slice();
+      if (choices.length > 4) {
+        const correct = item.correct;
+        const others = shuffle(choices.filter(o => o !== correct));
+        choices = shuffle([correct].concat(others.slice(0, 3)));
+      } else {
+        choices = shuffle(choices);
+      }
+      return choices;
+    }
+
+    function openQuizModeExam(subjectKey, setId) {
+      const sets = LIVE_MOCK_EXAM_CACHE[subjectKey] || {};
+      const set = sets[setId];
+      if (!set || !Array.isArray(set.questions) || !set.questions.length) return;
+
+      quizExamListScrollY = window.scrollY;
+      currentQuizExamRef = { subjectKey: subjectKey, setId: setId };
+      quizQuestions = shuffle(set.questions.slice()); // same items as the real exam, shuffled order
+      quizItemChoices = quizQuestions.map(buildQuizChoicesForItem);
+      quizUserAnswers = new Array(quizQuestions.length).fill(null);
+      quizIndex = 0;
+      quizScore = 0;
+      clearQuizAutoAdvance();
+
+      document.getElementById('quiz-header-title').textContent = set.title || 'Quiz';
+      document.getElementById('quiz-exam-list-panel').style.display = 'none';
+      document.getElementById('quiz-results-card').style.display = 'none';
+      document.getElementById('quiz-play-area').style.display = '';
+      window.scrollTo(0, 0);
+      renderQuizQuestion();
+      refreshTopbarTabIcons();
+    }
+
+    function retakeCurrentQuizExam() {
+      if (!currentQuizExamRef) return;
+      openQuizModeExam(currentQuizExamRef.subjectKey, currentQuizExamRef.setId);
+    }
+
+    function renderQuizQuestion() {
+      const item = quizQuestions[quizIndex];
+      const choices = quizItemChoices[quizIndex];
+
+      document.getElementById('quiz-progress').textContent = `Question ${quizIndex + 1} of ${quizQuestions.length}`;
+      document.getElementById('quiz-score-pill').textContent = `Score: ${quizScore}`;
+      document.getElementById('quiz-question-text').innerHTML = renderMathText(item.q);
+
+      const imgEl = document.getElementById('quiz-question-image');
+      if (item.image) {
+        imgEl.src = item.image;
+        imgEl.alt = `Question ${quizIndex + 1} image`;
+        imgEl.style.display = '';
+      } else {
+        imgEl.style.display = 'none';
+        imgEl.removeAttribute('src');
+      }
+
+      const grid = document.getElementById('quiz-choices-grid');
+      grid.innerHTML = choices.map((opt, i) => `
+        <button type="button" class="quiz-choice-btn" data-idx="${i}">
+          <span class="quiz-choice-text">${renderMathText(opt)}</span>
+        </button>
+      `).join('');
+
+      const buttons = Array.from(grid.querySelectorAll('.quiz-choice-btn'));
+      const answeredIdx = quizUserAnswers[quizIndex];
+      if (answeredIdx !== null && answeredIdx !== undefined) {
+        // Already answered on an earlier visit — show it locked in, same
+        // as right after tapping, but without re-scoring on revisit.
+        buttons.forEach((btn, i) => {
+          btn.disabled = true;
+          if (choices[i] === item.correct) btn.classList.add('correct');
+          else if (i === answeredIdx) btn.classList.add('wrong');
+          else btn.classList.add('dim');
+        });
+      } else {
+        buttons.forEach(btn => {
+          btn.addEventListener('click', () => selectQuizAnswer(parseInt(btn.dataset.idx, 10)));
+        });
+      }
+
+      updateQuizNavButtons();
+    }
+
+    function updateQuizNavButtons() {
+      const prevBtn = document.getElementById('quiz-prev-btn');
+      const nextBtn = document.getElementById('quiz-next-btn');
+      const answered = quizUserAnswers[quizIndex] !== null && quizUserAnswers[quizIndex] !== undefined;
+      if (prevBtn) prevBtn.style.display = quizIndex > 0 ? '' : 'none';
+      if (nextBtn) {
+        nextBtn.style.display = answered ? '' : 'none';
+        nextBtn.textContent = (quizIndex === quizQuestions.length - 1) ? 'FINISH ✓' : 'NEXT →';
+      }
+    }
+
+    function selectQuizAnswer(idx) {
+      if (quizUserAnswers[quizIndex] !== null && quizUserAnswers[quizIndex] !== undefined) return; // already locked in
+      quizUserAnswers[quizIndex] = idx;
+
+      const item = quizQuestions[quizIndex];
+      const choices = quizItemChoices[quizIndex];
+      const chosen = choices[idx];
+      if (chosen === item.correct) quizScore++;
+
+      const buttons = Array.from(document.querySelectorAll('#quiz-choices-grid .quiz-choice-btn'));
+      buttons.forEach((btn, i) => {
+        btn.disabled = true;
+        if (choices[i] === item.correct) btn.classList.add('correct');
+        else if (i === idx) btn.classList.add('wrong');
+        else btn.classList.add('dim');
+      });
+
+      document.getElementById('quiz-score-pill').textContent = `Score: ${quizScore}`;
+      updateQuizNavButtons();
+
+      clearQuizAutoAdvance();
+      quizAutoAdvanceTimer = setTimeout(() => {
+        quizAutoAdvanceTimer = null;
+        nextQuizQuestion();
+      }, getQuizAutoNextSeconds() * 1000);
+    }
+
+    function prevQuizQuestion() {
+      if (quizIndex <= 0) return;
+      clearQuizAutoAdvance();
+      quizIndex--;
+      renderQuizQuestion();
+    }
+
+    function nextQuizQuestion() {
+      clearQuizAutoAdvance();
+      if (quizIndex >= quizQuestions.length - 1) { showQuizResults(); return; }
+      quizIndex++;
+      renderQuizQuestion();
+    }
+
+    function showQuizResults() {
+      document.getElementById('quiz-play-area').style.display = 'none';
+      const total = quizQuestions.length;
+      const pct = total > 0 ? Math.round((quizScore / total) * 100) : 0;
+      document.getElementById('quiz-results-score').textContent = `${pct}%`;
+      document.getElementById('quiz-results-sub').textContent = `${quizScore} out of ${total} correct`;
+      document.getElementById('quiz-results-card').style.display = '';
+    }
+
     // Every other subject (construction, econ, math, and any future one)
     // shares the single "view-empty" template section, so only one such
     // subject's listener can usefully be attached at a time — swapped out
@@ -19877,6 +20759,14 @@ Answer: C</pre>
 
     let pinCycleIndex = -1;
     let currentExamId = null;
+    // Remembers which view (Mock Exam subject list, Quiz list, a subject
+    // page, etc.) was on screen right before an exam took it over, now that
+    // the exam is an in-page view instead of a floating pop-up — so closing
+    // it returns to that same view instead of leaving the page blank.
+    let gformReturnViewId = null;
+    // Remembers exactly where the user was scrolled on that return view, so
+    // closing the exam restores that same spot instead of jumping to the top.
+    let gformReturnScrollY = 0;
     const GFORM_PROGRESS_PREFIX = 'gformProgress_';
 
     function saveExamProgress(examId) {
@@ -19988,8 +20878,14 @@ Answer: C</pre>
       const exam = getMockExam(examId);
       if (!exam) return;
 
-      const overlay = document.createElement('div');
-      overlay.className = 'gform-overlay';
+      // Guard against a stale hidden copy left in the page (e.g. from a
+      // reopen without going through closeInAppMockExam) so two elements
+      // never share the id="gform-overlay" at once.
+      const stale = document.getElementById('gform-overlay');
+      if (stale) stale.remove();
+
+      const overlay = document.createElement('section');
+      overlay.className = 'gform-overlay view visible';
       overlay.id = 'gform-overlay';
 
       const qCardsHtml = exam.questions.map((item, i) => `
@@ -20018,19 +20914,16 @@ Answer: C</pre>
 
       overlay.innerHTML = `
         <div class="gform-modal">
-          <div class="gform-head">
-            <div>
-              <div class="gform-title-row">
-                <p class="gform-title">${escapeHtml(exam.title)}</p>
-                <span id="gform-popup-timer" class="gform-timer" style="display:none;"></span>
+          <header class="has-back gform-sticky-head" id="gform-header">
+            <div class="site-title-row">
+              <h1>${escapeHtml(exam.title)}</h1>
+              <span id="gform-popup-timer" class="gform-timer gform-timer-centered" style="display:none;"></span>
+              <div class="gform-head-actions">
+                <button type="button" class="gform-pin-btn" id="gform-pins-btn" onclick="jumpToNextPinned()">&#128204; Pins <span id="gform-pins-count">(0)</span></button>
               </div>
-              ${exam.description ? `<p class="gform-desc">${escapeHtml(exam.description)}</p>` : ''}
             </div>
-            <div class="gform-head-actions">
-              <button type="button" class="gform-pin-btn" id="gform-pins-btn" onclick="jumpToNextPinned()">&#128204; Pins <span id="gform-pins-count">(0)</span></button>
-              <button class="gform-close" onclick="closeInAppMockExam()">&times;</button>
-            </div>
-          </div>
+            ${exam.description ? `<p class="sub gform-desc">${escapeHtml(exam.description)}</p>` : ''}
+          </header>
           <div class="gform-warning-toast" id="gform-warning"><span class="gform-warning-toast-icon">&#9888;&#65039;</span><span id="gform-warning-text"></span></div>
           <div class="gform-body" id="gform-questions">
             ${qCardsHtml}
@@ -20044,11 +20937,20 @@ Answer: C</pre>
 
       pinCycleIndex = -1;
       currentExamId = examId;
-      document.body.appendChild(overlay);
+
+      // No longer a floating pop-up: hide whichever view is currently open
+      // (Mock Exam subject list, Quiz list, a subject page, etc.) and drop
+      // this exam into the page in its place, the same way the app's other
+      // views swap in and out — then remember it so closing the exam can
+      // bring that view back.
+      const activeView = document.querySelector('.view.visible');
+      if (activeView) gformReturnViewId = activeView.id;
+      else if (!gformReturnViewId) gformReturnViewId = 'view-mock-exam';
+      gformReturnScrollY = window.scrollY;
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('visible'));
+      document.querySelector('.wrap').appendChild(overlay);
+      window.scrollTo(0, 0);
       restoreExamProgress(examId);
-      // No document.body.style.overflow lock here, to match the Google
-      // Form popup: the page (sidebar, chat) stays fully usable underneath
-      // rather than being frozen behind a blocking modal.
 
       // Same 4-hour countdown as the other mock exams, shown right in this
       // popup's own header and kept in sync with the timer badge on the
@@ -20066,6 +20968,7 @@ Answer: C</pre>
         const timerEl = examCard.querySelector('.exam-timer');
         if (timerEl) updateExamTimer(examCard, timerEl);
       }
+      refreshMockExamTabIcon();
     }
 
     function togglePinQuestion(i) {
@@ -20097,6 +21000,16 @@ Answer: C</pre>
       if (overlay) overlay.remove();
       stopGformPopupTimer();
       currentExamId = null;
+      // Bring back whichever view was open before this exam took it over,
+      // now that the exam is a normal view rather than a pop-up sitting on
+      // top of it.
+      const backView = document.getElementById(gformReturnViewId || 'view-mock-exam');
+      if (backView) backView.classList.add('visible');
+      gformReturnViewId = null;
+      // Return to wherever the user was scrolled before the exam opened
+      // instead of jumping to the top.
+      window.scrollTo(0, gformReturnScrollY);
+      refreshMockExamTabIcon();
     }
 
     function findExamCardById(examId) {
@@ -20558,12 +21471,14 @@ Answer: C</pre>
       'review': 'view-review',
       'mock-exam': 'view-mock-exam',
       'mock-board': 'view-board',
+      'quiz': 'view-quiz',
       'shop': 'view-shop'
     };
     const HOME_TAB_SECTION_LABEL = {
       'review': 'reviewing',
       'mock-exam': 'taking a mock exam',
       'mock-board': 'taking a mock board exam',
+      'quiz': 'taking a quiz',
       'shop': 'browsing the Flight Store'
     };
 
@@ -20583,9 +21498,96 @@ Answer: C</pre>
       }
     }
 
+    // Every top-bar tab icon that leads into a multi-level section (Review,
+    // Quiz, Mock Exam, Mock Board Exam) doubles as a back button once
+    // you're a level deep in that section — this replaces the old in-page
+    // "BACK TO SUBJECTS" / "BACK TO LIST" buttons entirely. One tap steps
+    // back exactly one level (e.g. taking an exam -> that subject's exam
+    // list -> the subjects list), then the icon reverts to its plain
+    // tab icon/behaviour everywhere else.
+    const MOCK_EXAM_LIST_VIEW_IDS = ['view-structures', 'view-aero', 'view-powerplant', 'view-empty'];
+    function isMockExamListViewVisible() {
+      return MOCK_EXAM_LIST_VIEW_IDS.some(id => {
+        const el = document.getElementById(id);
+        return el && el.classList.contains('visible');
+      });
+    }
+    // Figures out which tab (if any) is currently a level deep, and what
+    // "back" should do for it. Returns null when every tab is at its own
+    // top level, so every icon shows its normal glyph/behaviour.
+    function getTopbarBackContext() {
+      const gformOverlay = document.getElementById('gform-overlay');
+      if (gformOverlay && gformOverlay.classList.contains('visible')) {
+        let tab = 'mock-exam';
+        if (gformReturnViewId === 'view-review') tab = 'review';
+        else if (gformReturnViewId === 'view-board') tab = 'mock-board';
+        else if (MOCK_EXAM_LIST_VIEW_IDS.includes(gformReturnViewId)) {
+          tab = (lastSubjectsOrigin === 'view-review') ? 'review' : 'mock-exam';
+        }
+        return { tab: tab, action: closeInAppMockExam };
+      }
+      if (isMockExamListViewVisible()) {
+        return { tab: (lastSubjectsOrigin === 'view-review') ? 'review' : 'mock-exam', action: backToSubjects };
+      }
+      const quizView = document.getElementById('view-quiz');
+      if (currentQuizSubjectKey && quizView && quizView.classList.contains('visible')) {
+        return { tab: 'quiz', action: handleQuizBackClick };
+      }
+      return null;
+    }
+    const TOPBAR_TAB_ICON_SVG = {
+      'review': '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 5.5C4.5 4.2 8 4.2 12 6c4-1.8 7.5-1.8 10-.5V19c-2.5-1.3-6-1.3-10 .5-4-1.8-7.5-1.8-10-.5V5.5z"/><path d="M12 6v13.5"/></svg>',
+      'quiz': '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>',
+      'mock-exam': '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 13.5l2 2 4-4.5"/></svg>',
+      'mock-board': '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5-10-5z"/><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/><path d="M22 9v6"/></svg>'
+    };
+    const TOPBAR_TAB_LABELS = { 'review': 'Review', 'quiz': 'Quiz', 'mock-exam': 'Mock Exam', 'mock-board': 'Mock Board Exam' };
+    const TOPBAR_BACK_ICON_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>';
+
+    function handleTopbarTabClick(tab) {
+      const backCtx = getTopbarBackContext();
+      if (backCtx && backCtx.tab === tab) {
+        // Each back action (closeInAppMockExam, backToSubjects,
+        // handleQuizBackClick, ...) restores the scroll position that was
+        // saved on its return view right before that deeper view was
+        // entered — so just run it. Don't also freeze the scroll position
+        // from inside the deeper view here, or it overrides that restore
+        // and can land you somewhere that isn't where you actually were.
+        backCtx.action();
+      } else {
+        navigateHomeTab(tab);
+      }
+      refreshTopbarTabIcons();
+    }
+    // Kept as the old name too since it's referenced from the exam popup's
+    // own code paths (openInAppMockExam/closeInAppMockExam etc.) — just
+    // forwards to the general multi-tab refresh.
+    function refreshMockExamTabIcon() { refreshTopbarTabIcons(); }
+    function refreshTopbarTabIcons() {
+      const backCtx = getTopbarBackContext();
+      Object.keys(TOPBAR_TAB_ICON_SVG).forEach(tab => {
+        const btn = document.getElementById('topbar-' + tab + '-btn');
+        if (!btn) return;
+        const isBack = !!(backCtx && backCtx.tab === tab);
+        btn.classList.toggle('is-back', isBack);
+        const label = isBack ? 'Back' : TOPBAR_TAB_LABELS[tab];
+        btn.title = label;
+        btn.setAttribute('aria-label', label);
+        btn.innerHTML = isBack ? TOPBAR_BACK_ICON_SVG : TOPBAR_TAB_ICON_SVG[tab];
+      });
+    }
+
     function navigateHomeTab(tab) {
       const targetViewId = HOME_TAB_TARGET_VIEW[tab];
       if (!targetViewId) return;
+
+      // Leaving the Quiz tab for anywhere else forgets which subject was
+      // open, so coming back to Quiz always starts at the subject list —
+      // matching Mock Exam's behavior — instead of jumping straight back
+      // into that subject's exam list.
+      if (tab !== 'quiz') {
+        currentQuizSubjectKey = null;
+      }
 
       // Remember exactly where the user was on the homepage so "back to
       // homepage" can return them here instead of jumping to the top.
@@ -20598,7 +21600,9 @@ Answer: C</pre>
       updateTopbarStoreNav(tab === 'shop' ? 'shop' : null);
       if (tab === 'shop') renderShopIfVisible();
       if (tab === 'mock-board') restoreBoardSetIfAny();
+      if (tab === 'quiz') refreshQuizViewOnOpen();
       updateSidebarVisibility();
+      refreshTopbarTabIcons();
     }
 
     // ---- flight store / hangar sub-navigation ----
@@ -20667,15 +21671,20 @@ Answer: C</pre>
       updateTopbarStoreNav(null);
       updateSidebarVisibility();
       teardownEmptySubjectMockExams();
+      refreshMockExamTabIcon();
     }
 
     // Remembers which SUBJECTS list (Mock Exam or Review) a subject
     // page was opened from, so its "BACK TO SUBJECTS" button returns there
     // instead of jumping all the way out to the homepage.
     let lastSubjectsOrigin = 'view-mock-exam';
+    // Remembers exactly where the user was scrolled on that SUBJECTS list,
+    // so "BACK TO SUBJECTS" restores that spot instead of jumping to the top.
+    let subjectsListScrollY = 0;
 
     function showSubject(key, originView) {
       lastSubjectsOrigin = originView || 'view-mock-exam';
+      subjectsListScrollY = window.scrollY;
       document.querySelectorAll('.view').forEach(v => v.classList.remove('visible'));
       if (key === 'structures') {
         document.getElementById('view-structures').classList.add('visible');
@@ -20693,6 +21702,7 @@ Answer: C</pre>
       updatePresenceSection('taking a mock exam');
       updateTopbarStoreNav(null);
       updateSidebarVisibility();
+      refreshMockExamTabIcon();
     }
 
     // Used by the subject pages' (Aerodynamics, Structures, empty-template)
@@ -20701,11 +21711,14 @@ Answer: C</pre>
     function backToSubjects() {
       document.querySelectorAll('.view').forEach(v => v.classList.remove('visible'));
       document.getElementById(lastSubjectsOrigin).classList.add('visible');
-      window.scrollTo(0, 0);
+      // Return to wherever the user left off on the subjects list instead
+      // of jumping back to the top.
+      window.scrollTo(0, subjectsListScrollY);
       updatePresenceSection(lastSubjectsOrigin === 'view-review' ? 'reviewing' : 'taking a mock exam');
       updateTopbarStoreNav(null);
       updateSidebarVisibility();
       teardownEmptySubjectMockExams();
+      refreshMockExamTabIcon();
     }
     // ---- Google Form links open in an in-page modal (an iframe inside
     // the app itself) instead of a new tab or a separate popup window.
@@ -21607,11 +22620,18 @@ Answer: C</pre>
 
 <script>
 /* ============ Custom tooltip (replaces every native title="" tooltip) ============
-   Works for any element with a title attribute — including ones created
-   later by the app's render functions — because it acts on hover/focus:
-   the title text is moved to data-app-tip (so the browser never shows its
-   own tooltip) and displayed in the styled #app-tooltip box. Elements that
-   already use the CSS [data-tooltip] tooltip are left as they are. */
+   Two layers close the gap between "a title attribute exists in the DOM"
+   and "we've swapped it for our own tooltip":
+   1) A MutationObserver strips every title the instant it shows up —
+      on first load, and on every later re-render (the shop/admin/quiz
+      list templates, etc. all set title="" via innerHTML). This covers
+      the case a mouseover/focus event would miss entirely: content
+      re-rendering under a mouse that never actually moved, which fires
+      no new mouseover, so the old hover-only approach could leave a
+      fresh title sitting there until the browser's own hover-delay
+      timer popped its native tooltip.
+   2) The mouseover/focus handlers still call stashTitle too, as a no-op
+      safety net for anything the observer's subtree might not reach. */
 (function () {
   const tip = document.createElement('div');
   tip.id = 'app-tooltip';
@@ -21637,6 +22657,22 @@ Answer: C</pre>
       if (!el.hasAttribute('aria-label') && !el.textContent.trim()) el.setAttribute('aria-label', t);
     }
   }
+
+  // ---- strip titles the moment they exist, not the moment they're hovered ----
+  function stashAll(node) {
+    if (!node || node.nodeType !== 1) return;
+    if (node.hasAttribute('title')) stashTitle(node);
+    if (node.querySelectorAll) node.querySelectorAll('[title]').forEach(stashTitle);
+  }
+  stashAll(document.body);
+  new MutationObserver(function (mutations) {
+    for (const m of mutations) {
+      if (m.type === 'attributes') { stashTitle(m.target); continue; }
+      m.addedNodes.forEach(stashAll);
+    }
+  }).observe(document.body, {
+    subtree: true, childList: true, attributes: true, attributeFilter: ['title']
+  });
 
   function place(el) {
     const r = el.getBoundingClientRect();
@@ -21684,10 +22720,10 @@ Answer: C</pre>
     if (!canHover()) return;
     const el = target(e);
     if (!el) return;
-    if (el === current) { stashTitle(el); return; }
+    stashTitle(el); // safety net; the observer has almost always already done this
+    if (el === current) return;
     hide();
     current = el;
-    stashTitle(el);
     if (!el.getAttribute('data-app-tip')) { current = null; return; }
     showTimer = setTimeout(function () { if (current === el) show(el); }, 120);
   });
@@ -21995,6 +23031,181 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     }
   }, true);
 })();
+</script>
+<script>
+  // ---- custom page scroll indicator (mock exam screen only) ----
+  // Draws a thin, clickable/draggable thumb at the content column's own
+  // right edge (the .wrap that the in-app exam renders inside), only while
+  // that exam screen is actually on screen. Dragging or clicking it calls
+  // window.scrollTo() the same way any other in-page control here does —
+  // it doesn't replace or hook into the page's native scrolling, so wheel/
+  // touch/keyboard scrolling keeps working exactly as before.
+  (function () {
+    var track = document.createElement('div');
+    track.id = 'app-scrollbar-track';
+    var thumb = document.createElement('div');
+    thumb.id = 'app-scrollbar-thumb';
+    track.appendChild(thumb);
+    document.body.appendChild(track);
+
+    var raf = null;
+    var dragging = false;
+
+    function isExamScreenVisible() {
+      var overlay = document.getElementById('gform-overlay');
+      if (overlay && overlay.classList.contains('visible')) return true;
+      // Also show on any list screen: the Mock Exam subject list, each
+      // individual subject's exam list (Aerodynamics, Structures,
+      // Powerplant, etc.), and the Quiz subject/exam lists — instead of
+      // hardcoding each view's id, just check whether the currently
+      // visible .view contains a subject-list or exam-list.
+      var visibleView = document.querySelector('.view.visible');
+      if (visibleView && visibleView.querySelector('.subject-list, .exam-list')) return true;
+      return false;
+    }
+
+    function updateAppScrollbar() {
+      raf = null;
+      if (!isExamScreenVisible()) { track.classList.remove('visible'); return; }
+
+      var doc = document.documentElement;
+      var viewportH = window.innerHeight;
+      var scrollable = doc.scrollHeight - viewportH;
+
+      if (scrollable <= 4) { track.classList.remove('visible'); return; }
+
+      var wrap = document.querySelector('.wrap');
+      var wrapRight = wrap ? wrap.getBoundingClientRect().right : 0;
+      if (wrap) {
+        var wrapPadRight = parseFloat(window.getComputedStyle(wrap).paddingRight) || 0;
+        wrapRight -= wrapPadRight; // wrap's own right padding isn't visible content —
+                                    // exclude it so the gap is measured from where the
+                                    // content actually ends, not the padded box edge.
+      }
+      var trackWidth = 8;
+
+      // Center the bar in the real gap next to the content, not just off
+      // its edge — the gap is bounded by whichever chat UI (the collapsed
+      // "Black Box" strip, or the full chat panel when open) is currently
+      // on screen. Falls back to hugging the content edge when neither is
+      // showing (mobile, or signed out, where there's no strip to center
+      // against).
+      var chatPeek = document.getElementById('chat-panel-peek');
+      var chatPanel = document.getElementById('chat-panel');
+      var rightBoundary = window.innerWidth;
+      [chatPanel, chatPeek].forEach(function (el) {
+        if (el && el.offsetParent !== null) {
+          var r = el.getBoundingClientRect();
+          if (r.left < rightBoundary) rightBoundary = r.left;
+        }
+      });
+      var left;
+      if (rightBoundary < window.innerWidth - 1) {
+        left = (wrapRight + rightBoundary) / 2 - trackWidth / 2 - 5.7;
+      } else {
+        left = wrapRight + 10 - 5.7;
+      }
+      // Clamped so it can never run past the actual window edge on very
+      // narrow screens.
+      left = Math.min(Math.max(left, 0), window.innerWidth - trackWidth - 2);
+
+      // Starts below the relevant header instead of the very top of the
+      // browser window. While actually taking an exam (gform-overlay open),
+      // that's the exam's own sticky header (Pins/Pin row). On the Mock
+      // Exam / Quiz list screens, there's no such sticky header, so it
+      // starts below the site's top bar instead.
+      var topBarEl = document.querySelector('.top-bar');
+      var topBarBottom = 8;
+      if (topBarEl && window.getComputedStyle(topBarEl).position === 'fixed') {
+        topBarBottom = topBarEl.getBoundingClientRect().bottom + 8;
+      }
+      var overlayForHeader = document.getElementById('gform-overlay');
+      var inExam = !!(overlayForHeader && overlayForHeader.classList.contains('visible'));
+      if (inExam) {
+        var examHeaderEl = document.getElementById('gform-header');
+        if (examHeaderEl && examHeaderEl.offsetParent !== null) {
+          topBarBottom = examHeaderEl.getBoundingClientRect().bottom + 8;
+        }
+      }
+      var trackTop = topBarBottom;
+      var trackHeight = viewportH - trackTop - 8;
+      var thumbHeight = Math.max(30, (viewportH / doc.scrollHeight) * trackHeight);
+      if (!dragging) {
+        var scrollFrac = Math.min(1, Math.max(0, window.scrollY / scrollable));
+        var thumbTop = scrollFrac * (trackHeight - thumbHeight);
+        thumb.style.top = thumbTop + 'px';
+      }
+
+      track.style.left = left + 'px';
+      track.style.top = trackTop + 'px';
+      track.style.height = trackHeight + 'px';
+      thumb.style.height = thumbHeight + 'px';
+      track.classList.add('visible');
+    }
+    function scheduleUpdate() {
+      if (raf) return;
+      raf = requestAnimationFrame(updateAppScrollbar);
+    }
+
+    // ---- dragging the thumb ----
+    thumb.addEventListener('pointerdown', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      dragging = true;
+      thumb.classList.add('dragging');
+      thumb.setPointerCapture(e.pointerId);
+      var startY = e.clientY;
+      var startTop = thumb.offsetTop;
+
+      function move(ev) {
+        var trackHeight = track.clientHeight;
+        var thumbHeight = thumb.offsetHeight;
+        var range = trackHeight - thumbHeight;
+        var newTop = Math.min(Math.max(0, startTop + (ev.clientY - startY)), range);
+        thumb.style.top = newTop + 'px';
+        var doc = document.documentElement;
+        var scrollable = doc.scrollHeight - window.innerHeight;
+        var frac = range > 0 ? newTop / range : 0;
+        window.scrollTo(0, frac * scrollable);
+      }
+      function up() {
+        dragging = false;
+        thumb.classList.remove('dragging');
+        document.removeEventListener('pointermove', move);
+        document.removeEventListener('pointerup', up);
+      }
+      document.addEventListener('pointermove', move);
+      document.addEventListener('pointerup', up);
+    });
+
+    // ---- clicking the track (above/below the thumb) jumps to that spot ----
+    track.addEventListener('pointerdown', function (e) {
+      if (e.target !== track) return; // the thumb's own handler covers itself
+      var trackRect = track.getBoundingClientRect();
+      var thumbHeight = thumb.offsetHeight;
+      var range = trackRect.height - thumbHeight;
+      var clickTop = Math.min(Math.max(0, e.clientY - trackRect.top - thumbHeight / 2), range);
+      var doc = document.documentElement;
+      var scrollable = doc.scrollHeight - window.innerHeight;
+      var frac = range > 0 ? clickTop / range : 0;
+      window.scrollTo({ top: frac * scrollable, behavior: 'smooth' });
+    });
+
+    window.addEventListener('scroll', scheduleUpdate, { passive: true });
+    window.addEventListener('resize', scheduleUpdate);
+    // Content height/width changes with no scroll or window resize of
+    // their own (an exam loading in, opening/closing it, the sidebar
+    // appearing after sign-in, etc.) — watch the content column itself so
+    // the indicator's visibility/size/position stay correct without
+    // hooking into every navigation function individually.
+    if (window.ResizeObserver) {
+      var ro = new ResizeObserver(scheduleUpdate);
+      var wrapEl = document.querySelector('.wrap');
+      if (wrapEl) ro.observe(wrapEl);
+      ro.observe(document.body);
+    }
+    updateAppScrollbar();
+  })();
 </script>
 </body>
 </html>
