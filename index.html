@@ -61,7 +61,7 @@
   html, body {
     margin: 0;
     padding: 0;
-    background: radial-gradient(ellipse at 50% 35%, rgb(18, 58, 94), rgb(3, 14, 26) 70%);
+    background: radial-gradient(ellipse at 50% 35%, rgb(8, 45, 82), rgb(2, 12, 24) 70%);
     background-attachment: fixed;
     font-family: 'Space Grotesk', sans-serif;
     color: var(--paper);
@@ -140,7 +140,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(ellipse at 50% 35%, rgb(18, 58, 94), rgb(3, 14, 26) 70%);
+    background: radial-gradient(ellipse at 50% 35%, rgb(8, 45, 82), rgb(2, 12, 24) 70%);
+    background-attachment: fixed;
     padding: 24px;
   }
   #signin-gate.hidden { display: none; }
@@ -248,7 +249,7 @@
     border-radius: 999px;
     cursor: pointer;
   }
-  .google-signup-link-btn:hover { border-color: var(--accent); }
+  .google-signup-link-btn:hover { color: var(--accent); }
   .google-back-btn {
     display: block;
     margin: 18px auto 0;
@@ -709,7 +710,7 @@
     border-radius: 999px;
     cursor: pointer;
   }
-  .admin-avatar-upload-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .admin-avatar-upload-btn:hover { color: var(--accent); }
   .admin-avatar-upload-hint {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10.5px;
@@ -881,7 +882,7 @@
     cursor: pointer;
   }
   .account-badge .signout-btn:hover {
-    background: rgba(255,255,255,0.07);
+    color: var(--accent);
   }
   .account-badge .signout-icon-btn {
     display: inline-flex;
@@ -903,7 +904,7 @@
     display: none;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(ellipse at 50% 35%, rgb(18, 58, 94), rgb(3, 14, 26) 70%);
+    background: radial-gradient(ellipse at 50% 35%, rgb(8, 45, 82), rgb(2, 12, 24) 70%);
   }
   .taxi-out-overlay.visible { display: flex; }
   .taxi-out-inner {
@@ -1795,7 +1796,7 @@
       right: -8px;
       z-index: -2;
       pointer-events: none;
-      background: radial-gradient(ellipse at 50% 35%, rgb(18, 58, 94), rgb(3, 14, 26) 70%);
+      background: radial-gradient(ellipse at 50% 35%, rgb(8, 45, 82), rgb(2, 12, 24) 70%);
       background-attachment: fixed;
     }
     /* The header card itself, solid (no see-through) and drawn above the cover. */
@@ -3110,7 +3111,7 @@
     flex-shrink: 0;
   }
   .quiz-settings-btn svg { width: 17px; height: 17px; }
-  .quiz-settings-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .quiz-settings-btn:hover { color: var(--accent); }
   .quiz-settings-note {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
@@ -3239,7 +3240,7 @@
     border: 1px solid var(--line);
     color: var(--paper);
   }
-  .quiz-start-btn.quiz-secondary-btn:hover { border-color: var(--accent); }
+  .quiz-start-btn.quiz-secondary-btn:hover { color: var(--accent); }
 
   ul.subject-list, ul.exam-list {
     list-style: none;
@@ -3262,8 +3263,6 @@
     transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
   }
   .subject-card.active:hover {
-    background: rgba(255, 177, 0, 0.08);
-    border-color: var(--accent);
   }
   .subject-card.disabled {
     cursor: default;
@@ -3307,18 +3306,6 @@
   .subject-status svg { width: 12px; height: 12px; transition: transform 0.15s ease; }
   .subject-card.active:hover .subject-status svg { transform: translate(2px, -2px); }
 
-  .bar-track {
-    margin-top: 12px;
-    height: 3px;
-    background: rgba(255,255,255,0.08);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-  .bar-fill {
-    height: 100%;
-    background: var(--accent);
-  }
-  .subject-card.disabled .bar-fill { background: var(--rivet); }
 
   /* ---- exam list (reuse) ---- */
   .exam-card {
@@ -3332,8 +3319,6 @@
     transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
   }
   .exam-card:hover:not(:has(.exam-timer-reset:hover)) {
-    background: rgba(255, 177, 0, 0.08);
-    border-color: var(--accent);
   }
   .exam-card:focus-visible, .subject-card:focus-visible {
     outline: none;
@@ -3396,7 +3381,8 @@
     letter-spacing: 0.02em;
   }
   .exam-timer.running {
-    color: var(--accent);
+    background: var(--accent);
+    color: var(--blueprint-dark);
     border-color: var(--accent);
   }
   .exam-timer.expired {
@@ -3416,7 +3402,6 @@
     transition: border-color 0.15s ease, color 0.15s ease;
   }
   .exam-timer-reset:hover {
-    border-color: var(--accent);
     color: var(--accent);
   }
 
@@ -3534,6 +3519,42 @@
   }
   .board-btn:hover { background: #ffc233; }
   .board-btn svg { width: 14px; height: 14px; }
+
+  /* Countdown to when the current 3-day board set expires (mirrors
+     BOARD_SET_TTL_MS in the JS below). Only shown once a set has
+     actually been generated. */
+  .board-countdown {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 0 0 16px;
+  }
+  .board-countdown-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--rivet);
+  }
+  .board-countdown-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+  .board-countdown.expiring .board-countdown-value { color: #ff6b6b; }
+  /* Shown once all 6 subjects are done and the clock has been stopped for
+     good, instead of the amber "still running" look. */
+  .board-countdown.completed .board-countdown-value { color: #4fd1a0; }
+
+  /* ---- per-day lock note (Day 2 / Day 3 subjects before their day starts) ---- */
+  .board-locked-note {
+    font-family: 'IBM Plex Mono', monospace;
+    letter-spacing: 0.02em;
+  }
+  .board-locked-note span { color: var(--accent); font-weight: 600; }
 
   /* ---- in-page Google Form popup (no separate browser window, so the
      address bar is never shown at all) ---- */
@@ -4029,7 +4050,7 @@
     border-radius: 999px;
     cursor: pointer;
   }
-  .banned-list-manual button:hover { border-color: var(--accent); color: var(--accent); }
+  .banned-list-manual button:hover { color: var(--accent); }
 
   /* ---- "Manage Mock Exams" admin popup, widened to match the
      .store-popup-overlay (Flight Store/Hangar) and .gform-overlay
@@ -4139,7 +4160,7 @@
     border-radius: 999px;
     cursor: pointer;
   }
-  .mockadmin-subject-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .mockadmin-subject-btn:hover { color: var(--accent); }
   .mockadmin-subject-btn.active { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); font-weight: 600; }
   .mockadmin-list-head {
     display: flex;
@@ -4180,7 +4201,7 @@
      while it is on a button/toggle inside it */
   .mockadmin-set-row-clickable:hover:not(:has(button:hover, label:hover, input:hover)),
   .mockadmin-set-row-clickable:focus-visible {
-    border-color: var(--accent); background: rgba(255,255,255,0.06); outline: none;
+    background: rgba(255,255,255,0.06); outline: none;
   }
   .mockadmin-set-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
   .mockadmin-set-title { font-weight: 600; font-size: 13px; color: var(--paper); }
@@ -4197,7 +4218,7 @@
     border-radius: 999px;
     cursor: pointer;
   }
-  .mockadmin-mini-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .mockadmin-mini-btn:hover { color: var(--accent); }
   .mockadmin-mini-btn.danger:hover { border-color: #f07a6a; color: #f07a6a; }
   .mockadmin-back-btn {
     background: none;
@@ -4254,7 +4275,7 @@
     font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 7px 11px;
     border-radius: 4px; cursor: pointer;
   }
-  .mockadmin-image-upload-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .mockadmin-image-upload-btn:hover { color: var(--accent); }
   .mockadmin-image-preview-wrap { display: flex; align-items: center; gap: 8px; }
   .mockadmin-image-preview-wrap img {
     max-width: 120px; max-height: 80px; border-radius: 4px; border: 1px solid var(--line); display: block;
@@ -4306,7 +4327,7 @@
     cursor: pointer;
   }
   .mockadmin-publish-btn { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
-  .mockadmin-save-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .mockadmin-save-btn:hover { color: var(--accent); }
   .mockadmin-publish-btn:hover { opacity: 0.85; }
 
   /* ---- bulk mock exam creator (BEC) ---- */
@@ -4844,7 +4865,7 @@
     padding: 8px 9px;
     cursor: pointer;
   }
-  .chat-emoji-btn:hover { border-color: var(--accent); }
+  .chat-emoji-btn:hover { filter: brightness(1.15); }
   .chat-emoji-btn.active { border-color: var(--accent); background: rgba(255,177,0,0.1); }
 
   .chat-emoji-picker {
@@ -5137,7 +5158,7 @@
     transition: border-color 0.15s ease, color 0.15s ease;
     flex-shrink: 0;
   }
-  .account-wings-badge:hover { background: rgba(255,255,255,0.07); }
+  .account-wings-badge:hover { color: var(--accent); }
   .daily-claim-btn {
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 700;
@@ -5163,7 +5184,38 @@
     white-space: nowrap;
     transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
   }
-  .topbar-nav-btn:hover { background: rgba(255,255,255,0.07); }
+  .topbar-nav-btn:hover { color: var(--accent); }
+  /* Icon-only versions of the top bar buttons (wings, Flight Store, Hangar,
+     Admin): same look as the other header icon buttons (.topbar-icon-btn) —
+     no border, no fill, and the soft rounded highlight shows ONLY while the
+     mouse is on them. The site's custom tooltip (title attribute) names each
+     one on hover. */
+  .account-wings-badge.icon-only,
+  .topbar-nav-btn.icon-only,
+  .account-badge .signout-btn.icon-only {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 38px;
+    padding: 0;
+    font-size: 17px;
+    line-height: 1;
+    background: none;
+    border: none;
+    border-radius: 10px;
+    box-shadow: none;
+    transition: background 0.15s ease;
+  }
+  .account-wings-badge.icon-only:hover,
+  .account-wings-badge.icon-only:focus-visible,
+  .topbar-nav-btn.icon-only:hover,
+  .topbar-nav-btn.icon-only:focus-visible,
+  .account-badge .signout-btn.icon-only:hover,
+  .account-badge .signout-btn.icon-only:focus-visible {
+    background: rgba(255,255,255,0.07);
+    outline: none;
+  }
   .topbar-nav-btn.locked { color: var(--rivet); opacity: 0.85; }
   .topbar-nav-btn.locked:hover { background: rgba(255,255,255,0.03); }
 
@@ -5282,7 +5334,7 @@
     cursor: pointer;
     transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
   }
-  .store-subnav-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .store-subnav-btn:hover { color: var(--accent); }
   .store-subnav-btn.active {
     border-color: var(--accent);
     color: var(--accent);
@@ -5327,7 +5379,7 @@
     border-radius: 999px;
     cursor: pointer;
   }
-  .shop-page-nav:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .shop-page-nav:hover:not(:disabled) { color: var(--accent); }
   .shop-page-nav:disabled { opacity: 0.35; cursor: default; }
   .shop-page-numbers {
     display: flex;
@@ -6903,7 +6955,7 @@
   bottom: 0;
   z-index: -2;
   pointer-events: none;
-  background: radial-gradient(ellipse at 50% 35%, rgb(18, 58, 94), rgb(3, 14, 26) 70%);
+  background: radial-gradient(ellipse at 50% 35%, rgb(8, 45, 82), rgb(2, 12, 24) 70%);
   background-attachment: fixed;
 }
 @media (max-width: 900px) {
@@ -6977,8 +7029,11 @@
 .gform-title-row { display: flex; align-items: center; gap: 14px; }
 .gform-desc { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--rivet); margin: 0 0 24px; }
 .gform-warning-toast {
-  position: fixed; top: 16px; left: 50%;
-  transform: translateX(-50%) translateY(-14px);
+  /* Centered in the middle of the exam area (left is set from the exam's
+     own position in showGformWarning, so it stays centered on the exam
+     even when the sidebar shifts it off the screen's center). */
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%, -50%) translateY(14px);
   z-index: 2200; max-width: 90%;
   display: flex; align-items: center; gap: 10px;
   background: #2a1417; border: 1px solid #ff6b6b; border-radius: 8px;
@@ -6986,10 +7041,10 @@
   font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #ff8f8f;
   opacity: 0; pointer-events: none;
   transition: opacity 0.2s ease, transform 0.2s ease;
-  white-space: nowrap;
+  white-space: normal; text-align: center; width: max-content;
 }
 .gform-warning-toast.visible {
-  opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto;
+  opacity: 1; transform: translate(-50%, -50%) translateY(0); pointer-events: auto;
 }
 .gform-warning-toast .gform-warning-toast-icon { flex-shrink: 0; }
 .gform-body {
@@ -7091,7 +7146,7 @@
   white-space: nowrap;
   align-self: flex-start;
 }
-.math-toolbar-btn:hover { border-color: var(--accent); color: var(--accent); }
+.math-toolbar-btn:hover { color: var(--accent); }
 .math-toolbox {
   position: fixed;
   z-index: 5000;
@@ -7118,7 +7173,7 @@
   min-width: 27px;
   cursor: pointer;
 }
-.math-toolbox-row button:hover { border-color: var(--accent); color: var(--accent); }
+.math-toolbox-row button:hover { color: var(--accent); }
 .math-toolbox-labeled-row button {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 10.5px;
@@ -7137,7 +7192,9 @@
    inside each question card reuses .gform-pin-btn too and should keep its
    original, easier-to-tap size there. */
 .gform-card .gform-pin-btn { font-size: 13px; padding: 5px 8px; }
-.gform-pin-btn:hover { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
+/* .hover-suppressed is set right after unpinning, so the button goes back to
+   unfilled even though the mouse is still on it; it comes off on mouseleave. */
+.gform-pin-btn:not(.hover-suppressed):hover { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
 .gform-pin-btn.active { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
 .gform-option {
   display: flex; align-items: center; padding: 8px 0; cursor: pointer;
@@ -7246,7 +7303,7 @@
   border-radius: 999px; padding: 11px 14px; font-family: 'Space Grotesk', sans-serif;
   font-size: 14px; font-weight: 600; cursor: pointer;
 }
-.gform-score-modal .gform-score-leave-btn:hover { border-color: var(--accent); }
+.gform-score-modal .gform-score-leave-btn:hover { color: var(--accent); }
 @media (max-width: 600px) {
   .gform-title { font-size: 16px; }
   /* Title + timer/Pins/Back can't all fit on one line on a phone —
@@ -8844,13 +8901,13 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         </span>
         <div class="account-name-stack">
           <span id="account-name" class="account-name-line" style="display:none;"></span>
-          <span class="account-wings-badge" id="account-wings-badge" onclick="openBuyWingsModal()" style="display:none;">🪽 —</span>
+          <span class="account-wings-badge icon-only" id="account-wings-badge" title="Wings" aria-label="Wings" onclick="openBuyWingsModal()" style="display:none;">🪽</span>
         </div>
         <button class="daily-claim-btn" id="daily-claim-btn" onclick="openDailyRewardsModal()" style="display:none;">🎁 CLAIM</button>
-        <button class="topbar-nav-btn" id="topbar-flight-store-btn" onclick="showFlightStore()">🛒 FLIGHT STORE</button>
-        <button class="topbar-nav-btn" id="topbar-hangar-btn" onclick="showHangar()">📦 HANGAR</button>
+        <button class="topbar-nav-btn icon-only" id="topbar-flight-store-btn" title="Flight Store" aria-label="Flight Store" onclick="showFlightStore()">🛒</button>
+        <button class="topbar-nav-btn icon-only" id="topbar-hangar-btn" title="Hangar" aria-label="Hangar" onclick="showHangar()">📦</button>
         <div class="admin-settings-wrap" id="admin-settings-wrap" style="display:none;">
-          <button class="signout-btn" id="admin-settings-btn" onclick="toggleAdminSettingsMenu(event)">&#9881;&#65039; ADMIN</button>
+          <button class="signout-btn icon-only" id="admin-settings-btn" title="Admin" aria-label="Admin" onclick="toggleAdminSettingsMenu(event)">&#9881;&#65039;</button>
           <div class="admin-settings-menu" id="admin-settings-menu">
             <button id="admin-unban-btn" onclick="openBannedListModal(); closeAdminSettingsMenu();">UNBAN</button>
             <button id="admin-gift-wings-btn" onclick="openGiftWingsModal(); closeAdminSettingsMenu();">ADJUST BALANCE</button>
@@ -9016,22 +9073,13 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         <h1>Mock Board Exam</h1>
       </header>
 
-      <div class="timer-info-note collapsed">
-        <span class="note-title" onclick="this.parentElement.classList.toggle('collapsed')">&#9201;&#65039; MOCK BOARD EXAM REMINDER</span>
-        <p>The actual AELE is conducted over 3 exam days, with two subjects scheduled each day. This mock board exam mirrors that setup. Each subject keeps its own timer, and the countdown starts automatically the moment you open its form.</p>
-        <ul>
-          <li>&#128204; Treat each day as a full board day, not separate practice sessions.</li>
-          <li>&#128204; Pace yourself within each subject&rsquo;s time limit. Some carry more weight and more hours than others.</li>
-          <li>&#128204; Your score for each subject is recorded automatically once you finish its exam. This is where you&rsquo;ll see your true standing across all six subjects.</li>
-        </ul>
-        <p>This is a full simulation of what your actual board days will feel like, not just isolated practice. Use it to build stamina across the day, not just knowledge for a single subject.</p>
-        <p>Stay consistent. Stay honest with your answers. Trust the process.</p>
-        <p>Three days. Six subjects. One goal.</p>
-        <p class="note-signoff">Good luck, future Aeronautical Engineers &#9992;&#65039;!</p>
-        <p>May this mock board exam bring you one step closer to that license.</p>
+
+      <div class="board-countdown" id="board-countdown" style="display:none;">
+        <span class="board-countdown-label">&#9201;&#65039; TIME LEFT ON THIS SET</span>
+        <span class="board-countdown-value" id="board-countdown-value">&mdash;</span>
       </div>
 
-      <button class="board-btn" onclick="generateBoardSet()">
+      <button class="board-btn" onclick="confirmGenerateBoardSet()">
         <span>GENERATE RANDOM SET</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2.1l4 4-4 4M3 12.9v-2a4 4 0 014-4h12.8M7 21.9l-4-4 4-4M21 11.1v2a4 4 0 01-4 4H4.2"/></svg>
       </button>
@@ -9041,6 +9089,28 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
 
       <div class="board-result-box" id="board-result" style="display:none;"></div>
     </section>
+
+    <!-- ---- mock board exam: shown once the 3-day set countdown hits
+         zero, whether the reviewee is watching it happen live or just
+         reopens the app after it already lapsed. Tells them whether they
+         finished all 6 subjects in time (and if so, the final result) or
+         failed to finish within the window. ---- -->
+    <div class="nick-modal-overlay" id="board-expired-overlay">
+      <div class="nick-modal" style="max-width: 420px;">
+        <div class="nick-modal-head">
+          <h3>&#9201;&#65039; Mock Board Exam &mdash; Time&rsquo;s Up</h3>
+          <button class="nick-modal-close" onclick="closeBoardExpiredModal()" aria-label="Close">&times;</button>
+        </div>
+        <div class="nick-modal-body">
+          <div id="board-expired-body" style="padding: 4px 16px 16px;"></div>
+          <div style="padding: 0 16px 16px;">
+            <button type="button" class="board-btn" style="width:100%; justify-content:center;" onclick="closeBoardExpiredModal(); confirmGenerateBoardSet();">
+              <span>START A NEW SET</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- ============ QUIZ VIEW (Quizizz-style, per exam) ============ -->
     <section id="view-quiz" class="view">
@@ -12647,7 +12717,10 @@ Answer: C</pre>
       // Non-admins: hidden entirely when disabled. Admins: always visible,
       // but labeled so it's obvious the store is currently closed to others.
       btn.style.display = (flightStoreEnabled || admin) ? '' : 'none';
-      btn.textContent = (!flightStoreEnabled && admin) ? '🛒 FLIGHT STORE (CLOSED)' : '🛒 FLIGHT STORE';
+      btn.textContent = '🛒';
+      const storeTip = (!flightStoreEnabled && admin) ? 'Flight Store (closed)' : 'Flight Store';
+      btn.setAttribute('title', storeTip);
+      btn.setAttribute('aria-label', storeTip);
       const toggleBtn = document.getElementById('admin-toggle-flightstore-btn');
       if (toggleBtn) toggleBtn.textContent = flightStoreEnabled ? 'DISABLE FLIGHT STORE' : 'ENABLE FLIGHT STORE';
     }
@@ -13626,7 +13699,10 @@ Answer: C</pre>
     function updateShopWingsBalanceDisplay() {
       const badge = document.getElementById('account-wings-badge');
       if (badge) {
-        badge.textContent = `🪽 ${walletLoaded ? userWallet.wings : '—'}`;
+        badge.textContent = '🪽';
+        const wingsTip = 'Wings';
+        badge.setAttribute('title', wingsTip);
+        badge.setAttribute('aria-label', wingsTip);
         badge.style.display = currentChatUser ? '' : 'none';
       }
       const shopBalance = document.getElementById('shop-wings-balance');
@@ -17024,7 +17100,6 @@ Answer: C</pre>
                 : `COMING SOON`}
             </span>
           </div>
-          <div class="bar-track"><div class="bar-fill" style="width:${s.pct * 3}%"></div></div>
         </div>`;
       listEl.appendChild(li);
     });
@@ -17042,7 +17117,6 @@ Answer: C</pre>
               <span class="subject-name">${s.name}</span>
               <span class="subject-status">COMING SOON</span>
             </div>
-            <div class="bar-track"><div class="bar-fill" style="width:${s.pct * 3}%"></div></div>
           </div>`;
         reviewListEl.appendChild(li);
       });
@@ -17185,34 +17259,6 @@ Answer: C</pre>
       });
     }
 
-    function initTimerInfoNotes() {
-      document.querySelectorAll('.view').forEach(view => {
-        if (view.id === 'view-home' || view.id === 'view-board') return;
-        if (!view.querySelector('.exam-card')) return;
-        if (view.querySelector('.timer-info-note')) return;
-        const header = view.querySelector('header');
-        if (!header) return;
-        const note = document.createElement('div');
-        note.className = 'timer-info-note collapsed';
-        note.innerHTML = `
-          <span class="note-title" onclick="this.parentElement.classList.toggle('collapsed')">&#9201;&#65039; MOCK EXAM REMINDER</span>
-          <p>You have 4 hours to complete each mock examination. The countdown starts automatically when you open the form, so make sure you are ready before beginning.</p>
-          <ul>
-            <li>&#128204; Read every question carefully.</li>
-            <li>&#128204; Manage your time wisely.</li>
-            <li>&#128204; If you&rsquo;re unsure, move on and come back later.</li>
-            <li>&#128204; Make every minute count.</li>
-          </ul>
-          <p>Remember, this is more than just a mock exam. It is an opportunity to identify what you already know, discover what you still need to improve, and build the confidence you&rsquo;ll need for the actual AELE.</p>
-          <p>Stay focused. Trust your preparation. Learn from every mistake.</p>
-          <p>Keep pushing forward. One question at a time. One mock exam at a time.</p>
-          <p class="note-signoff">Good luck, future Aeronautical Engineers &#9992;&#65039;!</p>
-          <p>May your hard work, perseverance, and preparation bring you closer to that license.</p>
-        `;
-        header.insertAdjacentElement('afterend', note);
-      });
-    }
-
     function updateExamTimer(card, timerEl) {
       const key = userScopedKey(TIMER_STORAGE_PREFIX + examKey(card));
       const duration = getExamDuration(card);
@@ -17301,6 +17347,7 @@ Answer: C</pre>
 
     function startGformPopupTimer(key, duration) {
       stopGformPopupTimer();
+      const examId = currentExamId; // the exam this timer belongs to
       const timerEl = document.getElementById('gform-popup-timer');
       if (!timerEl) return;
       timerEl.style.display = '';
@@ -17315,6 +17362,7 @@ Answer: C</pre>
           timerEl.textContent = "00:00:00 TIME'S UP";
           timerEl.classList.add('expired');
           if (gformPopupTimerInterval) gformPopupTimerInterval();
+          autoSubmitExpiredExam(examId);
         } else {
           timerEl.textContent = formatHMS(remaining);
         }
@@ -17332,7 +17380,6 @@ Answer: C</pre>
 
     createAlignedTicker(tickAllExamTimers);
     initExamTimers();
-    initTimerInfoNotes();
 
     // ---- Daily-style aviation & aerodynamics trivia (randomized every page load) ----
     const triviaFacts = [
@@ -19051,7 +19098,6 @@ Answer: C</pre>
                   : `COMING SOON`}
               </span>
             </div>
-            <div class="bar-track"><div class="bar-fill" style="width:${s.pct * 3}%"></div></div>
           </div>`;
         listEl.appendChild(li);
       });
@@ -20821,7 +20867,7 @@ Answer: C</pre>
       // If this exam was already fully submitted last time, re-grade
       // immediately so the score and answer key are restored too, not
       // just the raw selections.
-      if (saved.submitted) submitInAppMockExam(examId);
+      if (saved.submitted) submitInAppMockExam(examId, true, false);
     }
 
     function updatePinsCount() {
@@ -20977,6 +21023,14 @@ Answer: C</pre>
       if (!card || !btn) return;
       const isPinned = card.classList.toggle('pinned');
       btn.classList.toggle('active', isPinned);
+      if (isPinned) {
+        btn.classList.remove('hover-suppressed');
+      } else {
+        // Just unpinned: drop the hover fill until the pointer leaves and
+        // comes back.
+        btn.classList.add('hover-suppressed');
+        btn.addEventListener('mouseleave', () => btn.classList.remove('hover-suppressed'), { once: true });
+      }
       btn.setAttribute('aria-pressed', isPinned ? 'true' : 'false');
       updatePinsCount();
       saveExamProgress(currentExamId);
@@ -21049,6 +21103,12 @@ Answer: C</pre>
       const warning = document.getElementById('gform-warning');
       if (!warning) return;
       document.getElementById('gform-warning-text').textContent = message;
+      // Center horizontally on the exam itself rather than the whole screen.
+      const examBox = document.querySelector('#gform-overlay .gform-modal');
+      if (examBox) {
+        const r = examBox.getBoundingClientRect();
+        warning.style.left = (r.left + r.width / 2) + 'px';
+      }
       warning.classList.add('visible');
       if (gformWarningTimeout) clearTimeout(gformWarningTimeout);
       gformWarningTimeout = setTimeout(() => warning.classList.remove('visible'), 3200);
@@ -21061,7 +21121,10 @@ Answer: C</pre>
       if (gformWarningTimeout) { clearTimeout(gformWarningTimeout); gformWarningTimeout = null; }
     }
 
-    function submitInAppMockExam(examId) {
+    // forced = grade right now even if some questions are unanswered (used
+    // when the countdown hits zero, and when re-showing an already-graded
+    // exam). timedOut = additionally tells the reviewee the time ran out.
+    function submitInAppMockExam(examId, forced, timedOut) {
       const exam = getMockExam(examId);
       if (!exam) return;
 
@@ -21075,7 +21138,7 @@ Answer: C</pre>
         if (!selected) unansweredIndexes.push(i);
       });
 
-      if (unansweredIndexes.length > 0) {
+      if (unansweredIndexes.length > 0 && !forced) {
         showGformWarning(`Please answer all questions before submitting. (${unansweredIndexes.length} left)`);
 
         const firstMissing = document.getElementById(`gform-card-${unansweredIndexes[0]}`);
@@ -21099,7 +21162,7 @@ Answer: C</pre>
         const feedback = document.getElementById(`gform-feedback-${i}`);
         const clearBtn = document.getElementById(`gform-clear-${i}`);
 
-        const isCorrect = selected.value === item.correct;
+        const isCorrect = !!selected && selected.value === item.correct;
         if (isCorrect) score++;
 
         card.classList.remove('answered');
@@ -21111,7 +21174,7 @@ Answer: C</pre>
           if (optInput.value === item.correct) {
             optionLabel.classList.add('gform-option-correct');
           }
-          if (!isCorrect && optInput.value === selected.value) {
+          if (!isCorrect && selected && optInput.value === selected.value) {
             optionLabel.classList.add('gform-option-selected-wrong');
           }
         });
@@ -21121,13 +21184,13 @@ Answer: C</pre>
           const badge = document.createElement('span');
           badge.id = `gform-badge-${i}`;
           badge.className = 'gform-result-badge ' + (isCorrect ? 'correct' : 'incorrect');
-          badge.textContent = isCorrect ? '✓ Correct' : '✗ Incorrect';
+          badge.textContent = isCorrect ? '✓ Correct' : (selected ? '✗ Incorrect' : '✗ Unanswered');
           pinBtn.insertAdjacentElement('beforebegin', badge);
         }
         feedback.style.display = 'block';
         feedback.innerHTML = isCorrect
           ? `<span class="correct-text">Correct!</span>`
-          : `<span class="incorrect-text">Incorrect.</span><div class="gform-correct-answer">Correct answer: ${renderMathText(item.correct)}</div>`;
+          : `<span class="incorrect-text">${selected ? 'Incorrect.' : 'Not answered.'}</span><div class="gform-correct-answer">Correct answer: ${renderMathText(item.correct)}</div>`;
 
         Array.from(document.getElementsByName(`gform-q-${i}`)).forEach(r => r.disabled = true);
         if (clearBtn) clearBtn.style.display = 'none';
@@ -21137,10 +21200,20 @@ Answer: C</pre>
       document.getElementById('gform-questions').scrollTop = 0;
       saveExamProgress(examId);
       recordBoardScore(examId, score, exam.questions.length);
-      showScoreModal(examId, score, exam.questions.length);
+      showScoreModal(examId, score, exam.questions.length, !!timedOut);
     }
 
-    function showScoreModal(examId, score, total) {
+    // The countdown reached zero while this exam is on screen: lock every
+    // answer and grade whatever has been answered so far (unanswered
+    // questions count as wrong).
+    function autoSubmitExpiredExam(examId) {
+      if (!examId || currentExamId !== examId) return;
+      const questionsEl = document.getElementById('gform-questions');
+      if (!questionsEl || questionsEl.dataset.submitted === 'true') return;
+      submitInAppMockExam(examId, true, true);
+    }
+
+    function showScoreModal(examId, score, total, timedOut) {
       let overlay = document.getElementById('gform-score-overlay');
       if (!overlay) {
         overlay = document.createElement('div');
@@ -21152,6 +21225,7 @@ Answer: C</pre>
       overlay.innerHTML = `
         <div class="gform-score-modal">
           <p class="gform-score-title">Score</p>
+          ${timedOut ? `<p style="margin:-6px 0 14px; font-size:13px; color:#ff6b6b;">&#9201;&#65039; Time&rsquo;s up! Your exam was submitted automatically.</p>` : ''}
           <p class="gform-score-big">${percent}%</p>
           <div class="gform-score-actions">
             <button class="gform-score-retake-btn" onclick="hideScoreModal()">See Results</button>
@@ -21179,7 +21253,15 @@ Answer: C</pre>
     // survives reloads, and expire it after 3 days to match that window.
     const BOARD_SET_STORAGE_KEY = 'boardExamSet';
     const BOARD_SET_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
+    const BOARD_DAY_MS = 24 * 60 * 60 * 1000; // 1 day, used to gate each exam day
     let boardSetGeneratedAt = null;
+
+    // True once all 6 subjects have a recorded score and calculateBoardResult()
+    // has locked in a final PASSED/FAILED. From that point the 3-day clock is
+    // stopped for good (see calculateBoardResult) so finishing early doesn't
+    // leave the countdown running toward an expiry-wipe that would erase a
+    // result you already have.
+    let boardSetCompleted = false;
 
     function saveBoardState() {
       try {
@@ -21191,7 +21273,8 @@ Answer: C</pre>
         localStorage.setItem(userScopedKey(BOARD_SET_STORAGE_KEY), JSON.stringify({
           generatedAt: boardSetGeneratedAt,
           pickedIds,
-          boardScores
+          boardScores,
+          completed: boardSetCompleted
         }));
       } catch (e) {}
     }
@@ -21205,8 +21288,21 @@ Answer: C</pre>
         const raw = localStorage.getItem(userScopedKey(BOARD_SET_STORAGE_KEY));
         if (!raw) return false;
         const data = JSON.parse(raw);
-        if (!data || !data.generatedAt || (Date.now() - data.generatedAt) > BOARD_SET_TTL_MS) {
+        if (!data || !data.generatedAt) {
           localStorage.removeItem(userScopedKey(BOARD_SET_STORAGE_KEY));
+          return false;
+        }
+        boardSetCompleted = !!data.completed;
+        if (!boardSetCompleted && (Date.now() - data.generatedAt) > BOARD_SET_TTL_MS) {
+          // The 3-day window already lapsed while the app was closed (or
+          // on a different tab) — show the same "time's up" popup the
+          // live countdown would have shown, using whatever scores were
+          // recorded before it expired, then clear the closed-out set.
+          // A completed set (all 6 already finished and calculated) skips
+          // this entirely — its clock was already stopped on purpose and
+          // it should never be wiped just for sitting past the deadline.
+          openBoardExpiredModal(data.boardScores || {});
+          clearExpiredBoardSet();
           return false;
         }
         currentBoardSet = {};
@@ -21231,6 +21327,224 @@ Answer: C</pre>
       if (loadBoardState()) renderBoardSet();
     }
 
+    // ---- 3-day countdown for the current board set ----
+    // Ticks down the same BOARD_SET_TTL_MS window that loadBoardState()
+    // already enforces, so the number on screen always matches when the
+    // set will actually expire.
+    let boardCountdownInterval = null;
+
+    function stopBoardCountdown() {
+      if (boardCountdownInterval) { clearInterval(boardCountdownInterval); boardCountdownInterval = null; }
+    }
+
+    // Shared d/h/m/s formatter used by both the 3-day set countdown and the
+    // per-day unlock countdowns below.
+    function formatBoardDuration(ms) {
+      if (ms <= 0) return '00h 00m 00s';
+      const totalSec = Math.floor(ms / 1000);
+      const d = Math.floor(totalSec / 86400);
+      const h = Math.floor((totalSec % 86400) / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      const s = totalSec % 60;
+      const pad = n => String(n).padStart(2, '0');
+      return d > 0 ? `${d}d ${pad(h)}h ${pad(m)}m ${pad(s)}s` : `${pad(h)}h ${pad(m)}m ${pad(s)}s`;
+    }
+
+    // ---- per-day gating ----
+    // Day 1 subjects are answerable as soon as the set is generated. Day 2
+    // unlocks once a full day (24h) has elapsed on the set's clock, Day 3
+    // once two full days have elapsed — mirroring the real 3-day board exam
+    // schedule instead of leaving every subject open from the start.
+    function isDayUnlocked(day) {
+      if (!boardSetGeneratedAt) return false;
+      return (Date.now() - boardSetGeneratedAt) >= (day - 1) * BOARD_DAY_MS;
+    }
+
+    function boardDayUnlockAt(day) {
+      return boardSetGeneratedAt ? boardSetGeneratedAt + (day - 1) * BOARD_DAY_MS : null;
+    }
+
+    // Builds the exam-slot markup for one subject: a lock note while its
+    // day hasn't started yet, otherwise the normal exam card (or the
+    // "nothing indexed" note if no exam has been picked for it).
+    function buildExamAreaHtml(s) {
+      if (!isDayUnlocked(s.day)) {
+        return `<div class="empty-note board-locked-note">
+          &#128274; Locked until Day ${s.day} &mdash; unlocks in <span id="board-lock-countdown-${s.key}"></span>
+        </div>`;
+      }
+      const pick = currentBoardSet[s.key];
+      if (!pick) {
+        return `<div class="empty-note">NOTHING INDEXED HERE YET. CHECK BACK ONCE MOCK EXAMS FOR THIS SUBJECT ARE ADDED.</div>`;
+      }
+      const durationSec = s.hours * 3600;
+      return `<ul class="exam-list">
+          <li><a class="exam-card" href="javascript:void(0)" data-duration-sec="${durationSec}"
+              onclick="openInAppMockExam('live:${s.key}:${pick[0]}', this); return false;">
+            <div class="exam-row">
+              <span class="exam-idx">${s.pct}%</span>
+              <span class="exam-name">${escapeHtml(pick[1].title || 'Untitled Set')}</span>
+              <span class="exam-go">TAKE EXAM <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg></span>
+            </div>
+          </a></li>
+        </ul>`;
+    }
+
+    // Re-checks each subject's day lock every tick. If a day has just
+    // unlocked, swap that subject's slot from the lock note to its real
+    // exam card in place (without touching scores or the result box); if
+    // still locked, just refresh its "unlocks in" countdown text.
+    function updateBoardDayLocks() {
+      if (!boardSetGeneratedAt) return;
+      let revealedAny = false;
+      subjects.forEach(s => {
+        const area = document.getElementById(`board-exam-area-${s.key}`);
+        if (!area) return;
+        if (isDayUnlocked(s.day)) {
+          if (area.querySelector('.board-locked-note')) {
+            area.innerHTML = buildExamAreaHtml(s);
+            revealedAny = true;
+          }
+        } else {
+          const cd = document.getElementById(`board-lock-countdown-${s.key}`);
+          if (cd) cd.textContent = formatBoardDuration(boardDayUnlockAt(s.day) - Date.now());
+        }
+      });
+      if (revealedAny) initExamTimers();
+    }
+
+    function updateBoardCountdownDisplay() {
+      if (boardSetCompleted) { stopBoardCountdown(); return; }
+
+      const wrap = document.getElementById('board-countdown');
+      const valueEl = document.getElementById('board-countdown-value');
+      if (!wrap || !valueEl) return;
+      if (!boardSetGeneratedAt) { wrap.style.display = 'none'; return; }
+
+      updateBoardDayLocks();
+
+      const remainingMs = (boardSetGeneratedAt + BOARD_SET_TTL_MS) - Date.now();
+      if (remainingMs <= 0) {
+        wrap.style.display = 'none';
+        stopBoardCountdown();
+        openBoardExpiredModal(boardScores);
+        clearExpiredBoardSet();
+        return;
+      }
+
+      wrap.style.display = 'flex';
+      wrap.classList.remove('completed');
+      valueEl.textContent = formatBoardDuration(remainingMs);
+
+      // Under 3 hours left: flag it so it visually stands out.
+      wrap.classList.toggle('expiring', remainingMs < 3 * 60 * 60 * 1000);
+    }
+
+    function startBoardCountdown() {
+      stopBoardCountdown();
+      if (boardSetCompleted) return;
+      updateBoardCountdownDisplay();
+      if (!boardSetGeneratedAt) return;
+      boardCountdownInterval = setInterval(updateBoardCountdownDisplay, 1000);
+    }
+
+    // Freezes the countdown display once the set is fully finished and
+    // calculated, so it's obvious the clock is no longer running.
+    function freezeBoardCountdownAsCompleted() {
+      const wrap = document.getElementById('board-countdown');
+      const valueEl = document.getElementById('board-countdown-value');
+      if (!wrap || !valueEl) return;
+      wrap.style.display = 'flex';
+      wrap.classList.remove('expiring');
+      wrap.classList.add('completed');
+      valueEl.textContent = 'Finished \u2014 timer stopped';
+    }
+
+    // ---- "3 days are up" popup ----
+    // Fires once per set — either live (countdown hits 0 while the page
+    // is open) or the next time the Mock Board Exam page is opened after
+    // the window already lapsed elsewhere. Uses only the saved boardScores
+    // (keyed by subject), so it doesn't depend on the live exam cache.
+    function buildBoardExpiredContent(scores) {
+      scores = scores || {};
+      const finishedCount = subjects.filter(s => scores[s.key]).length;
+      const totalCount = subjects.length;
+
+      if (finishedCount < totalCount) {
+        const missing = subjects.filter(s => !scores[s.key]).map(s => s.name);
+        return {
+          passed: null,
+          html: `
+            <div class="board-result-box warn" style="margin-top:0;">
+              <div class="board-result-verdict">FAILED TO FINISH</div>
+              <div class="board-result-note">You failed to finish the mock board exam within 3 days (${finishedCount}/${totalCount} subjects completed). This set is now closed. Subjects left unfinished:</div>
+              <ul style="text-align:left; margin: 10px 0 0; padding-left: 18px; color: #b9cee0; font-family: 'IBM Plex Mono', monospace; font-size: 13px;">
+                ${missing.map(name => `<li>${escapeHtml(name)}</li>`).join('')}
+              </ul>
+            </div>
+          `
+        };
+      }
+
+      let total = 0;
+      let allAtOrAbove50 = true;
+      subjects.forEach(s => {
+        const sc = scores[s.key];
+        total += sc.percent * (s.pct / 100);
+        if (sc.percent < 50) allAtOrAbove50 = false;
+      });
+      const passed = total >= 75 && allAtOrAbove50;
+      return {
+        passed,
+        html: `
+          <div class="board-result-box ${passed ? 'pass' : 'fail'}" style="margin-top:0;">
+            <div class="board-result-total">${total.toFixed(2)}%</div>
+            <div class="board-result-verdict">${passed ? 'PASSED' : 'FAILED'}</div>
+            <div class="board-result-note">${
+              passed
+                ? 'You finished all 6 subjects within the 3-day window. Overall average is 75% or higher and no subject fell below 50%.'
+                : (total < 75
+                    ? 'You finished all 6 subjects within the 3-day window, but the overall average is below the 75% passing requirement.'
+                    : 'You finished all 6 subjects within the 3-day window, but at least one subject fell below the 50% minimum.')
+            }</div>
+          </div>
+        `
+      };
+    }
+
+    function openBoardExpiredModal(scores) {
+      const overlay = document.getElementById('board-expired-overlay');
+      const body = document.getElementById('board-expired-body');
+      if (!overlay || !body) return;
+      const { passed, html } = buildBoardExpiredContent(scores);
+      body.innerHTML = html;
+      overlay.classList.add('visible');
+      if (passed) launchConfetti();
+    }
+
+    function closeBoardExpiredModal() {
+      const overlay = document.getElementById('board-expired-overlay');
+      if (overlay) overlay.classList.remove('visible');
+    }
+
+    // Wipes the now-closed set (storage + in-memory + UI) once its expiry
+    // has been shown, so reopening the page starts blank instead of
+    // re-showing stale, no-longer-editable picks.
+    function clearExpiredBoardSet() {
+      localStorage.removeItem(userScopedKey(BOARD_SET_STORAGE_KEY));
+      currentBoardSet = {};
+      boardScores = {};
+      boardSetGeneratedAt = null;
+      boardSetCompleted = false;
+      stopBoardCountdown();
+      const countdownEl = document.getElementById('board-countdown');
+      if (countdownEl) countdownEl.style.display = 'none';
+      const subjectsEl = document.getElementById('board-subjects');
+      if (subjectsEl) subjectsEl.innerHTML = '';
+      const resultBox = document.getElementById('board-result');
+      if (resultBox) resultBox.style.display = 'none';
+    }
+
     // Pulls one random PUBLISHED admin-created mock exam set per subject
     // from the same live Firebase-backed cache (LIVE_MOCK_EXAM_CACHE) that
     // feeds each subject's own "Mock Exam" list. That cache is kept
@@ -21238,9 +21552,25 @@ Answer: C</pre>
     // below), so any set the admin adds or publishes is picked up
     // automatically and can turn up here the very next time this button is
     // pressed — no separate "board pool" to maintain by hand.
+    // Guards generateBoardSet with a themed confirm dialog whenever pressing
+    // the button would actually throw something away — an already-picked
+    // set and/or recorded scores. Skips the dialog on the very first press
+    // (nothing generated yet), since there's nothing to lose in that case.
+    function confirmGenerateBoardSet() {
+      const hasExistingSet = Object.values(currentBoardSet).some(Boolean);
+      const hasScores = Object.keys(boardScores).length > 0;
+      if (!hasExistingSet && !hasScores) { generateBoardSet(); return; }
+      openConfirmDialog(
+        'Generate a new random set? Your current picks and any recorded scores for this board set will be lost.',
+        generateBoardSet,
+        'Generate New Set'
+      );
+    }
+
     function generateBoardSet() {
       currentBoardSet = {};
       boardScores = {}; // a fresh random set starts with no scores
+      boardSetCompleted = false;
       boardSetGeneratedAt = Date.now();
       subjects.forEach(s => {
         const cache = LIVE_MOCK_EXAM_CACHE[s.key] || {};
@@ -21268,27 +21598,12 @@ Answer: C</pre>
         dayBlock.innerHTML = `<h3 class="board-day-title">DAY ${dayNum} <span class="board-day-hours">(${dayTotalHours} HRS TOTAL)</span></h3>`;
 
         daySubjects.forEach(s => {
-          const pick = currentBoardSet[s.key];
           const block = document.createElement('div');
           block.className = 'board-subject-block';
 
-          const durationSec = s.hours * 3600;
-          const examHtml = pick
-            ? `<ul class="exam-list">
-                <li><a class="exam-card" href="javascript:void(0)" data-duration-sec="${durationSec}"
-                    onclick="openInAppMockExam('live:${s.key}:${pick[0]}', this); return false;">
-                  <div class="exam-row">
-                    <span class="exam-idx">${s.pct}%</span>
-                    <span class="exam-name">${escapeHtml(pick[1].title || 'Untitled Set')}</span>
-                    <span class="exam-go">TAKE EXAM <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg></span>
-                  </div>
-                </a></li>
-              </ul>`
-            : `<div class="empty-note">NOTHING INDEXED HERE YET. CHECK BACK ONCE MOCK EXAMS FOR THIS SUBJECT ARE ADDED.</div>`;
-
           block.innerHTML = `
             <p class="group-label">${s.name} &mdash; ${s.pct}% OF BOARD &middot; ${s.hours} HRS</p>
-            ${examHtml}
+            <div class="board-exam-area" id="board-exam-area-${s.key}">${buildExamAreaHtml(s)}</div>
             <div class="board-grade-row">
               <span class="board-grade-label">YOUR SCORE</span>
               <span class="board-grade-value" id="grade-${s.key}"></span>
@@ -21316,6 +21631,17 @@ Answer: C</pre>
       }
 
       initExamTimers();
+
+      if (boardSetCompleted) {
+        // Already finished and calculated in an earlier session — clock
+        // stays stopped, and the saved result is shown again without
+        // re-triggering confetti.
+        stopBoardCountdown();
+        freezeBoardCountdownAsCompleted();
+        calculateBoardResult(true);
+      } else {
+        startBoardCountdown();
+      }
     }
 
     // ---- Mock Board scores are filled in automatically ----
@@ -21365,6 +21691,13 @@ Answer: C</pre>
       const key = boardSubjectKeyForExam(examId);
       if (!key) return;
       delete boardScores[key];
+      if (boardSetCompleted) {
+        // No longer fully finished — resume the 3-day clock (it'll expire
+        // immediately, same as normal, if the original deadline already
+        // passed while it was stopped).
+        boardSetCompleted = false;
+        startBoardCountdown();
+      }
       saveBoardState();
       updateBoardScoreDisplays();
       const resultBox = document.getElementById('board-result');
@@ -21396,6 +21729,18 @@ Answer: C</pre>
         resultBox.innerHTML = `Finish the exam for every subject first (${missingCount} left). Scores fill in automatically.`;
         return;
       }
+
+      // All 6 subjects done — lock the result in and stop the 3-day clock
+      // for good, even if time is still left on it. Finishing early
+      // shouldn't leave the countdown running toward an expiry-wipe that
+      // would erase a result you already have.
+      if (!boardSetCompleted) {
+        boardSetCompleted = true;
+        stopBoardCountdown();
+        freezeBoardCountdownAsCompleted();
+        saveBoardState();
+      }
+
       resultBox.style.display = 'block';
 
       const passed = total >= 75 && allAtOrAbove50;
