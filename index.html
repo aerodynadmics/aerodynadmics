@@ -209,7 +209,7 @@
     -webkit-appearance: none;
     appearance: none;
   }
-  #signin-direct-step input:focus { outline: none; border-color: var(--accent); }
+  #signin-direct-step input:focus { outline: none; }
   #signin-direct-step .nick-error {
     margin-bottom: 10px;
     font-family: 'IBM Plex Mono', monospace;
@@ -309,7 +309,7 @@
     padding: 10px 12px;
     margin-bottom: 10px;
   }
-  #flight-alert-step input:focus { outline: none; border-color: var(--accent); }
+  #flight-alert-step input:focus { outline: none; }
   #flight-alert-step .nick-error {
     display: none;
     font-family: 'IBM Plex Mono', monospace;
@@ -372,7 +372,7 @@
     margin-bottom: 10px;
     box-sizing: border-box;
   }
-  #forgot-flightcode-step input:focus { outline: none; border-color: var(--accent); }
+  #forgot-flightcode-step input:focus { outline: none; }
   #forgot-flightcode-step .nick-error {
     display: none;
     font-family: 'IBM Plex Mono', monospace;
@@ -563,7 +563,7 @@
     margin-bottom: 12px;
     text-align: left;
   }
-  #nickname-step input:focus { outline: none; border-color: var(--accent); }
+  #nickname-step input:focus { outline: none; }
   #nickname-step .nick-error {
     display: none;
     font-family: 'IBM Plex Mono', monospace;
@@ -888,13 +888,44 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 30px;
-    height: 30px;
+    width: 46px;
+    height: 38px;
     padding: 0;
-    font-size: 14px;
+    font-size: 17px;
     line-height: 1;
-    border-radius: 50%;
+    border: none;
+    border-radius: 10px;
+    background: none;
     margin-left: auto;
+    position: relative;
+    /* The 🛫 glyph itself is drawn with extra whitespace baked into its
+       right side, so centering the button box doesn't center the visible
+       icon — it visually sits left of center. Nudge it right to compensate
+       (plus 1px extra per adjustment). */
+    text-indent: 4px;
+  }
+  /* The hover/focus highlight lives on this pseudo-element, offset by the
+     same 4px as the glyph's text-indent above, so the highlight box is
+     centered on the visible emoji rather than on the button's own
+     (unshifted) layout box. Kept separate from the button itself so this
+     shift never moves the button, the emoji, or any sibling icons. */
+  .account-badge .signout-icon-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 10px;
+    background: transparent;
+    transform: translateX(1.5px);
+    transition: background 0.15s ease;
+    pointer-events: none;
+  }
+  .account-badge .signout-icon-btn:hover::after,
+  .account-badge .signout-icon-btn:focus-visible::after {
+    background: rgba(255,255,255,0.07);
+  }
+  .account-badge .signout-icon-btn:hover,
+  .account-badge .signout-icon-btn:focus-visible {
+    outline: none;
   }
   /* ---- flight-status (sign-in / sign-out) overlay ---- */
   .taxi-out-overlay {
@@ -977,8 +1008,9 @@
     text-align: left;
   }
   .admin-settings-menu button:hover {
+    background: var(--accent);
     border-color: var(--accent);
-    color: var(--accent);
+    color: var(--blueprint-dark);
   }
   .avatar-edit-wrap {
     position: relative;
@@ -1587,39 +1619,6 @@
     letter-spacing: 0.04em;
     color: #fff;
   }
-  .reviewees-refresh-btn {
-    flex-shrink: 0;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    border: 1px solid var(--line);
-    background: transparent;
-    color: #9aa0a8;
-    font-size: 13px;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    padding: 0;
-    transition: background 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
-  }
-  .reviewees-refresh-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: #fff;
-  }
-  .reviewees-refresh-btn:active {
-    transform: scale(0.9);
-  }
-  .reviewees-refresh-btn.is-spinning {
-    animation: reviewees-refresh-spin 0.7s linear;
-    pointer-events: none;
-    opacity: 0.6;
-  }
-  @keyframes reviewees-refresh-spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
   .reviewees-sidebar-body {
     flex: 1;
     overflow-y: auto;
@@ -2138,11 +2137,11 @@
   }
   .confirm-dialog-btn.cancel:hover { background: rgba(255,255,255,0.08); }
   .confirm-dialog-btn.confirm {
-    border-color: rgba(255, 107, 107, 0.4);
+    border-color: transparent;
     color: #ff6b6b;
-    background: rgba(255, 107, 107, 0.12);
+    background: none;
   }
-  .confirm-dialog-btn.confirm:hover { background: rgba(255, 107, 107, 0.22); }
+  .confirm-dialog-btn.confirm:hover { background: rgba(255, 107, 107, 0.12); }
   .confirm-dialog-btn.affirm {
     border-color: rgba(255, 111, 176, 0.4);
     color: #ff6fb0;
@@ -2828,7 +2827,7 @@
     min-height: 72px;
     margin-bottom: 4px;
   }
-  #profile-edit-bio:focus { outline: none; border-color: var(--accent); }
+  #profile-edit-bio:focus { outline: none; }
   .profile-edit-charcount {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
@@ -3131,7 +3130,7 @@
     padding: 10px 12px;
     margin-bottom: 4px;
   }
-  #quiz-autonext-input:focus { outline: none; border-color: var(--accent); }
+  #quiz-autonext-input:focus { outline: none; }
   .quiz-autonext-hint {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10.5px;
@@ -3266,7 +3265,6 @@
   }
   .subject-card.disabled {
     cursor: default;
-    opacity: 0.55;
   }
 
   .subject-row {
@@ -3519,6 +3517,61 @@
   }
   .board-btn:hover { background: #ffc233; }
   .board-btn svg { width: 14px; height: 14px; }
+
+  /* Row holding Generate + Reset together; the row now carries the
+     spacing .board-btn used to carry on its own, so it's zeroed out
+     on buttons inside this row specifically (this row is currently
+     .board-btn's only multi-button context). */
+  .board-actions-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 16px 0 28px;
+  }
+  .board-actions-row .board-btn { margin: 0; }
+  .board-reset-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 1px solid rgba(255, 107, 107, 0.4);
+    color: #ff6b6b;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    padding: 12px 16px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .board-reset-btn:hover { background: rgba(255, 107, 107, 0.12); }
+  .board-reset-btn svg { width: 14px; height: 14px; }
+  /* GENERATE RANDOM SET: same outlined look as RESET, but green. */
+  .board-generate-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 1px solid rgba(79, 209, 160, 0.4);
+    color: var(--green);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    padding: 12px 16px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .board-generate-btn:hover { background: rgba(79, 209, 160, 0.12); }
+  .board-generate-btn svg { width: 14px; height: 14px; }
+  /* Mock Board exams on a day that's already over: finished, so the card
+     (and its RESET / FINISH NOW buttons) can't be clicked any more. */
+  .exam-card.board-past {
+    pointer-events: none;
+    cursor: default;
+    opacity: 0.5;
+  }
 
   /* Countdown to when the current 3-day board set expires (mirrors
      BOARD_SET_TTL_MS in the JS below). Only shown once a set has
@@ -4160,8 +4213,8 @@
     border-radius: 999px;
     cursor: pointer;
   }
-  .mockadmin-subject-btn:hover { color: var(--accent); }
-  .mockadmin-subject-btn.active { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); font-weight: 600; }
+  .mockadmin-subject-btn:hover { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
+  .mockadmin-subject-btn.active { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
   .mockadmin-list-head {
     display: flex;
     align-items: center;
@@ -4219,7 +4272,7 @@
     cursor: pointer;
   }
   .mockadmin-mini-btn:hover { color: var(--accent); }
-  .mockadmin-mini-btn.danger:hover { border-color: #f07a6a; color: #f07a6a; }
+  .mockadmin-mini-btn.danger:hover { color: #f07a6a; }
   .mockadmin-back-btn {
     background: none;
     border: none;
@@ -4248,7 +4301,7 @@
     padding: 9px 11px;
     border-radius: 4px;
   }
-  .mockadmin-input:focus { outline: none; border-color: var(--accent); }
+  .mockadmin-input:focus { outline: none; }
   .mockadmin-textarea { resize: vertical; min-height: 46px; margin-bottom: 10px; font-family: inherit; }
   .mockadmin-question-card {
     border: 1px solid var(--line);
@@ -4337,7 +4390,7 @@
     font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--rivet);
   }
   .bec-step-dot { border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; }
-  .bec-step-dot.active { border-color: var(--accent); color: var(--accent); }
+  .bec-step-dot.active { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
   .bec-step-dot.done { color: var(--paper); }
   .bec-paste-textarea { min-height: 260px; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; resize: vertical; }
   .bec-format-guide { margin: 14px 0; border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; background: transparent; }
@@ -4434,7 +4487,7 @@
     font-size: 13px;
     padding: 8px 10px;
   }
-  .gift-wings-self-controls input:focus { outline: none; border-color: var(--accent); }
+  .gift-wings-self-controls input:focus { outline: none; }
   .gift-wings-self-btn {
     border-radius: 999px;
     padding: 8px 14px;
@@ -4582,7 +4635,7 @@
     font-size: 12px;
     padding: 6px 8px;
   }
-  .gift-wings-item-amount:focus { outline: none; border-color: var(--accent); }
+  .gift-wings-item-amount:focus { outline: none; }
   .gift-wings-mini-btn {
     flex-shrink: 0;
     border: none;
@@ -4841,7 +4894,7 @@
     font-size: 14px;
     padding: 10px 12px;
   }
-  .chat-input-row input:focus { outline: none; border-color: var(--accent); }
+  .chat-input-row input:focus { outline: none; }
   .chat-input-row button {
     background: var(--accent);
     border: none;
@@ -4980,8 +5033,8 @@
     
   }
   .board-result-box.pass { border-color: var(--green); background: rgba(79, 209, 160, 0.08); }
-  .board-result-box.fail { border-color: #ff6b6b; background: rgba(255, 107, 107, 0.08); }
-  .board-result-box.warn { border-color: var(--accent); background: rgba(255, 177, 0, 0.08); color: var(--accent); font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+  .board-result-box.fail { border: 2px solid #ff6b6b; background: rgba(255, 107, 107, 0.08); }
+  .board-result-box.warn { font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
   .board-result-total {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 32px;
@@ -5002,6 +5055,50 @@
     margin-top: 10px;
     line-height: 1.5;
   }
+
+  /* ---- share buttons inside the Mock Board Exam Result popup ---- */
+  .board-share { margin-top: 16px; text-align: center; }
+  .board-share-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--rivet);
+  }
+  .board-share-row { display: flex; justify-content: center; gap: 14px; margin-top: 10px; }
+  .board-share-btn {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0;
+    cursor: pointer;
+    transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  }
+  .board-share-btn svg { width: 22px; height: 22px; display: block; }
+  .board-share-btn:hover { transform: translateY(-2px); border-color: transparent; }
+  .board-share-btn.fb:hover { background: #1877f2; }
+  .board-share-btn.msgr:hover { background: linear-gradient(135deg, #00b2ff, #a033ff 60%, #ff5c87); }
+  .board-share-btn.ig:hover { background: linear-gradient(45deg, #f9ce34, #ee2a7b 55%, #6228d7); }
+  /* Gradient must cover the border box too; otherwise it tiles into the 1px
+     transparent border and shows the opposite colors on the top/bottom/left/right edges. */
+  .board-share-btn.msgr:hover,
+  .board-share-btn.ig:hover {
+    background-origin: border-box;
+    background-clip: border-box;
+    background-repeat: no-repeat;
+  }
+  .board-share-btn:disabled { opacity: 0.5; cursor: wait; transform: none; }
+  .board-share-status {
+    min-height: 16px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #b9cee0;
+    line-height: 1.4;
+  }
+  /* No message yet: don't reserve empty space under the share buttons. */
+  .board-share-status:empty { min-height: 0; margin-top: 0; }
 
   .empty-note {
     font-family: 'IBM Plex Mono', monospace;
@@ -5226,11 +5323,18 @@
     align-items: center;
     gap: 4px;
     margin-left: auto;
-    padding-right: 10px;
-    margin-right: 2px;
+    /* 8px on each side of the divider: matches the 8px on its other side
+       (margin-right: 2px here + the signout button's own margin-left: 6px
+       below), so the line sits centered between the last nav icon and the
+       Depart button instead of leaning toward the icon. Deliberately NOT
+       touching margin-right here or the signout button's margin-left —
+       that pair (divider-to-Depart, Depart-to-right-edge) stays exactly
+       as it was. */
+    padding-right: 8px;
+    margin-right: 0;
     border-right: 1px solid var(--line);
   }
-  .account-badge .topbar-icon-nav + .signout-icon-btn { margin-left: 8px; }
+  .account-badge .topbar-icon-nav + .signout-icon-btn { margin-left: -3px; }
   .topbar-icon-btn {
     --tab-color: var(--accent);
     display: inline-flex;
@@ -5245,6 +5349,10 @@
     color: var(--rivet);
     cursor: pointer;
     transition: color 0.15s ease, background 0.15s ease;
+    /* Nudged 2px left per design tweak; purely visual (transform), so it
+       doesn't change the button's layout box or shift the divider/Depart
+       button that sit after it in .topbar-icon-nav. */
+    transform: translateX(-2px);
   }
   .topbar-icon-btn svg {
     width: 23px;
@@ -5334,11 +5442,11 @@
     cursor: pointer;
     transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
   }
-  .store-subnav-btn:hover { color: var(--accent); }
+  .store-subnav-btn:hover { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
   .store-subnav-btn.active {
     border-color: var(--accent);
-    color: var(--accent);
-    background: rgba(255, 177, 0, 0.12);
+    background: var(--accent);
+    color: var(--blueprint-dark);
   }
   .shop-grid {
     display: grid;
@@ -5413,6 +5521,10 @@
     background: transparent;
     border: 1px solid var(--line);
     border-radius: 10px;
+    /* Whole card opens the item preview on click now, so it should read as
+       clickable everywhere over it — not just over the EQUIP/VIEW button,
+       which was the only thing showing a hand cursor before. */
+    cursor: pointer;
     /* Scales with the grid's own height (cqh) so this card's padding
        shrinks along with everything else when the popup is short —
        capped at 14px so it never grows past the normal fullscreen look. */
@@ -5632,10 +5744,33 @@
     color: var(--blueprint-dark);
     border: none;
   }
+  /* Not-yet-owned Flight Store item buttons (price/Loading…) stay plain —
+     no accent color at all, filled or outlined — so yellow reads as one
+     thing only: "you own/equipped this." */
+  .shop-item-buy-btn {
+    background: transparent;
+    color: var(--paper);
+    border: 1px solid var(--line);
+  }
+  /* Hovering a not-yet-owned price button (e.g. "500 🪽") fills it yellow.
+     Skips the disabled "Loading…" state since it isn't clickable. */
+  .shop-item-buy-btn:not(:disabled):hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--blueprint-dark);
+  }
   .shop-equip-btn.equipped {
-    background: rgba(79, 209, 160, 0.16);
-    border-color: var(--green);
-    color: var(--green);
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--blueprint-dark);
+  }
+  /* Hovering an un-equipped EQUIP button previews the filled-yellow look it
+     takes once clicked. Doesn't touch the disabled "✓ Owned" pill (also
+     .equipped) since that's not a clickable equip action. */
+  .shop-equip-btn:not(.equipped):not(:disabled):hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--blueprint-dark);
   }
   .shop-buy-wings-btn:disabled {
     opacity: 0.45;
@@ -6697,8 +6832,19 @@
   }
   .wings-pack-card:hover {
     border-color: var(--accent);
-    background: rgba(255, 177, 0, 0.08);
+    background: var(--accent);
     transform: translateY(-2px);
+  }
+  /* solid yellow hover: flip text to dark so it stays readable */
+  .wings-pack-card:hover .wings-pack-amount,
+  .wings-pack-card:hover .wings-pack-price,
+  .wings-pack-card:hover .wings-pack-save,
+  .wings-pack-card:hover .wings-pack-rate {
+    color: var(--blueprint-dark);
+  }
+  .wings-pack-card:hover .wings-pack-badge {
+    background: var(--blueprint-dark);
+    color: var(--accent);
   }
   .wings-pack-card.best-value { border-color: var(--line); }
   .wings-pack-badge {
@@ -7671,6 +7817,68 @@
   /* Flight Store close button has 14px of left padding (for its divider) and
      4px on the right, so its X is centred in the space right of the divider. */
   #view-shop .store-popup-head .nick-modal-close::after { left: calc(50% + 5px); }
+
+
+  /* No highlight ring/outline on inputs while typing */
+  input:focus, textarea:focus, select:focus, [contenteditable]:focus,
+  input:focus-visible, textarea:focus-visible, select:focus-visible, [contenteditable]:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  /* hide the up/down spinner arrows on every number input */
+  input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  /* homepage info popups (creator note / mock exam notice) */
+  .info-popup-overlay { z-index: 2500; }
+  .info-popup-overlay .info-popup-modal { max-width: 720px; max-height: 86vh; max-height: 86dvh; }
+  .info-popup-overlay .ai-note-body { font-size: 12.5px; line-height: 1.65; color: #c9dbea; padding: 18px 20px; }
+  .info-popup-overlay .ai-note-body p { margin: 0 0 12px; }
+  .info-popup-overlay .ai-note-body p:last-child { margin-bottom: 0; }
+  .info-popup-overlay .ai-note-body a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+  .info-popup-overlay .ai-note-body .thanks { color: #fff; font-weight: 500; text-align: left; }
+
+  /* homepage: creator note + mock exam notice, grouped in one box */
+  .info-links-box {
+    margin-top: 40px;
+    border: 1px dashed var(--line);
+    border-radius: 6px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: transparent;
+  }
+  .info-links-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    width: 100%;
+    padding: 16px 18px;
+    border-radius: 4px;
+    background: none;
+    border: none;
+    color: var(--rivet);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .info-links-item:hover,
+  .info-links-item:focus-visible {
+    background: rgba(255,255,255,0.05);
+    color: var(--paper);
+    outline: none;
+  }
+  .info-links-icon { font-size: 14px; line-height: 1; }
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js" defer></script>
@@ -7969,6 +8177,46 @@
           <button type="button" class="shop-buy-wings-btn" id="shop-ack-continue-btn" disabled onclick="continueShopAckPurchase()">Continue to purchase</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ---- Homepage popups: note from the creator / mock exam notice ---- -->
+  <div class="ai-note-overlay info-popup-overlay" id="creator-note-overlay" role="dialog" aria-modal="true" aria-labelledby="creator-note-title" aria-hidden="true">
+    <div class="ai-note-modal info-popup-modal">
+      <div class="ai-note-modal-head">
+        <h3 id="creator-note-title">A NOTE FROM THE CREATOR</h3>
+        <button type="button" class="ai-note-modal-close" onclick="closeInfoPopup('creator-note-overlay')" aria-label="Close">&times;</button>
+      </div>
+      <div class="ai-note-body">        <p>This platform was created from a simple hope: to make learning, reviewing, and preparing for the AELE a little more accessible, organized, and manageable for Aeronautical Engineering students and graduates.</p>
+        <p>aerodynadmics is being developed into a more comprehensive platform for the Aeronautical Engineering community, with structured lessons, detailed explanations, and interactive animations to help make difficult concepts, especially in Aerodynamics, easier to understand and visualize.</p>
+        <p>For students, the goal is to provide a place where you can strengthen your understanding of subjects throughout your studies, explore concepts beyond the classroom, and gradually build a stronger foundation for the AELE. For AELE reviewees, the platform aims to provide accessible resources that can support your continued review and preparation for the licensure examination.</p>
+        <p>Beyond being a review and learning platform, aerodynadmics is also being developed as an online space for group study and collaboration. The idea is to give Aeronautical Engineering students and AELE reviewees an online space where they can study, exchange knowledge, discuss difficult topics, and share useful materials with others. Through an accessible online platform, studying can become more connected and less isolated.</p>
+        <p>The platform is also meant to help AELE reviewees become more comfortable with answering exams in a computerized environment. Since the AELE is conducted through a Computer-Based Licensure Examination (CBLE) setup, I hope that practicing in a similar format can make the experience a little less unfamiliar when the actual examination day comes.</p>
+        <p>Everything provided for learning and review on aerodynadmics is completely free and accessible to everyone. There is no need to pay to access lessons, explanations, study resources, mock exams, or practice materials.</p>
+        <p>However, if you find aerodynadmics helpful and would like to support the project, you can make an optional donation by purchasing an item from the Flight Store. These purchases are not required to access any of the learning or review resources. They are simply a way for those who wish to support the platform to contribute to its continued development and maintenance.</p>
+        <p>I would genuinely appreciate any support. Your contribution helps me keep the platform running, improve its features, and create more learning and review resources for Aeronautical Engineering students and AELE reviewees.</p>
+        <p>There is absolutely no obligation to purchase anything. Whether you choose to donate through the Flight Store or simply use and share aerodynadmics, your support already means a lot.</p>
+        <p>If you have your own review materials or mock exams that you would be willing to share, I would also be grateful to have them become part of this growing collection. Feel free to <a href="https://forms.gle/GRHoKWEkkoHpCbwM8" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline; text-underline-offset:3px;">contribute a file</a>, and I’ll work on getting it published. The goal is to build a place where Aeronautical Engineering students and AELE reviewees can find mock exams and review materials from different sources, so no one has to feel like they are preparing alone or searching everywhere for something to practice with.</p>
+        <p>Thank you for taking the time to use this platform, for supporting it in whatever way you can, and for being part of its journey. I hope it can be even a small help as you work toward your goals in Aeronautical Engineering, whether you are still studying or preparing for the AELE.</p>
+                <p class="thanks">Thank you, and best of luck to all future Aeronautical Engineers ✈️!</p>
+        </div>
+    </div>
+  </div>
+
+  <div class="ai-note-overlay info-popup-overlay" id="mock-notice-overlay" role="dialog" aria-modal="true" aria-labelledby="mock-notice-title" aria-hidden="true">
+    <div class="ai-note-modal info-popup-modal">
+      <div class="ai-note-modal-head">
+        <h3 id="mock-notice-title">Notice Regarding Mock Exam Materials</h3>
+        <button type="button" class="ai-note-modal-close" onclick="closeInfoPopup('mock-notice-overlay')" aria-label="Close">&times;</button>
+      </div>
+      <div class="ai-note-body">
+        <p>If you recognize a mock exam, question, file, or other material that you believe belongs to you or your institution, please note that this platform may contain materials gathered from publicly accessible online sources, as well as files voluntarily submitted by users through the &quot;Contribute a File&quot; form.</p>
+        <p>These materials are currently being made available for educational and review purposes during the beta development of the platform. The materials shared at this stage are intended to be temporary and are not necessarily part of the platform&rsquo;s permanent content. As the platform continues to develop, these materials may be reviewed, replaced, or removed.</p>
+        <p>I do not claim ownership of materials created by other individuals, schools, organizations, or other copyright holders, nor do I intend to infringe upon any copyright or other intellectual property rights.</p>
+        <p>As the platform progresses beyond its beta stage, I intend to develop and provide original mock examinations and review materials created specifically for this website, with the goal of building a more organized and comprehensive review experience for future Aeronautical Engineering licensure examinees.</p>
+        <p>If you are the copyright owner or otherwise authorized to request the removal of material appearing on this platform, please raise a concern through <a href="https://forms.gle/Xc6HyAYFMp183DLR6" target="_blank" rel="noopener">this form</a>. Upon receiving a removal request, I will review the material and take appropriate action, including removing it when warranted.</p>
+        <p>Thank you for your understanding and for helping maintain a respectful learning environment for everyone.</p>
+        </div>
     </div>
   </div>
 
@@ -8574,7 +8822,6 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
   <div class="reviewees-sidebar" id="reviewees-sidebar">
     <div class="reviewees-sidebar-head">
       <h3>SOULS ON BOARD</h3>
-      <button type="button" class="reviewees-refresh-btn" id="reviewees-refresh-btn" onclick="manualRefreshNicknameList()" aria-label="Refresh Souls on Board list">&#8635;</button>
     </div>
     <div class="reviewees-sidebar-body" id="nick-modal-body">
       <div class="nick-modal-status">Loading&hellip;</div>
@@ -8961,7 +9208,7 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
       </header>
 
       <div class="trivia-card" id="trivia-card">
-        <span class="trivia-label">&#9992;&#65039; DID YOU KNOW? <span id="trivia-count"></span></span>
+        <span class="trivia-label">DID YOU KNOW? <span id="trivia-count"></span></span>
         <p id="trivia-text"></p>
         <button type="button" class="trivia-next-btn" onclick="nextTrivia()">NOW I KNOW!</button>
       </div>
@@ -8972,39 +9219,15 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         <p>So keep showing up. Every encounter leaves a trace, and one day, what once felt unfamiliar will feel like something you&rsquo;ve always known.</p>
       </div>
 
-      <div class="support-card">
-        <div class="collapsible-header" onclick="toggleSupport()">
-          <span>&#128172; A NOTE FROM THE CREATOR</span>
-          <span class="collapsible-arrow" id="support-arrow">&#9660;</span>
-        </div>
-        <div class="collapsible-body" id="support-body">        <p>This platform was created from a simple hope: to make learning, reviewing, and preparing for the AELE a little more accessible, organized, and manageable for Aeronautical Engineering students and graduates.</p>
-        <p>aerodynadmics is being developed into a more comprehensive platform for the Aeronautical Engineering community, with structured lessons, detailed explanations, and interactive animations to help make difficult concepts, especially in Aerodynamics, easier to understand and visualize.</p>
-        <p>For students, the goal is to provide a place where you can strengthen your understanding of subjects throughout your studies, explore concepts beyond the classroom, and gradually build a stronger foundation for the AELE. For AELE reviewees, the platform aims to provide accessible resources that can support your continued review and preparation for the licensure examination.</p>
-        <p>Beyond being a review and learning platform, aerodynadmics is also being developed as an online space for group study and collaboration. The idea is to give Aeronautical Engineering students and AELE reviewees an online space where they can study, exchange knowledge, discuss difficult topics, and share useful materials with others. Through an accessible online platform, studying can become more connected and less isolated.</p>
-        <p>The platform is also meant to help AELE reviewees become more comfortable with answering exams in a computerized environment. Since the AELE is conducted through a Computer-Based Licensure Examination (CBLE) setup, I hope that practicing in a similar format can make the experience a little less unfamiliar when the actual examination day comes.</p>
-        <p>Everything provided for learning and review on aerodynadmics is completely free and accessible to everyone. There is no need to pay to access lessons, explanations, study resources, mock exams, or practice materials.</p>
-        <p>However, if you find aerodynadmics helpful and would like to support the project, you can make an optional donation by purchasing an item from the Flight Store. These purchases are not required to access any of the learning or review resources. They are simply a way for those who wish to support the platform to contribute to its continued development and maintenance.</p>
-        <p>I would genuinely appreciate any support. Your contribution helps me keep the platform running, improve its features, and create more learning and review resources for Aeronautical Engineering students and AELE reviewees.</p>
-        <p>There is absolutely no obligation to purchase anything. Whether you choose to donate through the Flight Store or simply use and share aerodynadmics, your support already means a lot.</p>
-        <p>If you have your own review materials or mock exams that you would be willing to share, I would also be grateful to have them become part of this growing collection. Feel free to <a href="https://forms.gle/GRHoKWEkkoHpCbwM8" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline; text-underline-offset:3px;">contribute a file</a>, and I’ll work on getting it published. The goal is to build a place where Aeronautical Engineering students and AELE reviewees can find mock exams and review materials from different sources, so no one has to feel like they are preparing alone or searching everywhere for something to practice with.</p>
-        <p>Thank you for taking the time to use this platform, for supporting it in whatever way you can, and for being part of its journey. I hope it can be even a small help as you work toward your goals in Aeronautical Engineering, whether you are still studying or preparing for the AELE.</p>
-                <p class="thanks">Thank you, and best of luck to all future Aeronautical Engineers ✈️!</p>
-        </div>
-      </div>
-
-      <div class="disclaimer-box">
-        <div class="collapsible-header" onclick="toggleDisclaimer()">
-          <span class="disclaimer-label" style="margin-bottom:0;">Notice Regarding Mock Exam Materials</span>
-          <span class="collapsible-arrow" id="disclaimer-arrow">&#9660;</span>
-        </div>
-        <div class="collapsible-body" id="disclaimer-body">
-        <p>If you recognize a mock exam, question, file, or other material that you believe belongs to you or your institution, please note that this platform may contain materials gathered from publicly accessible online sources, as well as files voluntarily submitted by users through the &quot;Contribute a File&quot; form.</p>
-        <p>These materials are currently being made available for educational and review purposes during the beta development of the platform. The materials shared at this stage are intended to be temporary and are not necessarily part of the platform&rsquo;s permanent content. As the platform continues to develop, these materials may be reviewed, replaced, or removed.</p>
-        <p>I do not claim ownership of materials created by other individuals, schools, organizations, or other copyright holders, nor do I intend to infringe upon any copyright or other intellectual property rights.</p>
-        <p>As the platform progresses beyond its beta stage, I intend to develop and provide original mock examinations and review materials created specifically for this website, with the goal of building a more organized and comprehensive review experience for future Aeronautical Engineering licensure examinees.</p>
-        <p>If you are the copyright owner or otherwise authorized to request the removal of material appearing on this platform, please raise a concern through <a href="https://forms.gle/Xc6HyAYFMp183DLR6" target="_blank" rel="noopener">this form</a>. Upon receiving a removal request, I will review the material and take appropriate action, including removing it when warranted.</p>
-        <p>Thank you for your understanding and for helping maintain a respectful learning environment for everyone.</p>
-        </div>
+      <div class="info-links-box">
+        <button type="button" class="info-links-item" onclick="openInfoPopup('creator-note-overlay')">
+          <span class="info-links-icon" aria-hidden="true">&#128172;</span>
+          <span class="info-links-text">A NOTE FROM THE CREATOR</span>
+        </button>
+        <button type="button" class="info-links-item" onclick="openInfoPopup('mock-notice-overlay')">
+          <span class="info-links-icon" aria-hidden="true">&#128196;</span>
+          <span class="info-links-text">NOTICE REGARDING MOCK EXAM MATERIALS</span>
+        </button>
       </div>
 
       <nav class="legal-links" id="home-legal-links" aria-label="Legal">
@@ -9079,10 +9302,19 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         <span class="board-countdown-value" id="board-countdown-value">&mdash;</span>
       </div>
 
-      <button class="board-btn" onclick="confirmGenerateBoardSet()">
-        <span>GENERATE RANDOM SET</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2.1l4 4-4 4M3 12.9v-2a4 4 0 014-4h12.8M7 21.9l-4-4 4-4M21 11.1v2a4 4 0 01-4 4H4.2"/></svg>
-      </button>
+      <div class="board-actions-row">
+        <button class="board-btn" id="board-view-result-btn" style="display:none;" onclick="openBoardResultModal()">
+          <span>&#128202; VIEW RESULT</span>
+        </button>
+        <button class="board-generate-btn" onclick="confirmGenerateBoardSet()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2.1l4 4-4 4M3 12.9v-2a4 4 0 014-4h12.8M7 21.9l-4-4 4-4M21 11.1v2a4 4 0 01-4 4H4.2"/></svg>
+          <span>GENERATE RANDOM SET</span>
+        </button>
+        <button class="board-reset-btn" id="board-reset-btn" style="display:none;" onclick="confirmResetBoardSet()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"/><path d="M10 11v6M14 11v6"/></svg>
+          <span>RESET</span>
+        </button>
+      </div>
 
       <div id="board-subjects">
       </div>
@@ -9098,16 +9330,31 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
     <div class="nick-modal-overlay" id="board-expired-overlay">
       <div class="nick-modal" style="max-width: 420px;">
         <div class="nick-modal-head">
-          <h3>&#9201;&#65039; Mock Board Exam &mdash; Time&rsquo;s Up</h3>
+          <h3 id="board-expired-title">&#9201;&#65039; Mock Board Exam: Time&rsquo;s Up</h3>
           <button class="nick-modal-close" onclick="closeBoardExpiredModal()" aria-label="Close">&times;</button>
         </div>
         <div class="nick-modal-body">
-          <div id="board-expired-body" style="padding: 4px 16px 16px;"></div>
+          <div id="board-expired-body" style="padding: 16px 16px 14px;"></div>
           <div style="padding: 0 16px 16px;">
-            <button type="button" class="board-btn" style="width:100%; justify-content:center;" onclick="closeBoardExpiredModal(); confirmGenerateBoardSet();">
+            <button type="button" class="board-btn" style="width:100%; justify-content:center; margin:0;" onclick="closeBoardExpiredModal(); confirmGenerateBoardSet();">
               <span>START A NEW SET</span>
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- mock board exam: overall result popup, shown once all 6
+         subjects are scored. Closing it keeps every score and the result
+         (the VIEW RESULT button reopens it). Closed with the X button. ---- -->
+    <div class="nick-modal-overlay" id="board-result-overlay">
+      <div class="nick-modal" style="max-width: 420px;">
+        <div class="nick-modal-head">
+          <h3>Mock Board Exam Result</h3>
+          <button class="nick-modal-close" onclick="closeBoardResultModal()" aria-label="Close">&times;</button>
+        </div>
+        <div class="nick-modal-body">
+          <div id="board-result-modal-body" style="padding: 16px 16px 20px;"></div>
         </div>
       </div>
     </div>
@@ -9203,9 +9450,9 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
             <span class="wings-balance-label">YOUR BALANCE</span>
             <span class="wings-balance-amount" id="shop-wings-balance">— 🪽</span>
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <button class="topbar-nav-btn" onclick="openBuyWingsModal()">+ Buy Wings</button>
-              <button class="topbar-nav-btn" id="shop-tab-history" onclick="openWingsHistoryModal()">History</button>
-              <button class="topbar-nav-btn" id="shop-tab-hangar-shortcut" onclick="showHangar()">📦 Hangar</button>
+              <button class="topbar-nav-btn icon-only" title="Buy Wings" aria-label="Buy Wings" onclick="openBuyWingsModal()">🪽</button>
+              <button class="topbar-nav-btn icon-only" id="shop-tab-history" title="History" aria-label="History" onclick="openWingsHistoryModal()">🧾</button>
+              <button class="topbar-nav-btn icon-only" id="shop-tab-hangar-shortcut" title="Hangar" aria-label="Hangar" onclick="showHangar()">📦</button>
             </div>
           </div>
 
@@ -10324,6 +10571,7 @@ Answer: C</pre>
         };
         try {
           nsRef('presence/' + pKey).update({ avatar: updatedUser.avatar });
+          nsRef('nicknames/' + pKey).update({ avatar: updatedUser.avatar });
         } catch (err) {}
       }
 
@@ -11504,7 +11752,7 @@ Answer: C</pre>
       unreadChatCount = 0;
       updateUnreadBadge();
       resetChatForAccountSwitch();
-      userWallet = { wings: 0, ownedBorders: {}, ownedAnimations: {}, ownedModels: {}, modelOrder: [], equippedBorder: null, equippedAnimation: null, equippedModel: null };
+      userWallet = { wings: 0, ownedBorders: {}, ownedAnimations: {}, ownedModels: {}, modelOrder: [], equippedBorder: null, equippedAnimation: null, equippedModel: null, equippedModels: [] };
       walletLoaded = false;
       pendingDailyClaim = null;
       updateShopWingsBalanceDisplay();
@@ -11563,6 +11811,7 @@ Answer: C</pre>
     //         }
     //       },
     //       "presence": { ".read": true, ".write": true },
+    //       "nicknames": { ".read": true, ".write": true },
     //       "banned": { ".read": true, ".write": true },
     //       "bannedMeta": { ".read": true, ".write": true },
     //       "stats": {
@@ -12286,6 +12535,15 @@ Answer: C</pre>
             online: false,
             lastSeen: firebase.database.ServerValue.TIMESTAMP
           });
+          // Keep the Firebase roster (nsRef('nicknames'), see
+          // refreshNicknameListFromBackend below) up to date every time this
+          // account connects — this is what lets the sidebar list read
+          // straight from Firebase instead of Apps Script.
+          nsRef('nicknames/' + presenceKey(user.nickname)).update({
+            nickname: user.nickname,
+            avatar: user.avatar || '✈️'
+          });
+
           myPresenceRef.set({
             nickname: user.nickname,
             avatar: user.avatar || '✈️',
@@ -12303,6 +12561,7 @@ Answer: C</pre>
             equippedAnimation: (userWallet && userWallet.equippedAnimation) || null,
             ownedModels: (userWallet && userWallet.ownedModels) || {},
             modelOrder: (userWallet && userWallet.modelOrder) || [],
+            equippedModels: (userWallet && userWallet.equippedModels) || [],
             lastSeen: firebase.database.ServerValue.TIMESTAMP
           });
         });
@@ -12867,6 +13126,10 @@ Answer: C</pre>
         : ((signedIn && walletLoaded) ? (animClassFor(userWallet.equippedAnimation) || '') : '');
       const bannerCss = profileBackgroundCss(signedIn ? myProfile.background : null);
       const categoryLabel = category === 'borders' ? 'Avatar border' : category === 'animations' ? 'Name animation' : category === 'models' ? 'Aircraft model' : 'Item';
+      const isOwnedForNote = ownsShopItem(category, id);
+      const previewNoteText = isOwnedForNote
+        ? "Preview only. Nothing's equipped yet."
+        : "Preview only. Nothing's bought or equipped yet.";
 
       document.getElementById('shop-item-preview-body').innerHTML = `
         <div class="profile-card-banner" style="background:${bannerCss};">
@@ -12880,7 +13143,7 @@ Answer: C</pre>
         <div class="profile-card-body">
           <div class="profile-card-nickname ${animClass}" data-text="${escapeHtml(nickname)}">${escapeHtml(nickname)}</div>
           <div class="profile-card-divider"></div>
-          <p class="profile-card-section-label">Preview only. Nothing's bought or equipped yet.</p>
+          <p class="profile-card-section-label">${previewNoteText}</p>
         </div>
       `;
       document.getElementById('shop-item-preview-overlay').classList.add('visible');
@@ -13037,7 +13300,7 @@ Answer: C</pre>
       sweepStalePendingWingsPurchases();
     }
 
-    let userWallet = { wings: 0, ownedBorders: {}, ownedAnimations: {}, ownedModels: {}, modelOrder: [], equippedBorder: null, equippedAnimation: null, equippedModel: null };
+    let userWallet = { wings: 0, ownedBorders: {}, ownedAnimations: {}, ownedModels: {}, modelOrder: [], equippedBorder: null, equippedAnimation: null, equippedModel: null, equippedModels: [] };
     let walletLoaded = false;
     let walletListenerRef = null;
     // Tracks the last wings total we saw, so the realtime listener can tell
@@ -13265,6 +13528,40 @@ Answer: C</pre>
       models: { ownedKey: 'ownedModels', equippedKey: 'equippedModel' }
     };
 
+    // Aircraft models show up on the profile's "Aircraft Collections" grid
+    // only once equipped from the Hangar — same idea as equipping a border
+    // or animation, but as a small set of slots instead of just one, since
+    // showing off more than one plane at a time is the whole point. Capped
+    // at MAX_EQUIPPED_MODELS long-term; EQUIPPED_MODELS_AVAILABLE is how
+    // many of those slots are actually open right now (raise this — not
+    // the max — when more slots unlock).
+    const MAX_EQUIPPED_MODELS = 4;
+    const EQUIPPED_MODELS_AVAILABLE = 2;
+
+    function isModelEquipped(id) {
+      return !!(userWallet.equippedModels && userWallet.equippedModels.indexOf(id) !== -1);
+    }
+
+    function toggleEquipModel(id) {
+      if (!walletLoaded || !ownsShopItem('models', id)) return;
+      if (!userWallet.equippedModels) userWallet.equippedModels = [];
+      const idx = userWallet.equippedModels.indexOf(id);
+      if (idx !== -1) {
+        userWallet.equippedModels.splice(idx, 1);
+      } else {
+        if (userWallet.equippedModels.length >= EQUIPPED_MODELS_AVAILABLE) {
+          showWingsToast(`🔒 Only ${EQUIPPED_MODELS_AVAILABLE} aircraft can be equipped right now — unequip one first`);
+          return;
+        }
+        userWallet.equippedModels.push(id);
+      }
+      saveWallet();
+      applyEquippedCosmeticsToPresence();
+      renderHangarIfVisible();
+      renderShopIfVisible();
+      try { renderNicknameListFromCache(); } catch (err) { console.error('Nickname list refresh error:', err); }
+    }
+
     // Items pulled from the store stay revoked for anyone who already
     // bought them — deleting an entry from SHOP_ITEMS only stops new
     // purchases, it doesn't touch ownership already saved in a wallet.
@@ -13336,6 +13633,7 @@ Answer: C</pre>
             equippedBorder: data.equippedBorder || null,
             equippedAnimation: data.equippedAnimation || null,
             equippedModel: data.equippedModel || null,
+            equippedModels: Array.isArray(data.equippedModels) ? data.equippedModels : [],
             lastLoginDate: data.lastLoginDate || null,
             loginStreak: data.loginStreak || 0
           };
@@ -13691,7 +13989,8 @@ Answer: C</pre>
           // channel for "things about me other people's clients need to
           // render", rather than adding a second one just for models.
           ownedModels: userWallet.ownedModels || {},
-          modelOrder: userWallet.modelOrder || []
+          modelOrder: userWallet.modelOrder || [],
+          equippedModels: userWallet.equippedModels || []
         });
       } catch (err) {}
     }
@@ -13905,7 +14204,7 @@ Answer: C</pre>
       function renderOwnedCard(category, rawItem) {
         const item = withTierOverride(category, rawItem);
         const equippedField = userWallet[SHOP_CATEGORY_FIELDS[category].equippedKey];
-        const isEquipped = equippedField === item.id;
+        const isEquipped = category === 'models' ? isModelEquipped(item.id) : equippedField === item.id;
         const previewHtml = category === 'borders'
           ? `<span class="shop-item-preview ${item.cssClass}">✈️</span>`
           : category === 'animations'
@@ -13914,17 +14213,21 @@ Answer: C</pre>
           ? `<span class="shop-item-preview model-preview"><model-viewer src="${item.modelSrc}" alt="${escapeHtml(item.name)}" auto-rotate rotation-per-second="25deg" disable-zoom interaction-prompt="none" shadow-intensity="0" exposure="1"></model-viewer></span>`
           : `<span class="shop-item-preview bg-preview" style="background-image:url('${item.imageUrl}')"></span>`;
 
-        // Models don't equip onto the profile look like borders/animations
-        // do (same reasoning as openShopItemPreview above) — so
-        // instead of an EQUIP toggle, their Hangar card gets a VIEW button
-        // that opens the actual 3D model, same as tapping one of these in
-        // the Aircraft Collections grid on a profile card.
+        // Models now equip the same way borders/animations do — up to
+        // EQUIPPED_MODELS_AVAILABLE at once (see toggleEquipModel) — so
+        // equipped ones show up on the profile's Aircraft Collections grid.
+        // Tapping the card itself (not this button) still opens the 3D
+        // preview, same as every other category.
         const actionsHtml = category === 'models'
-          ? `<button class="shop-equip-btn" onclick="openAircraftTilePreview('${item.id}')">VIEW</button>`
-          : `<button class="shop-equip-btn ${isEquipped ? 'equipped' : ''}" onclick="toggleEquipCosmetic('${category}','${item.id}')">${isEquipped ? 'EQUIPPED' : 'EQUIP'}</button>`;
+          ? `<button class="shop-equip-btn ${isEquipped ? 'equipped' : ''}" onclick="event.stopPropagation(); toggleEquipModel('${item.id}')">${isEquipped ? 'EQUIPPED' : 'EQUIP'}</button>`
+          : `<button class="shop-equip-btn ${isEquipped ? 'equipped' : ''}" onclick="event.stopPropagation(); toggleEquipCosmetic('${category}','${item.id}')">${isEquipped ? 'EQUIPPED' : 'EQUIP'}</button>`;
 
+        // Whole card is clickable to preview the item (same popup the
+        // Flight Store card uses) — the buttons above stop propagation so
+        // clicking EQUIP/VIEW (or the admin actions) doesn't also pop the
+        // preview open.
         return `
-          <div class="shop-item-card">
+          <div class="shop-item-card" onclick="openShopItemPreview('${category}','${item.id}')">
             ${shopItemAdminActionsHtml(category, item)}
             ${tierBadgeHtml(item)}
             ${previewHtml}
@@ -14014,17 +14317,17 @@ Answer: C</pre>
           // buy button.
           actionsHtml = `<button class="shop-equip-btn equipped" disabled>✓ Owned</button>`;
         } else if (!walletLoaded) {
-          actionsHtml = `<button class="shop-buy-wings-btn" disabled>Loading…</button>`;
+          actionsHtml = `<button class="shop-buy-wings-btn shop-item-buy-btn" disabled>Loading…</button>`;
         } else if (item.pricePHP) {
           // Cash-priced items (pesos) route through the cash checkout modal
           // instead of spending Wings — currently unused since every item is
           // Wings-priced, but kept so pesos pricing can return per-item later.
           actionsHtml = `
-            <button class="shop-buy-wings-btn shop-buy-cash-item-btn" onclick="event.stopPropagation(); openShopItemPayModal('${category}','${item.id}')">₱${item.pricePHP.toLocaleString()}</button>
+            <button class="shop-buy-wings-btn shop-buy-cash-item-btn shop-item-buy-btn" onclick="event.stopPropagation(); openShopItemPayModal('${category}','${item.id}')">₱${item.pricePHP.toLocaleString()}</button>
           `;
         } else {
           actionsHtml = `
-            <button class="shop-buy-wings-btn" onclick="event.stopPropagation(); buyWithWings('${category}','${item.id}')">${item.priceWings} 🪽</button>
+            <button class="shop-buy-wings-btn shop-item-buy-btn" onclick="event.stopPropagation(); buyWithWings('${category}','${item.id}')">${item.priceWings} 🪽</button>
           `;
         }
 
@@ -14977,64 +15280,93 @@ Answer: C</pre>
     let lastNicknameListData = null;
     let nicknameListRefreshTimer = null;
 
-    // Pulls the authoritative roster from the backend and re-renders. This
-    // is the single source of truth for "which accounts actually exist" —
-    // unlike presence, it's kept in sync with account creation/deletion on
-    // the backend, so it naturally excludes deleted accounts even if their
-    // old presence node is still lingering in Firebase.
-    //
-    // A single failed/timed-out attempt is very often just a slow Apps
-    // Script cold-start (see jsonpRequest's comment above) rather than an
-    // actual connectivity problem — the backend answers fine, it just
-    // took longer than the default 10s timeout to spin up. So the first
-    // failure retries once automatically, with a longer timeout, before
-    // actually reporting failure — that way a normal cold-start delay
-    // doesn't surface "Radar contact lost" for a backend that was about
-    // to answer anyway.
-    function refreshNicknameListFromBackend(onDone, isRetry) {
+    // ---- roster (sidebar "reviewees" list) ----
+    // Used to live-fetch this from the Apps Script backend on every open
+    // (jsonpRequest({action:'listNicknames'})), which meant every sidebar
+    // open/refresh waited on an Apps Script round-trip — often several
+    // seconds on a cold start, since Apps Script web apps spin down between
+    // calls and need to "wake up" again. The roster now lives at
+    // nsRef('nicknames') in Firebase instead (written by every signed-in
+    // client on connect/reconnect — see initPresence — and on avatar
+    // change), the same realtime database presence already uses. Reading it
+    // is a plain live subscription, so the sidebar renders as fast as
+    // presence does, with no backend cold-start in the critical path.
+    let nicknamesRosterRef = null;
+    let nicknamesLegacyBackfillDone = false;
+
+    // One-time, best-effort background pass: pulls the full roster from the
+    // old Apps Script backend and writes into Firebase any nickname that
+    // isn't already there. This exists only to backfill accounts that
+    // registered before this change and haven't reconnected since (so
+    // initPresence hasn't had a chance to write them yet) — it never
+    // overwrites anything Firebase already has, and it never blocks or
+    // delays what's shown in the sidebar, which renders from Firebase alone.
+    function backfillNicknamesFromLegacyBackend() {
+      if (nicknamesLegacyBackfillDone) return;
+      nicknamesLegacyBackfillDone = true;
       jsonpRequest({ action: 'listNicknames' }, (data) => {
-        if (!data || !Array.isArray(data.nicknames)) {
-          if (!isRetry) {
-            refreshNicknameListFromBackend(onDone, true);
-            return;
-          }
-          if (onDone) onDone(false);
-          return;
-        }
-        lastNicknameListData = data.nicknames;
-        renderNicknameListFromCache();
+        if (!data || !Array.isArray(data.nicknames)) return;
+        data.nicknames.forEach((item) => {
+          const nickname = typeof item === 'string' ? item : item.nickname;
+          if (!nickname) return;
+          const avatar = typeof item === 'string' ? '✈️' : (item.avatar || '✈️');
+          nsRef('nicknames/' + presenceKey(nickname)).transaction((current) => {
+            if (current) return; // already present — leave the live entry alone
+            return { nickname, avatar };
+          });
+        });
+      }, { timeoutMs: 20000 });
+    }
+
+    // Subscribes to the live roster (once) and renders on every change.
+    // onDone fires once the first snapshot has arrived (or on timeout), the
+    // same shape as the old backend-fetch version so the existing caller
+    // (showNicknameList) doesn't need to change.
+    function refreshNicknameListFromBackend(onDone) {
+      if (!chatConfigIsFilledIn()) {
+        if (onDone) onDone(false);
+        return;
+      }
+      try {
+        ensureFirebaseApp();
+      } catch (err) {
+        if (onDone) onDone(false);
+        return;
+      }
+
+      if (!nicknamesRosterRef) {
+        nicknamesRosterRef = nsRef('nicknames');
+        nicknamesRosterRef.on('value', (snap) => {
+          lastNicknameListData = Object.values(snap.val() || {});
+          renderNicknameListFromCache();
+        }, (err) => {
+          console.error('Nickname roster error:', err);
+        });
+        // Kick off the legacy backfill in the background the first time
+        // anyone opens the sidebar — never on the critical path.
+        backfillNicknamesFromLegacyBackend();
+      }
+
+      if (lastNicknameListData) {
         if (onDone) onDone(true);
-      }, isRetry ? { timeoutMs: 20000 } : undefined);
+        return;
+      }
+      // First subscription of the session: wait briefly for Firebase's
+      // initial snapshot rather than reporting failure immediately.
+      const start = Date.now();
+      (function waitForFirstSnapshot() {
+        if (lastNicknameListData) { if (onDone) onDone(true); return; }
+        if (Date.now() - start > 8000) { if (onDone) onDone(false); return; }
+        setTimeout(waitForFirstSnapshot, 150);
+      })();
     }
 
-    // Presence is realtime, so it's a good SIGNAL that the roster might be
-    // stale (a nickname showed up that we haven't seen before) — but it's
-    // not itself trustworthy as a source of roster entries, since a
-    // deleted account's presence node can keep lingering in Firebase long
-    // after the account itself is gone. So on an unrecognized nickname we
-    // re-fetch the real roster from the backend instead of fabricating a
-    // row from the presence data directly; that re-fetch will correctly
-    // pick up genuinely new accounts and correctly omit deleted ones.
-    function mergeNewPresenceNicknamesIntoList() {
-      // Roster hasn't loaded yet (jsonpRequest still in flight) — nothing
-      // to compare against yet. showNicknameList()'s own callback will
-      // render whatever's current once it lands.
-      if (!lastNicknameListData) return;
-
-      const known = new Set(
-        lastNicknameListData.map((item) => (typeof item === 'string' ? item : item.nickname))
-      );
-      const hasUnknown = Object.values(latestPresenceData).some((p) => p && p.nickname && !known.has(p.nickname));
-      if (!hasUnknown) return;
-
-      // Debounce: a burst of presence changes (e.g. several people
-      // reconnecting at once) should trigger one re-fetch, not one per entry.
-      if (nicknameListRefreshTimer) return;
-      nicknameListRefreshTimer = setTimeout(() => {
-        nicknameListRefreshTimer = null;
-        refreshNicknameListFromBackend();
-      }, 800);
-    }
+    // No longer needed: the roster above is itself a live Firebase
+    // subscription, so a new presence entry's nickname already lands in
+    // lastNicknameListData (via the same initPresence write) without any
+    // extra merging step. Kept as a no-op so the presence 'value' handler
+    // that used to call this doesn't need to change.
+    function mergeNewPresenceNicknamesIntoList() {}
 
     function showNicknameList() {
       const body = document.getElementById('nick-modal-body');
@@ -15042,27 +15374,6 @@ Answer: C</pre>
 
       refreshNicknameListFromBackend((ok) => {
         if (!ok) body.innerHTML = '<div class="nick-modal-status">Radar contact lost. Could not detect anyone right now.</div>';
-      });
-    }
-
-    // Manual refresh button in the sidebar header — for the rare case
-    // where the list never loaded (or got stuck) on its own. Spins the
-    // button briefly for feedback and shows the same "Sweeping radar…" /
-    // "Radar contact lost" states as the initial load.
-    function manualRefreshNicknameList() {
-      const btn = document.getElementById('reviewees-refresh-btn');
-      const body = document.getElementById('nick-modal-body');
-      if (btn) {
-        btn.classList.remove('is-spinning');
-        // Force reflow so re-adding the class restarts the animation on repeat clicks.
-        void btn.offsetWidth;
-        btn.classList.add('is-spinning');
-      }
-      if (body) body.innerHTML = '<div class="nick-modal-status">Sweeping radar&hellip;</div>';
-
-      refreshNicknameListFromBackend((ok) => {
-        if (!ok && body) body.innerHTML = '<div class="nick-modal-status">Radar contact lost. Could not detect anyone right now.</div>';
-        if (btn) btn.classList.remove('is-spinning');
       });
     }
 
@@ -16275,13 +16586,15 @@ Answer: C</pre>
       }
 
       // Shown on every profile card, not just the owner's own — for the
-      // owner it reads live from the wallet (userWallet.ownedModels); for
-      // anyone else it reads that account's ownedModels off presence, which
-      // is now synced the same way equippedBorder/equippedAnimation already
-      // were (see applyEquippedCosmeticsToPresence). If a still-online
-      // account hasn't picked up that sync yet (e.g. an old tab that hasn't
-      // reconnected since this shipped), its presence entry just won't have
-      // ownedModels yet and the grid falls back to the empty state below.
+      // owner it reads live from the wallet (userWallet.ownedModels /
+      // .equippedModels); for anyone else it reads that account's synced
+      // presence data (see applyEquippedCosmeticsToPresence). Only
+      // equipped aircraft are shown here (equip up to EQUIPPED_MODELS_AVAILABLE
+      // from the Hangar) — owning a model no longer puts it on the profile
+      // by itself. If a still-online account hasn't picked up that sync yet
+      // (e.g. an old tab that hasn't reconnected since this shipped), its
+      // presence entry just won't have equippedModels yet and the grid
+      // falls back to the empty state below.
       //
       // The DATA still always comes from the wallet for isOwn (it's the
       // live source of truth regardless of how this card was opened), but
@@ -16289,18 +16602,18 @@ Answer: C</pre>
       // purposes is showEditUi, not raw isOwn — same distinction
       // showEditUi already draws for the background/bio edit buttons above.
       // Opened from the bottom sidebar card, showEditUi is true and this
-      // renders the full owner experience: the "No aircraft in your
-      // collection yet" prompt, drag-to-reorder, tiles opening the gated
-      // 3D Viewer. Opened read-only from the Reviewees list, showEditUi is
-      // false, so an empty collection just renders nothing (like it would
-      // on anyone else's profile) and tiles fall back to the plain preview
-      // popup — the sidebar-list preview of your own profile should always
-      // look exactly like what everyone else sees when they open it, not
-      // like your own management view.
+      // renders the full owner experience: the "No aircraft equipped yet"
+      // prompt, drag-to-reorder, tiles opening the gated 3D Viewer. Opened
+      // read-only from the Reviewees list, showEditUi is false, so an empty
+      // collection just renders nothing (like it would on anyone else's
+      // profile) and tiles fall back to the plain preview popup — the
+      // sidebar-list preview of your own profile should always look exactly
+      // like what everyone else sees when they open it, not like your own
+      // management view.
       const aircraftOwned = isOwn ? userWallet.ownedModels : (presenceEntry && presenceEntry.ownedModels);
       const aircraftDataLoaded = isOwn ? walletLoaded : !!presenceEntry;
-      const aircraftOrder = isOwn ? (userWallet.modelOrder || []) : (presenceEntry && presenceEntry.modelOrder) || [];
-      const aircraftCollectionHtml = renderAircraftCollectionHtml(aircraftOwned, aircraftDataLoaded, showEditUi, aircraftOrder);
+      const aircraftEquipped = isOwn ? (userWallet.equippedModels || []) : ((presenceEntry && presenceEntry.equippedModels) || []);
+      const aircraftCollectionHtml = renderAircraftCollectionHtml(aircraftOwned, aircraftDataLoaded, showEditUi, aircraftEquipped);
 
       // "Co-Pilot" / "Crewmates" links — clicking either opens a roster
       // popup of THIS profile's own Co-Pilot + Crewmates (not the
@@ -17125,6 +17438,11 @@ Answer: C</pre>
     // ---- 4-hour countdown timer for each mock exam ----
     const EXAM_DURATION_SEC = 4 * 60 * 60; // 4 hours
     const TIMER_STORAGE_PREFIX = 'examTimerStart:';
+    // Exam cards inside the Mock Board Exam page keep their OWN timer,
+    // stored under this extra scope, so a countdown started from the
+    // Mock Board never shows up on the same exam in the regular Mock Exam
+    // lists (and vice versa).
+    const BOARD_TIMER_SCOPE = 'board:';
 
     // Exam timers and answer progress were being saved to plain localStorage
     // keys with no per-account scoping, so on a shared device, whichever
@@ -17162,7 +17480,10 @@ Answer: C</pre>
       // so prefer that when present.
       const onclick = card.getAttribute('onclick') || '';
       const idMatch = onclick.match(/openInAppMockExam\(\s*['"]([^'"]+)['"]/);
-      if (idMatch) return 'inapp:' + idMatch[1];
+      // Cards on the Mock Board Exam page get a separate timer key from
+      // the same exam's card in the Mock Exam lists.
+      const scope = (card.closest && card.closest('#view-board')) ? BOARD_TIMER_SCOPE : '';
+      if (idMatch) return scope + 'inapp:' + idMatch[1];
 
       const raw = card.getAttribute('href') || card.id || '';
       // Normalize so the exact same exam link always maps to the exact
@@ -17170,7 +17491,38 @@ Answer: C</pre>
       // Board's randomly-picked card, etc.) — trims stray whitespace and
       // a trailing slash so two visually-identical links can never end up
       // as two separate, out-of-sync timers.
-      return raw.trim().replace(/\/+$/, '');
+      return scope + raw.trim().replace(/\/+$/, '');
+    }
+
+    // Storage key of the Mock Board timer for one exam id (same key
+    // examKey() gives that exam's card on the Mock Board page).
+    function boardExamTimerKey(examId) {
+      return userScopedKey(TIMER_STORAGE_PREFIX + BOARD_TIMER_SCOPE + 'inapp:' + examId);
+    }
+
+    // Wipes the running timers AND the saved answers/submitted state of
+    // Mock Board exams, so a replaced (or re-picked) exam comes back fresh:
+    // full-duration timer, blank questions. Pass a list of exam ids to
+    // clear just those; omit it to clear every Mock Board exam for the
+    // signed-in account. (Mock Exam lists keep their own, untouched.)
+    function clearBoardExamTimers(examIds) {
+      try {
+        if (Array.isArray(examIds)) {
+          examIds.forEach(id => {
+            localStorage.removeItem(boardExamTimerKey(id));
+            localStorage.removeItem(examProgressKey(id, true));
+          });
+        } else {
+          const prefixes = [
+            userScopedKey(TIMER_STORAGE_PREFIX + BOARD_TIMER_SCOPE),
+            userScopedKey(GFORM_PROGRESS_PREFIX + 'board:')
+          ];
+          Object.keys(localStorage)
+            .filter(k => prefixes.some(pre => k.indexOf(pre) === 0))
+            .forEach(k => localStorage.removeItem(k));
+        }
+      } catch (e) {}
+      tickAllExamTimers();
     }
 
     // For an in-app exam's list card, checks whether that exam has already
@@ -17181,7 +17533,7 @@ Answer: C</pre>
       const onclick = card.getAttribute('onclick') || '';
       const idMatch = onclick.match(/openInAppMockExam\(\s*['"]([^'"]+)['"]/);
       if (!idMatch) return false;
-      const saved = loadExamProgress(idMatch[1]);
+      const saved = loadExamProgress(idMatch[1], !!card.closest('#view-board'));
       return !!(saved && saved.submitted);
     }
 
@@ -17206,12 +17558,12 @@ Answer: C</pre>
         resetBtn.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
+          if (card.classList.contains('board-past')) return;
           const key = userScopedKey(TIMER_STORAGE_PREFIX + examKey(card));
           localStorage.removeItem(key);
           // Refresh every exam-card sharing this key right away (not just
-          // this one) — e.g. resetting a Mock Board pick must also clear
-          // the badge on the same exam's card in the regular Mock Exam
-          // list instantly, not on the next 1s tick.
+          // this one), not on the next 1s tick. Mock Board cards have
+          // their own key, so this never touches the Mock Exam lists.
           tickAllExamTimers();
           if (formPopupTimerKey === key) stopFormPopupTimer();
 
@@ -17233,21 +17585,42 @@ Answer: C</pre>
               if (backView) backView.classList.add('visible');
               gformReturnViewId = null;
             }
-            try { localStorage.removeItem(userScopedKey(GFORM_PROGRESS_PREFIX + examId)); } catch (err) {}
-            clearBoardScore(examId);
+            const isBoardCard = !!card.closest('#view-board');
+            try { localStorage.removeItem(examProgressKey(examId, isBoardCard)); } catch (err) {}
+            // Only a Mock Board card's own reset touches the board score.
+            if (isBoardCard) clearBoardScore(examId);
           }
         });
+
+        // TEMPORARY test helper: a per-exam "FINISH NOW" button on the
+        // Mock Board Exam page (see BOARD_INSTANT_FINISH_BTN).
+        let finishBtn = null;
+        if (BOARD_INSTANT_FINISH_BTN && card.closest('#view-board')) {
+          finishBtn = document.createElement('button');
+          finishBtn.type = 'button';
+          finishBtn.className = 'exam-timer-reset exam-instant-finish';
+          finishBtn.textContent = 'FINISH NOW';
+          finishBtn.title = 'TEMPORARY: finish this exam instantly with a random score';
+          finishBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            instantFinishBoardExam(card);
+          });
+        }
 
         const goEl = row.querySelector('.exam-go');
         if (goEl) {
           row.insertBefore(timerEl, goEl);
           row.insertBefore(resetBtn, goEl);
+          if (finishBtn) row.insertBefore(finishBtn, goEl);
         } else {
           row.appendChild(timerEl);
           row.appendChild(resetBtn);
+          if (finishBtn) row.appendChild(finishBtn);
         }
 
         card.addEventListener('click', () => {
+          if (card.classList.contains('board-past')) return;
           const key = userScopedKey(TIMER_STORAGE_PREFIX + examKey(card));
           if (!localStorage.getItem(key) && !isCardExamAlreadyFinished(card)) {
             localStorage.setItem(key, String(Date.now()));
@@ -17257,6 +17630,54 @@ Answer: C</pre>
 
         updateExamTimer(card, timerEl);
       });
+    }
+
+    // ---- TEMPORARY test helper ----
+    // Set to false (or delete this block and the button code in
+    // initExamTimers) to remove the per-exam FINISH NOW buttons.
+    const BOARD_INSTANT_FINISH_BTN = true;
+
+    // Finishes one Mock Board exam instantly: fills in answers that add up
+    // to a random score (40-100%), saves the exam as submitted (so opening
+    // it later shows the graded answer key), stops that exam's timer, and
+    // records the score on the board exactly like a real submission.
+    function instantFinishBoardExam(card) {
+      if (card.classList.contains('board-past')) return;
+      const m = /openInAppMockExam\('([^']+)'/.exec(card.getAttribute('onclick') || '');
+      if (!m) return;
+      const examId = m[1];
+      const exam = getMockExam(examId);
+      if (!exam || !exam.questions || !exam.questions.length) {
+        alert('This exam has no questions to score.');
+        return;
+      }
+      const total = exam.questions.length;
+      const score = Math.round(total * (0.4 + Math.random() * 0.6));
+
+      // Pick which questions get the right answer.
+      const order = exam.questions.map((_, i) => i).sort(() => Math.random() - 0.5);
+      const correctSet = new Set(order.slice(0, score));
+      const answers = {};
+      let actualScore = 0;
+      exam.questions.forEach((item, i) => {
+        const wrong = (item.options || []).filter(o => o !== item.correct);
+        if (correctSet.has(i) || !wrong.length) {
+          answers[i] = item.correct;
+          actualScore++;
+        } else {
+          answers[i] = wrong[Math.floor(Math.random() * wrong.length)];
+        }
+      });
+
+      try {
+        localStorage.setItem(
+          examProgressKey(examId, true),
+          JSON.stringify({ answers, pinned: [], submitted: true })
+        );
+        localStorage.removeItem(userScopedKey(TIMER_STORAGE_PREFIX + examKey(card)));
+      } catch (e) {}
+      tickAllExamTimers();
+      recordBoardScore(examId, actualScore, total);
     }
 
     function updateExamTimer(card, timerEl) {
@@ -18573,20 +18994,20 @@ Answer: C</pre>
 
     initTrivia();
 
-    function toggleSupport() {
-      const body = document.getElementById('support-body');
-      const arrow = document.getElementById('support-arrow');
-      if (!body) return;
-      body.classList.toggle('open');
-      if (arrow) arrow.classList.toggle('open');
+    function openInfoPopup(id) {
+      const ov = document.getElementById(id);
+      if (!ov) return;
+      ov.classList.add('visible');
+      ov.setAttribute('aria-hidden', 'false');
+      const body = ov.querySelector('.ai-note-body');
+      if (body) body.scrollTop = 0;
     }
 
-    function toggleDisclaimer() {
-      const body = document.getElementById('disclaimer-body');
-      const arrow = document.getElementById('disclaimer-arrow');
-      if (!body) return;
-      body.classList.toggle('open');
-      if (arrow) arrow.classList.toggle('open');
+    function closeInfoPopup(id) {
+      const ov = document.getElementById(id);
+      if (!ov) return;
+      ov.classList.remove('visible');
+      ov.setAttribute('aria-hidden', 'true');
     }
 
     function toggleBeta() {
@@ -20815,6 +21236,16 @@ Answer: C</pre>
     let gformReturnScrollY = 0;
     const GFORM_PROGRESS_PREFIX = 'gformProgress_';
 
+    // Answers / pins / submitted state for an exam are saved separately for
+    // the Mock Board Exam page and for the regular Mock Exam lists, so
+    // finishing an exam in one place never marks it finished (or feeds a
+    // score) in the other. Defaults to whichever page the open exam was
+    // launched from; pass true/false to force one.
+    function examProgressKey(examId, board) {
+      const isBoard = (board === undefined) ? (gformReturnViewId === 'view-board') : !!board;
+      return userScopedKey(GFORM_PROGRESS_PREFIX + (isBoard ? 'board:' : '') + examId);
+    }
+
     function saveExamProgress(examId) {
       if (!examId) return;
       const exam = getMockExam(examId);
@@ -20829,13 +21260,13 @@ Answer: C</pre>
       const questionsEl = document.getElementById('gform-questions');
       const submitted = !!(questionsEl && questionsEl.dataset.submitted === 'true');
       try {
-        localStorage.setItem(userScopedKey(GFORM_PROGRESS_PREFIX + examId), JSON.stringify({ answers, pinned, submitted }));
+        localStorage.setItem(examProgressKey(examId), JSON.stringify({ answers, pinned, submitted }));
       } catch (e) {}
     }
 
-    function loadExamProgress(examId) {
+    function loadExamProgress(examId, board) {
       try {
-        const raw = localStorage.getItem(userScopedKey(GFORM_PROGRESS_PREFIX + examId));
+        const raw = localStorage.getItem(examProgressKey(examId, board));
         return raw ? JSON.parse(raw) : null;
       } catch (e) { return null; }
     }
@@ -20921,6 +21352,8 @@ Answer: C</pre>
     }
 
     function openInAppMockExam(examId, examCard) {
+      // Mock Board exams on a finished day can't be opened any more.
+      if (examCard && examCard.classList && examCard.classList.contains('board-past')) return;
       const exam = getMockExam(examId);
       if (!exam) return;
 
@@ -21067,7 +21500,18 @@ Answer: C</pre>
     }
 
     function findExamCardById(examId) {
-      return document.querySelector(`.exam-card[onclick*="openInAppMockExam('${examId}'"]`);
+      // The same exam can have a card in a Mock Exam list AND on the Mock
+      // Board page, each with its own timer — so return the card from the
+      // place the open exam was launched from, not just the first match.
+      const sel = `.exam-card[onclick*="openInAppMockExam('${examId}'"]`;
+      if (gformReturnViewId === 'view-board') {
+        return document.querySelector('#view-board ' + sel);
+      }
+      const all = document.querySelectorAll(sel);
+      for (const c of all) {
+        if (!c.closest('#view-board')) return c;
+      }
+      return null;
     }
 
     function resetExamTimerForExam(examId) {
@@ -21088,8 +21532,8 @@ Answer: C</pre>
       // Clear the saved answers/pins/submitted flag for this exam, then
       // close and reopen it so every question comes back blank and
       // re-enabled instead of showing the old graded state.
-      try { localStorage.removeItem(userScopedKey(GFORM_PROGRESS_PREFIX + examId)); } catch (e) {}
-      clearBoardScore(examId); // the Mock Board score for this exam resets on retake
+      try { localStorage.removeItem(examProgressKey(examId)); } catch (e) {}
+      if (gformReturnViewId === 'view-board') clearBoardScore(examId); // only a Mock Board retake resets the board score
       const overlay = document.getElementById('gform-overlay');
       if (overlay) overlay.remove();
       currentExamId = null;
@@ -21199,7 +21643,15 @@ Answer: C</pre>
       document.getElementById('gform-submit-area').style.display = 'none';
       document.getElementById('gform-questions').scrollTop = 0;
       saveExamProgress(examId);
-      recordBoardScore(examId, score, exam.questions.length);
+
+      // Mock Board Exam: no score popup. The score is recorded for the
+      // board (where it stays hidden until the whole set is finished) and
+      // the exam just closes, back to the board page.
+      if (gformReturnViewId === 'view-board') {
+        recordBoardScore(examId, score, exam.questions.length);
+        closeInAppMockExam();
+        return;
+      }
       showScoreModal(examId, score, exam.questions.length, !!timedOut);
     }
 
@@ -21252,8 +21704,12 @@ Answer: C</pre>
     // in account, same scoping as the exam timers/progress above) so it
     // survives reloads, and expire it after 3 days to match that window.
     const BOARD_SET_STORAGE_KEY = 'boardExamSet';
-    const BOARD_SET_TTL_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
-    const BOARD_DAY_MS = 24 * 60 * 60 * 1000; // 1 day, used to gate each exam day
+    // TEMPORARY TEST MODE: set to false to go back to the real 3-day /
+    // 1-day-per-set timing. While true, the whole set lasts 30s and each
+    // day/set gets 10s, so day unlocks and failures can be seen quickly.
+    const BOARD_FAST_TEST = true;
+    const BOARD_SET_TTL_MS = BOARD_FAST_TEST ? 30 * 1000 : 3 * 24 * 60 * 60 * 1000; // 3 days (30s in test mode)
+    const BOARD_DAY_MS = BOARD_FAST_TEST ? 10 * 1000 : 24 * 60 * 60 * 1000; // 1 day per set (10s in test mode), used to gate each exam day
     let boardSetGeneratedAt = null;
 
     // True once all 6 subjects have a recorded score and calculateBoardResult()
@@ -21262,6 +21718,14 @@ Answer: C</pre>
     // leave the countdown running toward an expiry-wipe that would erase a
     // result you already have.
     let boardSetCompleted = false;
+
+    // Tracks which days' subjects have already had their exam randomly
+    // picked (keyed by day number, e.g. {1: true}). Day 1 is picked the
+    // moment GENERATE RANDOM SET is pressed; Day 2 and Day 3 are each
+    // picked only once that day actually unlocks (see generateDaySubjects /
+    // updateBoardDayLocks below) — so, like a real 3-day board exam,
+    // nobody can see a later day's papers before that day arrives.
+    let boardDaysGenerated = {};
 
     function saveBoardState() {
       try {
@@ -21274,7 +21738,8 @@ Answer: C</pre>
           generatedAt: boardSetGeneratedAt,
           pickedIds,
           boardScores,
-          completed: boardSetCompleted
+          completed: boardSetCompleted,
+          daysGenerated: boardDaysGenerated
         }));
       } catch (e) {}
     }
@@ -21293,29 +21758,40 @@ Answer: C</pre>
           return false;
         }
         boardSetCompleted = !!data.completed;
-        if (!boardSetCompleted && (Date.now() - data.generatedAt) > BOARD_SET_TTL_MS) {
-          // The 3-day window already lapsed while the app was closed (or
-          // on a different tab) — show the same "time's up" popup the
-          // live countdown would have shown, using whatever scores were
-          // recorded before it expired, then clear the closed-out set.
-          // A completed set (all 6 already finished and calculated) skips
-          // this entirely — its clock was already stopped on purpose and
-          // it should never be wiped just for sitting past the deadline.
-          openBoardExpiredModal(data.boardScores || {});
-          clearExpiredBoardSet();
-          return false;
+        if (!boardSetCompleted) {
+          // A day's window may have already closed without both its
+          // subjects finished while the app was closed (or on a different
+          // tab): show the same day-failed popup the live countdown would
+          // have shown, using whatever scores were recorded, then clear the
+          // closed-out set. A completed set (all 6 already finished and
+          // calculated) skips this entirely: its clock was already stopped
+          // on purpose and it should never be wiped just for sitting past
+          // a deadline.
+          const failedDay = findFailedDay(data.generatedAt, data.boardScores || {});
+          if (failedDay !== null) {
+            failBoardDay(failedDay, data.boardScores || {});
+            return false;
+          }
         }
         currentBoardSet = {};
-        let anyPicked = false;
         subjects.forEach(s => {
           const examId = data.pickedIds ? data.pickedIds[s.key] : null;
           const cache = LIVE_MOCK_EXAM_CACHE[s.key] || {};
           currentBoardSet[s.key] = (examId && cache[examId]) ? [examId, cache[examId]] : null;
-          if (currentBoardSet[s.key]) anyPicked = true;
         });
         boardScores = data.boardScores || {};
         boardSetGeneratedAt = data.generatedAt;
-        return anyPicked;
+        // Sets saved before per-day generation existed have no
+        // daysGenerated field at all — everything was picked upfront back
+        // then, so treat every day as already generated rather than
+        // re-randomizing days that were already shown.
+        if (data.daysGenerated) {
+          boardDaysGenerated = { ...data.daysGenerated };
+        } else {
+          boardDaysGenerated = {};
+          subjects.forEach(s => { boardDaysGenerated[s.day] = true; });
+        }
+        return Object.keys(boardDaysGenerated).length > 0;
       } catch (e) {
         return false;
       }
@@ -21364,6 +21840,66 @@ Answer: C</pre>
       return boardSetGeneratedAt ? boardSetGeneratedAt + (day - 1) * BOARD_DAY_MS : null;
     }
 
+    // ---- per-day failure ----
+    // A real 3-day board exam doesn't wait for the whole 3 days to run out
+    // to fail you: missing a single day's subjects ends the attempt right
+    // then. Day 1's window is the first 24h, Day 2's the next 24h, Day 3's
+    // the final 24h (which lines up exactly with the old full BOARD_SET_TTL_MS
+    // deadline), so a day's window closes the moment the day after it would
+    // unlock (or, for the last day, at the full 3-day mark).
+    function boardDayNumbers() {
+      return [...new Set(subjects.map(s => s.day))].sort((a, b) => a - b);
+    }
+
+    function isDaySubjectsComplete(day, scores) {
+      scores = scores || {};
+      return subjects.filter(s => s.day === day).every(s => scores[s.key]);
+    }
+
+    // Walks the days in order and returns the first one whose window has
+    // fully closed without both of its subjects finished, or null if
+    // nothing has been missed (yet). Only the first missed day matters:
+    // once one day is failed the whole set is over regardless of later days.
+    function findFailedDay(generatedAt, scores) {
+      if (!generatedAt) return null;
+      for (const day of boardDayNumbers()) {
+        const windowEnd = generatedAt + day * BOARD_DAY_MS;
+        if (Date.now() < windowEnd) break; // later days haven't closed yet either
+        if (!isDaySubjectsComplete(day, scores)) return day;
+      }
+      return null;
+    }
+
+    // Ends the whole 3-day attempt the moment a day is missed: captures
+    // which of that day's subjects were never finished (before anything is
+    // wiped), clears/resets the entire generated set automatically, and
+    // shows the day-failed popup. The popup has no outside-click-to-close
+    // and stays up until the reviewee dismisses it themselves.
+    function failBoardDay(day, scores) {
+      const missing = subjects.filter(s => s.day === day && !(scores && scores[s.key])).map(s => s.name);
+      clearExpiredBoardSet();
+      openBoardExpiredModal(day, missing);
+    }
+
+    // A day is "past" once the next day has unlocked: its window has closed
+    // (and it can only have closed because its subjects were finished,
+    // otherwise the whole set would already have failed), so its exams are
+    // done and no longer clickable.
+    // Once every subject is finished (the whole set is done) nothing is
+    // clickable any more either, including the last day's exams.
+    // A board exam is locked once its day is over, the whole set is
+    // finished, or that exam itself has been submitted.
+    function isBoardSubjectLocked(s) {
+      return isBoardDayPast(s.day) || !!boardScores[s.key];
+    }
+
+    function isBoardDayPast(day) {
+      if (!boardSetGeneratedAt) return false;
+      if (boardSetCompleted) return true;
+      const later = boardDayNumbers().filter(d => d > day);
+      return later.length > 0 && isDayUnlocked(Math.min(...later));
+    }
+
     // Builds the exam-slot markup for one subject: a lock note while its
     // day hasn't started yet, otherwise the normal exam card (or the
     // "nothing indexed" note if no exam has been picked for it).
@@ -21378,8 +21914,9 @@ Answer: C</pre>
         return `<div class="empty-note">NOTHING INDEXED HERE YET. CHECK BACK ONCE MOCK EXAMS FOR THIS SUBJECT ARE ADDED.</div>`;
       }
       const durationSec = s.hours * 3600;
+      const past = isBoardSubjectLocked(s);
       return `<ul class="exam-list">
-          <li><a class="exam-card" href="javascript:void(0)" data-duration-sec="${durationSec}"
+          <li><a class="exam-card${past ? ' board-past' : ''}" ${past ? 'tabindex="-1" aria-disabled="true"' : ''} href="javascript:void(0)" data-duration-sec="${durationSec}"
               onclick="openInAppMockExam('live:${s.key}:${pick[0]}', this); return false;">
             <div class="exam-row">
               <span class="exam-idx">${s.pct}%</span>
@@ -21391,15 +21928,36 @@ Answer: C</pre>
     }
 
     // Re-checks each subject's day lock every tick. If a day has just
-    // unlocked, swap that subject's slot from the lock note to its real
-    // exam card in place (without touching scores or the result box); if
+    // unlocked, generate that day's random picks (a no-op if already
+    // done) and swap its subjects' slots from the lock note to their real
+    // exam cards in place (without touching scores or the result box); if
     // still locked, just refresh its "unlocks in" countdown text.
+    // Re-applies the non-clickable state to one subject's exam card.
+    function refreshBoardPastCard(s) {
+      const area = document.getElementById(`board-exam-area-${s.key}`);
+      const card = area && area.querySelector('.exam-card');
+      if (!card) return;
+      const past = isBoardSubjectLocked(s);
+      card.classList.toggle('board-past', past);
+      if (past) { card.setAttribute('tabindex', '-1'); card.setAttribute('aria-disabled', 'true'); }
+      else { card.removeAttribute('tabindex'); card.removeAttribute('aria-disabled'); }
+    }
+
+    function refreshAllBoardPastCards() {
+      subjects.forEach(refreshBoardPastCard);
+    }
+
     function updateBoardDayLocks() {
       if (!boardSetGeneratedAt) return;
+      [...new Set(subjects.map(s => s.day))].forEach(dayNum => {
+        if (isDayUnlocked(dayNum)) generateDaySubjects(dayNum);
+      });
       let revealedAny = false;
       subjects.forEach(s => {
         const area = document.getElementById(`board-exam-area-${s.key}`);
         if (!area) return;
+        // Exams on a day that just ended become non-clickable in place.
+        refreshBoardPastCard(s);
         if (isDayUnlocked(s.day)) {
           if (area.querySelector('.board-locked-note')) {
             area.innerHTML = buildExamAreaHtml(s);
@@ -21419,22 +21977,28 @@ Answer: C</pre>
       const wrap = document.getElementById('board-countdown');
       const valueEl = document.getElementById('board-countdown-value');
       if (!wrap || !valueEl) return;
-      if (!boardSetGeneratedAt) { wrap.style.display = 'none'; return; }
+      if (!boardSetGeneratedAt) { wrap.style.display = 'none'; setBoardResetBtnVisible(false); return; }
+
+      // A day's window (24h) closing without both of that day's subjects
+      // finished fails and resets the whole 3-day set immediately: it
+      // doesn't wait for the full 3 days to run out.
+      const failedDay = findFailedDay(boardSetGeneratedAt, boardScores);
+      if (failedDay !== null) {
+        wrap.style.display = 'none';
+        setBoardResetBtnVisible(false);
+        stopBoardCountdown();
+        failBoardDay(failedDay, boardScores);
+        return;
+      }
 
       updateBoardDayLocks();
 
       const remainingMs = (boardSetGeneratedAt + BOARD_SET_TTL_MS) - Date.now();
-      if (remainingMs <= 0) {
-        wrap.style.display = 'none';
-        stopBoardCountdown();
-        openBoardExpiredModal(boardScores);
-        clearExpiredBoardSet();
-        return;
-      }
 
       wrap.style.display = 'flex';
       wrap.classList.remove('completed');
       valueEl.textContent = formatBoardDuration(remainingMs);
+      setBoardResetBtnVisible(true);
 
       // Under 3 hours left: flag it so it visually stands out.
       wrap.classList.toggle('expiring', remainingMs < 3 * 60 * 60 * 1000);
@@ -21457,92 +22021,564 @@ Answer: C</pre>
       wrap.style.display = 'flex';
       wrap.classList.remove('expiring');
       wrap.classList.add('completed');
-      valueEl.textContent = 'Finished \u2014 timer stopped';
+      valueEl.textContent = 'Finished, timer stopped';
+      setBoardResetBtnVisible(true);
     }
 
-    // ---- "3 days are up" popup ----
-    // Fires once per set — either live (countdown hits 0 while the page
-    // is open) or the next time the Mock Board Exam page is opened after
-    // the window already lapsed elsewhere. Uses only the saved boardScores
-    // (keyed by subject), so it doesn't depend on the live exam cache.
-    function buildBoardExpiredContent(scores) {
-      scores = scores || {};
-      const finishedCount = subjects.filter(s => scores[s.key]).length;
-      const totalCount = subjects.length;
-
-      if (finishedCount < totalCount) {
-        const missing = subjects.filter(s => !scores[s.key]).map(s => s.name);
-        return {
-          passed: null,
-          html: `
-            <div class="board-result-box warn" style="margin-top:0;">
-              <div class="board-result-verdict">FAILED TO FINISH</div>
-              <div class="board-result-note">You failed to finish the mock board exam within 3 days (${finishedCount}/${totalCount} subjects completed). This set is now closed. Subjects left unfinished:</div>
-              <ul style="text-align:left; margin: 10px 0 0; padding-left: 18px; color: #b9cee0; font-family: 'IBM Plex Mono', monospace; font-size: 13px;">
-                ${missing.map(name => `<li>${escapeHtml(name)}</li>`).join('')}
-              </ul>
-            </div>
-          `
-        };
-      }
-
-      let total = 0;
-      let allAtOrAbove50 = true;
-      subjects.forEach(s => {
-        const sc = scores[s.key];
-        total += sc.percent * (s.pct / 100);
-        if (sc.percent < 50) allAtOrAbove50 = false;
-      });
-      const passed = total >= 75 && allAtOrAbove50;
-      return {
-        passed,
-        html: `
-          <div class="board-result-box ${passed ? 'pass' : 'fail'}" style="margin-top:0;">
-            <div class="board-result-total">${total.toFixed(2)}%</div>
-            <div class="board-result-verdict">${passed ? 'PASSED' : 'FAILED'}</div>
-            <div class="board-result-note">${
-              passed
-                ? 'You finished all 6 subjects within the 3-day window. Overall average is 75% or higher and no subject fell below 50%.'
-                : (total < 75
-                    ? 'You finished all 6 subjects within the 3-day window, but the overall average is below the 75% passing requirement.'
-                    : 'You finished all 6 subjects within the 3-day window, but at least one subject fell below the 50% minimum.')
-            }</div>
-          </div>
-        `
-      };
+    // ---- "day failed" popup ----
+    // Fires once per set: either live (a day's window closes while the
+    // page is open) or the next time the Mock Board Exam page is opened
+    // after a day's window already closed elsewhere. Uses only the saved
+    // boardScores (keyed by subject), so it doesn't depend on the live
+    // exam cache.
+    // day / missingNames describe which day's window closed and which of
+    // that day's subjects were never finished (see failBoardDay()).
+    function buildBoardExpiredContent(day, missingNames) {
+      const plural = missingNames.length > 1;
+      return `
+        <div class="board-result-box warn" style="margin-top:0; padding: 0 20px;">
+          <div class="board-result-verdict" style="margin-top:0;">DAY ${day} INCOMPLETE</div>
+          <div class="board-result-note">You failed to complete Day ${day}'s subject${plural ? 's' : ''} in time. The entire 3-day mock board exam has been stopped, and all generated exams for this set have been cleared/reset automatically. Subject${plural ? 's' : ''} left unfinished on Day ${day}:</div>
+          <ul style="text-align:left; margin: 10px 0 0; padding-left: 18px; color: #b9cee0; font-family: 'IBM Plex Mono', monospace; font-size: 13px;">
+            ${missingNames.map(name => `<li>${escapeHtml(name)}</li>`).join('')}
+          </ul>
+        </div>
+      `;
     }
 
-    function openBoardExpiredModal(scores) {
+    // The "Day X Failed" popup belongs to the Mock Board Exam page only.
+    // A day can close while the reviewee is somewhere else (another tab,
+    // a subject page, even mid-exam), so the failure is parked here and
+    // the popup is only put on screen while #view-board is actually
+    // visible. It's hidden again if they leave that page, and comes back
+    // when they return, until they dismiss it themselves.
+    // The pending failure is saved to localStorage (per signed-in account,
+    // same scoping as the board set itself), so refreshing the page or
+    // coming back later still shows the popup until the reviewee closes it
+    // with the X button or starts a new set.
+    const BOARD_EXPIRED_STORAGE_KEY = 'boardExpiredNotice';
+
+    function readBoardExpiredNotice() {
+      try {
+        const raw = localStorage.getItem(userScopedKey(BOARD_EXPIRED_STORAGE_KEY));
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        if (!data || !data.day || !Array.isArray(data.missingNames)) return null;
+        return data;
+      } catch (e) { return null; }
+    }
+
+    function isBoardViewVisible() {
+      const v = document.getElementById('view-board');
+      return !!(v && v.classList.contains('visible'));
+    }
+
+    function syncBoardExpiredModal() {
       const overlay = document.getElementById('board-expired-overlay');
       const body = document.getElementById('board-expired-body');
+      const titleEl = document.getElementById('board-expired-title');
       if (!overlay || !body) return;
-      const { passed, html } = buildBoardExpiredContent(scores);
-      body.innerHTML = html;
+      const data = readBoardExpiredNotice();
+      if (!data || !isBoardViewVisible()) {
+        overlay.classList.remove('visible');
+        return;
+      }
+      if (titleEl) titleEl.innerHTML = `&#9201;&#65039; Mock Board Exam: Day ${data.day} Failed`;
+      body.innerHTML = buildBoardExpiredContent(data.day, data.missingNames);
+      // .visible has no outside-click-to-close handler on this overlay, and
+      // the only ways out are the &times; button or "START A NEW SET" below,
+      // so it stays on screen until the reviewee dismisses it themselves.
       overlay.classList.add('visible');
-      if (passed) launchConfetti();
+    }
+
+    function openBoardExpiredModal(day, missingNames) {
+      try {
+        localStorage.setItem(userScopedKey(BOARD_EXPIRED_STORAGE_KEY), JSON.stringify({ day, missingNames }));
+      } catch (e) {}
+      syncBoardExpiredModal();
     }
 
     function closeBoardExpiredModal() {
+      try { localStorage.removeItem(userScopedKey(BOARD_EXPIRED_STORAGE_KEY)); } catch (e) {}
       const overlay = document.getElementById('board-expired-overlay');
       if (overlay) overlay.classList.remove('visible');
     }
+
+    // ---- overall result popup ----
+    // Appears on the Mock Board Exam page the moment all 6 subjects are
+    // scored. Closing it only hides the popup: scores and the result stay
+    // saved with the set until it is reset or a new set is generated, and
+    // the VIEW RESULT button on the page reopens it.
+    let boardResultPopupWanted = false;
+    let boardResultLatest = null; // { total, passed, allAtOrAbove50, rows: [{ name, weight, score, outOf, percent }] }
+
+    function buildBoardResultHtml(r) {
+      const note = r.passed
+        ? 'Overall average is 75% or higher and no subject fell below 50%.'
+        : (r.total < 75
+            ? 'Overall average is below the 75% passing requirement.'
+            : 'At least one subject fell below the 50% minimum, even though the overall average is 75% or higher.');
+      return `
+        <div class="board-result-box ${r.passed ? 'pass' : 'fail'}" style="margin-top:0;">
+          <div class="board-result-total">${r.total.toFixed(2)}%</div>
+          <div class="board-result-verdict">${r.passed ? 'PASSED' : 'FAILED'}</div>
+          <div class="board-result-note">${note}</div>
+        </div>
+        <div class="board-share">
+          <div class="board-share-label">SHARE YOUR RESULT</div>
+          <div class="board-share-row">
+            <button type="button" class="board-share-btn fb" onclick="shareBoardResult('facebook')" aria-label="Share to Facebook Story" title="Share to Facebook Story">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 21v-8h2.7l.4-3.2h-3.1V7.8c0-.9.3-1.5 1.6-1.5h1.6V3.4c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.4-4 4.1v2.4H7.6V13h2.7v8h3.2z"/></svg>
+            </button>
+            <button type="button" class="board-share-btn msgr" onclick="shareBoardResult('messenger')" aria-label="Send on Messenger" title="Send on Messenger">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12 2C6.5 2 2 6.2 2 11.5c0 2.9 1.3 5.4 3.4 7.1V22l3.1-1.7c1 .3 2 .4 3.5.4 5.5 0 10-4.2 10-9.5S17.5 2 12 2zM6.2 14.2l4.3-4.6 2.3 2.4 4.2-2.4-4.3 4.6-2.3-2.4-4.2 2.4z"/></svg>
+            </button>
+            <button type="button" class="board-share-btn ig" onclick="shareBoardResult('instagram')" aria-label="Share to Instagram Story" title="Share to Instagram Story">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.4" cy="6.6" r="1" fill="currentColor" stroke="none"/></svg>
+            </button>
+          </div>
+          <div class="board-share-status" id="board-share-status" role="status" aria-live="polite"></div>
+        </div>`;
+    }
+
+    // ---- sharing the result (Instagram Story / Facebook Story / Messenger) ----
+    // The result is turned into a 1080x1920 story-sized image and handed to
+    // the phone's native share sheet (Web Share API with a file). That is the
+    // only way a web page can put an image straight into these apps: the
+    // sheet lists Instagram (Stories), Facebook (Your Story) and Messenger,
+    // and the picture arrives already attached. Desktop browsers can't do
+    // that, so there the image is saved and the right site is opened to
+    // upload it.
+    const BOARD_SHARE_URL = 'https://aerodynadmics.com/';
+    let boardShareImageCache = null; // { key, blob }
+
+    function boardShareText(r) {
+      return 'I scored ' + r.total.toFixed(2) + '% on the Mock Board Exam on aerodynadmics \u2014 ' +
+        (r.passed ? 'PASSED' : 'FAILED') + '. Try it yourself!';
+    }
+
+    function boardShareStatus(msg) {
+      const el = document.getElementById('board-share-status');
+      if (!el) return;
+      el.textContent = msg || '';
+      clearTimeout(el._t);
+      if (msg) el._t = setTimeout(() => { el.textContent = ''; }, 6000);
+    }
+
+    function boardShareIsMobile() {
+      return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+        (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform || ''));
+    }
+
+    async function boardShareCopy(text) {
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch (e) {}
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return ok;
+      } catch (e) { return false; }
+    }
+
+    // Paints the page's own background onto the canvas:
+    //   radial-gradient(ellipse at 50% 35%, rgb(8,45,82), rgb(2,12,24) 70%)
+    // with CSS's default farthest-corner size. It is computed pixel by pixel
+    // (rather than with createRadialGradient) so the geometry is exactly the
+    // CSS one, and a little noise is added before rounding to 8-bit colour
+    // ("dithering"), which is what the browser does for the page's own
+    // gradient. This gradient only spans a few dozen colour levels, so
+    // without the dithering the image shows visible rings/bands that the
+    // page itself doesn't have.
+    function paintBoardShareBackground(g, W, H, S) {
+      const c0 = [0, 38, 94], c1 = [0, 10, 36];
+      const dr = c1[0] - c0[0], dg = c1[1] - c0[1], db = c1[2] - c0[2];
+      const cx = W * 0.5, cy = H * 0.35;
+      const rx = 1200 * S; // page-like: on the site the content column sits in the bright middle of a much wider gradient
+      const ry = Math.SQRT2 * Math.max(cy, H - cy);
+      const img = g.createImageData(W, H);
+      const d = img.data;
+      let seed = 0x9e3779b9;
+      const rnd = () => { // xorshift32 -> [0, 1)
+        seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5;
+        return (seed >>> 0) / 4294967296;
+      };
+      let i = 0;
+      for (let y = 0; y < H; y++) {
+        const dy = (y + 0.5 - cy) / ry;
+        const dy2 = dy * dy;
+        for (let x = 0; x < W; x++) {
+          const dx = (x + 0.5 - cx) / rx;
+          let t = Math.sqrt(dx * dx + dy2) / 0.7; // 2nd colour stop sits at 70%
+          if (t > 1) t = 1;
+          d[i]     = c0[0] + dr * t + (rnd() + rnd() - 1);
+          d[i + 1] = c0[1] + dg * t + (rnd() + rnd() - 1);
+          d[i + 2] = c0[2] + db * t + (rnd() + rnd() - 1);
+          d[i + 3] = 255;
+          i += 4;
+        }
+      }
+      g.putImageData(img, 0, 0);
+    }
+
+    // Draws the 1080x1920 (9:16 story) result card: logo, overall result,
+    // the score of every subject, then the call to action. Content stays
+    // inside the middle of the frame so the story apps' top/bottom bars
+    // never cover it.
+    async function buildBoardShareImage(r) {
+      const rows = r.rows || [];
+      const key = r.total.toFixed(2) + '|' + (r.passed ? 1 : 0) + '|story17-4k|' +
+        rows.map(x => x.score + '/' + x.outOf).join(',');
+      if (boardShareImageCache && boardShareImageCache.key === key) return boardShareImageCache.blob;
+      try {
+        if (document.fonts && document.fonts.load) {
+          await Promise.all([
+            document.fonts.load('600 150px "IBM Plex Mono"'),
+            document.fonts.load('500 30px "IBM Plex Mono"'),
+            document.fonts.load('400 18px "IBM Plex Mono"'),
+            document.fonts.load('400 40px "Space Grotesk"'),
+            document.fonts.load('500 28px "Space Grotesk"'),
+            document.fonts.load('700 100px "Space Grotesk"')
+          ]);
+        }
+      } catch (e) {}
+      // Logical layout is 1080x1920; the canvas is 2x that (2160x3840 = 4K, 9:16)
+      // and everything is drawn through g.scale(S, S) so all sizes stay the same.
+      const W = 1080, H = 1920, S = 2;
+      const c = document.createElement('canvas');
+      c.width = W * S; c.height = H * S;
+      const g = c.getContext('2d');
+      const accent = r.passed ? '#4fd1a0' : '#ff6b6b';
+
+      // Exactly the page's background gradient.
+      paintBoardShareBackground(g, W * S, H * S, S);
+      g.scale(S, S);
+      g.imageSmoothingQuality = 'high';
+
+      g.textAlign = 'center';
+      g.textBaseline = 'alphabetic';
+
+      const rrect = (x, y, w, h, rad) => {
+        g.beginPath();
+        g.moveTo(x + rad, y);
+        g.arcTo(x + w, y, x + w, y + h, rad);
+        g.arcTo(x + w, y + h, x, y + h, rad);
+        g.arcTo(x, y + h, x, y, rad);
+        g.arcTo(x, y, x + w, y, rad);
+        g.closePath();
+      };
+      // Splits text into lines no wider than maxW (measured with g.font).
+      const wrap = (text, maxW) => {
+        const out = [];
+        let line = '';
+        for (const w of text.split(' ')) {
+          const t = line ? line + ' ' + w : w;
+          if (g.measureText(t).width > maxW && line) { out.push(line); line = w; }
+          else { line = t; }
+        }
+        if (line) out.push(line);
+        return out;
+      };
+
+      // "aerodynadmics" logo in the site's Blueprint style: outlined cyan
+      // letters inside a bordered box with a faint drafting grid.
+      {
+        let fs = 108;
+        g.font = '700 ' + fs + 'px "Space Grotesk", Arial, sans-serif';
+        let tw = g.measureText('aerodynadmics').width;
+        while (tw > W - 300 && fs > 50) {
+          fs -= 4;
+          g.font = '700 ' + fs + 'px "Space Grotesk", Arial, sans-serif';
+          tw = g.measureText('aerodynadmics').width;
+        }
+        const padX = 44, boxH = Math.round(fs * 1.42);
+        const bw = Math.round(tw + padX * 2), bx = Math.round((W - bw) / 2), by = 262;
+        g.save();
+        rrect(bx, by, bw, boxH, 12);
+        g.clip();
+        // grid (12px cells on the page, scaled up)
+        const cell = 48;
+        g.lineWidth = 2;
+        g.strokeStyle = 'rgba(79,248,255,0.22)';
+        for (let x = bx; x <= bx + bw; x += cell) { g.beginPath(); g.moveTo(x, by); g.lineTo(x, by + boxH); g.stroke(); }
+        g.strokeStyle = 'rgba(79,248,255,0.18)';
+        for (let y = by; y <= by + boxH; y += cell) { g.beginPath(); g.moveTo(bx, y); g.lineTo(bx + bw, y); g.stroke(); }
+        // edge glow
+        const eg = g.createLinearGradient(bx, 0, bx + bw, 0);
+        eg.addColorStop(0, 'rgba(79,248,255,0.16)');
+        eg.addColorStop(0.35, 'rgba(79,248,255,0)');
+        eg.addColorStop(0.65, 'rgba(79,248,255,0)');
+        eg.addColorStop(1, 'rgba(79,248,255,0.16)');
+        g.fillStyle = eg;
+        g.fillRect(bx, by, bw, boxH);
+        g.restore();
+        // border
+        rrect(bx, by, bw, boxH, 12);
+        g.lineWidth = 3;
+        g.strokeStyle = 'rgba(79,248,255,0.42)';
+        g.stroke();
+        // outlined text (transparent fill, cyan stroke)
+        g.lineJoin = 'round';
+        g.lineWidth = 3;
+        g.strokeStyle = '#4ff8ff';
+        g.shadowColor = 'rgba(79,248,255,0.35)';
+        g.shadowBlur = 14 * S;
+        g.strokeText('aerodynadmics', W / 2, by + boxH / 2 + fs * 0.35);
+        g.shadowBlur = 0;
+      }
+
+      g.textAlign = 'center';
+      g.fillStyle = '#7fa8c9';
+      g.font = '500 32px "IBM Plex Mono", monospace';
+      g.fillText('MOCK BOARD EXAM RESULT', W / 2, 468);
+
+      // ---- overall result ----
+      const px = 90, py = 495, pw = W - 180, ph = 350;
+      rrect(px, py, pw, ph, 28);
+      g.fillStyle = r.passed ? 'rgba(79,209,160,0.10)' : 'rgba(0,10,36,0.35)';
+      g.fill();
+      g.lineWidth = 3;
+      g.strokeStyle = accent;
+      g.stroke();
+
+      g.fillStyle = '#ffffff';
+      g.font = '600 150px "IBM Plex Mono", monospace';
+      g.fillText(r.total.toFixed(2) + '%', W / 2, py + 155);
+      g.fillStyle = accent;
+      g.font = '600 56px "IBM Plex Mono", monospace';
+      g.fillText(r.passed ? 'PASSED' : 'FAILED', W / 2, py + 232);
+
+      const note = r.passed
+        ? 'Overall average is 75% or higher and no subject fell below 50%.'
+        : (r.total < 75
+            ? 'Overall average is below the 75% passing requirement.'
+            : 'At least one subject fell below the 50% minimum.');
+      g.fillStyle = '#b9cee0';
+      g.font = '400 28px "Space Grotesk", Arial, sans-serif';
+      wrap(note, pw - 70).forEach((ln, i) => g.fillText(ln, W / 2, py + 288 + i * 40));
+
+      // ---- score of every subject ----
+      if (rows.length) {
+
+        const sx = 90, sw = W - 180, sy = 885, spad = 12;
+        const scoreRight = sx + sw - 190;  // right edge of the "18 / 25" column
+        const pctRight = sx + sw - 32;     // right edge of the percentage column
+        const nameFont = '500 28px "Space Grotesk", Arial, sans-serif';
+        g.font = nameFont;
+        const laid = rows.map(row => ({ row: row, lines: wrap(row.name, 470) }));
+        const rowH = n => (n > 1 ? 104 : 78);
+        const listH = laid.reduce((sum, l) => sum + rowH(l.lines.length), 0);
+
+        rrect(sx, sy, sw, listH + spad * 2, 24);
+        g.fillStyle = 'rgba(127,168,201,0.07)';
+        g.fill();
+        g.lineWidth = 2;
+        g.strokeStyle = 'rgba(63,109,146,0.75)';
+        g.stroke();
+
+        let cy0 = sy + spad;
+        laid.forEach((l, idx) => {
+          const h = rowH(l.lines.length);
+          const midY = cy0 + h / 2;
+          if (idx > 0) {
+            g.beginPath();
+            g.moveTo(sx + 28, cy0);
+            g.lineTo(sx + sw - 28, cy0);
+            g.lineWidth = 1.5;
+            g.strokeStyle = 'rgba(127,168,201,0.18)';
+            g.stroke();
+          }
+          // subject name
+          g.textAlign = 'left';
+          g.fillStyle = '#eef3f6';
+          g.font = nameFont;
+          const lh = 33;
+          const firstY = midY - ((l.lines.length - 1) * lh) / 2 + 10;
+          l.lines.forEach((ln, i) => g.fillText(ln, sx + 32, firstY + i * lh));
+          // raw score + weight of the subject
+          g.textAlign = 'right';
+          g.fillStyle = '#b9cee0';
+          g.font = '500 30px "IBM Plex Mono", monospace';
+          g.fillText(l.row.score + ' / ' + l.row.outOf, scoreRight, midY - 2);
+          g.fillStyle = '#7fa8c9';
+          g.font = '400 18px "IBM Plex Mono", monospace';
+          g.fillText(l.row.weight + '% OF BOARD', scoreRight, midY + 24);
+          // percentage (red when under the 50% minimum)
+          g.fillStyle = l.row.percent >= 50 ? '#4fd1a0' : '#ff6b6b';
+          g.font = '600 42px "IBM Plex Mono", monospace';
+          g.fillText(+l.row.percent.toFixed(2) + '%', pctRight, midY + 15);
+          cy0 += h;
+        });
+      }
+
+      g.textAlign = 'center';
+      g.fillStyle = '#eef3f6';
+      g.font = '400 44px "Space Grotesk", Arial, sans-serif';
+      g.fillText('Think you can beat it?', W / 2, 1640);
+      g.fillStyle = '#ffb100';
+      g.font = '600 48px "IBM Plex Mono", monospace';
+      g.fillText('aerodynadmics.com', W / 2, 1705);
+
+      const blob = await new Promise(res => c.toBlob(res, 'image/png'));
+      if (blob) boardShareImageCache = { key, blob };
+      return blob;
+    }
+
+    async function shareBoardResult(platform) {
+      const r = boardResultLatest;
+      if (!r) return;
+      const text = boardShareText(r) + ' ' + BOARD_SHARE_URL;
+      const names = { instagram: 'Instagram', facebook: 'Facebook', messenger: 'Messenger' };
+      const tips = {
+        instagram: 'In the share sheet, pick Instagram \u2192 Stories.',
+        facebook: 'In the share sheet, pick Facebook \u2192 Your Story.',
+        messenger: 'In the share sheet, pick Messenger and choose who to send it to.'
+      };
+      const desktopSites = {
+        instagram: 'https://www.instagram.com/',
+        facebook: 'https://www.facebook.com/stories/create',
+        messenger: 'https://www.messenger.com/'
+      };
+      const btns = document.querySelectorAll('.board-share-btn');
+      try {
+        btns.forEach(b => { b.disabled = true; });
+        boardShareStatus('Preparing your result image\u2026');
+        let blob = null;
+        try { blob = await buildBoardShareImage(r); } finally {
+          btns.forEach(b => { b.disabled = false; });
+        }
+        if (!blob) { boardShareStatus('Couldn\u2019t create the image. Please try again.'); return; }
+        const file = new File([blob], 'aerodynadmics-mock-board-result.png', { type: 'image/png' });
+
+        // Phones: native share sheet with the image attached.
+        if (boardShareIsMobile() && navigator.canShare && navigator.canShare({ files: [file] })) {
+          boardShareStatus(tips[platform]);
+          try {
+            await navigator.share({ files: [file], text: text });
+            boardShareStatus('');
+            return;
+          } catch (e) {
+            if (e && e.name === 'AbortError') { boardShareStatus(''); return; }
+            // any other failure: fall through to the save-and-open fallback
+          }
+        }
+
+        // Desktop / unsupported browsers: save the image, open the site.
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'aerodynadmics-mock-board-result.png';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+        await boardShareCopy(text);
+        window.open(desktopSites[platform], '_blank');
+        boardShareStatus(platform === 'messenger'
+          ? 'Image saved \u2014 attach it to a Messenger chat (message copied).'
+          : 'Image saved \u2014 add it to your ' + names[platform] + ' story from the ' + names[platform] + ' app on your phone, or upload it there.');
+      } catch (err) {
+        console.warn('Share failed:', err);
+        btns.forEach(b => { b.disabled = false; });
+        boardShareStatus('Sharing failed. Please try again.');
+      }
+    }
+
+    function syncBoardResultModal() {
+      const overlay = document.getElementById('board-result-overlay');
+      const body = document.getElementById('board-result-modal-body');
+      if (!overlay || !body) return;
+      if (!boardSetCompleted || !boardResultLatest) boardResultPopupWanted = false;
+      refreshBoardViewResultBtn();
+      if (!boardResultPopupWanted || !isBoardViewVisible()) {
+        overlay.classList.remove('visible');
+        return;
+      }
+      body.innerHTML = buildBoardResultHtml(boardResultLatest);
+      overlay.classList.add('visible');
+      buildBoardShareImage(boardResultLatest).catch(() => {});
+    }
+
+    // VIEW RESULT (top-right of the board's button row) is only there
+    // while the current set is finished and has a result.
+    function refreshBoardViewResultBtn() {
+      const btn = document.getElementById('board-view-result-btn');
+      if (btn) btn.style.display = (boardSetCompleted && boardResultLatest) ? 'inline-flex' : 'none';
+    }
+
+    function openBoardResultModal() {
+      boardResultPopupWanted = true;
+      syncBoardResultModal();
+    }
+
+    function closeBoardResultModal() {
+      boardResultPopupWanted = false;
+      const overlay = document.getElementById('board-result-overlay');
+      if (overlay) overlay.classList.remove('visible');
+    }
+
+    // Show/hide the popup whenever the Mock Board Exam page appears or
+    // disappears, however the user got there (topbar tab, back button,
+    // closing an exam that was opened from the board, ...).
+    (function watchBoardViewForExpiredModal() {
+      const boardView = document.getElementById('view-board');
+      if (!boardView || typeof MutationObserver === 'undefined') return;
+      new MutationObserver(() => { syncBoardExpiredModal(); syncBoardResultModal(); })
+        .observe(boardView, { attributes: true, attributeFilter: ['class'] });
+      syncBoardExpiredModal();
+    })();
 
     // Wipes the now-closed set (storage + in-memory + UI) once its expiry
     // has been shown, so reopening the page starts blank instead of
     // re-showing stale, no-longer-editable picks.
     function clearExpiredBoardSet() {
+      closeBoardResultModal();
+      clearBoardExamTimers(); // a cleared set leaves no running exam timers behind
       localStorage.removeItem(userScopedKey(BOARD_SET_STORAGE_KEY));
       currentBoardSet = {};
       boardScores = {};
       boardSetGeneratedAt = null;
       boardSetCompleted = false;
+      boardDaysGenerated = {};
       stopBoardCountdown();
       const countdownEl = document.getElementById('board-countdown');
       if (countdownEl) countdownEl.style.display = 'none';
+      setBoardResetBtnVisible(false);
       const subjectsEl = document.getElementById('board-subjects');
       if (subjectsEl) subjectsEl.innerHTML = '';
       const resultBox = document.getElementById('board-result');
       if (resultBox) resultBox.style.display = 'none';
+      refreshBoardViewResultBtn();
+    }
+
+    // Shows/hides the RESET button in lockstep with the 3-day countdown
+    // display — there's nothing to reset when no set has been generated.
+    function setBoardResetBtnVisible(show) {
+      const btn = document.getElementById('board-reset-btn');
+      if (btn) btn.style.display = show ? 'inline-flex' : 'none';
+    }
+
+    // RESET clears the current board set (picks, scores, and the 3-day
+    // clock) the same way letting it expire would, but on demand and
+    // always behind a themed confirm dialog since — unlike Generate,
+    // which only warns when there's something to lose — Reset's entire
+    // purpose is destructive.
+    function confirmResetBoardSet() {
+      if (!boardSetGeneratedAt) return; // nothing generated; button is hidden anyway
+      openConfirmDialog(
+        'Reset this board exam set? Your current picks, all recorded scores, and the 3-day countdown will be cleared. This cannot be undone.',
+        clearExpiredBoardSet,
+        'Reset Set'
+      );
     }
 
     // Pulls one random PUBLISHED admin-created mock exam set per subject
@@ -21552,35 +22588,119 @@ Answer: C</pre>
     // below), so any set the admin adds or publishes is picked up
     // automatically and can turn up here the very next time this button is
     // pressed — no separate "board pool" to maintain by hand.
-    // Guards generateBoardSet with a themed confirm dialog whenever pressing
-    // the button would actually throw something away — an already-picked
-    // set and/or recorded scores. Skips the dialog on the very first press
-    // (nothing generated yet), since there's nothing to lose in that case.
+    //
+    // Before any set exists at all (or once the set is finished), pressing the button starts a brand
+    // new 3-day set from scratch (see generateBoardSet). Once a set is
+    // already running, pressing it again only re-rolls the CURRENT day —
+    // whichever day is presently unlocked — leaving every other day's
+    // picks, scores, and the overall 3-day countdown untouched. Skips the
+    // confirm dialog only when there's genuinely nothing to lose yet
+    // (the current day has no picks or scores of its own).
+    function currentBoardDay() {
+      const days = [...new Set(subjects.map(s => s.day))];
+      const unlocked = days.filter(d => isDayUnlocked(d));
+      return unlocked.length ? Math.max(...unlocked) : null;
+    }
+
     function confirmGenerateBoardSet() {
-      const hasExistingSet = Object.values(currentBoardSet).some(Boolean);
-      const hasScores = Object.keys(boardScores).length > 0;
-      if (!hasExistingSet && !hasScores) { generateBoardSet(); return; }
+      if (!boardSetGeneratedAt) { generateBoardSet(); return; }
+      // Once every subject is finished, this button starts a brand-new
+      // set (instead of re-rolling just the current day), since there's
+      // nothing left to re-roll. The finished scores and result are lost,
+      // so it asks first.
+      if (boardSetCompleted) {
+        openConfirmDialog(
+          'Generate a brand-new random set? Your current scores and result will be cleared.',
+          generateBoardSet,
+          'Generate New Set'
+        );
+        return;
+      }
+      const day = currentBoardDay();
+      if (day === null) { generateBoardSet(); return; } // defensive fallback
+      const daySubjects = subjects.filter(s => s.day === day);
+      const hasExistingPicks = daySubjects.some(s => currentBoardSet[s.key]);
+      const hasScores = daySubjects.some(s => boardScores[s.key]);
+      if (!hasExistingPicks && !hasScores) { regenerateBoardDay(day); return; }
       openConfirmDialog(
-        'Generate a new random set? Your current picks and any recorded scores for this board set will be lost.',
-        generateBoardSet,
+        `Generate a new random set for Day ${day}? Your current picks and any recorded score for Day ${day} will be lost. Other days are not affected.`,
+        () => regenerateBoardDay(day),
         'Generate New Set'
       );
     }
 
     function generateBoardSet() {
+      closeBoardResultModal();
+      closeBoardExpiredModal(); // a new set replaces any saved "day failed" notice
+      clearBoardExamTimers(); // brand-new set: every exam timer starts fresh
       currentBoardSet = {};
       boardScores = {}; // a fresh random set starts with no scores
       boardSetCompleted = false;
       boardSetGeneratedAt = Date.now();
-      subjects.forEach(s => {
+      boardDaysGenerated = {};
+      // Only the first day's papers are randomized right now — later days
+      // are picked on their own the moment they unlock (see
+      // updateBoardDayLocks, which calls generateDaySubjects for each day
+      // as it opens up), the same way a real 3-day board exam only reveals
+      // each day's subjects on the day itself.
+      const firstDay = Math.min(...subjects.map(s => s.day));
+      generateDaySubjects(firstDay);
+      renderBoardSet();
+    }
+
+    // Randomly picks one published exam per subject for a single day, and
+    // marks that day as generated so it's never re-picked later (by a
+    // fresh countdown tick, or by re-opening the page). Called for the
+    // first day right when GENERATE RANDOM SET is pressed, and again,
+    // automatically, for each later day the instant it unlocks.
+    function generateDaySubjects(dayNum) {
+      if (boardDaysGenerated[dayNum]) return;
+      subjects.filter(s => s.day === dayNum).forEach(s => {
         const cache = LIVE_MOCK_EXAM_CACHE[s.key] || {};
         const entries = Object.entries(cache).filter(([, set]) => set && set.published);
         currentBoardSet[s.key] = entries.length > 0
           ? entries[Math.floor(Math.random() * entries.length)]
           : null;
       });
+      boardDaysGenerated[dayNum] = true;
+      saveBoardState();
+    }
+
+    // Re-rolls just ONE day's picks — unlike generateDaySubjects (which
+    // refuses to touch a day that's already been generated), this is the
+    // manual "regenerate today's papers" action, so it deliberately
+    // overwrites even an already-generated day and clears only that day's
+    // recorded scores. Every other day, its scores, and the overall 3-day
+    // countdown are left exactly as they were.
+    function regenerateBoardDay(day) {
+      // Re-rolling the day replaces its exams, so reset the (possibly
+      // running) timer of each paper being replaced automatically.
+      clearBoardExamTimers(
+        subjects
+          .filter(s => s.day === day && currentBoardSet[s.key])
+          .map(s => 'live:' + s.key + ':' + currentBoardSet[s.key][0])
+      );
+      subjects.filter(s => s.day === day).forEach(s => {
+        const cache = LIVE_MOCK_EXAM_CACHE[s.key] || {};
+        const entries = Object.entries(cache).filter(([, set]) => set && set.published);
+        currentBoardSet[s.key] = entries.length > 0
+          ? entries[Math.floor(Math.random() * entries.length)]
+          : null;
+        delete boardScores[s.key];
+      });
+      boardDaysGenerated[day] = true;
+      // Regenerating a day means the set is no longer fully finished —
+      // resume the countdown if it had been stopped as completed (same
+      // rule clearBoardScore already applies for a single retaken exam).
+      if (boardSetCompleted) {
+        boardSetCompleted = false;
+        startBoardCountdown();
+      }
       saveBoardState();
       renderBoardSet();
+      const resultBox = document.getElementById('board-result');
+      if (resultBox) resultBox.style.display = 'none';
+      refreshBoardViewResultBtn();
     }
 
     function renderBoardSet() {
@@ -21619,16 +22739,7 @@ Answer: C</pre>
 
       const resultBox = document.getElementById('board-result');
       resultBox.style.display = 'none';
-
-      if (!document.getElementById('board-calc-btn')) {
-        const calcBtn = document.createElement('button');
-        calcBtn.id = 'board-calc-btn';
-        calcBtn.className = 'board-btn';
-        calcBtn.style.marginTop = '6px';
-        calcBtn.innerHTML = '<span>CALCULATE RESULT</span>';
-        calcBtn.onclick = () => calculateBoardResult(false);
-        container.parentNode.insertBefore(calcBtn, resultBox);
-      }
+      refreshBoardViewResultBtn();
 
       initExamTimers();
 
@@ -21638,7 +22749,7 @@ Answer: C</pre>
         // re-triggering confetti.
         stopBoardCountdown();
         freezeBoardCountdownAsCompleted();
-        calculateBoardResult(true);
+        calculateBoardResult();
       } else {
         startBoardCountdown();
       }
@@ -21663,13 +22774,26 @@ Answer: C</pre>
       subjects.forEach(s => {
         const el = document.getElementById(`grade-${s.key}`);
         if (!el) return;
+        const row = el.closest('.board-grade-row');
+        const label = row && row.querySelector('.board-grade-label');
         const sc = boardScores[s.key];
-        if (sc) {
+        // The "YOUR SCORE" label only appears once the set is finished and
+        // the real score is shown; until then only the status text shows.
+        if (label) label.style.display = (sc && boardSetCompleted) ? '' : 'none';
+        // Nothing to show for a subject that hasn't been submitted yet, so
+        // its whole row stays hidden (no placeholder text or dash).
+        if (row) row.style.display = sc ? '' : 'none';
+        if (sc && !boardSetCompleted) {
+          // Scores stay hidden until every subject (through Day 3) is
+          // finished, like a real board exam releasing results at the end.
+          el.classList.remove('has-score');
+          el.textContent = 'Submitted, score hidden until Day 3 is finished';
+        } else if (sc) {
           el.classList.add('has-score');
           el.innerHTML = `${sc.score} / ${sc.total}<span class="board-grade-pct">${+sc.percent.toFixed(2)}%</span>`;
         } else {
           el.classList.remove('has-score');
-          el.textContent = currentBoardSet[s.key] ? 'Finish the exam to see your score' : '—';
+          el.textContent = '';
         }
       });
     }
@@ -21682,8 +22806,9 @@ Answer: C</pre>
       if (!key) return;
       boardScores[key] = { score, total, percent: total > 0 ? (score / total) * 100 : 0 };
       saveBoardState();
+      refreshAllBoardPastCards(); // this exam is finished: no longer clickable
       updateBoardScoreDisplays();
-      calculateBoardResult(true);
+      calculateBoardResult();
     }
 
     // Called when an exam is retaken: its board score goes back to blank.
@@ -21698,68 +22823,58 @@ Answer: C</pre>
         boardSetCompleted = false;
         startBoardCountdown();
       }
+      refreshAllBoardPastCards(); // the cleared exam is clickable again
       saveBoardState();
       updateBoardScoreDisplays();
       const resultBox = document.getElementById('board-result');
       if (resultBox) resultBox.style.display = 'none';
+      refreshBoardViewResultBtn();
     }
 
-    // auto = true: called by itself after an exam is finished — shows the
-    // overall result only once every subject has a score (no warning, no
-    // confetti). auto = false: the CALCULATE RESULT button.
-    function calculateBoardResult(auto) {
+    // Called by itself after an exam is finished — once every subject has
+    // a score, the overall result is locked in and shown as a popup.
+    function calculateBoardResult() {
       let total = 0;
       let allAtOrAbove50 = true;
       let missingCount = 0;
 
+      const rows = []; // per-subject summary, used by the share image
       subjects.forEach(s => {
         const sc = boardScores[s.key];
         if (!sc) { missingCount++; return; }
         total += sc.percent * (s.pct / 100);
         if (sc.percent < 50) allAtOrAbove50 = false;
+        rows.push({ name: s.name, weight: s.pct, score: sc.score, outOf: sc.total, percent: sc.percent });
       });
 
-      const resultBox = document.getElementById('board-result');
-      if (!resultBox) return;
-
-      if (missingCount) {
-        if (auto) return;
-        resultBox.style.display = 'block';
-        resultBox.className = 'board-result-box warn';
-        resultBox.innerHTML = `Finish the exam for every subject first (${missingCount} left). Scores fill in automatically.`;
-        return;
-      }
+      if (missingCount) return;
 
       // All 6 subjects done — lock the result in and stop the 3-day clock
       // for good, even if time is still left on it. Finishing early
       // shouldn't leave the countdown running toward an expiry-wipe that
       // would erase a result you already have.
-      if (!boardSetCompleted) {
+      const justCompleted = !boardSetCompleted;
+      if (justCompleted) {
         boardSetCompleted = true;
         stopBoardCountdown();
         freezeBoardCountdownAsCompleted();
         saveBoardState();
+        refreshAllBoardPastCards(); // everything is done: no exam is clickable any more
+        updateBoardScoreDisplays(); // ...and the scores are revealed
       }
 
-      resultBox.style.display = 'block';
+      boardResultLatest = { total, allAtOrAbove50, passed: total >= 75 && allAtOrAbove50, rows };
 
-      const passed = total >= 75 && allAtOrAbove50;
-      resultBox.className = 'board-result-box ' + (passed ? 'pass' : 'fail');
-      resultBox.innerHTML = `
-        <div class="board-result-total">${total.toFixed(2)}%</div>
-        <div class="board-result-verdict">${passed ? 'PASSED' : 'FAILED'}</div>
-        <div class="board-result-note">${
-          passed
-            ? 'Overall average is 75% or higher and no subject fell below 50%.'
-            : (total < 75
-                ? 'Overall average is below the 75% passing requirement.'
-                : 'At least one subject fell below the 50% minimum, even though the overall average is 75% or higher.')
-        }</div>
-      `;
+      // The result itself lives in the popup; the page only keeps a
+      // VIEW RESULT button (top right, beside GENERATE RANDOM SET / RESET)
+      // to reopen it.
+      refreshBoardViewResultBtn();
 
-      if (passed && !auto) {
-        launchConfetti();
-      }
+      // Pop it up when the set has just been completed (not when an
+      // already-finished set is restored on page load); it waits for the
+      // Mock Board Exam page if the last exam was submitted from inside
+      // an exam.
+      if (justCompleted) openBoardResultModal();
     }
 
     function launchConfetti() {
@@ -21828,6 +22943,36 @@ Answer: C</pre>
     };
 
     let homeScrollY = 0;
+    // Remembers each top-bar tab's own scroll position (Mock Exam, Review,
+    // Mock Board, Quiz, Shop — whatever's on screen for that tab right
+    // now, top-level list or a level deep), keyed by tab name, so
+    // switching to a different tab and back restores that spot instead of
+    // jumping to the top. This is separate from the more granular
+    // trackers used when backing up one level WITHIN a tab (quizSubjectsScrollY,
+    // subjectsListScrollY, gformReturnScrollY, etc.) — those keep working
+    // exactly as before; this only covers the tab-switch case.
+    let tabScrollPositions = {};
+    // Figures out which top-bar tab (if any) is currently on screen, deep
+    // or not, so navigateHomeTab() knows whose scroll position to save
+    // before switching away. Mirrors getTopbarBackContext()'s tab
+    // resolution for the "deep" cases, then falls back to matching
+    // whichever top-level view is visible.
+    function currentActiveTab() {
+      const gformOverlay = document.getElementById('gform-overlay');
+      if (gformOverlay && gformOverlay.classList.contains('visible')) {
+        if (gformReturnViewId === 'view-review') return 'review';
+        if (gformReturnViewId === 'view-board') return 'mock-board';
+        return 'mock-exam';
+      }
+      if (isMockExamListViewVisible()) {
+        return (lastSubjectsOrigin === 'view-review') ? 'review' : 'mock-exam';
+      }
+      for (const tab in HOME_TAB_TARGET_VIEW) {
+        const el = document.getElementById(HOME_TAB_TARGET_VIEW[tab]);
+        if (el && el.classList.contains('visible')) return tab;
+      }
+      return null;
+    }
 
     function updatePresenceSection(label) {
       // Broadcasts what page/tab this user is currently on, shown in
@@ -21929,22 +23074,84 @@ Answer: C</pre>
       // Leaving the Quiz tab for anywhere else forgets which subject was
       // open, so coming back to Quiz always starts at the subject list —
       // matching Mock Exam's behavior — instead of jumping straight back
-      // into that subject's exam list.
-      if (tab !== 'quiz') {
+      // into that subject's exam list. But NOT while still a level deep in
+      // that subject — its exam list, an in-progress quiz, or its results
+      // screen (i.e. whenever quiz-subjects-panel is hidden):
+      // refreshQuizViewOnOpen() deliberately leaves whichever of those was
+      // on screen alone when you return to the tab, but
+      // getTopbarBackContext() needs currentQuizSubjectKey to recognize
+      // you're a level deep — clearing it here left that screen visible
+      // with a stale/broken back button (it silently reverted to the plain
+      // tab icon and stopped navigating back) until you backed all the way
+      // out of the subject. Keeping the key while any of those screens is
+      // showing keeps the back button consistent with what's actually
+      // still on screen.
+      // Save the scroll position of whatever tab we're currently leaving
+      // (deep or not), so coming back to it later — even after visiting
+      // other tabs in between — restores this exact spot instead of
+      // jumping to the top.
+      const leavingTab = currentActiveTab();
+      if (leavingTab) tabScrollPositions[leavingTab] = window.scrollY;
+
+      const quizStillDeep = document.getElementById('quiz-subjects-panel').style.display === 'none';
+      if (tab !== 'quiz' && !quizStillDeep) {
         currentQuizSubjectKey = null;
       }
 
+      // Same idea, generalized to every other section that has a "level
+      // deep" state: Mock Exam / Mock Board / Review all share one
+      // in-progress exam overlay (gform-overlay), and Mock Exam / Review
+      // also share the subject-detail pages (Aerodynamics, Structures,
+      // etc. — tracked by lastOpenSubjectViewId, above). Unconditionally
+      // hiding every .view and showing only this tab's own top-level list
+      // (the old behavior below) meant switching to a different tab and
+      // back would silently drop you out of an exam or subject page you
+      // were still in — the data was safe (auto-saved / kept in these
+      // variables), but the screen, and the back button, reset to the top
+      // as if nothing was open. Figure out first whether the tab being
+      // switched TO still has one of those parked behind it, so it can be
+      // restored instead.
+      const gformOverlay = document.getElementById('gform-overlay');
+      let gformOwnerTab = null;
+      if (gformOverlay && gformReturnViewId) {
+        if (gformReturnViewId === 'view-review') gformOwnerTab = 'review';
+        else if (gformReturnViewId === 'view-board') gformOwnerTab = 'mock-board';
+        else gformOwnerTab = 'mock-exam';
+      }
+      const subjectOwnerTab = lastOpenSubjectViewId
+        ? ((lastSubjectsOrigin === 'view-review') ? 'review' : 'mock-exam')
+        : null;
+
       // Remember exactly where the user was on the homepage so "back to
-      // homepage" can return them here instead of jumping to the top.
-      homeScrollY = window.scrollY;
+      // homepage" can return them here instead of jumping to the top —
+      // but only if the homepage is actually what's being left; otherwise
+      // this would overwrite it with whatever tab's scroll position
+      // instead (e.g. switching straight from Mock Exam to Quiz).
+      if (document.getElementById('view-home').classList.contains('visible')) {
+        homeScrollY = window.scrollY;
+      }
 
       document.querySelectorAll('.view').forEach(v => v.classList.remove('visible'));
-      document.getElementById(targetViewId).classList.add('visible');
-      window.scrollTo(0, 0);
+      if (tab === gformOwnerTab) {
+        gformOverlay.classList.add('visible');
+      } else if (tab === subjectOwnerTab) {
+        const subjEl = document.getElementById(lastOpenSubjectViewId);
+        if (subjEl) subjEl.classList.add('visible');
+        else document.getElementById(targetViewId).classList.add('visible');
+      } else {
+        document.getElementById(targetViewId).classList.add('visible');
+      }
+      // Restore this tab's own remembered scroll position instead of
+      // always jumping to the top.
+      window.scrollTo(0, tabScrollPositions[tab] || 0);
       updatePresenceSection(HOME_TAB_SECTION_LABEL[tab] || 'reviewing');
       updateTopbarStoreNav(tab === 'shop' ? 'shop' : null);
       if (tab === 'shop') renderShopIfVisible();
-      if (tab === 'mock-board') restoreBoardSetIfAny();
+      // Skip these re-renders when we just restored a parked exam overlay
+      // instead of the tab's own list view underneath it — that list isn't
+      // what's on screen right now, and re-rendering it is wasted work
+      // (and, for the board, could stomp on state mid-exam).
+      if (tab === 'mock-board' && tab !== gformOwnerTab) restoreBoardSetIfAny();
       if (tab === 'quiz') refreshQuizViewOnOpen();
       updateSidebarVisibility();
       refreshTopbarTabIcons();
@@ -22026,21 +23233,33 @@ Answer: C</pre>
     // Remembers exactly where the user was scrolled on that SUBJECTS list,
     // so "BACK TO SUBJECTS" restores that spot instead of jumping to the top.
     let subjectsListScrollY = 0;
+    // Remembers which specific subject-detail view (view-structures,
+    // view-aero, view-powerplant, or view-empty) is currently open a level
+    // deep in Mock Exam or Review, independent of which .view element
+    // happens to have the 'visible' class right now — switching to a
+    // different top-bar tab strips 'visible' from every .view, including
+    // this one, so by itself that class can't tell navigateHomeTab()
+    // whether to restore it later. Set in showSubject(), cleared in
+    // backToSubjects() (the only ways in/out of a subject-detail view).
+    let lastOpenSubjectViewId = null;
 
     function showSubject(key, originView) {
       lastSubjectsOrigin = originView || 'view-mock-exam';
       subjectsListScrollY = window.scrollY;
       document.querySelectorAll('.view').forEach(v => v.classList.remove('visible'));
       if (key === 'structures') {
-        document.getElementById('view-structures').classList.add('visible');
+        lastOpenSubjectViewId = 'view-structures';
       } else if (key === 'aero') {
-        document.getElementById('view-aero').classList.add('visible');
+        lastOpenSubjectViewId = 'view-aero';
       } else if (key === 'powerplant') {
-        document.getElementById('view-powerplant').classList.add('visible');
+        lastOpenSubjectViewId = 'view-powerplant';
       } else {
+        lastOpenSubjectViewId = 'view-empty';
+      }
+      document.getElementById(lastOpenSubjectViewId).classList.add('visible');
+      if (lastOpenSubjectViewId === 'view-empty') {
         const s = subjects.find(x => x.key === key);
         document.getElementById('empty-title').textContent = s ? s.name : 'Subject';
-        document.getElementById('view-empty').classList.add('visible');
         setupEmptySubjectMockExams(key);
       }
       window.scrollTo(0, 0);
@@ -22056,6 +23275,7 @@ Answer: C</pre>
     function backToSubjects() {
       document.querySelectorAll('.view').forEach(v => v.classList.remove('visible'));
       document.getElementById(lastSubjectsOrigin).classList.add('visible');
+      lastOpenSubjectViewId = null;
       // Return to wherever the user left off on the subjects list instead
       // of jumping back to the top.
       window.scrollTo(0, subjectsListScrollY);
@@ -22139,20 +23359,22 @@ Answer: C</pre>
     // (openAircraftTilePreview) instead, since the ownership gate is about
     // *your* wallet and shouldn't block you from looking at models someone
     // else owns.
-    // order is that account's saved tile arrangement (userWallet.modelOrder
-    // for the owner, presence.modelOrder for anyone else) — any owned item
-    // not yet in it (never reordered, or bought after the order was last
-    // saved) just falls back to SHOP_ITEMS.models order at the end.
-    function renderAircraftCollectionHtml(owned, dataLoaded, isOwn, order) {
+    // equipped is that account's equipped-model ids, in equip/reorder order
+    // (userWallet.equippedModels for the owner, presence.equippedModels for
+    // anyone else) — only owned items still in that list are shown, so an
+    // item revoked or otherwise no longer owned quietly drops off here too.
+    function renderAircraftCollectionHtml(owned, dataLoaded, isOwn, equipped) {
       if (!dataLoaded) return `<div class="profile-aircraft-empty">Loading…</div>`;
-      const ownedItems = (SHOP_ITEMS.models || []).filter((item) => owned && owned[item.id]);
-      if (ownedItems.length === 0) {
-        // Only the owner sees a prompt here (it's actionable — go buy
-        // something); on someone else's profile an empty collection just
-        // renders nothing instead of a "no aircraft yet" line.
-        return isOwn ? `<div class="profile-aircraft-empty">No aircraft in your collection yet. Check the Flight Store.</div>` : '';
+      const equippedIds = equipped || [];
+      const byId = {};
+      (SHOP_ITEMS.models || []).forEach((item) => { byId[item.id] = item; });
+      const orderedItems = equippedIds.map((id) => byId[id]).filter((item) => item && owned && owned[item.id]);
+      if (orderedItems.length === 0) {
+        // Only the owner sees a prompt here (it's actionable — go equip
+        // something from the Hangar); on someone else's profile an empty
+        // collection just renders nothing instead of a "no aircraft" line.
+        return isOwn ? `<div class="profile-aircraft-empty">No aircraft equipped yet. Equip one from the Hangar.</div>` : '';
       }
-      const orderedItems = sortAircraftItemsByOrder(ownedItems, order);
       const tiles = orderedItems.map((item) => `
         <div class="profile-aircraft-item"${isOwn ? ' draggable="true"' : ''} data-aircraft-id="${item.id}" onclick="${isOwn ? `openMigViewer('${item.id}')` : `openAircraftTilePreview('${item.id}')`}"${isOwn ? `
           ondragstart="handleAircraftDragStart(event, '${item.id}')"
@@ -22216,18 +23438,17 @@ Answer: C</pre>
       if (grid) grid.querySelectorAll('.dragging').forEach((el) => el.classList.remove('dragging'));
     }
 
-    // Moves fromId to sit where toId currently is, saves the resulting
-    // order to the wallet (so it survives a reload), mirrors it to presence
-    // so it shows the same way on everyone else's screen, and re-renders
-    // the open profile card immediately.
+    // Moves fromId to sit where toId currently is within the equipped list,
+    // saves the resulting order to the wallet (so it survives a reload),
+    // mirrors it to presence so it shows the same way on everyone else's
+    // screen, and re-renders the open profile card immediately.
     function reorderAircraftCollection(fromId, toId) {
-      const ownedItems = (SHOP_ITEMS.models || []).filter((item) => userWallet.ownedModels && userWallet.ownedModels[item.id]);
-      const currentOrder = sortAircraftItemsByOrder(ownedItems, userWallet.modelOrder || []).map((item) => item.id);
+      const currentOrder = (userWallet.equippedModels || []).slice();
       const fromIndex = currentOrder.indexOf(fromId);
       const toIndex = currentOrder.indexOf(toId);
       if (fromIndex === -1 || toIndex === -1) return;
       currentOrder.splice(toIndex, 0, currentOrder.splice(fromIndex, 1)[0]);
-      userWallet.modelOrder = currentOrder;
+      userWallet.equippedModels = currentOrder;
       if (currentChatUser && currentChatUser.nickname) {
         walletRef(currentChatUser.nickname).set(userWallet);
       }
