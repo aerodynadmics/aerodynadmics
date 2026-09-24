@@ -2148,6 +2148,25 @@
     background: rgba(255, 111, 176, 0.12);
   }
   .confirm-dialog-btn.affirm:hover { background: rgba(255, 111, 176, 0.22); }
+  /* Boxed green (Generate New Set) and boxed red (Reset Set). */
+  .confirm-dialog-btn.generate {
+    border-color: rgba(79, 209, 160, 0.45);
+    color: var(--green);
+    background: rgba(79, 209, 160, 0.12);
+  }
+  .confirm-dialog-btn.generate:hover { background: rgba(79, 209, 160, 0.22); }
+  .confirm-dialog-btn.danger {
+    border-color: rgba(255, 107, 107, 0.45);
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.12);
+  }
+  .confirm-dialog-btn.danger:hover { background: rgba(255, 107, 107, 0.22); }
+  .confirm-dialog-btn.yellow {
+    border-color: var(--accent);
+    color: var(--blueprint-dark);
+    background: var(--accent);
+  }
+  .confirm-dialog-btn.yellow:hover { filter: brightness(1.08); }
 
 
   /* ---- site-wide custom tooltip for every native title="" tooltip ----
@@ -3234,6 +3253,9 @@
     border-radius: 999px;
     cursor: pointer;
   }
+  /* Same lighten-on-hover as the other yellow buttons (e.g. Submit). */
+  .quiz-start-btn { transition: filter 0.15s ease; }
+  .quiz-start-btn:not(.quiz-secondary-btn):hover { filter: brightness(1.08); }
   .quiz-start-btn.quiz-secondary-btn {
     background: transparent;
     border: 1px solid var(--line);
@@ -3387,6 +3409,11 @@
     color: #ff6b6b;
     border-color: #ff6b6b;
   }
+  .exam-timer.scored {
+    background: var(--accent);
+    color: var(--blueprint-dark);
+    border-color: var(--accent);
+  }
   .exam-timer-reset {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
@@ -3401,6 +3428,12 @@
   }
   .exam-timer-reset:hover {
     color: var(--accent);
+  }
+  /* Timer + RESET only show once an exam has been started (running or
+     expired) or has a score — hidden while the exam is untouched. */
+  .exam-card.exam-timer-idle .exam-timer,
+  .exam-card.exam-timer-idle .exam-timer-reset:not(.exam-instant-finish) {
+    display: none;
   }
 
   .timer-info-note {
@@ -9156,11 +9189,12 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         <div class="admin-settings-wrap" id="admin-settings-wrap" style="display:none;">
           <button class="signout-btn icon-only" id="admin-settings-btn" title="Admin" aria-label="Admin" onclick="toggleAdminSettingsMenu(event)">&#9881;&#65039;</button>
           <div class="admin-settings-menu" id="admin-settings-menu">
-            <button id="admin-unban-btn" onclick="openBannedListModal(); closeAdminSettingsMenu();">UNBAN</button>
             <button id="admin-gift-wings-btn" onclick="openGiftWingsModal(); closeAdminSettingsMenu();">ADJUST BALANCE</button>
-            <button id="admin-mock-exams-btn" onclick="openMockExamAdmin(); closeAdminSettingsMenu();">MOCK EXAMS</button>
+            <button id="admin-board-settings-btn" onclick="openBoardAdminSettingsModal(); closeAdminSettingsMenu();">BOARD SETTINGS</button>
             <button id="admin-deleted-items-btn" onclick="openDeletedItemsModal(); closeAdminSettingsMenu();">DELETED SHOP ITEMS</button>
             <button id="admin-toggle-flightstore-btn" onclick="toggleFlightStoreEnabled(); closeAdminSettingsMenu();">DISABLE FLIGHT STORE</button>
+            <button id="admin-mock-exams-btn" onclick="openMockExamAdmin(); closeAdminSettingsMenu();">MOCK EXAMS</button>
+            <button id="admin-unban-btn" onclick="openBannedListModal(); closeAdminSettingsMenu();">UNBAN</button>
           </div>
         </div>
         <div class="topbar-icon-nav" id="topbar-icon-nav">
@@ -9647,6 +9681,31 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
       <hr class="gift-wings-divider">
       <h3>🪽 Adjust Another User's Balance</h3>
       <div id="gift-wings-items"></div>
+    </div>
+  </div>
+
+  <!-- Merged in-page "BOARD SETTINGS" popup (replaces the old separate
+       BOARD TIMER prompt() and SHOW/HIDE FINISH NOW BUTTON toggle button —
+       see openBoardAdminSettingsModal()/applyBoardAdminSettings() below).
+       Only ever opened by the signed-in admin from the admin gear menu. -->
+  <div class="banned-list-overlay" id="board-admin-settings-overlay">
+    <div class="mockadmin-card" style="max-width:420px;" onclick="event.stopPropagation();">
+      <button class="banned-list-close" onclick="closeBoardAdminSettingsModal()">&times;</button>
+      <h3>Board Settings</h3>
+
+      <label class="mockadmin-field-label">BOARD TIMER MINUTES PER SET</label>
+      <input type="text" id="board-admin-settings-minutes" class="mockadmin-input" inputmode="numeric" pattern="[0-9]*" maxlength="7" autocomplete="off" placeholder="0" style="max-width:160px;" onbeforeinput="if (event.data &amp;&amp; /\D/.test(event.data)) event.preventDefault();" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 7);">
+      <p style="margin:6px 0 0; font-size:11px; color:var(--rivet); line-height:1.5;">1 = 1 min/set (3 min total) for TEST SPEED. Enter 0 for REAL SPEED (real 1-day-per-set timing).</p>
+
+      <label class="mockadmin-publish-toggle" style="margin-top:20px; font-size:12.5px;">
+        <input type="checkbox" id="board-admin-settings-finish-toggle">
+        HIDE FINISH NOW BUTTON
+      </label>
+
+      <div class="mockadmin-editor-actions" style="margin-top:20px;">
+        <button type="button" class="mockadmin-save-btn" onclick="closeBoardAdminSettingsModal()">CANCEL</button>
+        <button type="button" class="mockadmin-publish-btn" onclick="applyBoardAdminSettings()">APPLY</button>
+      </div>
     </div>
   </div>
 
@@ -10784,6 +10843,7 @@ Answer: C</pre>
       setChatPanelAvailable(false);
       markPresenceOffline();
       stopWatchingForLiveBan();
+      progSyncOnSignOut();
       currentChatUser = null;
       if (window.google && google.accounts && google.accounts.id) {
         google.accounts.id.disableAutoSelect();
@@ -11511,6 +11571,8 @@ Answer: C</pre>
       if (!isAdminUser(user)) closeAdminSettingsMenu();
       updateFlightStoreButtonVisibility();
       currentChatUser = user;
+      refreshBoardTimerConfig();
+      updateBoardAdminToggleLabels();
       setNeedsFlightCode(user.needsFlightCode);
       setChatPanelAvailable(true);
       initChat();
@@ -11525,6 +11587,7 @@ Answer: C</pre>
       loadWingsAlerts(user);
       showNicknameList();
       updateSidebarVisibility();
+      progSyncOnSignIn(user); // pull this account's saved progress from Firebase
     }
 
     function openBannedListModal() {
@@ -11747,6 +11810,7 @@ Answer: C</pre>
       // against this account's leftover balance (that false "increase"
       // is what was firing the +wings toast on every login/logout).
       lastKnownWings = null;
+      progSyncOnSignOut();
       currentChatUser = null;
       setChatPanelAvailable(false);
       unreadChatCount = 0;
@@ -12327,6 +12391,391 @@ Answer: C</pre>
           resolve(null);
         }, timeoutMs || 4000);
       });
+    }
+
+    // ==================================================================
+    // PROGRESS SYNC (localStorage <-> Firebase Realtime Database)
+    // ------------------------------------------------------------------
+    // Makes each signed-in user's progress follow their account across
+    // devices. localStorage stays the fast local copy; every save/delete
+    // of the synced keys is ALSO written to Firebase, and on sign-in /
+    // page load the Firebase copy is read back and merged (newest
+    // updatedAt wins).
+    //
+    // Synced keys (all already scoped per account by userScopedKey()):
+    //   boardExamSet            saveBoardState() / loadBoardState()
+    //   examTimerStart:*        exam countdown timers
+    //   examProgress_*          saveExamProgress() / loadExamProgress()
+    //                           (old name gformProgress_* is migrated, see
+    //                           migrateLegacyExamProgress() below)
+    //                           (see examProgressKey())
+    //   quizProgress_*          saveQuizProgress() / loadQuizProgress()
+    //
+    // How: Storage.prototype.setItem / removeItem are wrapped (only for
+    // localStorage and only for the keys above), so EVERY existing save,
+    // RESET, retake, board-set expiry and bulk clear is mirrored without
+    // touching each call site or changing any existing behavior.
+    //
+    // Database layout:
+    //   {DB_NAMESPACE}/userProgress/{authUid}/{emailKey}/{encodedKey}
+    //     = { k: <original key>, v: <string value>, updatedAt: <ms> }
+    //   or, after a delete/reset/retake/expiry:
+    //     = { k: <original key>, d: true, updatedAt: <ms> }   (tombstone)
+    // authUid is the Firebase Auth uid this app's backend mints for the
+    // signed-in Callsign (same value used for Storage avatar rules), and
+    // emailKey is the email from userScopedKey() with "." (and the other
+    // characters Firebase forbids in keys) replaced by ",".
+    //
+    // Firebase rules to add (inside "rules" > "aerodynadmics-aele"):
+    //   "userProgress": {
+    //     "$uid": {
+    //       ".read":  "auth != null && auth.uid === $uid",
+    //       ".write": "auth != null && auth.uid === $uid",
+    //       "$emailKey": { "$itemKey": {
+    //         ".validate": "newData.hasChildren(['k','updatedAt']) && newData.child('updatedAt').isNumber() && (newData.hasChild('v') || newData.child('d').val() === true)",
+    //         "k": { ".validate": "newData.isString() && newData.val().length < 800" },
+    //         "v": { ".validate": "newData.isString() && newData.val().length < 3000000" },
+    //         "d": { ".validate": "newData.val() === true" },
+    //         "updatedAt": { ".validate": "newData.isNumber()" },
+    //         "$other": { ".validate": false }
+    //       } }
+    //     }
+    //   }
+    // ==================================================================
+    var __progSync = {
+      email: null,          // lower-cased email of the account being synced
+      uid: null,            // Firebase Auth uid expected for that account
+      started: false,       // true once Firebase Auth matches uid (pull runs)
+      authListening: false,
+      offset: 0,            // Firebase server-time offset (ms)
+      meta: null,           // { rawKey: [updatedAt, deletedFlag?] } for email
+      metaEmail: null,
+      origSet: Storage.prototype.setItem,
+      origRemove: Storage.prototype.removeItem
+    };
+
+    function progSyncRawOk(raw) {
+      return raw === 'boardExamSet' ||
+        raw.indexOf('examTimerStart:') === 0 ||
+        raw.indexOf('examProgress_') === 0 ||
+        raw.indexOf('gformProgress_') === 0 ||
+        raw.indexOf('quizProgress_') === 0;
+    }
+
+    function progSyncEmail() {
+      try {
+        if (typeof currentChatUser !== 'undefined' && currentChatUser && currentChatUser.email) {
+          return String(currentChatUser.email).toLowerCase();
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    function progSyncEmailKey(email) {
+      return String(email).toLowerCase().replace(/[.#$\[\]\/]/g, ',');
+    }
+
+    function progSyncEncKey(raw) {
+      let e = encodeURIComponent(raw).replace(/\./g, '%2E');
+      if (e.length > 600) {
+        let h = 5381;
+        for (let i = 0; i < raw.length; i++) h = ((h * 33) ^ raw.charCodeAt(i)) >>> 0;
+        e = e.slice(0, 500) + '~' + h.toString(16) + '~' + raw.length;
+      }
+      return e;
+    }
+
+    function progSyncBaseRef(email, uid) {
+      return nsRef('userProgress/' + uid + '/' + progSyncEmailKey(email));
+    }
+
+    function progSyncNow() { return Date.now() + (__progSync.offset || 0); }
+
+    // Local "when was this key last changed" bookkeeping, so the newer of
+    // the local and Firebase copies can be picked (and so a delete made
+    // while offline still wins over an older Firebase copy).
+    function progSyncMetaKey(email) { return 'progressSyncMeta::' + email; }
+
+    function progSyncLoadMeta(email) {
+      const S = __progSync;
+      if (S.metaEmail === email && S.meta) return S.meta;
+      let m = {};
+      try {
+        const raw = localStorage.getItem(progSyncMetaKey(email));
+        if (raw) m = JSON.parse(raw) || {};
+      } catch (e) { m = {}; }
+      S.meta = m;
+      S.metaEmail = email;
+      return m;
+    }
+
+    function progSyncSaveMeta(email) {
+      try {
+        __progSync.origSet.call(localStorage, progSyncMetaKey(email), JSON.stringify(__progSync.meta || {}));
+      } catch (e) {}
+    }
+
+    function progSyncNextTs(meta, raw) {
+      const prev = meta[raw] ? (Number(meta[raw][0]) || 0) : 0;
+      return Math.max(progSyncNow(), prev + 1);
+    }
+
+    function progSyncPush(email, raw, payload) {
+      const S = __progSync;
+      if (!S.started || S.email !== email) return;
+      try {
+        progSyncBaseRef(email, S.uid).child(progSyncEncKey(raw)).set(payload)
+          .catch(err => console.error('Progress sync (write) failed:', err));
+      } catch (err) { console.error('Progress sync (write) error:', err); }
+    }
+
+    // Called by the localStorage.setItem wrapper.
+    function progSyncOnLocalSet(key, value) {
+      const email = progSyncEmail();
+      if (!email) return;
+      const pre = email + '::';
+      if (key.indexOf(pre) !== 0) return;
+      const raw = key.slice(pre.length);
+      if (!progSyncRawOk(raw)) return;
+      const meta = progSyncLoadMeta(email);
+      const ts = progSyncNextTs(meta, raw);
+      meta[raw] = [ts];
+      progSyncSaveMeta(email);
+      progSyncPush(email, raw, { k: raw, v: value, updatedAt: ts });
+    }
+
+    // Called by the localStorage.removeItem wrapper: RESET, retake, board
+    // expiry and bulk clears all land here and delete the Firebase copy.
+    function progSyncOnLocalRemove(key) {
+      const email = progSyncEmail();
+      if (!email) return;
+      const pre = email + '::';
+      if (key.indexOf(pre) !== 0) return;
+      const raw = key.slice(pre.length);
+      if (!progSyncRawOk(raw)) return;
+      const meta = progSyncLoadMeta(email);
+      if (raw.indexOf('gformProgress_') === 0) {
+        // Old-name key being migrated away: nothing writes this name any
+        // more, so erase the Firebase entry outright instead of leaving a
+        // delete-marker behind.
+        delete meta[raw];
+        progSyncSaveMeta(email);
+        progSyncPush(email, raw, null);
+        return;
+      }
+      const ts = progSyncNextTs(meta, raw);
+      meta[raw] = [ts, 1];
+      progSyncSaveMeta(email);
+      progSyncPush(email, raw, { k: raw, d: true, updatedAt: ts });
+    }
+
+    (function installProgressSyncHooks() {
+      try {
+        const proto = Storage.prototype;
+        const origSet = __progSync.origSet;
+        const origRemove = __progSync.origRemove;
+        proto.setItem = function (key, value) {
+          origSet.call(this, key, value);
+          try {
+            if (this === window.localStorage) progSyncOnLocalSet(String(key), String(value));
+          } catch (e) {}
+        };
+        proto.removeItem = function (key) {
+          origRemove.call(this, key);
+          try {
+            if (this === window.localStorage) progSyncOnLocalRemove(String(key));
+          } catch (e) {}
+        };
+      } catch (e) {}
+    })();
+
+    // One-time rename: exam progress used to be saved under
+    // "<email>::gformProgress_..." and is now "<email>::examProgress_...".
+    // Copies every old key to the new name (never overwriting a new one),
+    // then removes the old key. Because this goes through the normal
+    // localStorage wrappers, the Firebase copy is moved the same way for
+    // the signed-in account. Safe to run any number of times.
+    function migrateLegacyExamProgress() {
+      try {
+        const OLD = '::gformProgress_', NEW = '::examProgress_';
+        const oldKeys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.indexOf(OLD) > 0) oldKeys.push(k);
+        }
+        oldKeys.forEach(k => {
+          const idx = k.indexOf(OLD);
+          const nk = k.slice(0, idx) + NEW + k.slice(idx + OLD.length);
+          if (localStorage.getItem(nk) === null) localStorage.setItem(nk, localStorage.getItem(k));
+          localStorage.removeItem(k);
+        });
+      } catch (e) {}
+    }
+    migrateLegacyExamProgress(); // on page load, before anything reads progress
+
+    // Sign-in / page-load entry point (called from showSignedInUI). Waits
+    // until Firebase Auth is signed in as this account's uid (the custom
+    // token from the backend), then runs the pull/merge once.
+    function progSyncOnSignIn(user) {
+      try {
+        if (!user || !user.email || !user.nickname) return;
+        const S = __progSync;
+        const email = String(user.email).toLowerCase();
+        const uid = avatarUploadKey(user.nickname);
+        if (S.email !== email || S.uid !== uid) {
+          S.email = email;
+          S.uid = uid;
+          S.started = false;
+          S.meta = null;
+          S.metaEmail = null;
+        }
+        if (!chatConfigIsFilledIn() || !ensureFirebaseApp()) return;
+        if (!S.authListening) {
+          S.authListening = true;
+          firebase.auth().onAuthStateChanged(() => progSyncMaybeStart());
+        }
+        progSyncMaybeStart();
+      } catch (err) { console.error('Progress sync (sign-in) error:', err); }
+    }
+
+    function progSyncOnSignOut() {
+      const S = __progSync;
+      S.email = null;
+      S.uid = null;
+      S.started = false;
+      S.meta = null;
+      S.metaEmail = null;
+    }
+
+    function progSyncMaybeStart() {
+      const S = __progSync;
+      if (!S.email || S.started) return;
+      try {
+        const u = firebase.auth().currentUser;
+        if (!u || u.uid !== S.uid) return;
+      } catch (e) { return; }
+      S.started = true;
+      progSyncPull(S.email, S.uid);
+    }
+
+    // Reads this account's Firebase copy and merges it with localStorage:
+    //  - only in Firebase  -> copied into localStorage
+    //  - only local        -> uploaded to Firebase
+    //  - both              -> the one with the newer updatedAt wins
+    //  - deleted (tombstone) newer than local -> local copy is removed too
+    async function progSyncPull(email, uid) {
+      const S = __progSync;
+      try {
+        try {
+          const offSnap = await firebase.database().ref('.info/serverTimeOffset').once('value');
+          S.offset = Number(offSnap.val()) || 0;
+        } catch (e) {}
+
+        const base = progSyncBaseRef(email, uid);
+        const snap = await base.once('value');
+        if (S.email !== email || S.uid !== uid || progSyncEmail() !== email) return; // account changed meanwhile
+
+        const remote = {};
+        snap.forEach(child => {
+          const n = child.val();
+          if (!n || typeof n.k !== 'string' || !progSyncRawOk(n.k)) return;
+          const isDel = n.d === true;
+          if (!isDel && typeof n.v !== 'string') return;
+          remote[n.k] = { enc: child.key, d: isDel, v: isDel ? null : n.v, ts: Number(n.updatedAt) || 0 };
+        });
+
+        const pre = email + '::';
+        const meta = progSyncLoadMeta(email);
+        const local = {};
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key || key.indexOf(pre) !== 0) continue;
+          const raw = key.slice(pre.length);
+          if (!progSyncRawOk(raw)) continue;
+          local[raw] = { exists: true, v: localStorage.getItem(key), ts: meta[raw] ? (Number(meta[raw][0]) || 0) : 0 };
+        }
+        Object.keys(meta).forEach(raw => {
+          if (!local[raw]) local[raw] = { exists: false, ts: Number(meta[raw][0]) || 0 };
+        });
+
+        const changed = { board: false, exam: false, quiz: false };
+        const flag = (raw) => {
+          if (raw === 'boardExamSet') changed.board = true;
+          else if (raw.indexOf('quizProgress_') === 0) changed.quiz = true;
+          else changed.exam = true;
+        };
+        const toWrite = {};
+
+        Object.keys(remote).concat(Object.keys(local).filter(r => !remote[r])).forEach(raw => {
+          const R = remote[raw];
+          const L = local[raw];
+          if (R && (!L || R.ts > L.ts)) {
+            // Firebase copy is newer (or the only one): apply it locally.
+            try {
+              if (R.d) {
+                if (L && L.exists) { S.origRemove.call(localStorage, pre + raw); flag(raw); }
+                meta[raw] = [R.ts, 1];
+              } else {
+                if (!L || !L.exists || L.v !== R.v) { S.origSet.call(localStorage, pre + raw, R.v); flag(raw); }
+                meta[raw] = [R.ts];
+              }
+            } catch (e) {}
+          } else if (L && (!R || L.ts > R.ts)) {
+            // Local copy is newer (or the only one): upload it.
+            if (L.exists) {
+              let ts = L.ts;
+              if (!ts) { ts = progSyncNextTs(meta, raw); meta[raw] = [ts]; }
+              toWrite[progSyncEncKey(raw)] = { k: raw, v: L.v, updatedAt: ts };
+            } else if (R) {
+              toWrite[progSyncEncKey(raw)] = { k: raw, d: true, updatedAt: L.ts };
+            }
+          }
+        });
+
+        // Housekeeping: drop delete-markers older than 30 days (and any
+        // delete-marker left under the old gformProgress_ name right away).
+        const cutoff = progSyncNow() - 30 * 24 * 60 * 60 * 1000;
+        const isLegacyRaw = (raw) => raw.indexOf('gformProgress_') === 0;
+        Object.keys(remote).forEach(raw => {
+          const R = remote[raw];
+          if (R.d && (R.ts < cutoff || isLegacyRaw(raw)) && toWrite[R.enc] === undefined && localStorage.getItem(pre + raw) === null) {
+            toWrite[R.enc] = null;
+          }
+        });
+        Object.keys(meta).forEach(raw => {
+          if (meta[raw][1] && ((Number(meta[raw][0]) || 0) < cutoff || isLegacyRaw(raw))) delete meta[raw];
+        });
+        progSyncSaveMeta(email);
+
+        if (Object.keys(toWrite).length) {
+          base.update(toWrite).catch(err => console.error('Progress sync (upload) failed:', err));
+        }
+        migrateLegacyExamProgress();
+        if (changed.board || changed.exam || changed.quiz) progSyncRefreshUI(changed);
+      } catch (err) {
+        console.error('Progress sync (pull) failed:', err);
+      }
+    }
+
+    // Re-renders whatever was just changed by the merge, using the app's
+    // own existing loaders/renderers.
+    function progSyncRefreshUI(changed) {
+      try {
+        if (changed.board) {
+          const hasLocal = localStorage.getItem(userScopedKey('boardExamSet')) !== null;
+          const inMemory = !!boardSetGeneratedAt;
+          if (hasLocal) {
+            if (inMemory || isBoardViewVisible()) restoreBoardSetIfAny();
+          } else if (inMemory) {
+            clearExpiredBoardSet(); // the set was reset/expired on another device
+          }
+        }
+        if (changed.exam) {
+          tickAllExamTimers();
+          refreshMockExamTabIcon();
+        }
+        if (changed.quiz) renderQuizExamList();
+      } catch (err) { console.error('Progress sync (refresh) error:', err); }
     }
 
     function initChat() {
@@ -16160,7 +16609,7 @@ Answer: C</pre>
       const overlay = document.createElement('div');
       overlay.id = 'confirm-dialog-overlay';
       overlay.className = 'confirm-dialog-overlay';
-      const toneClass = tone === 'affirm' ? 'affirm' : 'confirm';
+      const toneClass = (tone === 'affirm' || tone === 'generate' || tone === 'danger' || tone === 'yellow') ? tone : 'confirm';
       overlay.innerHTML = `
         <div class="confirm-dialog">
           <p class="confirm-dialog-message">${escapeHtml(message)}</p>
@@ -17515,7 +17964,7 @@ Answer: C</pre>
         } else {
           const prefixes = [
             userScopedKey(TIMER_STORAGE_PREFIX + BOARD_TIMER_SCOPE),
-            userScopedKey(GFORM_PROGRESS_PREFIX + 'board:')
+            userScopedKey(EXAM_PROGRESS_PREFIX + 'board:')
           ];
           Object.keys(localStorage)
             .filter(k => prefixes.some(pre => k.indexOf(pre) === 0))
@@ -17543,7 +17992,9 @@ Answer: C</pre>
     }
 
     function initExamTimers() {
-      document.querySelectorAll('.exam-card').forEach(card => {
+      // Quiz list cards reuse the .exam-card look but are NOT timed mock
+      // exams — never give them a countdown / RESET / click-to-start-timer.
+      document.querySelectorAll('.exam-card:not(.quiz-exam-card)').forEach(card => {
         const row = card.querySelector('.exam-row');
         if (!row || row.querySelector('.exam-timer')) return;
         const timerEl = document.createElement('span');
@@ -17584,6 +18035,7 @@ Answer: C</pre>
               const backView = document.getElementById(gformReturnViewId || 'view-mock-exam');
               if (backView) backView.classList.add('visible');
               gformReturnViewId = null;
+              gformIsBoard = false;
             }
             const isBoardCard = !!card.closest('#view-board');
             try { localStorage.removeItem(examProgressKey(examId, isBoardCard)); } catch (err) {}
@@ -17592,10 +18044,11 @@ Answer: C</pre>
           }
         });
 
-        // TEMPORARY test helper: a per-exam "FINISH NOW" button on the
-        // Mock Board Exam page (see BOARD_INSTANT_FINISH_BTN).
+        // Admin-only "FINISH NOW" button on the Mock Board Exam page (see
+        // boardAdminFinishBtnOn). Only ever appears for the signed-in admin,
+        // on their own account — every other user never sees it.
         let finishBtn = null;
-        if (BOARD_INSTANT_FINISH_BTN && card.closest('#view-board')) {
+        if (boardAdminFinishBtnOn() && card.closest('#view-board')) {
           finishBtn = document.createElement('button');
           finishBtn.type = 'button';
           finishBtn.className = 'exam-timer-reset exam-instant-finish';
@@ -17632,10 +18085,84 @@ Answer: C</pre>
       });
     }
 
-    // ---- TEMPORARY test helper ----
-    // Set to false (or delete this block and the button code in
-    // initExamTimers) to remove the per-exam FINISH NOW buttons.
-    const BOARD_INSTANT_FINISH_BTN = true;
+    // ---- admin-only test helper ----
+    // Mirrors boardAdminFastTestOn() above: persisted per-browser, gated by
+    // isAdminUser() on every read, toggled from the admin gear menu (see
+    // applyBoardAdminSettings). Never shown to a non-admin account.
+    const BOARD_ADMIN_FINISH_BTN_KEY = 'boardAdminFinishBtn';
+    function boardAdminFinishBtnOn() {
+      return isAdminUser(currentChatUser) && localStorage.getItem(BOARD_ADMIN_FINISH_BTN_KEY) === '1';
+    }
+
+    // Re-renders the board view (if it exists in the DOM, which it always
+    // does — see #board-subjects) so a toggle takes effect immediately
+    // without needing a page reload.
+    function refreshBoardAdminUI() {
+      refreshBoardTimerConfig();
+      if (document.getElementById('board-subjects')) renderBoardSet();
+      updateBoardAdminToggleLabels();
+    }
+
+    // Lets the admin type in how many minutes each mock-board "day"/set
+    // should last while BOARD TIMER: TEST SPEED is on (replaces the old
+    // fixed 10s-per-set / 30s-total test timing, and the separate REAL
+    // SPEED / TEST SPEED toggle button). Stored per-browser like the other
+    // admin board toggles above, gated by isAdminUser() on every read.
+    // Falls back to the previous default (1/6 min = 10s) if unset.
+    const BOARD_ADMIN_TEST_MINUTES_KEY = 'boardAdminTestMinutes';
+    function boardAdminTestMinutes() {
+      if (!isAdminUser(currentChatUser)) return 1 / 6;
+      const stored = parseFloat(localStorage.getItem(BOARD_ADMIN_TEST_MINUTES_KEY));
+      return (Number.isFinite(stored) && stored > 0) ? stored : 1 / 6;
+    }
+
+    // Single entry point for the merged "BOARD SETTINGS" button: opens the
+    // in-page board-admin-settings-overlay popup (see markup near
+    // gift-wings-overlay) instead of the old browser prompt()/separate
+    // toggle button. The popup is pre-filled with the current minutes-per-
+    // set (blank if REAL SPEED is currently on) and the current FINISH NOW
+    // button visibility; nothing is saved until APPLY is clicked.
+    function openBoardAdminSettingsModal() {
+      if (!isAdminUser(currentChatUser)) return;
+      const wasFast = boardAdminFastTestOn();
+      document.getElementById('board-admin-settings-minutes').value = wasFast ? String(Math.max(1, Math.round(boardAdminTestMinutes()))).slice(0, 7) : '';
+      // Checkbox is "HIDE FINISH NOW BUTTON": checked = hidden, unchecked = shown.
+      document.getElementById('board-admin-settings-finish-toggle').checked = !boardAdminFinishBtnOn();
+      document.getElementById('board-admin-settings-overlay').classList.add('visible');
+    }
+
+    function closeBoardAdminSettingsModal() {
+      document.getElementById('board-admin-settings-overlay').classList.remove('visible');
+    }
+
+    // Reads both fields from the popup and applies them together: entering
+    // a number > 0 for minutes-per-set turns TEST SPEED on at that rate;
+    // entering 0 (or leaving it blank) switches to REAL SPEED. The FINISH
+    // NOW checkbox is saved as-is. Closes the popup on success.
+    function applyBoardAdminSettings() {
+      if (!isAdminUser(currentChatUser)) return;
+      const rawMinutes = document.getElementById('board-admin-settings-minutes').value.trim();
+      // The field only accepts digits (max 7), so no validation popup is
+      // needed; blank counts as 0 = REAL SPEED.
+      const parsedMinutes = rawMinutes === '' ? 0 : parseInt(rawMinutes, 10);
+      const minutes = Number.isFinite(parsedMinutes) ? parsedMinutes : 0;
+      if (minutes === 0) {
+        localStorage.setItem(BOARD_ADMIN_FAST_TEST_KEY, '0');
+      } else {
+        localStorage.setItem(BOARD_ADMIN_TEST_MINUTES_KEY, String(minutes));
+        localStorage.setItem(BOARD_ADMIN_FAST_TEST_KEY, '1');
+      }
+      const showFinishBtn = !document.getElementById('board-admin-settings-finish-toggle').checked; // checked = HIDE
+      localStorage.setItem(BOARD_ADMIN_FINISH_BTN_KEY, showFinishBtn ? '1' : '0');
+      refreshBoardAdminUI();
+      closeBoardAdminSettingsModal();
+    }
+
+    function updateBoardAdminToggleLabels() {
+      // Single merged "BOARD SETTINGS" gear-menu button — its label stays
+      // fixed; current values are shown inside the popup itself (see
+      // openBoardAdminSettingsModal) rather than in the button text.
+    }
 
     // Finishes one Mock Board exam instantly: fills in answers that add up
     // to a random score (40-100%), saves the exam as submitted (so opening
@@ -17680,15 +18207,50 @@ Answer: C</pre>
       recordBoardScore(examId, actualScore, total);
     }
 
+    // For a Mock Exam card (never Mock Board — those keep their score
+    // hidden until the whole board set is done) that's already been
+    // submitted, grades its saved answers against the exam's answer key
+    // and returns { score, total }. Returns null if there's nothing
+    // graded to show (no saved/submitted progress, or exam data missing).
+    function computeSavedExamScore(examId, board) {
+      if (!examId || board) return null;
+      const saved = loadExamProgress(examId, false);
+      if (!saved || !saved.submitted) return null;
+      const exam = getMockExam(examId);
+      if (!exam || !exam.questions) return null;
+      let score = 0;
+      exam.questions.forEach((item, i) => {
+        const selected = saved.answers ? saved.answers[i] : undefined;
+        if (selected !== undefined && selected === item.correct) score++;
+      });
+      return { score, total: exam.questions.length };
+    }
+
     function updateExamTimer(card, timerEl) {
+      const isBoardCard = !!card.closest('#view-board');
+      const onclick = card.getAttribute('onclick') || '';
+      const idMatch = onclick.match(/openInAppMockExam\(\s*['"]([^'"]+)['"]/);
+      const result = idMatch ? computeSavedExamScore(idMatch[1], isBoardCard) : null;
+      if (result) {
+        card.classList.remove('exam-timer-idle');
+        timerEl.textContent = `${result.score}/${result.total}`;
+        timerEl.classList.remove('running', 'expired');
+        timerEl.classList.add('scored');
+        return;
+      }
+      timerEl.classList.remove('scored');
+
       const key = userScopedKey(TIMER_STORAGE_PREFIX + examKey(card));
       const duration = getExamDuration(card);
       const startStr = localStorage.getItem(key);
       if (!startStr) {
+        // Not started yet, nothing to show: hide the timer + RESET.
+        card.classList.add('exam-timer-idle');
         timerEl.textContent = formatHMS(duration);
         timerEl.classList.remove('running', 'expired');
         return;
       }
+      card.classList.remove('exam-timer-idle');
       const elapsedSec = (Date.now() - Number(startStr)) / 1000;
       const remaining = duration - elapsedSec;
       if (remaining <= 0) {
@@ -17703,7 +18265,9 @@ Answer: C</pre>
     }
 
     function tickAllExamTimers() {
-      document.querySelectorAll('.exam-card').forEach(card => {
+      // Skip quiz cards: their .exam-timer badge shows "Question X of Y" /
+      // the final score, and must never be overwritten by a countdown.
+      document.querySelectorAll('.exam-card:not(.quiz-exam-card)').forEach(card => {
         const timerEl = card.querySelector('.exam-timer');
         if (timerEl) updateExamTimer(card, timerEl);
       });
@@ -19591,12 +20155,78 @@ Answer: C</pre>
 
     function renderQuizExamCardLi(subjectKey, id, set, index) {
       const draftTag = !set.published ? ' <span style="color:var(--accent);">[DRAFT]</span>' : '';
-      return `<li><a class="exam-card" href="javascript:void(0)" onclick="openQuizModeExam('${subjectKey}', '${id}'); return false;">
+      // If this quiz has saved progress (in-progress or finished), show a
+      // filled badge with either "Question X of Y" or the final score,
+      // plus a RESET button beside it that wipes that saved progress —
+      // mirrors the Mock Exam list's timer/score + RESET badge.
+      const saved = loadQuizProgress(subjectKey, id);
+      let badgeHtml = '';
+      if (saved && Array.isArray(saved.questions) && saved.questions.length) {
+        const total = saved.questions.length;
+        const badgeText = saved.finished
+          ? `${saved.score || 0}/${total}`
+          : `Question ${(saved.index || 0) + 1} of ${total}`;
+        badgeHtml = `
+            <span class="exam-timer scored">${escapeHtml(badgeText)}</span>
+            <button type="button" class="exam-timer-reset" onclick="resetQuizProgressFromCard(event, '${subjectKey}', '${id}')">RESET</button>`;
+      }
+      return `<li><a class="exam-card quiz-exam-card" href="javascript:void(0)" onclick="openQuizModeExam('${subjectKey}', '${id}'); return false;">
           <div class="exam-row"><span class="exam-idx">${String(index).padStart(2, '0')}</span>
-            <span class="exam-name">${escapeHtml(set.title || 'Untitled Set')}${draftTag}</span>
+            <span class="exam-name">${escapeHtml(set.title || 'Untitled Set')}${draftTag}</span>${badgeHtml}
             <span class="exam-go">QUIZ ME <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg></span>
           </div>
         </a></li>`;
+    }
+
+    // ---- Persisted quiz progress, so backing out of a quiz (or leaving
+    // the page) and coming back resumes exactly where it was left off,
+    // instead of the in-memory quizQuestions/quizIndex/etc getting
+    // reshuffled and wiped the next time this quiz is opened. Scoped like
+    // the Mock Exam progress keys (per signed-in account). ----
+    const QUIZ_PROGRESS_PREFIX = 'quizProgress_';
+    function quizProgressKey(subjectKey, setId) {
+      return userScopedKey(QUIZ_PROGRESS_PREFIX + subjectKey + ':' + setId);
+    }
+    function loadQuizProgress(subjectKey, setId) {
+      try {
+        const raw = localStorage.getItem(quizProgressKey(subjectKey, setId));
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) { return null; }
+    }
+    function clearQuizProgress(subjectKey, setId) {
+      try { localStorage.removeItem(quizProgressKey(subjectKey, setId)); } catch (e) {}
+    }
+    // Saves the full in-progress state (shuffled questions, per-question
+    // choice layout, answers so far, current position, running score) so
+    // it can be reconstructed exactly on return. Pass true once the quiz
+    // has been finished, so the list badge switches to showing the score.
+    function saveQuizProgress(finished) {
+      if (!currentQuizExamRef) return;
+      try {
+        localStorage.setItem(
+          quizProgressKey(currentQuizExamRef.subjectKey, currentQuizExamRef.setId),
+          JSON.stringify({
+            questions: quizQuestions,
+            choices: quizItemChoices,
+            answers: quizUserAnswers,
+            index: quizIndex,
+            score: quizScore,
+            finished: !!finished
+          })
+        );
+      } catch (e) {}
+    }
+
+    // RESET button on a quiz's list row: clears its saved progress (the
+    // badge disappears on the next render) without opening the quiz.
+    function resetQuizProgressFromCard(e, subjectKey, id) {
+      e.preventDefault();
+      e.stopPropagation();
+      clearQuizProgress(subjectKey, id);
+      if (currentQuizExamRef && currentQuizExamRef.subjectKey === subjectKey && currentQuizExamRef.setId === id) {
+        currentQuizExamRef = null;
+      }
+      renderQuizExamList();
     }
 
     function renderQuizExamList() {
@@ -19782,19 +20412,45 @@ Answer: C</pre>
       return choices;
     }
 
-    function openQuizModeExam(subjectKey, setId) {
+    function openQuizModeExam(subjectKey, setId, forceNew) {
       const sets = LIVE_MOCK_EXAM_CACHE[subjectKey] || {};
       const set = sets[setId];
       if (!set || !Array.isArray(set.questions) || !set.questions.length) return;
 
       quizExamListScrollY = window.scrollY;
       currentQuizExamRef = { subjectKey: subjectKey, setId: setId };
+      clearQuizAutoAdvance();
+
+      // Resume a saved attempt (in-progress or finished) instead of
+      // reshuffling and wiping it — unless this is an explicit retake.
+      const saved = !forceNew ? loadQuizProgress(subjectKey, setId) : null;
+      if (saved && Array.isArray(saved.questions) && saved.questions.length) {
+        quizQuestions = saved.questions;
+        quizItemChoices = saved.choices;
+        quizUserAnswers = saved.answers;
+        quizIndex = Math.min(saved.index || 0, quizQuestions.length - 1);
+        quizScore = saved.score || 0;
+
+        document.getElementById('quiz-header-title').textContent = set.title || 'Quiz';
+        document.getElementById('quiz-exam-list-panel').style.display = 'none';
+        window.scrollTo(0, 0);
+        if (saved.finished) {
+          document.getElementById('quiz-play-area').style.display = 'none';
+          showQuizResults();
+        } else {
+          document.getElementById('quiz-results-card').style.display = 'none';
+          document.getElementById('quiz-play-area').style.display = '';
+          renderQuizQuestion();
+        }
+        refreshTopbarTabIcons();
+        return;
+      }
+
       quizQuestions = shuffle(set.questions.slice()); // same items as the real exam, shuffled order
       quizItemChoices = quizQuestions.map(buildQuizChoicesForItem);
       quizUserAnswers = new Array(quizQuestions.length).fill(null);
       quizIndex = 0;
       quizScore = 0;
-      clearQuizAutoAdvance();
 
       document.getElementById('quiz-header-title').textContent = set.title || 'Quiz';
       document.getElementById('quiz-exam-list-panel').style.display = 'none';
@@ -19807,7 +20463,8 @@ Answer: C</pre>
 
     function retakeCurrentQuizExam() {
       if (!currentQuizExamRef) return;
-      openQuizModeExam(currentQuizExamRef.subjectKey, currentQuizExamRef.setId);
+      clearQuizProgress(currentQuizExamRef.subjectKey, currentQuizExamRef.setId);
+      openQuizModeExam(currentQuizExamRef.subjectKey, currentQuizExamRef.setId, true);
     }
 
     function renderQuizQuestion() {
@@ -19853,6 +20510,7 @@ Answer: C</pre>
       }
 
       updateQuizNavButtons();
+      saveQuizProgress();
     }
 
     function updateQuizNavButtons() {
@@ -19885,6 +20543,7 @@ Answer: C</pre>
 
       document.getElementById('quiz-score-pill').textContent = `Score: ${quizScore}`;
       updateQuizNavButtons();
+      saveQuizProgress();
 
       clearQuizAutoAdvance();
       quizAutoAdvanceTimer = setTimeout(() => {
@@ -19914,6 +20573,7 @@ Answer: C</pre>
       document.getElementById('quiz-results-score').textContent = `${pct}%`;
       document.getElementById('quiz-results-sub').textContent = `${quizScore} out of ${total} correct`;
       document.getElementById('quiz-results-card').style.display = '';
+      saveQuizProgress(true);
     }
 
     // Every other subject (construction, econ, math, and any future one)
@@ -21234,7 +21894,20 @@ Answer: C</pre>
     // Remembers exactly where the user was scrolled on that return view, so
     // closing the exam restores that same spot instead of jumping to the top.
     let gformReturnScrollY = 0;
-    const GFORM_PROGRESS_PREFIX = 'gformProgress_';
+    const EXAM_PROGRESS_PREFIX = 'examProgress_';
+    // Whether the exam that's open right now was launched from the Mock
+    // Board Exam page. Decided once, when the exam opens (from the card that
+    // was clicked), and then used for everything that must stay separate:
+    // saved answers, timer, score. It no longer depends on which view
+    // happens to be showing later, so a Mock Board attempt can never leak
+    // into the regular Mock Exam lists (or the other way round).
+    let gformIsBoard = false;
+    // Review exams share the exam screen but not the confirm-before-submit.
+    function gformIsReviewExam() {
+      if (gformIsBoard) return false;
+      if (gformReturnViewId === 'view-review') return true;
+      return gformReturnViewId !== 'view-mock-exam' && lastSubjectsOrigin === 'view-review';
+    }
 
     // Answers / pins / submitted state for an exam are saved separately for
     // the Mock Board Exam page and for the regular Mock Exam lists, so
@@ -21242,8 +21915,8 @@ Answer: C</pre>
     // score) in the other. Defaults to whichever page the open exam was
     // launched from; pass true/false to force one.
     function examProgressKey(examId, board) {
-      const isBoard = (board === undefined) ? (gformReturnViewId === 'view-board') : !!board;
-      return userScopedKey(GFORM_PROGRESS_PREFIX + (isBoard ? 'board:' : '') + examId);
+      const isBoard = (board === undefined) ? gformIsBoard : !!board;
+      return userScopedKey(EXAM_PROGRESS_PREFIX + (isBoard ? 'board:' : '') + examId);
     }
 
     function saveExamProgress(examId) {
@@ -21423,8 +22096,11 @@ Answer: C</pre>
       // views swap in and out — then remember it so closing the exam can
       // bring that view back.
       const activeView = document.querySelector('.view.visible');
-      if (activeView) gformReturnViewId = activeView.id;
-      else if (!gformReturnViewId) gformReturnViewId = 'view-mock-exam';
+      if (examCard && examCard.closest) gformIsBoard = !!examCard.closest('#view-board');
+      else if (activeView) gformIsBoard = (activeView.id === 'view-board');
+      if (gformIsBoard) gformReturnViewId = 'view-board';
+      else if (activeView) gformReturnViewId = activeView.id;
+      else if (!gformReturnViewId || gformReturnViewId === 'view-board') gformReturnViewId = 'view-mock-exam';
       gformReturnScrollY = window.scrollY;
       document.querySelectorAll('.view').forEach(v => v.classList.remove('visible'));
       document.querySelector('.wrap').appendChild(overlay);
@@ -21493,6 +22169,7 @@ Answer: C</pre>
       const backView = document.getElementById(gformReturnViewId || 'view-mock-exam');
       if (backView) backView.classList.add('visible');
       gformReturnViewId = null;
+      gformIsBoard = false;
       // Return to wherever the user was scrolled before the exam opened
       // instead of jumping to the top.
       window.scrollTo(0, gformReturnScrollY);
@@ -21504,7 +22181,7 @@ Answer: C</pre>
       // Board page, each with its own timer — so return the card from the
       // place the open exam was launched from, not just the first match.
       const sel = `.exam-card[onclick*="openInAppMockExam('${examId}'"]`;
-      if (gformReturnViewId === 'view-board') {
+      if (gformIsBoard) {
         return document.querySelector('#view-board ' + sel);
       }
       const all = document.querySelectorAll(sel);
@@ -21533,7 +22210,7 @@ Answer: C</pre>
       // close and reopen it so every question comes back blank and
       // re-enabled instead of showing the old graded state.
       try { localStorage.removeItem(examProgressKey(examId)); } catch (e) {}
-      if (gformReturnViewId === 'view-board') clearBoardScore(examId); // only a Mock Board retake resets the board score
+      if (gformIsBoard) clearBoardScore(examId); // only a Mock Board retake resets the board score
       const overlay = document.getElementById('gform-overlay');
       if (overlay) overlay.remove();
       currentExamId = null;
@@ -21568,7 +22245,7 @@ Answer: C</pre>
     // forced = grade right now even if some questions are unanswered (used
     // when the countdown hits zero, and when re-showing an already-graded
     // exam). timedOut = additionally tells the reviewee the time ran out.
-    function submitInAppMockExam(examId, forced, timedOut) {
+    function submitInAppMockExam(examId, forced, timedOut, confirmed) {
       const exam = getMockExam(examId);
       if (!exam) return;
 
@@ -21593,6 +22270,25 @@ Answer: C</pre>
         }
         return;
       }
+
+      // Mock Board Exam / Mock Exam: everything is answered, so ask for a final
+      // confirmation before grading. (Skipped for forced submits — timer
+      // ran out or a saved, already-graded exam being re-shown.)
+      if (!forced && !confirmed && !gformIsReviewExam()) {
+        hideGformWarning();
+        openConfirmDialog(
+          gformIsBoard
+            ? 'Submit your Mock Board Exam? Your answers will be final once submitted.'
+            : 'Submit your Mock Exam? Your answers will be final once submitted.',
+          () => submitInAppMockExam(examId, false, false, true),
+          'Submit',
+          'yellow'
+        );
+        return;
+      }
+
+      // If the time ran out while the confirmation was open, drop it.
+      if (forced) closeConfirmDialog();
 
       hideGformWarning();
       document.getElementById('gform-questions').dataset.submitted = 'true';
@@ -21647,7 +22343,7 @@ Answer: C</pre>
       // Mock Board Exam: no score popup. The score is recorded for the
       // board (where it stays hidden until the whole set is finished) and
       // the exam just closes, back to the board page.
-      if (gformReturnViewId === 'view-board') {
+      if (gformIsBoard) {
         recordBoardScore(examId, score, exam.questions.length);
         closeInAppMockExam();
         return;
@@ -21704,12 +22400,27 @@ Answer: C</pre>
     // in account, same scoping as the exam timers/progress above) so it
     // survives reloads, and expire it after 3 days to match that window.
     const BOARD_SET_STORAGE_KEY = 'boardExamSet';
-    // TEMPORARY TEST MODE: set to false to go back to the real 3-day /
-    // 1-day-per-set timing. While true, the whole set lasts 30s and each
-    // day/set gets 10s, so day unlocks and failures can be seen quickly.
-    const BOARD_FAST_TEST = true;
-    const BOARD_SET_TTL_MS = BOARD_FAST_TEST ? 30 * 1000 : 3 * 24 * 60 * 60 * 1000; // 3 days (30s in test mode)
-    const BOARD_DAY_MS = BOARD_FAST_TEST ? 10 * 1000 : 24 * 60 * 60 * 1000; // 1 day per set (10s in test mode), used to gate each exam day
+    // Admin-only test mode: lets the signed-in admin (isAdminUser check —
+    // ADMIN_EMAIL above) speed up the Mock Board Exam timer on their own
+    // account only. Every other signed-in user always gets the real 3-day /
+    // 1-day-per-set timing, even while the admin has this on. Toggled from
+    // the admin gear menu (see applyBoardAdminSettings); persisted
+    // per-browser in localStorage, gated by isAdminUser() on every read so
+    // it can never take effect for a non-admin account.
+    const BOARD_ADMIN_FAST_TEST_KEY = 'boardAdminFastTest';
+    function boardAdminFastTestOn() {
+      return isAdminUser(currentChatUser) && localStorage.getItem(BOARD_ADMIN_FAST_TEST_KEY) === '1';
+    }
+    let BOARD_SET_TTL_MS, BOARD_DAY_MS;
+    function refreshBoardTimerConfig() {
+      const fast = boardAdminFastTestOn();
+      // 1 day per set, used to gate each exam day. In admin test mode this
+      // is however many minutes the admin picked via "BOARD TIMER: SET TEST
+      // MINUTES" (see boardAdminTestMinutes()) instead of a real 24h day.
+      BOARD_DAY_MS = fast ? boardAdminTestMinutes() * 60 * 1000 : 24 * 60 * 60 * 1000;
+      BOARD_SET_TTL_MS = 3 * BOARD_DAY_MS; // 3 sets/days total
+    }
+    refreshBoardTimerConfig();
     let boardSetGeneratedAt = null;
 
     // True once all 6 subjects have a recorded score and calculateBoardResult()
@@ -22157,12 +22868,10 @@ Answer: C</pre>
         (r.passed ? 'PASSED' : 'FAILED') + '. Try it yourself!';
     }
 
+    // Messages under the share buttons are turned off: nothing is shown.
     function boardShareStatus(msg) {
       const el = document.getElementById('board-share-status');
-      if (!el) return;
-      el.textContent = msg || '';
-      clearTimeout(el._t);
-      if (msg) el._t = setTimeout(() => { el.textContent = ''; }, 6000);
+      if (el) el.textContent = '';
     }
 
     function boardShareIsMobile() {
@@ -22189,6 +22898,18 @@ Answer: C</pre>
         document.body.removeChild(ta);
         return ok;
       } catch (e) { return false; }
+    }
+
+    // Puts the PNG itself on the clipboard so it can be pasted (Ctrl+V / Cmd+V)
+    // straight into a chat box. Returns true on success.
+    async function boardShareCopyImage(blob) {
+      try {
+        if (navigator.clipboard && window.ClipboardItem && window.isSecureContext) {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          return true;
+        }
+      } catch (e) {}
+      return false;
     }
 
     // Paints the page's own background onto the canvas:
@@ -22235,9 +22956,18 @@ Answer: C</pre>
     // the score of every subject, then the call to action. Content stays
     // inside the middle of the frame so the story apps' top/bottom bars
     // never cover it.
+    // The signed-in user's Callsign (same text the top bar shows).
+    function boardShareCallsign() {
+      try {
+        const el = document.getElementById('account-name');
+        return ((el && el.textContent) || '').trim();
+      } catch (e) { return ''; }
+    }
+
     async function buildBoardShareImage(r) {
       const rows = r.rows || [];
-      const key = r.total.toFixed(2) + '|' + (r.passed ? 1 : 0) + '|story17-4k|' +
+      const callsign = boardShareCallsign();
+      const key = r.total.toFixed(2) + '|' + (r.passed ? 1 : 0) + '|story17-4k|' + callsign + '|' +
         rows.map(x => x.score + '/' + x.outOf).join(',');
       if (boardShareImageCache && boardShareImageCache.key === key) return boardShareImageCache.blob;
       try {
@@ -22302,7 +23032,7 @@ Answer: C</pre>
           tw = g.measureText('aerodynadmics').width;
         }
         const padX = 44, boxH = Math.round(fs * 1.42);
-        const bw = Math.round(tw + padX * 2), bx = Math.round((W - bw) / 2), by = 262;
+        const bw = Math.round(tw + padX * 2), bx = Math.round((W - bw) / 2), by = 207;
         g.save();
         rrect(bx, by, bw, boxH, 12);
         g.clip();
@@ -22340,10 +23070,10 @@ Answer: C</pre>
       g.textAlign = 'center';
       g.fillStyle = '#7fa8c9';
       g.font = '500 32px "IBM Plex Mono", monospace';
-      g.fillText('MOCK BOARD EXAM RESULT', W / 2, 468);
+      g.fillText('MOCK BOARD EXAM RESULT', W / 2, 413);
 
       // ---- overall result ----
-      const px = 90, py = 495, pw = W - 180, ph = 350;
+      const px = 90, py = 440, pw = W - 180, ph = 350;
       rrect(px, py, pw, ph, 28);
       g.fillStyle = r.passed ? 'rgba(79,209,160,0.10)' : 'rgba(0,10,36,0.35)';
       g.fill();
@@ -22368,9 +23098,10 @@ Answer: C</pre>
       wrap(note, pw - 70).forEach((ln, i) => g.fillText(ln, W / 2, py + 288 + i * 40));
 
       // ---- score of every subject ----
+      let contentBottom = py + ph;
       if (rows.length) {
 
-        const sx = 90, sw = W - 180, sy = 885, spad = 12;
+        const sx = 90, sw = W - 180, sy = 830, spad = 12;
         const scoreRight = sx + sw - 190;  // right edge of the "18 / 25" column
         const pctRight = sx + sw - 32;     // right edge of the percentage column
         const nameFont = '500 28px "Space Grotesk", Arial, sans-serif';
@@ -22379,6 +23110,7 @@ Answer: C</pre>
         const rowH = n => (n > 1 ? 104 : 78);
         const listH = laid.reduce((sum, l) => sum + rowH(l.lines.length), 0);
 
+        contentBottom = sy + listH + spad * 2;
         rrect(sx, sy, sw, listH + spad * 2, 24);
         g.fillStyle = 'rgba(127,168,201,0.07)';
         g.fill();
@@ -22421,13 +23153,30 @@ Answer: C</pre>
         });
       }
 
+      // ---- Callsign of the person who took the exam ----
+      if (callsign) {
+        const labelY = Math.min(Math.max(contentBottom + 60, 1425), 1485);
+        g.textAlign = 'center';
+        g.fillStyle = '#7fa8c9';
+        g.font = '500 24px "IBM Plex Mono", monospace';
+        g.fillText('CALLSIGN', W / 2, labelY);
+        let cfs = 52;
+        g.font = '600 ' + cfs + 'px "IBM Plex Mono", monospace';
+        while (g.measureText(callsign).width > W - 240 && cfs > 26) {
+          cfs -= 2;
+          g.font = '600 ' + cfs + 'px "IBM Plex Mono", monospace';
+        }
+        g.fillStyle = '#4ff8ff';
+        g.fillText(callsign, W / 2, labelY + 56);
+      }
+
       g.textAlign = 'center';
       g.fillStyle = '#eef3f6';
       g.font = '400 44px "Space Grotesk", Arial, sans-serif';
-      g.fillText('Think you can beat it?', W / 2, 1640);
+      g.fillText('Think you can beat it?', W / 2, 1740);
       g.fillStyle = '#ffb100';
       g.font = '600 48px "IBM Plex Mono", monospace';
-      g.fillText('aerodynadmics.com', W / 2, 1705);
+      g.fillText('aerodynadmics.com', W / 2, 1805);
 
       const blob = await new Promise(res => c.toBlob(res, 'image/png'));
       if (blob) boardShareImageCache = { key, blob };
@@ -22481,11 +23230,19 @@ Answer: C</pre>
         a.click();
         document.body.removeChild(a);
         setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-        await boardShareCopy(text);
+        let imageCopied = false;
+        if (platform === 'messenger') imageCopied = await boardShareCopyImage(blob);
+        if (!imageCopied) await boardShareCopy(text);
         window.open(desktopSites[platform], '_blank');
-        boardShareStatus(platform === 'messenger'
-          ? 'Image saved \u2014 attach it to a Messenger chat (message copied).'
-          : 'Image saved \u2014 add it to your ' + names[platform] + ' story from the ' + names[platform] + ' app on your phone, or upload it there.');
+        if (platform === 'messenger') {
+          boardShareStatus(imageCopied
+            ? 'Image copied \u2014 open a chat and press Ctrl+V (Cmd+V on Mac) to paste it. Also saved to your downloads.'
+            : 'Image saved \u2014 drag it into a Messenger chat or use the attach button.');
+        } else if (platform === 'instagram') {
+          boardShareStatus('Image saved. Instagram doesn\u2019t allow Stories from a computer \u2014 post it with + Create, or add it as a Story from the Instagram app on your phone.');
+        } else {
+          boardShareStatus('Image saved \u2014 add it to your ' + names[platform] + ' story from the ' + names[platform] + ' app on your phone, or upload it there.');
+        }
       } catch (err) {
         console.warn('Share failed:', err);
         btns.forEach(b => { b.disabled = false; });
@@ -22577,7 +23334,8 @@ Answer: C</pre>
       openConfirmDialog(
         'Reset this board exam set? Your current picks, all recorded scores, and the 3-day countdown will be cleared. This cannot be undone.',
         clearExpiredBoardSet,
-        'Reset Set'
+        'Reset Set',
+        'danger'
       );
     }
 
@@ -22612,7 +23370,8 @@ Answer: C</pre>
         openConfirmDialog(
           'Generate a brand-new random set? Your current scores and result will be cleared.',
           generateBoardSet,
-          'Generate New Set'
+          'Generate New Set',
+          'generate'
         );
         return;
       }
@@ -22625,7 +23384,8 @@ Answer: C</pre>
       openConfirmDialog(
         `Generate a new random set for Day ${day}? Your current picks and any recorded score for Day ${day} will be lost. Other days are not affected.`,
         () => regenerateBoardDay(day),
-        'Generate New Set'
+        'Generate New Set',
+        'generate'
       );
     }
 
