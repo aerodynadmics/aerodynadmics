@@ -2,7 +2,44 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=720, user-scalable=no">
+<script>
+  /* Phones: the viewport tag above lays the page out at a wider "virtual"
+     width (720 CSS px) and the browser scales it down to fit the screen, so
+     the content looks like the PC layout instead of being squeezed into
+     ~360px. Bigger number = wider / more PC-like but smaller text; smaller
+     number = larger text (change it in the tag above AND PHONE_LAYOUT_WIDTH
+     below). Tablets / large screens get the normal responsive viewport back. */
+  (function () {
+    var PHONE_LAYOUT_WIDTH = 720;
+    try {
+      var sw = screen.width, sh = screen.height;
+      var landscape = window.matchMedia && window.matchMedia('(orientation: landscape)').matches;
+      var deviceW = landscape ? Math.max(sw, sh) : Math.min(sw, sh);
+      if (deviceW >= PHONE_LAYOUT_WIDTH) {
+        var m = document.querySelector('meta[name="viewport"]');
+        if (m) m.setAttribute('content', 'width=device-width, initial-scale=1, user-scalable=no');
+      }
+    } catch (e) {}
+  })();
+  (function () {
+    var LAYOUT_W = 720, root = document.documentElement;
+    function applyPcScale() {
+      var vw = window.innerWidth || root.clientWidth;
+      if (vw && vw < LAYOUT_W - 20) {
+        root.classList.add('pc-scale');
+        root.style.setProperty('--pc-zoom', (vw / LAYOUT_W).toFixed(4));
+      } else {
+        root.classList.remove('pc-scale');
+        root.style.removeProperty('--pc-zoom');
+      }
+    }
+    applyPcScale();
+    window.addEventListener('resize', applyPcScale);
+    window.addEventListener('DOMContentLoaded', applyPcScale);
+    window.addEventListener('load', applyPcScale);
+  })();
+</script>
 <title>aerodynadmics</title>
 
 <!-- Open Graph tags: control the preview shown when this link is shared
@@ -124,7 +161,8 @@
     cursor: grab;
     touch-action: none;
   }
-  #app-scrollbar-thumb:hover, #app-scrollbar-thumb.dragging { background: var(--rivet); }
+  #app-scrollbar-thumb.dragging { background: var(--rivet); }
+  @media (hover: hover) { #app-scrollbar-thumb:hover { background: var(--rivet); } }
   #app-scrollbar-thumb.dragging { cursor: grabbing; }
 
   /* ---- sign-in gate ---- */
@@ -249,7 +287,7 @@
     border-radius: 999px;
     cursor: pointer;
   }
-  .google-signup-link-btn:hover { color: var(--accent); }
+  @media (hover: hover) { .google-signup-link-btn:hover { color: var(--accent); } }
   .google-back-btn {
     display: block;
     margin: 18px auto 0;
@@ -348,7 +386,7 @@
     padding: 0;
     margin: -4px 0 16px;
   }
-  .forgot-flightcode-link:hover { color: var(--accent); }
+  @media (hover: hover) { .forgot-flightcode-link:hover { color: var(--accent); } }
   .forgot-stage { display: none; }
   .forgot-stage.visible { display: block; }
   .forgot-stage-hint {
@@ -459,7 +497,7 @@
   }
   .pw-toggle-btn svg { display: block; }
   .pw-toggle-btn::-moz-focus-inner { border: 0; }
-  .pw-toggle-btn:hover { color: var(--paper); }
+  @media (hover: hover) { .pw-toggle-btn:hover { color: var(--paper); } }
   .pw-toggle-btn:focus { outline: none; }
 
   /* ---- nickname step ---- */
@@ -644,7 +682,7 @@
     cursor: pointer;
     transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
   }
-  .avatar-option:hover { border-color: var(--rivet); transform: translateY(-1px); }
+  @media (hover: hover) { .avatar-option:hover { border-color: var(--rivet); transform: translateY(-1px); } }
   .avatar-option.selected {
     border-color: var(--accent);
     background: rgba(255, 177, 0, 0.14);
@@ -677,7 +715,7 @@
     cursor: pointer;
     margin-top: 12px;
   }
-  #avatar-lock-submit:hover { background: rgba(255, 177, 0, 0.14); }
+  @media (hover: hover) { #avatar-lock-submit:hover { background: rgba(255, 177, 0, 0.14); } }
   .avatar-lock-error {
     display: none;
     font-family: 'IBM Plex Mono', monospace;
@@ -710,7 +748,7 @@
     border-radius: 999px;
     cursor: pointer;
   }
-  .admin-avatar-upload-btn:hover { color: var(--accent); }
+  @media (hover: hover) { .admin-avatar-upload-btn:hover { color: var(--accent); } }
   .admin-avatar-upload-hint {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10.5px;
@@ -732,7 +770,7 @@
     letter-spacing: 0.02em;
     text-decoration: none;
   }
-  .ai-note-link:hover { color: var(--rivet); }
+  @media (hover: hover) { .ai-note-link:hover { color: var(--rivet); } }
 
   .ai-note-overlay {
     position: fixed;
@@ -785,7 +823,7 @@
     cursor: pointer;
     padding: 0 4px;
   }
-  .ai-note-modal-close:hover { color: var(--accent); }
+  @media (hover: hover) { .ai-note-modal-close:hover { color: var(--accent); } }
   .ai-note-body {
     overflow-y: auto;
     padding: 16px 18px;
@@ -881,9 +919,9 @@
     border-radius: 3px;
     cursor: pointer;
   }
-  .account-badge .signout-btn:hover {
+  @media (hover: hover) { .account-badge .signout-btn:hover {
     color: var(--accent);
-  }
+  } }
   .account-badge .signout-icon-btn {
     display: inline-flex;
     align-items: center;
@@ -919,14 +957,18 @@
     transition: background 0.15s ease;
     pointer-events: none;
   }
-  .account-badge .signout-icon-btn:hover::after,
   .account-badge .signout-icon-btn:focus-visible::after {
     background: rgba(255,255,255,0.07);
   }
-  .account-badge .signout-icon-btn:hover,
+  @media (hover: hover) { .account-badge .signout-icon-btn:hover::after {
+    background: rgba(255,255,255,0.07);
+  } }
   .account-badge .signout-icon-btn:focus-visible {
     outline: none;
   }
+  @media (hover: hover) { .account-badge .signout-icon-btn:hover {
+    outline: none;
+  } }
   /* ---- flight-status (sign-in / sign-out) overlay ---- */
   .taxi-out-overlay {
     position: fixed;
@@ -1007,11 +1049,11 @@
     cursor: pointer;
     text-align: left;
   }
-  .admin-settings-menu button:hover {
+  @media (hover: hover) { .admin-settings-menu button:hover {
     background: var(--accent);
     border-color: var(--accent);
     color: var(--blueprint-dark);
-  }
+  } }
   .avatar-edit-wrap {
     position: relative;
     display: inline-flex;
@@ -1039,7 +1081,7 @@
     padding: 0;
     cursor: pointer;
   }
-  .avatar-edit-pencil:hover { background: var(--accent); }
+  @media (hover: hover) { .avatar-edit-pencil:hover { background: var(--accent); } }
   .avatar-change-save-btn {
     width: 100%;
     background: var(--accent);
@@ -1133,7 +1175,7 @@
     margin-bottom: 28px;
     transition: border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
   }
-  .back-btn:hover { color: var(--accent); }
+  @media (hover: hover) { .back-btn:hover { color: var(--accent); } }
   .back-btn svg { width: 14px; height: 14px; }
 
   /* Review / Mock Exam / Mock Board Exam have no back button above
@@ -1246,7 +1288,7 @@
     cursor: pointer;
     padding: 0 4px;
   }
-  .nick-modal-close:hover { color: var(--accent); }
+  @media (hover: hover) { .nick-modal-close:hover { color: var(--accent); } }
   .nick-modal-back {
     background: none;
     border: none;
@@ -1257,7 +1299,7 @@
     cursor: pointer;
     padding: 0 4px;
   }
-  .nick-modal-back:hover { color: var(--accent); }
+  @media (hover: hover) { .nick-modal-back:hover { color: var(--accent); } }
   .nick-modal-body {
     overflow-y: auto;
     padding: 8px 0;
@@ -1447,7 +1489,7 @@
     position: relative;
     overflow: hidden;
   }
-  .nick-list li:hover { background-color: rgba(255,255,255,0.07); }
+  @media (hover: hover) { .nick-list li:hover { background-color: rgba(255,255,255,0.07); } }
   .nick-list li:last-child { margin-bottom: 0; }
   /* Keep the avatar/name/status-dot above each row's cover image. */
   .nick-list li > * {
@@ -1660,10 +1702,10 @@
     border-radius: 12px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.28);
   }
-  .reviewees-sidebar-me:hover {
+  @media (hover: hover) { .reviewees-sidebar-me:hover {
     background-color: rgba(255,255,255,0.07);
     box-shadow: 0 3px 14px rgba(0,0,0,0.36);
-  }
+  } }
   /* Keep the avatar/name/status above the cover image + overlay. */
   .reviewees-sidebar-me > * {
     position: relative;
@@ -1889,7 +1931,7 @@
     align-items: center;
     justify-content: center;
   }
-  .profile-card-close:hover { background: rgba(4, 18, 32, 0.85); color: var(--accent); }
+  @media (hover: hover) { .profile-card-close:hover { background: rgba(4, 18, 32, 0.85); color: var(--accent); } }
   /* Back arrow — only shown when the profile card was opened by drilling
      into it from a Co-Pilot/Crewmates popup (see profileCardStack), so
      you can return to whichever profile you were looking at instead of
@@ -1913,7 +1955,7 @@
     align-items: center;
     justify-content: center;
   }
-  .profile-card-back:hover { background: rgba(4, 18, 32, 0.85); color: var(--accent); }
+  @media (hover: hover) { .profile-card-back:hover { background: rgba(4, 18, 32, 0.85); color: var(--accent); } }
   /* Edit-background pencil — sits in the same top-left slot as
      .profile-card-back, since the two never show at once: this only
      renders for the signed-in user's own (non-read-only) profile, and
@@ -1937,7 +1979,7 @@
     justify-content: center;
     transform: scaleX(-1);
   }
-  .profile-card-bg-edit-btn:hover { background: rgba(4, 18, 32, 0.85); color: var(--accent); }
+  @media (hover: hover) { .profile-card-bg-edit-btn:hover { background: rgba(4, 18, 32, 0.85); color: var(--accent); } }
   .profile-card-avatar-wrap {
     position: absolute;
     left: 18px;
@@ -1979,17 +2021,17 @@
   }
   .crewmate-btn svg { width: 10px; height: 10px; }
   .crewmate-btn.state-none { background: #8a97a3; }
-  .crewmate-btn.state-none:hover { background: #a3aeb8; }
+  @media (hover: hover) { .crewmate-btn.state-none:hover { background: #a3aeb8; } }
   .crewmate-btn.state-sent { background: var(--rivet); opacity: 0.9; }
-  .crewmate-btn.state-sent:hover { background: #ff8f8f; color: #3a0000; }
+  @media (hover: hover) { .crewmate-btn.state-sent:hover { background: #ff8f8f; color: #3a0000; } }
   .crewmate-btn.state-incoming { background: var(--green); }
-  .crewmate-btn.state-incoming:hover { background: #6fe6b8; }
+  @media (hover: hover) { .crewmate-btn.state-incoming:hover { background: #6fe6b8; } }
   .crewmate-btn.state-crewmates {
     background: var(--blueprint-dark);
     color: var(--green);
     border-color: var(--green);
   }
-  .crewmate-btn.state-crewmates:hover { background: rgba(79, 209, 160, 0.18); }
+  @media (hover: hover) { .crewmate-btn.state-crewmates:hover { background: rgba(79, 209, 160, 0.18); } }
 
   /* ---- "Make Co-Pilot" button: an inline star icon that sits right
      after the callsign in the profile popover (.profile-card-nickname-row),
@@ -2014,18 +2056,18 @@
   }
   .copilot-btn svg { width: 10px; height: 10px; }
   .copilot-btn.state-none { background: #8a97a3; }
-  .copilot-btn.state-none:hover { background: #a3aeb8; }
+  @media (hover: hover) { .copilot-btn.state-none:hover { background: #a3aeb8; } }
   .copilot-btn.state-taken { background: #5a636b; }
   .copilot-btn.state-sent { background: var(--rivet); opacity: 0.9; }
-  .copilot-btn.state-sent:hover { background: #ff8f8f; color: #3a0000; }
+  @media (hover: hover) { .copilot-btn.state-sent:hover { background: #ff8f8f; color: #3a0000; } }
   .copilot-btn.state-incoming { background: #ffd166; color: #3a2900; }
-  .copilot-btn.state-incoming:hover { background: #ffdd8f; }
+  @media (hover: hover) { .copilot-btn.state-incoming:hover { background: #ffdd8f; } }
   .copilot-btn.state-copilot {
     background: transparent;
     color: #ff6fb0;
     border: 2px solid #ff6fb0;
   }
-  .copilot-btn.state-copilot:hover { background: rgba(255, 111, 176, 0.18); }
+  @media (hover: hover) { .copilot-btn.state-copilot:hover { background: rgba(255, 111, 176, 0.18); } }
 
   /* Co-Pilot badge, but positioned to sit in the avatar corner exactly
      like .crewmate-btn — used when renderCopilotAvatarBadge replaces the
@@ -2068,7 +2110,7 @@
     cursor: pointer;
     text-align: left;
   }
-  .crewmate-action-menu-item:hover { background: rgba(255,255,255,0.08); }
+  @media (hover: hover) { .crewmate-action-menu-item:hover { background: rgba(255,255,255,0.08); } }
   .crewmate-action-menu-icon {
     display: inline-flex;
     align-items: center;
@@ -2077,7 +2119,7 @@
     flex-shrink: 0;
   }
   .crewmate-action-menu-item.danger { color: #ff8f8f; }
-  .crewmate-action-menu-item.danger:hover { background: rgba(255, 107, 107, 0.12); }
+  @media (hover: hover) { .crewmate-action-menu-item.danger:hover { background: rgba(255, 107, 107, 0.12); } }
   /* Non-interactive status row — shown instead of the "Apply as Co-Pilot"
      button when a request to THIS specific person is already pending, so
      the menu still confirms the pending state instead of just omitting
@@ -2086,7 +2128,7 @@
     cursor: default;
     color: var(--dim, rgba(255,255,255,0.5));
   }
-  .crewmate-action-menu-item.disabled:hover { background: none; }
+  @media (hover: hover) { .crewmate-action-menu-item.disabled:hover { background: none; } }
 
   /* ---- Themed confirm dialog, replacing native confirm() for the
      Remove Crewmate / Remove Co-Pilot actions. ---- */
@@ -2135,38 +2177,38 @@
     background: none;
     color: var(--paper);
   }
-  .confirm-dialog-btn.cancel:hover { background: rgba(255,255,255,0.08); }
+  @media (hover: hover) { .confirm-dialog-btn.cancel:hover { background: rgba(255,255,255,0.08); } }
   .confirm-dialog-btn.confirm {
     border-color: transparent;
     color: #ff6b6b;
     background: none;
   }
-  .confirm-dialog-btn.confirm:hover { background: rgba(255, 107, 107, 0.12); }
+  @media (hover: hover) { .confirm-dialog-btn.confirm:hover { background: rgba(255, 107, 107, 0.12); } }
   .confirm-dialog-btn.affirm {
     border-color: rgba(255, 111, 176, 0.4);
     color: #ff6fb0;
     background: rgba(255, 111, 176, 0.12);
   }
-  .confirm-dialog-btn.affirm:hover { background: rgba(255, 111, 176, 0.22); }
+  @media (hover: hover) { .confirm-dialog-btn.affirm:hover { background: rgba(255, 111, 176, 0.22); } }
   /* Boxed green (Generate New Set) and boxed red (Reset Set). */
   .confirm-dialog-btn.generate {
     border-color: rgba(79, 209, 160, 0.45);
     color: var(--green);
     background: rgba(79, 209, 160, 0.12);
   }
-  .confirm-dialog-btn.generate:hover { background: rgba(79, 209, 160, 0.22); }
+  @media (hover: hover) { .confirm-dialog-btn.generate:hover { background: rgba(79, 209, 160, 0.22); } }
   .confirm-dialog-btn.danger {
     border-color: rgba(255, 107, 107, 0.45);
     color: #ff6b6b;
     background: rgba(255, 107, 107, 0.12);
   }
-  .confirm-dialog-btn.danger:hover { background: rgba(255, 107, 107, 0.22); }
+  @media (hover: hover) { .confirm-dialog-btn.danger:hover { background: rgba(255, 107, 107, 0.22); } }
   .confirm-dialog-btn.yellow {
     border-color: var(--accent);
     color: var(--blueprint-dark);
     background: var(--accent);
   }
-  .confirm-dialog-btn.yellow:hover { filter: brightness(1.08); }
+  @media (hover: hover) { .confirm-dialog-btn.yellow:hover { filter: brightness(1.08); } }
 
 
   /* ---- site-wide custom tooltip for every native title="" tooltip ----
@@ -2268,12 +2310,12 @@
   .crewmate-btn::before { left: 50%; }
   .crewmate-btn::after { top: calc(100% - 4px); transform: translate(12px, -1px); }
   .crewmate-btn::before { top: calc(100% - 6px); transform: translate(12px, -1px); }
-  .crewmate-btn:hover::after,
-  .crewmate-btn:hover::before {
+  @media (hover: hover) { .crewmate-btn:hover::after,
+.crewmate-btn:hover::before {
     opacity: 1;
     visibility: visible;
     transform: translate(12px, 0);
-  }
+  } }
 
   /* Co-Pilot button's tooltip — same fixed nudge as the Crewmate
      reference above, just applied to .copilot-btn so it doesn't fall
@@ -2283,12 +2325,12 @@
   .copilot-btn::before { left: 50%; }
   .copilot-btn::after { top: calc(100% - 4px); transform: translate(12px, -1px); }
   .copilot-btn::before { top: calc(100% - 6px); transform: translate(12px, -1px); }
-  .copilot-btn:hover::after,
-  .copilot-btn:hover::before {
+  @media (hover: hover) { .copilot-btn:hover::after,
+.copilot-btn:hover::before {
     opacity: 1;
     visibility: visible;
     transform: translate(12px, 0);
-  }
+  } }
 
   /* Every other tooltip — same vertical gap as the reference, but a small
      fixed horizontal nudge (not a %-of-icon-width offset) so it hugs the
@@ -2297,12 +2339,12 @@
   [data-tooltip]:not(.crewmate-btn):not(.copilot-btn)::before { left: 0; }
   [data-tooltip]:not(.crewmate-btn):not(.copilot-btn)::after { top: calc(100% + 8px); transform: translate(0, -4px); }
   [data-tooltip]:not(.crewmate-btn):not(.copilot-btn)::before { top: calc(100% + 3px); transform: translate(0, -4px); }
-  [data-tooltip]:not(.crewmate-btn):not(.copilot-btn):hover::after,
-  [data-tooltip]:not(.crewmate-btn):not(.copilot-btn):hover::before {
+  @media (hover: hover) { [data-tooltip]:not(.crewmate-btn):not(.copilot-btn):hover::after,
+[data-tooltip]:not(.crewmate-btn):not(.copilot-btn):hover::before {
     opacity: 1;
     visibility: visible;
     transform: translate(0, 0);
-  }
+  } }
   .crewmate-status-line {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10.5px;
@@ -2363,8 +2405,8 @@
     cursor: pointer;
     transition: color 0.12s ease;
   }
-  .profile-card-crew-link:hover { color: var(--green); }
-  .profile-card-crew-link-copilot:hover { color: #ff6fb0; }
+  @media (hover: hover) { .profile-card-crew-link:hover { color: var(--green); } }
+  @media (hover: hover) { .profile-card-crew-link-copilot:hover { color: #ff6fb0; } }
   .profile-card-crew-link .status-line-icon {
     display: inline-block;
     width: 18px;
@@ -2395,10 +2437,10 @@
     cursor: pointer;
     transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   }
-  .flight-alerts-btn:hover {
+  @media (hover: hover) { .flight-alerts-btn:hover {
     background: rgba(255,255,255,0.11);
     border-color: var(--rivet);
-  }
+  } }
   .flight-alerts-btn svg { width: 14px; height: 14px; }
   .flight-alerts-badge {
     position: absolute;
@@ -2467,24 +2509,24 @@
     cursor: pointer;
   }
   .flight-alert-btn.confirm { background: var(--green); color: #04321f; }
-  .flight-alert-btn.confirm:hover { background: #6fe6b8; }
+  @media (hover: hover) { .flight-alert-btn.confirm:hover { background: #6fe6b8; } }
   .flight-alert-btn.decline { background: transparent; color: var(--rivet); }
-  .flight-alert-btn.decline:hover { background: rgba(255,107,107,0.18); color: #ff6b6b; }
+  @media (hover: hover) { .flight-alert-btn.decline:hover { background: rgba(255,107,107,0.18); color: #ff6b6b; } }
   .flight-alert-row.wings-alert-row {
     cursor: pointer;
   }
-  .flight-alert-row.wings-alert-row:hover {
+  @media (hover: hover) { .flight-alert-row.wings-alert-row:hover {
     background: rgba(255,255,255,0.04);
-  }
+  } }
   .flight-alert-row.wings-alert-row:focus-visible {
     outline: none;
   }
   .flight-alert-row.wings-alert-row.unread {
     box-shadow: inset 3px 0 0 var(--rivet);
   }
-  .flight-alert-row.wings-alert-row.unread:hover {
+  @media (hover: hover) { .flight-alert-row.wings-alert-row.unread:hover {
     background: rgba(255,255,255,0.04);
-  }
+  } }
   .flight-alert-row.wings-alert-row.unread .flight-alert-name {
     color: var(--paper);
     font-weight: 700;
@@ -2504,10 +2546,10 @@
     cursor: pointer;
     border-radius: 4px;
   }
-  .wings-alert-delete-btn:hover {
+  @media (hover: hover) { .wings-alert-delete-btn:hover {
     color: #ff6b6b;
     background: rgba(255,107,107,0.12);
-  }
+  } }
   .wings-alert-confirm-actions {
     display: flex;
     justify-content: flex-end;
@@ -2515,7 +2557,7 @@
     margin-top: 4px;
   }
   .flight-alert-btn.confirm-delete { background: #ff6b6b; color: #3a0d0d; }
-  .flight-alert-btn.confirm-delete:hover { background: #ff8686; }
+  @media (hover: hover) { .flight-alert-btn.confirm-delete:hover { background: #ff8686; } }
   .wings-alert-detail-amount {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 30px;
@@ -2647,10 +2689,10 @@
     cursor: pointer;
     transition: background 0.15s ease, border-color 0.15s ease;
   }
-  .hours-chip:hover {
+  @media (hover: hover) { .hours-chip:hover {
     background: rgba(255,177,0,0.2);
     border-color: var(--accent);
-  }
+  } }
   .hours-chip-medal {
     width: 15px; height: 15px; border-radius: 50%;
     background: linear-gradient(160deg, #ffd873, var(--accent) 60%, #a86e00 100%);
@@ -2728,7 +2770,7 @@
     cursor: pointer;
     transform: scaleX(-1);
   }
-  .profile-card-bio-edit-btn:hover { color: var(--accent); }
+  @media (hover: hover) { .profile-card-bio-edit-btn:hover { color: var(--accent); } }
   .profile-aircraft-grid {
     display: flex;
     flex-wrap: wrap;
@@ -2741,7 +2783,7 @@
     text-align: center;
     transition: background-color 0.15s ease;
   }
-  .profile-aircraft-item:hover { background-color: rgba(255,255,255,0.06); }
+  @media (hover: hover) { .profile-aircraft-item:hover { background-color: rgba(255,255,255,0.06); } }
   .profile-aircraft-item[draggable="true"] { cursor: grab; }
   .profile-aircraft-item.dragging { opacity: 0.4; }
   .profile-aircraft-thumb {
@@ -2870,7 +2912,7 @@
   }
   /* Shop-purchased tiles still lift on hover; the upload tile below
      overrides this back to no movement. */
-  .profile-bg-swatch:hover { transform: translateY(-1px); }
+  @media (hover: hover) { .profile-bg-swatch:hover { transform: translateY(-1px); } }
   /* The upload tile is now the only tile in this grid, and a card that
      shifts under the cursor reads as a broken hover state for something
      that's really just a single button — keep it still. Its aspect ratio
@@ -2878,9 +2920,9 @@
   .profile-bg-swatch.upload-tile {
     aspect-ratio: 16/6;
   }
-  .profile-bg-swatch.upload-tile:hover {
+  @media (hover: hover) { .profile-bg-swatch.upload-tile:hover {
     transform: none;
-  }
+  } }
   .profile-bg-swatch.selected {
     border-color: var(--rivet);
     box-shadow: 0 0 0 1px var(--rivet);
@@ -3032,10 +3074,10 @@
     text-align: left;
     transition: border-color 0.15s, background 0.15s;
   }
-  .home-tab-btn:hover {
+  @media (hover: hover) { .home-tab-btn:hover {
     border-color: var(--accent);
     background: rgba(255, 177, 0, 0.08);
-  }
+  } }
   .home-tab-btn-title {
     font-weight: 700;
     font-size: 19px;
@@ -3055,19 +3097,19 @@
 
   /* individually colored tabs */
   .home-tab-btn.tab-review { border-color: #ff6b6b; }
-  .home-tab-btn.tab-review:hover { border-color: #ff6b6b; background: rgba(255, 107, 107, 0.1); }
+  @media (hover: hover) { .home-tab-btn.tab-review:hover { border-color: #ff6b6b; background: rgba(255, 107, 107, 0.1); } }
   .home-tab-btn.tab-review .home-tab-btn-title { color: #ff6b6b; }
 
   .home-tab-btn.tab-mock-exam { border-color: #8b5cf6; }
-  .home-tab-btn.tab-mock-exam:hover { border-color: #8b5cf6; background: rgba(139, 92, 246, 0.1); }
+  @media (hover: hover) { .home-tab-btn.tab-mock-exam:hover { border-color: #8b5cf6; background: rgba(139, 92, 246, 0.1); } }
   .home-tab-btn.tab-mock-exam .home-tab-btn-title { color: #8b5cf6; }
 
   .home-tab-btn.tab-mock-board { border-color: #5aa8ff; }
-  .home-tab-btn.tab-mock-board:hover { border-color: #5aa8ff; background: rgba(90, 168, 255, 0.1); }
+  @media (hover: hover) { .home-tab-btn.tab-mock-board:hover { border-color: #5aa8ff; background: rgba(90, 168, 255, 0.1); } }
   .home-tab-btn.tab-mock-board .home-tab-btn-title { color: #5aa8ff; }
 
   .home-tab-btn.tab-music { border-color: #ff8fc0; }
-  .home-tab-btn.tab-music:hover { border-color: #ff8fc0; background: rgba(255, 143, 192, 0.1); }
+  @media (hover: hover) { .home-tab-btn.tab-music:hover { border-color: #ff8fc0; background: rgba(255, 143, 192, 0.1); } }
   .home-tab-btn.tab-music .home-tab-btn-title { color: #ff8fc0; }
 
   /* ============ QUIZ (Quizizz-style, per exam) ============ */
@@ -3111,8 +3153,17 @@
     gap: 12px;
     margin-top: 4px;
   }
+  /* Phones keep the 2x2 layout too; the buttons just get a bit more compact
+     so two fit side by side. */
   @media (max-width: 640px) {
-    .quiz-choices-grid { grid-template-columns: 1fr; }
+    .quiz-choices-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .quiz-choice-btn {
+      min-width: 0;
+      min-height: 72px;
+      padding: 10px 8px;
+      font-size: 13.5px;
+      overflow-wrap: anywhere;
+    }
   }
   .quiz-settings-btn {
     display: inline-flex;
@@ -3129,7 +3180,7 @@
     flex-shrink: 0;
   }
   .quiz-settings-btn svg { width: 17px; height: 17px; }
-  .quiz-settings-btn:hover { color: var(--accent); }
+  @media (hover: hover) { .quiz-settings-btn:hover { color: var(--accent); } }
   .quiz-settings-note {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
@@ -3173,7 +3224,7 @@
     background: var(--blueprint-dark);
     transition: transform 0.1s ease, opacity 0.15s ease, background 0.1s ease;
   }
-  .quiz-choice-btn:hover:not(:disabled) { transform: scale(1.02); background: #0d3860; }
+  @media (hover: hover) { .quiz-choice-btn:hover:not(:disabled) { transform: scale(1.02); background: #0d3860; } }
   .quiz-choice-btn:disabled { cursor: default; }
   .quiz-choice-btn.correct {
     background: var(--green) !important;
@@ -3211,7 +3262,7 @@
     border: 1px solid var(--line);
     color: var(--paper);
   }
-  .quiz-nav-btn.quiz-prev-btn:hover { color: var(--accent); }
+  @media (hover: hover) { .quiz-nav-btn.quiz-prev-btn:hover { color: var(--accent); } }
   .quiz-results-card {
     max-width: 420px;
     margin: 22px auto;
@@ -3255,13 +3306,13 @@
   }
   /* Same lighten-on-hover as the other yellow buttons (e.g. Submit). */
   .quiz-start-btn { transition: filter 0.15s ease; }
-  .quiz-start-btn:not(.quiz-secondary-btn):hover { filter: brightness(1.08); }
+  @media (hover: hover) { .quiz-start-btn:not(.quiz-secondary-btn):hover { filter: brightness(1.08); } }
   .quiz-start-btn.quiz-secondary-btn {
     background: transparent;
     border: 1px solid var(--line);
     color: var(--paper);
   }
-  .quiz-start-btn.quiz-secondary-btn:hover { color: var(--accent); }
+  @media (hover: hover) { .quiz-start-btn.quiz-secondary-btn:hover { color: var(--accent); } }
 
   ul.subject-list, ul.exam-list {
     list-style: none;
@@ -3283,8 +3334,8 @@
     cursor: pointer;
     transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
   }
-  .subject-card.active:hover {
-  }
+  @media (hover: hover) { .subject-card.active:hover {
+  } }
   .subject-card.disabled {
     cursor: default;
   }
@@ -3322,9 +3373,9 @@
     align-items: center;
     gap: 6px;
   }
-  .subject-card.active:hover .subject-status { color: var(--accent); }
+  @media (hover: hover) { .subject-card.active:hover .subject-status { color: var(--accent); } }
   .subject-status svg { width: 12px; height: 12px; transition: transform 0.15s ease; }
-  .subject-card.active:hover .subject-status svg { transform: translate(2px, -2px); }
+  @media (hover: hover) { .subject-card.active:hover .subject-status svg { transform: translate(2px, -2px); } }
 
 
   /* ---- exam list (reuse) ---- */
@@ -3338,8 +3389,8 @@
     padding: 16px 18px;
     transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
   }
-  .exam-card:hover:not(:has(.exam-timer-reset:hover)) {
-  }
+  @media (hover: hover) { .exam-card:hover:not(:has(.exam-timer-reset:hover)) {
+  } }
   .exam-card:focus-visible, .subject-card:focus-visible {
     outline: none;
   }
@@ -3385,9 +3436,9 @@
     align-items: center;
     gap: 6px;
   }
-  .exam-card:hover:not(:has(.exam-timer-reset:hover)) .exam-go { color: var(--accent); }
+  @media (hover: hover) { .exam-card:hover:not(:has(.exam-timer-reset:hover)) .exam-go { color: var(--accent); } }
   .exam-go svg { width: 12px; height: 12px; transition: transform 0.15s ease; }
-  .exam-card:hover:not(:has(.exam-timer-reset:hover)) .exam-go svg { transform: translate(2px, -2px); }
+  @media (hover: hover) { .exam-card:hover:not(:has(.exam-timer-reset:hover)) .exam-go svg { transform: translate(2px, -2px); } }
 
   .exam-timer {
     font-family: 'IBM Plex Mono', monospace;
@@ -3426,9 +3477,9 @@
     flex-shrink: 0;
     transition: border-color 0.15s ease, color 0.15s ease;
   }
-  .exam-timer-reset:hover {
+  @media (hover: hover) { .exam-timer-reset:hover {
     color: var(--accent);
-  }
+  } }
   /* Timer + RESET only show once an exam has been started (running or
      expired) or has a score — hidden while the exam is untouched. */
   .exam-card.exam-timer-idle .exam-timer,
@@ -3529,7 +3580,7 @@
     cursor: pointer;
     transition: filter 0.15s ease, transform 0.15s ease;
   }
-  .trivia-next-btn:hover { filter: brightness(1.1); }
+  @media (hover: hover) { .trivia-next-btn:hover { filter: brightness(1.1); } }
 
   /* ---- mock board exam ---- */
   .board-btn {
@@ -3548,7 +3599,7 @@
     margin: 16px 0 28px;
     transition: background 0.15s ease, transform 0.15s ease;
   }
-  .board-btn:hover { background: #ffc233; }
+  @media (hover: hover) { .board-btn:hover { background: #ffc233; } }
   .board-btn svg { width: 14px; height: 14px; }
 
   /* Row holding Generate + Reset together; the row now carries the
@@ -3578,7 +3629,7 @@
     cursor: pointer;
     transition: background 0.15s ease, border-color 0.15s ease;
   }
-  .board-reset-btn:hover { background: rgba(255, 107, 107, 0.12); }
+  @media (hover: hover) { .board-reset-btn:hover { background: rgba(255, 107, 107, 0.12); } }
   .board-reset-btn svg { width: 14px; height: 14px; }
   /* GENERATE RANDOM SET: same outlined look as RESET, but green. */
   .board-generate-btn {
@@ -3596,7 +3647,7 @@
     cursor: pointer;
     transition: background 0.15s ease, border-color 0.15s ease;
   }
-  .board-generate-btn:hover { background: rgba(79, 209, 160, 0.12); }
+  @media (hover: hover) { .board-generate-btn:hover { background: rgba(79, 209, 160, 0.12); } }
   .board-generate-btn svg { width: 14px; height: 14px; }
   /* Mock Board exams on a day that's already over: finished, so the card
      (and its RESET / FINISH NOW buttons) can't be clicked any more. */
@@ -3706,7 +3757,7 @@
     line-height: 1;
     padding: 2px 6px;
   }
-  .form-popup-close:hover { color: var(--accent); }
+  @media (hover: hover) { .form-popup-close:hover { color: var(--accent); } }
   .form-popup-card iframe {
     display: block;
     width: 100%;
@@ -3841,9 +3892,9 @@
     -webkit-user-select: none;
   }
   .chat-panel-peek.available { display: flex; }
-  .chat-panel-peek:hover {
+  @media (hover: hover) { .chat-panel-peek:hover {
     background-image: linear-gradient(rgba(255,255,255,0.06), rgba(255,255,255,0.06));
-  }
+  } }
   .chat-panel-peek:focus-visible { outline: none; }
   .chat-peek-icon { font-size: 20px; line-height: 1; }
   .chat-peek-label {
@@ -3895,7 +3946,7 @@
     line-height: 1;
     padding: 0 4px;
   }
-  .chat-panel-close:hover { color: var(--accent); }
+  @media (hover: hover) { .chat-panel-close:hover { color: var(--accent); } }
   /* thin vertical divider between "Black Box Guidelines" and the » button,
      matching the Flight Store header */
   .chat-panel-head .chat-panel-close {
@@ -4021,7 +4072,7 @@
     line-height: 1;
     cursor: pointer;
   }
-  .chat-guidelines-close:hover { color: var(--accent); }
+  @media (hover: hover) { .chat-guidelines-close:hover { color: var(--accent); } }
 
   .banned-list-overlay {
     position: fixed;
@@ -4062,7 +4113,7 @@
     line-height: 1;
     cursor: pointer;
   }
-  .banned-list-close:hover { color: var(--accent); }
+  @media (hover: hover) { .banned-list-close:hover { color: var(--accent); } }
   .banned-list-empty {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 12px;
@@ -4114,7 +4165,7 @@
     border-radius: 999px;
     cursor: pointer;
   }
-  .banned-list-item-unban:hover { opacity: 0.85; }
+  @media (hover: hover) { .banned-list-item-unban:hover { opacity: 0.85; } }
   .banned-list-manual {
     border-top: 1px solid var(--line);
     padding-top: 14px;
@@ -4136,7 +4187,7 @@
     border-radius: 999px;
     cursor: pointer;
   }
-  .banned-list-manual button:hover { color: var(--accent); }
+  @media (hover: hover) { .banned-list-manual button:hover { color: var(--accent); } }
 
   /* ---- "Manage Mock Exams" admin popup, widened to match the
      .store-popup-overlay (Flight Store/Hangar) and .gform-overlay
@@ -4214,9 +4265,9 @@
     border-radius: 6px;
     border: 2px solid var(--blueprint-dark);
   }
-  .mockadmin-card::-webkit-scrollbar-thumb:hover {
+  @media (hover: hover) { .mockadmin-card::-webkit-scrollbar-thumb:hover {
     background-color: var(--rivet);
-  }
+  } }
   /* The ~10px scrollbar above renders in addition to the box's padding
      (not eaten out of it), so the right side ends up ~10px wider than the
      left's plain 26px. Trimming just the right padding here — scoped to
@@ -4246,7 +4297,7 @@
     border-radius: 999px;
     cursor: pointer;
   }
-  .mockadmin-subject-btn:hover { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
+  @media (hover: hover) { .mockadmin-subject-btn:hover { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); } }
   .mockadmin-subject-btn.active { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
   .mockadmin-list-head {
     display: flex;
@@ -4267,7 +4318,9 @@
     border-radius: 999px;
     cursor: pointer;
   }
-  .mockadmin-new-btn:hover, .mockadmin-add-q-btn:hover, .mockadmin-add-opt-btn:hover { opacity: 0.85; }
+  @media (hover: hover) { .mockadmin-new-btn:hover,
+.mockadmin-add-q-btn:hover,
+.mockadmin-add-opt-btn:hover { opacity: 0.85; } }
   .mockadmin-add-opt-btn { padding: 5px 11px; font-size: 10.5px; margin-top: 4px; }
   .mockadmin-set-row {
     display: flex;
@@ -4285,10 +4338,12 @@
   .mockadmin-set-row-clickable { cursor: pointer; transition: border-color 0.15s ease, background 0.15s ease; }
   /* highlight the box only while the pointer is on the box itself — not
      while it is on a button/toggle inside it */
-  .mockadmin-set-row-clickable:hover:not(:has(button:hover, label:hover, input:hover)),
   .mockadmin-set-row-clickable:focus-visible {
     background: rgba(255,255,255,0.06); outline: none;
   }
+  @media (hover: hover) { .mockadmin-set-row-clickable:hover:not(:has(button:hover, label:hover, input:hover)) {
+    background: rgba(255,255,255,0.06); outline: none;
+  } }
   .mockadmin-set-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
   .mockadmin-set-title { font-weight: 600; font-size: 13px; color: var(--paper); }
   .mockadmin-set-meta { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--rivet); }
@@ -4304,8 +4359,8 @@
     border-radius: 999px;
     cursor: pointer;
   }
-  .mockadmin-mini-btn:hover { color: var(--accent); }
-  .mockadmin-mini-btn.danger:hover { color: #f07a6a; }
+  @media (hover: hover) { .mockadmin-mini-btn:hover { color: var(--accent); } }
+  @media (hover: hover) { .mockadmin-mini-btn.danger:hover { color: #f07a6a; } }
   .mockadmin-back-btn {
     background: none;
     border: none;
@@ -4315,7 +4370,7 @@
     cursor: pointer;
     padding: 0 0 16px;
   }
-  .mockadmin-back-btn:hover { color: var(--accent); }
+  @media (hover: hover) { .mockadmin-back-btn:hover { color: var(--accent); } }
   .mockadmin-field-label {
     display: block;
     font-family: 'IBM Plex Mono', monospace;
@@ -4361,7 +4416,7 @@
     font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 7px 11px;
     border-radius: 4px; cursor: pointer;
   }
-  .mockadmin-image-upload-btn:hover { color: var(--accent); }
+  @media (hover: hover) { .mockadmin-image-upload-btn:hover { color: var(--accent); } }
   .mockadmin-image-preview-wrap { display: flex; align-items: center; gap: 8px; }
   .mockadmin-image-preview-wrap img {
     max-width: 120px; max-height: 80px; border-radius: 4px; border: 1px solid var(--line); display: block;
@@ -4413,8 +4468,8 @@
     cursor: pointer;
   }
   .mockadmin-publish-btn { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
-  .mockadmin-save-btn:hover { color: var(--accent); }
-  .mockadmin-publish-btn:hover { opacity: 0.85; }
+  @media (hover: hover) { .mockadmin-save-btn:hover { color: var(--accent); } }
+  @media (hover: hover) { .mockadmin-publish-btn:hover { opacity: 0.85; } }
 
   /* ---- bulk mock exam creator (BEC) ---- */
   .bec-steps-bar {
@@ -4573,7 +4628,7 @@
     line-height: 1;
     cursor: pointer;
   }
-  .gift-wings-close:hover { color: var(--accent); }
+  @media (hover: hover) { .gift-wings-close:hover { color: var(--accent); } }
 
   .wings-history-empty {
     font-family: 'IBM Plex Mono', monospace;
@@ -4715,9 +4770,9 @@
     stroke-width: 1.5;
     stroke-linecap: round;
   }
-  .chat-msg:has(.chat-msg-reply:hover) .chat-msg-reply-thread path {
+  @media (hover: hover) { .chat-msg:has(.chat-msg-reply:hover) .chat-msg-reply-thread path {
     stroke: var(--accent);
-  }
+  } }
   .chat-msg-row {
     display: flex;
     gap: 16px;
@@ -4803,7 +4858,7 @@
     line-height: 1;
     overflow: hidden;
   }
-  .chat-msg-reply:hover { color: var(--paper); }
+  @media (hover: hover) { .chat-msg-reply:hover { color: var(--paper); } }
   .chat-msg-reply b { color: var(--paper); font-weight: normal; }
   .chat-reply-btn {
     background: none;
@@ -4815,7 +4870,7 @@
     opacity: 0.7;
     line-height: 1;
   }
-  .chat-reply-btn:hover { opacity: 1; }
+  @media (hover: hover) { .chat-reply-btn:hover { opacity: 1; } }
   .chat-ban-btn {
     background: none;
     border: none;
@@ -4825,7 +4880,7 @@
     opacity: 0.55;
     line-height: 1;
   }
-  .chat-ban-btn:hover { opacity: 1; }
+  @media (hover: hover) { .chat-ban-btn:hover { opacity: 1; } }
   .chat-delete-btn {
     background: none;
     border: none;
@@ -4835,7 +4890,7 @@
     opacity: 0.55;
     line-height: 1;
   }
-  .chat-delete-btn:hover { opacity: 1; }
+  @media (hover: hover) { .chat-delete-btn:hover { opacity: 1; } }
   .chat-msg.own .chat-msg-body {
     text-align: left;
   }
@@ -4888,7 +4943,7 @@
     line-height: 1;
     flex-shrink: 0;
   }
-  .chat-reply-preview-close:hover { color: var(--accent); }
+  @media (hover: hover) { .chat-reply-preview-close:hover { color: var(--accent); } }
   .chat-mention-suggest {
     display: none;
     flex-direction: column;
@@ -4905,10 +4960,14 @@
     padding: 7px 12px;
     cursor: pointer;
   }
-  .chat-mention-option:hover, .chat-mention-option.active {
+  .chat-mention-option.active {
     background: rgba(255,177,0,0.12);
     color: var(--accent);
   }
+  @media (hover: hover) { .chat-mention-option:hover {
+    background: rgba(255,177,0,0.12);
+    color: var(--accent);
+  } }
   .chat-input-row {
     display: flex;
     gap: 8px;
@@ -4951,7 +5010,7 @@
     padding: 8px 9px;
     cursor: pointer;
   }
-  .chat-emoji-btn:hover { filter: brightness(1.15); }
+  @media (hover: hover) { .chat-emoji-btn:hover { filter: brightness(1.15); } }
   .chat-emoji-btn.active { border-color: var(--accent); background: rgba(255,177,0,0.1); }
 
   .chat-emoji-picker {
@@ -4980,7 +5039,7 @@
     opacity: 0.55;
     border-bottom: 2px solid transparent;
   }
-  .chat-emoji-tab:hover { opacity: 0.85; }
+  @media (hover: hover) { .chat-emoji-tab:hover { opacity: 0.85; } }
   .chat-emoji-tab.active { opacity: 1; border-bottom-color: var(--accent); }
   .chat-emoji-grid {
     display: grid;
@@ -5000,7 +5059,7 @@
     cursor: pointer;
     text-align: center;
   }
-  .chat-emoji-item:hover { background: rgba(255,177,0,0.15); }
+  @media (hover: hover) { .chat-emoji-item:hover { background: rgba(255,177,0,0.15); } }
 
   @media (max-width: 900px) {
     /* stays inside the viewport with the same 16px margins; sits above the
@@ -5110,18 +5169,18 @@
     transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
   }
   .board-share-btn svg { width: 22px; height: 22px; display: block; }
-  .board-share-btn:hover { transform: translateY(-2px); border-color: transparent; }
-  .board-share-btn.fb:hover { background: #1877f2; }
-  .board-share-btn.msgr:hover { background: linear-gradient(135deg, #00b2ff, #a033ff 60%, #ff5c87); }
-  .board-share-btn.ig:hover { background: linear-gradient(45deg, #f9ce34, #ee2a7b 55%, #6228d7); }
+  @media (hover: hover) { .board-share-btn:hover { transform: translateY(-2px); border-color: transparent; } }
+  @media (hover: hover) { .board-share-btn.fb:hover { background: #1877f2; } }
+  @media (hover: hover) { .board-share-btn.msgr:hover { background: linear-gradient(135deg, #00b2ff, #a033ff 60%, #ff5c87); } }
+  @media (hover: hover) { .board-share-btn.ig:hover { background: linear-gradient(45deg, #f9ce34, #ee2a7b 55%, #6228d7); } }
   /* Gradient must cover the border box too; otherwise it tiles into the 1px
      transparent border and shows the opposite colors on the top/bottom/left/right edges. */
-  .board-share-btn.msgr:hover,
-  .board-share-btn.ig:hover {
+  @media (hover: hover) { .board-share-btn.msgr:hover,
+.board-share-btn.ig:hover {
     background-origin: border-box;
     background-clip: border-box;
     background-repeat: no-repeat;
-  }
+  } }
   .board-share-btn:disabled { opacity: 0.5; cursor: wait; transform: none; }
   .board-share-status {
     min-height: 16px;
@@ -5288,7 +5347,7 @@
     transition: border-color 0.15s ease, color 0.15s ease;
     flex-shrink: 0;
   }
-  .account-wings-badge:hover { color: var(--accent); }
+  @media (hover: hover) { .account-wings-badge:hover { color: var(--accent); } }
   .daily-claim-btn {
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 700;
@@ -5314,7 +5373,7 @@
     white-space: nowrap;
     transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
   }
-  .topbar-nav-btn:hover { color: var(--accent); }
+  @media (hover: hover) { .topbar-nav-btn:hover { color: var(--accent); } }
   /* Icon-only versions of the top bar buttons (wings, Flight Store, Hangar,
      Admin): same look as the other header icon buttons (.topbar-icon-btn) —
      no border, no fill, and the soft rounded highlight shows ONLY while the
@@ -5337,17 +5396,20 @@
     box-shadow: none;
     transition: background 0.15s ease;
   }
-  .account-wings-badge.icon-only:hover,
   .account-wings-badge.icon-only:focus-visible,
-  .topbar-nav-btn.icon-only:hover,
-  .topbar-nav-btn.icon-only:focus-visible,
-  .account-badge .signout-btn.icon-only:hover,
-  .account-badge .signout-btn.icon-only:focus-visible {
+.topbar-nav-btn.icon-only:focus-visible,
+.account-badge .signout-btn.icon-only:focus-visible {
     background: rgba(255,255,255,0.07);
     outline: none;
   }
+  @media (hover: hover) { .account-wings-badge.icon-only:hover,
+.topbar-nav-btn.icon-only:hover,
+.account-badge .signout-btn.icon-only:hover {
+    background: rgba(255,255,255,0.07);
+    outline: none;
+  } }
   .topbar-nav-btn.locked { color: var(--rivet); opacity: 0.85; }
-  .topbar-nav-btn.locked:hover { background: rgba(255,255,255,0.03); }
+  @media (hover: hover) { .topbar-nav-btn.locked:hover { background: rgba(255,255,255,0.03); } }
 
   /* Review / Mock Exam / Mock Board Exam icon buttons in the homepage
      header. They sit on the right, just before the Depart button. */
@@ -5397,8 +5459,8 @@
     stroke-linejoin: round;
     pointer-events: none;
   }
-  .topbar-icon-btn:hover,
   .topbar-icon-btn:focus-visible { background: rgba(255,255,255,0.07); outline: none; }
+  @media (hover: hover) { .topbar-icon-btn:hover { background: rgba(255,255,255,0.07); outline: none; } }
 
   /* Title row: the page title on the left, an optional button on the right. */
   .site-title-row {
@@ -5475,7 +5537,7 @@
     cursor: pointer;
     transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
   }
-  .store-subnav-btn:hover { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
+  @media (hover: hover) { .store-subnav-btn:hover { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); } }
   .store-subnav-btn.active {
     border-color: var(--accent);
     background: var(--accent);
@@ -5520,7 +5582,7 @@
     border-radius: 999px;
     cursor: pointer;
   }
-  .shop-page-nav:hover:not(:disabled) { color: var(--accent); }
+  @media (hover: hover) { .shop-page-nav:hover:not(:disabled) { color: var(--accent); } }
   .shop-page-nav:disabled { opacity: 0.35; cursor: default; }
   .shop-page-numbers {
     display: flex;
@@ -5539,7 +5601,7 @@
     border-radius: 50%;
     cursor: pointer;
   }
-  .shop-page-btn:hover { border-color: var(--line); color: var(--paper); }
+  @media (hover: hover) { .shop-page-btn:hover { border-color: var(--line); color: var(--paper); } }
   .shop-page-btn.active {
     background: var(--accent);
     color: var(--blueprint-dark);
@@ -5613,16 +5675,16 @@
     padding: 0;
     cursor: pointer;
   }
-  .shop-item-admin-btn:hover {
+  @media (hover: hover) { .shop-item-admin-btn:hover {
     background: var(--accent);
     color: var(--blueprint-dark);
     border-color: var(--accent);
-  }
-  .shop-item-admin-btn.danger:hover {
+  } }
+  @media (hover: hover) { .shop-item-admin-btn.danger:hover {
     background: #ff2d78;
     color: #fff;
     border-color: #ff2d78;
-  }
+  } }
   .shop-item-card.shop-item-filler {
     visibility: hidden;
   }
@@ -5787,11 +5849,11 @@
   }
   /* Hovering a not-yet-owned price button (e.g. "500 🪽") fills it yellow.
      Skips the disabled "Loading…" state since it isn't clickable. */
-  .shop-item-buy-btn:not(:disabled):hover {
+  @media (hover: hover) { .shop-item-buy-btn:not(:disabled):hover {
     background: var(--accent);
     border-color: var(--accent);
     color: var(--blueprint-dark);
-  }
+  } }
   .shop-equip-btn.equipped {
     background: var(--accent);
     border-color: var(--accent);
@@ -5800,11 +5862,11 @@
   /* Hovering an un-equipped EQUIP button previews the filled-yellow look it
      takes once clicked. Doesn't touch the disabled "✓ Owned" pill (also
      .equipped) since that's not a clickable equip action. */
-  .shop-equip-btn:not(.equipped):not(:disabled):hover {
+  @media (hover: hover) { .shop-equip-btn:not(.equipped):not(:disabled):hover {
     background: var(--accent);
     border-color: var(--accent);
     color: var(--blueprint-dark);
-  }
+  } }
   .shop-buy-wings-btn:disabled {
     opacity: 0.45;
     cursor: default;
@@ -6748,7 +6810,7 @@
     cursor: pointer;
     z-index: 2;
   }
-  .shop-pay-x:hover { color: var(--accent); }
+  @media (hover: hover) { .shop-pay-x:hover { color: var(--accent); } }
 
   /* wings purchase thank-you modal */
   .wings-thankyou-overlay {
@@ -6863,22 +6925,22 @@
     cursor: pointer;
     transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
   }
-  .wings-pack-card:hover {
+  @media (hover: hover) { .wings-pack-card:hover {
     border-color: var(--accent);
     background: var(--accent);
     transform: translateY(-2px);
-  }
+  } }
   /* solid yellow hover: flip text to dark so it stays readable */
-  .wings-pack-card:hover .wings-pack-amount,
-  .wings-pack-card:hover .wings-pack-price,
-  .wings-pack-card:hover .wings-pack-save,
-  .wings-pack-card:hover .wings-pack-rate {
+  @media (hover: hover) { .wings-pack-card:hover .wings-pack-amount,
+.wings-pack-card:hover .wings-pack-price,
+.wings-pack-card:hover .wings-pack-save,
+.wings-pack-card:hover .wings-pack-rate {
     color: var(--blueprint-dark);
-  }
-  .wings-pack-card:hover .wings-pack-badge {
+  } }
+  @media (hover: hover) { .wings-pack-card:hover .wings-pack-badge {
     background: var(--blueprint-dark);
     color: var(--accent);
-  }
+  } }
   .wings-pack-card.best-value { border-color: var(--line); }
   .wings-pack-badge {
     position: absolute;
@@ -7325,7 +7387,7 @@
   white-space: nowrap;
   align-self: flex-start;
 }
-.math-toolbar-btn:hover { color: var(--accent); }
+@media (hover: hover) { .math-toolbar-btn:hover { color: var(--accent); } }
 .math-toolbox {
   position: fixed;
   z-index: 5000;
@@ -7352,7 +7414,7 @@
   min-width: 27px;
   cursor: pointer;
 }
-.math-toolbox-row button:hover { color: var(--accent); }
+@media (hover: hover) { .math-toolbox-row button:hover { color: var(--accent); } }
 .math-toolbox-labeled-row button {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 10.5px;
@@ -7373,7 +7435,7 @@
 .gform-card .gform-pin-btn { font-size: 13px; padding: 5px 8px; }
 /* .hover-suppressed is set right after unpinning, so the button goes back to
    unfilled even though the mouse is still on it; it comes off on mouseleave. */
-.gform-pin-btn:not(.hover-suppressed):hover { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
+@media (hover: hover) { .gform-pin-btn:not(.hover-suppressed):hover { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); } }
 .gform-pin-btn.active { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
 .gform-option {
   display: flex; align-items: center; padding: 8px 0; cursor: pointer;
@@ -7401,7 +7463,7 @@
   white-space: nowrap; text-decoration: underline; text-underline-offset: 2px;
   position: relative; top: 5px; /* nudged down so it lines up with the choice circle */
 }
-.gform-clear-btn:hover { color: var(--accent); }
+@media (hover: hover) { .gform-clear-btn:hover { color: var(--accent); } }
 .gform-card.correct {
   border-color: var(--green);
   background: rgba(79, 209, 160, 0.1);
@@ -7447,7 +7509,7 @@
   padding: 10px 22px; font-family: 'Space Grotesk', sans-serif; font-size: 14px;
   font-weight: 600; cursor: pointer;
 }
-.gform-submit-btn:hover { filter: brightness(1.08); }
+@media (hover: hover) { .gform-submit-btn:hover { filter: brightness(1.08); } }
 .gform-score-overlay {
   position: fixed; inset: 0; z-index: 2000;
   display: none; align-items: center; justify-content: center;
@@ -7476,13 +7538,13 @@
   padding: 11px 14px; font-family: 'Space Grotesk', sans-serif; font-size: 14px;
   font-weight: 600; cursor: pointer;
 }
-.gform-score-modal .gform-score-retake-btn:hover { filter: brightness(1.08); }
+@media (hover: hover) { .gform-score-modal .gform-score-retake-btn:hover { filter: brightness(1.08); } }
 .gform-score-modal .gform-score-leave-btn {
   background: transparent; border: 1px solid var(--line); color: var(--paper);
   border-radius: 999px; padding: 11px 14px; font-family: 'Space Grotesk', sans-serif;
   font-size: 14px; font-weight: 600; cursor: pointer;
 }
-.gform-score-modal .gform-score-leave-btn:hover { color: var(--accent); }
+@media (hover: hover) { .gform-score-modal .gform-score-leave-btn:hover { color: var(--accent); } }
 @media (max-width: 600px) {
   .gform-title { font-size: 16px; }
   /* Title + timer/Pins/Back can't all fit on one line on a phone —
@@ -7537,9 +7599,9 @@
     text-decoration-color: rgba(127, 168, 201, 0.45);
     text-underline-offset: 3px;
   }
-  .legal-link:hover,
-  .legal-inline-link:hover,
-  .profile-card-legal-link:hover { color: var(--accent); text-decoration-color: var(--accent); }
+  @media (hover: hover) { .legal-link:hover,
+.legal-inline-link:hover,
+.profile-card-legal-link:hover { color: var(--accent); text-decoration-color: var(--accent); } }
   .legal-sep { opacity: 0.55; user-select: none; }
 
   /* "By creating an account, you agree to ..." note on the sign-up steps.
@@ -7550,7 +7612,7 @@
     margin: 14px 0 0;
   }
   .signin-card p.legal-agree-note .legal-inline-link { color: var(--paper); }
-  .signin-card p.legal-agree-note .legal-inline-link:hover { color: var(--accent); }
+  @media (hover: hover) { .signin-card p.legal-agree-note .legal-inline-link:hover { color: var(--accent); } }
 
   /* ---- Even vertical rhythm in the sign-up form's legal area ----
      Visible gaps are all ~12px: Confirm Flight Code -> note -> Terms row ->
@@ -7595,7 +7657,7 @@
     cursor: pointer;
     transition: border-color 0.15s ease, background 0.15s ease;
   }
-  .legal-check-row:hover { border-color: var(--rivet); }
+  @media (hover: hover) { .legal-check-row:hover { border-color: var(--rivet); } }
   .legal-check-row.checked {
     border-color: var(--green);
     background: rgba(79, 209, 160, 0.08);
@@ -7670,7 +7732,7 @@
     cursor: pointer;
     transition: border-color 0.15s ease;
   }
-  .legal-accept-label:hover { border-color: var(--rivet); }
+  @media (hover: hover) { .legal-accept-label:hover { border-color: var(--rivet); } }
   .legal-accept-label:has(input:checked) { border-color: var(--green); }
   .legal-accept-label input[type="checkbox"] {
     flex: 0 0 auto;
@@ -7905,12 +7967,16 @@
     cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease;
   }
-  .info-links-item:hover,
   .info-links-item:focus-visible {
     background: rgba(255,255,255,0.05);
     color: var(--paper);
     outline: none;
   }
+  @media (hover: hover) { .info-links-item:hover {
+    background: rgba(255,255,255,0.05);
+    color: var(--paper);
+    outline: none;
+  } }
   .info-links-icon { font-size: 14px; line-height: 1; }
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -7980,6 +8046,187 @@
     color: var(--rivet);
     pointer-events: none;
   }
+
+  /* ============ MOBILE (900px and narrower): swipe-to-reveal side panels ============
+     On phones the page shows ONLY the top icon card + the page content (the
+     same view as before, minus the two side panels):
+       - swipe RIGHT  -> the "Souls on Board" sidebar slides in from the left
+       - swipe LEFT   -> the "Black Box" chat panel slides in from the right
+     Swiping back the other way (or tapping the dimmed area beside the sidebar,
+     or the » button in the chat) closes them again. Desktop (901px and wider)
+     is untouched: the sidebar and the Black Box strip stay visible always. */
+  .mobile-drawer-backdrop { display: none; }
+  @media (max-width: 900px) {
+    html { overscroll-behavior-x: none; }
+
+    /* no custom side scroll indicator on phones (touch scrolling only) */
+    #app-scrollbar-track { display: none !important; }
+
+    /* page content: full width, no room reserved for the side panels */
+    body.sidebar-active { padding-left: 0; padding-right: 0; }
+    .wrap { padding: 10px 10px 90px; }
+
+    /* top icon row becomes the same rounded card as on desktop */
+    .top-bar {
+      position: relative;
+      isolation: isolate;
+      flex-wrap: nowrap;
+      min-height: 54px;
+      padding: 0 8px;
+      margin-bottom: 18px;
+    }
+    .top-bar::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background: var(--blueprint-dark);
+      border-radius: 14px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+    /* icon buttons scale with the screen width so the whole row (wings,
+       store, hangar, admin, 5 tabs, depart) always fits inside the card
+       instead of squeezing/overlapping or running off the right edge */
+    .top-bar { --tb-btn: clamp(24px, calc((100vw - 60px) / 10.4), 46px); }
+    .account-badge { gap: 1px; min-width: 0; }
+    .account-wings-badge.icon-only,
+    .topbar-nav-btn.icon-only,
+    .account-badge .signout-btn.icon-only,
+    .account-badge .signout-icon-btn,
+    .topbar-icon-btn {
+      width: var(--tb-btn);
+      flex: 0 0 auto;
+    }
+    .account-wings-badge.icon-only,
+    .topbar-nav-btn.icon-only,
+    .account-badge .signout-btn.icon-only { font-size: clamp(14px, calc(var(--tb-btn) * 0.55), 17px); }
+    .topbar-icon-btn svg {
+      width: clamp(18px, calc(var(--tb-btn) * 0.6), 23px);
+      height: clamp(18px, calc(var(--tb-btn) * 0.6), 23px);
+    }
+    .topbar-icon-nav { gap: 0; padding-right: 4px; flex: 0 0 auto; }
+
+    /* sidebar: off-canvas drawer on the left */
+    .reviewees-sidebar {
+      width: min(84vw, 300px);
+      z-index: 1500;
+      transform: translateX(calc(-100% - 40px));
+      visibility: hidden;
+      transition: transform 300ms cubic-bezier(0.22, 0.61, 0.36, 1), visibility 0s linear 300ms;
+    }
+    body.side-left-open .reviewees-sidebar {
+      transform: translateX(0);
+      visibility: visible;
+      transition-delay: 0s, 0s;
+    }
+    .mobile-drawer-backdrop {
+      display: block;
+      position: fixed;
+      inset: 0;
+      z-index: 1500;
+      background: rgba(2, 12, 24, 0.6);
+      opacity: 0;
+      pointer-events: none;
+      touch-action: none;
+      transition: opacity 300ms ease;
+    }
+    body.side-left-open .mobile-drawer-backdrop { opacity: 1; pointer-events: auto; }
+
+    /* Black Box: the collapsed edge strip is gone; the panel itself
+       (already an off-canvas slide-in from the right) opens by swipe */
+    .chat-panel-peek, .chat-panel-peek.available { display: none !important; }
+
+    /* pop-ups that used to sit between the two panels now use the full width */
+    .store-popup-overlay,
+    #mockadmin-overlay { left: 10px; right: 10px; }
+  }
+  @media (max-width: 900px) and (prefers-reduced-motion: reduce) {
+    .reviewees-sidebar, .mobile-drawer-backdrop { transition-duration: 1ms; }
+  }
+
+  /* Touch screens: a tap leaves the browser "hovering"/focusing the button
+     until you tap somewhere else, which kept the rounded highlight box stuck
+     on the top-bar icons. Drop the hover/focus highlight on touch devices
+     and show it only for the instant of the tap (:active). */
+  @media (hover: none), (max-width: 900px) {
+    .topbar-icon-btn:hover,
+    .topbar-icon-btn:focus,
+    .topbar-icon-btn:focus-visible,
+    .account-wings-badge.icon-only:hover,
+    .account-wings-badge.icon-only:focus-visible,
+    .topbar-nav-btn.icon-only:hover,
+    .topbar-nav-btn.icon-only:focus,
+    .topbar-nav-btn.icon-only:focus-visible,
+    .account-badge .signout-btn.icon-only:hover,
+    .account-badge .signout-btn.icon-only:focus-visible {
+      background: none;
+    }
+    .account-badge .signout-icon-btn:hover::after,
+    .account-badge .signout-icon-btn:focus::after,
+    .account-badge .signout-icon-btn:focus-visible::after {
+      background: transparent;
+    }
+    .topbar-icon-btn:active,
+    .account-wings-badge.icon-only:active,
+    .topbar-nav-btn.icon-only:active,
+    .account-badge .signout-btn.icon-only:active {
+      background: rgba(255,255,255,0.07);
+    }
+    .account-badge .signout-icon-btn:active::after {
+      background: rgba(255,255,255,0.07);
+    }
+  }
+
+  /* Phones: exam cards (idx, title, timer, RESET, TAKE EXAM) stay on ONE
+     straight line instead of wrapping "TAKE EXAM" onto a second row; the
+     pieces are made compact and the title takes whatever room is left. */
+  @media (max-width: 600px) {
+html:not(.pc-scale) .exam-card { padding: 12px 10px; }
+html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-row { flex-wrap: nowrap; gap: 6px; }
+html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-name { min-width: 0; font-size: 14px; line-height: 1.3; overflow-wrap: anywhere; }
+html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-idx { min-width: 18px; font-size: 11px; }
+html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-timer { font-size: 10px; padding: 3px 5px; letter-spacing: 0; }
+html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-timer-reset { font-size: 9px; padding: 3px 5px; }
+html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-go { font-size: 10px; gap: 3px; }
+html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-go svg { width: 10px; height: 10px; }
+  }
+
+  /* Very narrow screens / small windows (the wide phone layout isn't in
+     effect): stack the exam & quiz cards neatly instead of squeezing them.
+     Row 1 = number + title (full width, so the title never gets pinched);
+     row 2 = timer / progress badge, RESET, and TAKE EXAM / QUIZ ME, all on
+     one straight line lined up under the title. Cards with nothing extra
+     (no timer/badge) stay a single line. */
+  @media (max-width: 600px) {
+html:not(.pc-scale) .quiz-exam-card .exam-row { flex-wrap: wrap; gap: 8px; row-gap: 8px; }
+html:not(.pc-scale) .quiz-exam-card .exam-idx { min-width: 18px; font-size: 11px; }
+html:not(.pc-scale) .quiz-exam-card .exam-name { min-width: 0; font-size: 14px; line-height: 1.3; }
+html:not(.pc-scale) .quiz-exam-card .exam-row:has(.exam-timer) .exam-name { flex: 1 1 calc(100% - 26px); }
+html:not(.pc-scale) .quiz-exam-card .exam-name + .exam-timer { margin-left: 26px; }
+html:not(.pc-scale) .quiz-exam-card .exam-timer { font-size: 10px; padding: 3px 6px; }
+html:not(.pc-scale) .quiz-exam-card .exam-timer-reset { font-size: 9px; padding: 3px 6px; }
+html:not(.pc-scale) .quiz-exam-card .exam-go { font-size: 10px; margin-left: auto; }
+html:not(.pc-scale) .quiz-exam-card .exam-row:not(:has(.exam-timer)) .exam-go { margin-left: 0; }
+  }
+  @media (max-width: 360px) {
+html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-row:has(.exam-timer) { flex-wrap: wrap; row-gap: 8px; gap: 8px; }
+html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-row:has(.exam-timer) .exam-name { flex: 1 1 calc(100% - 26px); }
+html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-name + .exam-timer { margin-left: 26px; }
+html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-row:has(.exam-timer) .exam-go { margin-left: auto; }
+  }
+  @media (max-width: 320px) {
+html:not(.pc-scale) .quiz-exam-card .exam-name + .exam-timer,
+    html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-name + .exam-timer { margin-left: 0; }
+html:not(.pc-scale) .exam-card .exam-timer { letter-spacing: 0; }
+  }
+
+  /* PC-scale fallback: when a browser ignores the phone viewport tag (narrow
+     desktop window, some in-app browsers), the JS in <head> adds .pc-scale
+     and sets --pc-zoom so the page column is still drawn at the wide PC
+     layout (720px) and shrunk to fit, instead of being squeezed. */
+  html.pc-scale .wrap { zoom: var(--pc-zoom, 1); }
+  html.pc-scale .top-bar { --tb-btn: 46px; }
 </style>
 </head>
 <body class="gate-active">
@@ -8851,6 +9098,8 @@ By creating or using an aerodynadmics account, you acknowledge and accept the co
 
 If you do not agree with this Privacy Policy, you should discontinue use of the platform.
 </script>
+
+  <div class="mobile-drawer-backdrop" id="mobile-drawer-backdrop"></div>
 
   <div class="reviewees-sidebar" id="reviewees-sidebar">
     <div class="reviewees-sidebar-head">
@@ -25531,6 +25780,78 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
       ro.observe(document.body);
     }
     updateAppScrollbar();
+  })();
+</script>
+<script>
+  /* ---- Mobile swipe navigation (phones / narrow screens only) ----
+     Swipe right: open the sidebar (or close the Black Box if it is open).
+     Swipe left:  open the Black Box (or close the sidebar if it is open). */
+  (function () {
+    var mq = window.matchMedia('(max-width: 900px)');
+    var body = document.body;
+    var backdrop = document.getElementById('mobile-drawer-backdrop');
+    var SWIPE_MIN_PX = 60, SWIPE_MAX_MS = 900, DIRECTION_RATIO = 1.6;
+    var sx = 0, sy = 0, st = 0, tracking = false;
+
+    function sidebarOpen() { return body.classList.contains('side-left-open'); }
+    function setSidebar(open) { body.classList.toggle('side-left-open', !!open); }
+    function chatEl() { return document.getElementById('chat-panel'); }
+    function chatAvailable() { var p = chatEl(); return !!p && p.classList.contains('available'); }
+    function chatOpen() { var p = chatEl(); return !!p && p.classList.contains('visible'); }
+    function chatBusy() { var p = chatEl(); return !!p && p.classList.contains('animating'); }
+
+    // Don't hijack swipes meant for something else: text fields, horizontally
+    // scrollable areas (tables, carousels...), or anything inside a fixed
+    // pop-up. The sidebar, chat panel and backdrop themselves are allowed.
+    function blockedTarget(t) {
+      if (t && t.nodeType !== 1) t = t.parentElement;
+      for (var el = t; el && el !== document.documentElement; el = el.parentElement) {
+        if (el.matches && el.matches('input, textarea, select, canvas, [contenteditable="true"]')) return true;
+        var cs = window.getComputedStyle(el);
+        if ((cs.overflowX === 'auto' || cs.overflowX === 'scroll') && el.scrollWidth > el.clientWidth + 1) return true;
+        if (cs.position === 'fixed' &&
+            el.id !== 'reviewees-sidebar' && el.id !== 'chat-panel' && el.id !== 'mobile-drawer-backdrop') return true;
+      }
+      return false;
+    }
+
+    document.addEventListener('touchstart', function (e) {
+      tracking = false;
+      if (!mq.matches || e.touches.length !== 1 || body.classList.contains('gate-active')) return;
+      if (blockedTarget(e.target)) return;
+      sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now();
+      tracking = true;
+    }, { passive: true });
+
+    document.addEventListener('touchcancel', function () { tracking = false; }, { passive: true });
+
+    document.addEventListener('touchend', function (e) {
+      if (!tracking) return;
+      tracking = false;
+      var t = e.changedTouches && e.changedTouches[0];
+      if (!t) return;
+      var dx = t.clientX - sx, dy = t.clientY - sy;
+      if (Date.now() - st > SWIPE_MAX_MS) return;
+      if (Math.abs(dx) < SWIPE_MIN_PX || Math.abs(dx) < Math.abs(dy) * DIRECTION_RATIO) return;
+      if (window.getSelection && String(window.getSelection()).length) return; // user is selecting text
+
+      if (dx > 0) {                       // finger moved right
+        if (chatOpen()) { if (!chatBusy()) toggleChatPanel(); }
+        else if (!sidebarOpen()) setSidebar(true);
+      } else {                            // finger moved left
+        if (sidebarOpen()) setSidebar(false);
+        else if (!chatOpen() && chatAvailable() && !chatBusy()) toggleChatPanel();
+      }
+    }, { passive: true });
+
+    if (backdrop) backdrop.addEventListener('click', function () { setSidebar(false); });
+
+    // Close the drawer when the screen grows past phone width or the user signs out.
+    var onMq = function (e) { if (!e.matches) setSidebar(false); };
+    if (mq.addEventListener) mq.addEventListener('change', onMq); else if (mq.addListener) mq.addListener(onMq);
+    new MutationObserver(function () {
+      if (body.classList.contains('gate-active') && sidebarOpen()) setSidebar(false);
+    }).observe(body, { attributes: true, attributeFilter: ['class'] });
   })();
 </script>
 </body>
