@@ -1064,6 +1064,245 @@
     border-color: var(--accent);
     color: var(--blueprint-dark);
   } }
+
+  /* ---- Copyright / Concerns: public submission pop-up + admin viewer.
+     The submission card reuses .mockadmin-card/.mockadmin-input/etc, and
+     the toggle reuses .gift-wings-mode-toggle. The admin list reuses
+     .banned-list-card/.banned-list-empty but needs its own item layout
+     since each entry shows a full, unlimited-length message rather than
+     one line, plus a type badge. ---- */
+  .cc-badge {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 3px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+  .cc-badge.copyright { background: rgba(230,90,90,0.18); color: #e65a5a; border: 1px solid rgba(230,90,90,0.4); }
+  .cc-badge.concern { background: rgba(79,209,160,0.18); color: var(--green); border: 1px solid rgba(79,209,160,0.4); }
+  .cc-admin-items { display: flex; flex-direction: column; gap: 10px; margin-bottom: 6px; }
+  .cc-admin-item {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 16px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 12px 8px;
+    background: transparent;
+    cursor: pointer;
+  }
+  @media (hover: hover) { .cc-admin-item:hover { border-color: var(--rivet); background: rgba(127,168,201,0.08); } }
+  /* List row only: the badge grows to match the height of the
+     callsign/email + timestamp block beside it, instead of the small
+     compact pill used in the detail pop-up header. */
+  .cc-badge-list {
+    align-self: stretch;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    padding: 0 22px;
+  }
+  .cc-admin-item-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-end;
+    text-align: right;
+    gap: 5px;
+    min-width: 0;
+  }
+  .cc-admin-item-head {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 14px;
+    margin-bottom: 6px;
+  }
+  .cc-admin-item-who {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--rivet);
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+  .cc-admin-item-who strong { color: var(--accent); font-weight: 400; }
+  .cc-admin-item-msg {
+    font-size: 12.5px;
+    color: var(--paper);
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    margin: 0 0 10px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .cc-admin-item-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .cc-admin-item-ts { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--rivet); }
+  .cc-admin-item-dismiss {
+    flex-shrink: 0;
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--rivet);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 11px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  @media (hover: hover) { .cc-admin-item-dismiss:hover { color: var(--accent); } }
+  .cc-admin-item-resolve {
+    flex-shrink: 0;
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    color: var(--blueprint-dark);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    padding: 5px 13px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  @media (hover: hover) { .cc-admin-item-resolve:hover { filter: brightness(1.1); } }
+
+  /* ---- single-submission detail pop-up: message + timestamp grouped
+     into one bordered box, with the Resolve action sitting below it
+     (rather than inline with the timestamp, as in the compact list
+     item preview above). ---- */
+  .cc-detail-message-box {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 14px 16px;
+    background: rgba(127,168,201,0.06);
+  }
+  .cc-detail-message-box .cc-admin-item-msg { margin: 0 0 10px; }
+  .cc-detail-message-box .cc-admin-item-ts { display: block; }
+  #admin-cc-detail-overlay .cc-admin-item-foot { justify-content: center; gap: 16px; margin-top: 16px; }
+  #admin-cc-detail-overlay .cc-admin-item-dismiss,
+  #admin-cc-detail-overlay .cc-admin-item-resolve {
+    font-size: 13px;
+    padding: 10px 22px;
+  }
+
+  /* Submission pop-up only: fully non-scrolling (no scrollbar and no
+     scroll interaction), unlike the other .mockadmin-card modals which
+     scroll internally when their content is tall. Scoped to this
+     overlay's ID so those other modals are unaffected. */
+  #copyright-concerns-overlay .mockadmin-card {
+    overflow: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  #copyright-concerns-overlay .mockadmin-card::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* ---- "About the Creator" popup (opened from the "Nad" link in the
+     footer) and its admin-only edit popup. Reuses the site's existing
+     .banned-list-overlay/.mockadmin-card shells so both stay visually
+     consistent with every other admin popup, and .avatar-circle (scaled
+     up) so a stored photo renders the same way avatars do everywhere
+     else. ---- */
+  .creator-profile-card {
+    max-width: 320px;
+    text-align: center;
+    padding-top: 34px;
+  }
+  .creator-profile-avatar {
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 14px;
+    font-size: 40px;
+    box-shadow: 0 0 0 3px var(--line);
+  }
+  .creator-profile-avatar.clickable-avatar { cursor: pointer; }
+  @media (hover: hover) { .creator-profile-avatar.clickable-avatar:hover { box-shadow: 0 0 0 3px var(--accent); } }
+  .creator-profile-avatar {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* ---- Full-size image viewer: click a photo avatar (e.g. the Creator
+     profile photo) to open it at full size. Sits above the popup it was
+     opened from, closes only on outside click. ---- */
+  .image-lightbox-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(4, 20, 36, 0.9);
+    padding: 30px;
+  }
+  .image-lightbox-overlay.visible { display: flex; }
+  .image-lightbox-img {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 6px;
+    box-shadow: 0 0 0 3px var(--line);
+    /* Deterrents against casual right-click-save / long-press-save /
+       drag-out. These can't stop an actual screenshot — no website can —
+       but they remove the easy "save image" affordances browsers offer. */
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-user-drag: none;
+    -webkit-touch-callout: none;
+    pointer-events: none;
+  }
+  .creator-profile-name {
+    margin: 0 0 10px;
+    font-size: 18px;
+  }
+  .creator-profile-bio {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    color: var(--paper);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+    text-align: left;
+  }
+  .creator-profile-bio.empty {
+    color: var(--rivet);
+    font-style: italic;
+    text-align: center;
+  }
+  .creator-profile-edit-link {
+    margin-top: 18px;
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--rivet);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  @media (hover: hover) { .creator-profile-edit-link:hover { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); } }
+  .creator-profile-edit-avatar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .creator-profile-edit-avatar-row .avatar-circle { width: 52px; height: 52px; font-size: 24px; }
+  .creator-profile-edit-hint {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--rivet);
+    margin: 6px 0 14px;
+    line-height: 1.5;
+  }
   .avatar-edit-wrap {
     position: relative;
     display: inline-flex;
@@ -1592,6 +1831,11 @@
     background: rgba(90, 168, 255, 0.15);
     border-color: rgba(90, 168, 255, 0.4);
   }
+  .nick-list .nick-status-tag.quiz {
+    color: #ff6fb0;
+    background: rgba(255, 111, 176, 0.15);
+    border-color: rgba(255, 111, 176, 0.4);
+  }
   .nick-list .nick-status-tag.homepage-idle {
     color: var(--green);
     background: rgba(79, 209, 160, 0.15);
@@ -1904,7 +2148,7 @@
   .profile-card-overlay.visible { display: flex; }
   .profile-card {
     width: 100%;
-    max-width: 340px;
+    max-width: 480px;
     background: var(--blueprint-dark);
     border-radius: 10px;
     box-shadow: 0 8px 28px rgba(0,0,0,0.5);
@@ -1991,19 +2235,19 @@
   @media (hover: hover) { .profile-card-bg-edit-btn:hover { background: rgba(4, 18, 32, 0.85); color: var(--accent); } }
   .profile-card-avatar-wrap {
     position: absolute;
-    left: 18px;
-    bottom: -32px;
+    left: 26px;
+    bottom: -42px;
   }
   .profile-card-avatar-wrap .avatar-circle {
-    width: 64px;
-    height: 64px;
-    font-size: 30px;
+    width: 84px;
+    height: 84px;
+    font-size: 38px;
     background: var(--blueprint-dark);
     box-shadow: 0 0 0 4px var(--blueprint-dark), 0 0 0 6px var(--line);
   }
   .profile-card-avatar-wrap .status-dot {
-    width: 14px;
-    height: 14px;
+    width: 18px;
+    height: 18px;
     border-width: 3px;
     right: 1px;
     bottom: 1px;
@@ -2598,10 +2842,10 @@
     color: var(--rivet);
   }
   .profile-card-body {
-    padding: 52px 18px 18px;
+    padding: 68px 26px 26px;
   }
   .profile-card-nickname {
-    font-size: 17px;
+    font-size: 22px;
     font-weight: 700;
     color: #fff;
     line-height: 1.3;
@@ -2649,6 +2893,11 @@
     background: rgba(90, 168, 255, 0.15);
     border-color: rgba(90, 168, 255, 0.4);
   }
+  .profile-card-status-row .nick-status-tag.quiz {
+    color: #ff6fb0;
+    background: rgba(255, 111, 176, 0.15);
+    border-color: rgba(255, 111, 176, 0.4);
+  }
   .profile-card-status-row .nick-status-tag.homepage-idle {
     color: var(--green);
     background: rgba(79, 209, 160, 0.15);
@@ -2690,27 +2939,26 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    border: 1px solid rgba(255,177,0,0.4);
-    background: rgba(255,177,0,0.12);
+    border: 1px solid var(--accent);
+    background: var(--accent);
     border-radius: 999px;
     padding: 2px 8px 2px 4px;
     flex-shrink: 0;
     cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    transition: filter 0.15s ease;
   }
   @media (hover: hover) { .hours-chip:hover {
-    background: rgba(255,177,0,0.2);
-    border-color: var(--accent);
+    filter: brightness(1.08);
   } }
   .hours-chip-medal {
     width: 15px; height: 15px; border-radius: 50%;
-    background: linear-gradient(160deg, #ffd873, var(--accent) 60%, #a86e00 100%);
+    background: var(--blueprint-dark);
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   }
-  .hours-chip-medal svg { width: 9px; height: 9px; color: var(--blueprint-dark); }
+  .hours-chip-medal svg { width: 9px; height: 9px; color: var(--accent); }
   .hours-chip-value {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10.5px; font-weight: 600; color: var(--accent);
+    font-size: 10.5px; font-weight: 400; color: var(--blueprint-dark);
     line-height: 1; white-space: nowrap;
   }
 
@@ -2862,7 +3110,7 @@
   }
   .profile-card-bio {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 12.5px;
+    font-size: 14.5px;
     color: var(--paper);
     line-height: 1.6;
     margin-top: -1px;
@@ -2894,7 +3142,7 @@
     line-height: 1.5;
     padding: 10px 12px;
     resize: vertical;
-    min-height: 72px;
+    min-height: 140px;
     margin-bottom: 4px;
   }
   #profile-edit-bio:focus { outline: none; }
@@ -8772,7 +9020,7 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
         <p>These materials are currently being made available for educational and review purposes during the beta development of the platform. The materials shared at this stage are intended to be temporary and are not necessarily part of the platform&rsquo;s permanent content. As the platform continues to develop, these materials may be reviewed, replaced, or removed.</p>
         <p>I do not claim ownership of materials created by other individuals, schools, organizations, or other copyright holders, nor do I intend to infringe upon any copyright or other intellectual property rights.</p>
         <p>As the platform progresses beyond its beta stage, I intend to develop and provide original mock examinations and review materials created specifically for this website, with the goal of building a more organized and comprehensive review experience for future Aeronautical Engineering licensure examinees.</p>
-        <p>If you are the copyright owner or otherwise authorized to request the removal of material appearing on this platform, please raise a concern through <a href="https://forms.gle/Xc6HyAYFMp183DLR6" target="_blank" rel="noopener">this form</a>. Upon receiving a removal request, I will review the material and take appropriate action, including removing it when warranted.</p>
+        <p>If you are the copyright owner or otherwise authorized to request the removal of material appearing on this platform, please raise a concern through the <a href="javascript:void(0)" onclick="closeInfoPopup('mock-notice-overlay'); openCopyrightConcerns();">Copyright / Concerns form</a>. Upon receiving a removal request, I will review the material and take appropriate action, including removing it when warranted.</p>
         <p>Thank you for your understanding and for helping maintain a respectful learning environment for everyone.</p>
         </div>
     </div>
@@ -9603,8 +9851,8 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
       <div class="nick-modal-body">
         <div style="padding: 4px 16px 16px;">
           <p class="profile-edit-label">Bio</p>
-          <textarea id="profile-edit-bio" maxlength="50" placeholder="Tell other Souls on Board a bit about yourself&hellip;" oninput="updateProfileBioCharCount()"></textarea>
-          <div class="profile-edit-charcount" id="profile-edit-charcount">0 / 50</div>
+          <textarea id="profile-edit-bio" placeholder="Tell other Souls on Board a bit about yourself&hellip;" oninput="updateProfileBioCharCount()"></textarea>
+          <div class="profile-edit-charcount" id="profile-edit-charcount">0</div>
 
           <button type="button" class="profile-edit-save-btn" id="profile-edit-bio-save-btn" onclick="saveProfileBio()">SAVE BIO</button>
           <div class="profile-edit-status" id="profile-edit-bio-status"></div>
@@ -9721,6 +9969,8 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
             <div class="admin-settings-menu" id="admin-settings-menu">
               <button id="admin-gift-wings-btn" onclick="openGiftWingsModal(); closeAdminSettingsMenu();">ADJUST BALANCE</button>
               <button id="admin-board-settings-btn" onclick="openBoardAdminSettingsModal(); closeAdminSettingsMenu();">BOARD SETTINGS</button>
+              <button id="admin-cc-btn" onclick="openAdminCopyrightConcernsModal(); closeAdminSettingsMenu();">COPYRIGHT/CONCERNS</button>
+              <button id="admin-creator-profile-btn" onclick="openCreatorProfileEditModal(); closeAdminSettingsMenu();">CREATOR PROFILE</button>
               <button id="admin-deleted-items-btn" onclick="openDeletedItemsModal(); closeAdminSettingsMenu();">DELETED SHOP ITEMS</button>
               <button id="admin-toggle-flightstore-btn" onclick="toggleFlightStoreEnabled(); closeAdminSettingsMenu();">DISABLE FLIGHT STORE</button>
               <button id="admin-mock-exams-btn" onclick="openMockExamAdmin(); closeAdminSettingsMenu();">MOCK EXAMS</button>
@@ -9768,7 +10018,7 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         <div class="site-title-row">
           <h1 class="site-title nick-blueprint">aerodynadmics</h1>
         </div>
-        <p class="sub" style="max-width:none;">a Platform for Aeronautical Engineering Students and Graduates, made by <a href="https://www.facebook.com/nadburanday" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline; text-underline-offset:3px;">Nad</a></p>
+        <p class="sub" style="max-width:none;">a Platform for Aeronautical Engineering Students and Graduates, made by <a href="javascript:void(0)" onclick="openCreatorProfile()" style="color:inherit; text-decoration:underline; text-underline-offset:3px; cursor:pointer;">Nad</a></p>
         <p class="sub" style="margin-top:10px; font-style:italic;">sic itur ad astra ⭐!</p>
       </header>
 
@@ -10190,6 +10440,52 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
     </div>
   </div>
 
+  <!-- ---- "About the Creator" popup, opened by clicking "Nad" in the
+       footer. Profile (name/photo/bio) is loaded from Firebase so every
+       visitor sees whatever the admin last saved via the edit popup
+       below. ---- -->
+  <div class="banned-list-overlay" id="creator-profile-overlay" onclick="if(event.target===this) closeCreatorProfile();">
+    <div class="banned-list-card creator-profile-card">
+      <span class="avatar-circle creator-profile-avatar" id="creator-profile-avatar" oncontextmenu="return false;"></span>
+      <h3 class="creator-profile-name" id="creator-profile-name">Nad</h3>
+      <p class="creator-profile-bio" id="creator-profile-bio"></p>
+    </div>
+  </div>
+
+  <!-- ---- Admin-only editor for the popup above: name, a compressed
+       photo upload (kept under ~4KB so it stores cheaply as a data URL
+       in Firebase, same trick as the mock-exam question images), and a
+       short bio. ---- -->
+  <div class="banned-list-overlay" id="creator-profile-edit-overlay" onclick="if(event.target===this) closeCreatorProfileEditModal();">
+    <div class="mockadmin-card" style="max-width:380px;">
+      <h3>Edit Creator Profile</h3>
+
+      <label class="mockadmin-field-label">NAME</label>
+      <input type="text" id="creator-profile-edit-name" class="mockadmin-input" autocomplete="off">
+
+      <label class="mockadmin-field-label">PHOTO</label>
+      <div class="creator-profile-edit-avatar-row">
+        <span class="avatar-circle" id="creator-profile-edit-preview"></span>
+        <button type="button" class="admin-avatar-upload-btn" onclick="document.getElementById('creator-profile-edit-input').click()">Choose Image</button>
+        <input type="file" id="creator-profile-edit-input" accept="image/*" style="display:none;" onchange="handleCreatorProfileImageUpload(event)">
+      </div>
+
+      <label class="mockadmin-field-label">ABOUT</label>
+      <textarea id="creator-profile-edit-bio" class="mockadmin-input mockadmin-textarea" maxlength="400" placeholder="A few lines about you&hellip;"></textarea>
+
+      <div class="mockadmin-editor-actions" style="margin-top:18px;">
+        <button type="button" class="mockadmin-save-btn" onclick="closeCreatorProfileEditModal()">CANCEL</button>
+        <button type="button" class="mockadmin-publish-btn" onclick="saveCreatorProfileEdit()">SAVE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- Full-size image viewer, opened by clicking a photo avatar
+       (currently just the Creator profile photo). ---- -->
+  <div class="image-lightbox-overlay" id="image-lightbox-overlay" onclick="if(event.target===this) closeImageLightbox();">
+    <img class="image-lightbox-img" id="image-lightbox-img" src="" alt="Profile photo, full size" draggable="false" oncontextmenu="return false;" ondragstart="return false;">
+  </div>
+
   <div class="gift-wings-overlay" id="gift-wings-overlay">
     <div class="gift-wings-card">
       <button class="gift-wings-close" onclick="closeGiftWingsModal()">&times;</button>
@@ -10233,6 +10529,77 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
       <div class="mockadmin-editor-actions" style="margin-top:20px;">
         <button type="button" class="mockadmin-save-btn" onclick="closeBoardAdminSettingsModal()">CANCEL</button>
         <button type="button" class="mockadmin-publish-btn" onclick="applyBoardAdminSettings()">APPLY</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- Copyright / Concerns: public submission pop-up. Opened from the
+       homepage "Copyright / Concerns" link via openCopyrightConcerns() (see
+       the Legal script block). Replaces the old external Google Form link —
+       the person picks a type, gives an email + Callsign, and writes as
+       much as they need; it's saved to Firebase at 'copyrightConcerns' for
+       the admin viewer below. ---- -->
+  <div class="banned-list-overlay" id="copyright-concerns-overlay">
+    <div class="mockadmin-card" style="max-width:420px;" onclick="event.stopPropagation();">
+      <h3>Copyright / Concerns</h3>
+      <p style="margin:0 0 18px; font-size:12.5px; color:var(--rivet); line-height:1.5;">If you're the copyright owner of material on this platform and would like it reviewed, or you have another concern about the platform, let us know below.</p>
+
+      <label class="mockadmin-field-label">TYPE</label>
+      <div class="gift-wings-mode-toggle" style="margin-bottom:18px;">
+        <button type="button" class="gift-wings-mode-btn active" id="cc-type-copyright-btn" onclick="setCopyrightConcernType('copyright')">Copyright</button>
+        <button type="button" class="gift-wings-mode-btn" id="cc-type-concern-btn" onclick="setCopyrightConcernType('concern')">Concern</button>
+      </div>
+
+      <label class="mockadmin-field-label">EMAIL FOR UPDATES</label>
+      <input type="email" id="cc-email-input" class="mockadmin-input" placeholder="you@example.com" autocomplete="email" autocapitalize="off" spellcheck="false">
+      <p style="margin:6px 0 18px; font-size:11px; color:var(--rivet); line-height:1.4;">We'll send updates about this submission to this address.</p>
+
+      <label class="mockadmin-field-label">YOUR CALLSIGN</label>
+      <input type="text" id="cc-callsign-input" class="mockadmin-input" placeholder="Callsign" maxlength="13" autocomplete="off" autocapitalize="off" spellcheck="false" readonly style="opacity:0.7; cursor:not-allowed;">
+
+      <label class="mockadmin-field-label" id="cc-message-label">TELL US ABOUT IT</label>
+      <textarea id="cc-message-input" class="mockadmin-input mockadmin-textarea" style="min-height:130px;" placeholder="Describe the copyright material in question, or your concern, in as much detail as you'd like&hellip;"></textarea>
+
+      <div id="cc-submit-error" style="display:none; font-size:11.5px; color:#e67a7a; margin:-4px 0 4px;"></div>
+
+      <div class="mockadmin-editor-actions" style="margin-top:16px;">
+        <button type="button" class="mockadmin-save-btn" onclick="closeCopyrightConcerns()">CANCEL</button>
+        <button type="button" class="mockadmin-publish-btn" id="cc-submit-btn" onclick="submitCopyrightConcern()">SUBMIT</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- Copyright / Concerns: admin-only viewer. Opened from the admin
+       gear menu (ADMIN SETTINGS &rarr; COPYRIGHT/CONCERNS). Live-updating,
+       same .on('value') pattern as the banned list above, so a submission
+       from anyone anywhere shows up here immediately. ---- -->
+  <div class="banned-list-overlay" id="admin-cc-overlay">
+    <div class="banned-list-card" style="max-width:580px;">
+      <button class="banned-list-close" onclick="closeAdminCopyrightConcernsModal()">&times;</button>
+      <h3>&#128220; Copyright / Concerns Submissions</h3>
+      <div id="admin-cc-items"></div>
+    </div>
+  </div>
+
+  <!-- ---- Copyright / Concerns: single-submission detail pop-up. Opened by
+       clicking an item in the admin list above (see openCcDetail()); shows
+       the full, un-clamped message plus a Resolve action (emails the
+       submitter that their submission has been handled), and closes only
+       via its own &times; button, same as the public submission pop-up. ---- -->
+  <div class="banned-list-overlay" id="admin-cc-detail-overlay">
+    <div class="mockadmin-card" style="max-width:720px;" onclick="event.stopPropagation();">
+      <button class="banned-list-close" onclick="closeCcDetail()">&times;</button>
+      <div class="cc-admin-item-head" style="margin-bottom:14px;">
+        <span class="cc-badge" id="cc-detail-badge"></span>
+        <span class="cc-admin-item-who" id="cc-detail-who"></span>
+      </div>
+      <div class="cc-detail-message-box">
+        <p class="cc-admin-item-msg" id="cc-detail-msg" style="-webkit-line-clamp:unset; overflow:visible; max-height:50vh; overflow-y:auto;"></p>
+        <span class="cc-admin-item-ts" id="cc-detail-ts"></span>
+      </div>
+      <div class="cc-admin-item-foot">
+        <button type="button" class="cc-admin-item-dismiss" id="cc-detail-dismiss-btn">DISMISS</button>
+        <button type="button" class="cc-admin-item-resolve" id="cc-detail-resolve-btn">RESOLVE</button>
       </div>
     </div>
   </div>
@@ -12312,6 +12679,239 @@ Answer: C</pre>
       });
     }
 
+    // ---- Copyright / Concerns: public submission pop-up ----
+    let ccSelectedType = 'copyright';
+
+    function setCopyrightConcernType(type) {
+      ccSelectedType = type === 'concern' ? 'concern' : 'copyright';
+      const copyBtn = document.getElementById('cc-type-copyright-btn');
+      const concernBtn = document.getElementById('cc-type-concern-btn');
+      if (copyBtn) copyBtn.classList.toggle('active', ccSelectedType === 'copyright');
+      if (concernBtn) concernBtn.classList.toggle('active', ccSelectedType === 'concern');
+      const label = document.getElementById('cc-message-label');
+      if (label) label.textContent = ccSelectedType === 'copyright' ? 'DESCRIBE THE COPYRIGHT ISSUE' : 'TELL US ABOUT YOUR CONCERN';
+    }
+
+    function openCopyrightConcernsModal() {
+      const overlay = document.getElementById('copyright-concerns-overlay');
+      if (!overlay) return;
+      setCopyrightConcernType('copyright');
+      document.getElementById('cc-email-input').value =
+        (typeof currentChatUser !== 'undefined' && currentChatUser && currentChatUser.email) ? currentChatUser.email : '';
+      document.getElementById('cc-callsign-input').value =
+        (typeof currentChatUser !== 'undefined' && currentChatUser && currentChatUser.nickname) ? currentChatUser.nickname : '';
+      document.getElementById('cc-message-input').value = '';
+      const err = document.getElementById('cc-submit-error');
+      err.style.display = 'none';
+      err.textContent = '';
+      overlay.classList.add('visible');
+    }
+
+    function closeCopyrightConcerns() {
+      const overlay = document.getElementById('copyright-concerns-overlay');
+      if (overlay) overlay.classList.remove('visible');
+    }
+
+    function ccShowError(msg) {
+      const err = document.getElementById('cc-submit-error');
+      err.textContent = msg;
+      err.style.display = '';
+    }
+
+    async function submitCopyrightConcern() {
+      const email = document.getElementById('cc-email-input').value.trim();
+      const callsign = document.getElementById('cc-callsign-input').value.trim();
+      const message = document.getElementById('cc-message-input').value.trim();
+
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { ccShowError('Enter a valid email address.'); return; }
+      if (!callsign) { ccShowError('Enter your Callsign.'); return; }
+      if (!message) { ccShowError('Write a bit about your ' + (ccSelectedType === 'copyright' ? 'copyright concern' : 'concern') + '.'); return; }
+      if (!chatConfigIsFilledIn()) { ccShowError("This isn't connected right now. Please try again later."); return; }
+
+      const err = document.getElementById('cc-submit-error');
+      err.style.display = 'none';
+      const btn = document.getElementById('cc-submit-btn');
+      const originalLabel = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'SUBMITTING\u2026';
+      try {
+        ensureFirebaseApp();
+        await nsRef('copyrightConcerns').push({
+          type: ccSelectedType,
+          email: email,
+          callsign: callsign,
+          message: message,
+          ts: firebase.database.ServerValue.TIMESTAMP
+        });
+        closeCopyrightConcerns();
+        await adminAlert("Thank you! Your " + (ccSelectedType === 'copyright' ? 'copyright request' : 'concern') + ' has been submitted for review.');
+      } catch (e) {
+        console.error('Submit copyright/concern error:', e);
+        ccShowError("Couldn't submit that. Please try again.");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalLabel;
+      }
+    }
+
+    // ---- Copyright / Concerns: admin-only viewer ----
+    let ccAdminRef = null;
+    let ccAdminEntries = [];
+
+    function openAdminCopyrightConcernsModal() {
+      if (!isAdminUser(currentChatUser)) return;
+      document.getElementById('admin-cc-overlay').classList.add('visible');
+      loadCopyrightConcernsList();
+    }
+
+    function closeAdminCopyrightConcernsModal() {
+      document.getElementById('admin-cc-overlay').classList.remove('visible');
+      if (ccAdminRef) { ccAdminRef.off('value'); ccAdminRef = null; }
+    }
+
+    function loadCopyrightConcernsList() {
+      const listEl = document.getElementById('admin-cc-items');
+      listEl.innerHTML = '<div class="banned-list-empty">Loading&hellip;</div>';
+      if (!chatConfigIsFilledIn()) {
+        listEl.innerHTML = '<div class="banned-list-empty">Chat isn\'t connected.</div>';
+        return;
+      }
+      try {
+        ensureFirebaseApp();
+        if (ccAdminRef) ccAdminRef.off('value'); // avoid stacking duplicate listeners on repeat opens
+        ccAdminRef = nsRef('copyrightConcerns');
+        ccAdminRef.on('value', (snap) => {
+          const val = snap.val() || {};
+          ccAdminEntries = Object.keys(val)
+            .map((key) => Object.assign({ key }, val[key]))
+            .sort((a, b) => (b.ts || 0) - (a.ts || 0));
+          renderCopyrightConcernsList();
+        }, (err) => {
+          console.error('Live copyright/concerns list error:', err);
+          listEl.innerHTML = '<div class="banned-list-empty">Could not load submissions.</div>';
+        });
+      } catch (err) {
+        console.error('Load copyright/concerns list error:', err);
+        listEl.innerHTML = '<div class="banned-list-empty">Could not load submissions.</div>';
+      }
+    }
+
+    function renderCopyrightConcernsList() {
+      const listEl = document.getElementById('admin-cc-items');
+      if (!ccAdminEntries.length) {
+        listEl.innerHTML = '<div class="banned-list-empty">No submissions yet.</div>';
+        return;
+      }
+      listEl.innerHTML = `<div class="cc-admin-items">${ccAdminEntries.map((e) => {
+        const isCopyright = e.type === 'copyright';
+        const when = e.ts ? new Date(e.ts).toLocaleString([], { hour12: false }) : '';
+        return `
+        <div class="cc-admin-item" onclick="openCcDetail('${e.key}')">
+          <span class="cc-badge cc-badge-list ${isCopyright ? 'copyright' : 'concern'}">${isCopyright ? 'Copyright' : 'Concern'}</span>
+          <div class="cc-admin-item-info">
+            <span class="cc-admin-item-who"><strong>${escapeHtml(e.callsign || '(no callsign)')}</strong> &middot; ${escapeHtml(e.email || 'no email on file')}</span>
+            <span class="cc-admin-item-ts">${escapeHtml(when)}</span>
+          </div>
+        </div>`;
+      }).join('')}</div>`;
+    }
+
+    function openCcDetail(key) {
+      const e = ccAdminEntries.find((x) => x.key === key);
+      if (!e) return;
+      const isCopyright = e.type === 'copyright';
+      const when = e.ts ? new Date(e.ts).toLocaleString([], { hour12: false }) : '';
+      const badge = document.getElementById('cc-detail-badge');
+      badge.textContent = isCopyright ? 'Copyright' : 'Concern';
+      badge.className = 'cc-badge ' + (isCopyright ? 'copyright' : 'concern');
+      document.getElementById('cc-detail-who').innerHTML =
+        `<strong>${escapeHtml(e.callsign || '(no callsign)')}</strong> &middot; ${escapeHtml(e.email || 'no email on file')}`;
+      document.getElementById('cc-detail-msg').textContent = e.message || '';
+      document.getElementById('cc-detail-ts').textContent = when;
+      document.getElementById('cc-detail-resolve-btn').onclick = () => resolveCopyrightConcernEntry(e.key);
+      document.getElementById('cc-detail-dismiss-btn').onclick = () => dismissCopyrightConcernEntry(e.key);
+      document.getElementById('admin-cc-detail-overlay').classList.add('visible');
+    }
+
+    function closeCcDetail() {
+      document.getElementById('admin-cc-detail-overlay').classList.remove('visible');
+    }
+
+    async function dismissCopyrightConcernEntry(key) {
+      if (!isAdminUser(currentChatUser)) return;
+      const confirmed = await adminConfirm('Remove this submission from the list? This cannot be undone.');
+      if (!confirmed) return;
+      try {
+        ensureFirebaseApp();
+        await nsRef('copyrightConcerns/' + key).remove();
+        // No manual reload needed — the live 'copyrightConcerns' listener
+        // above already re-renders the list once the removal lands.
+        closeCcDetail();
+      } catch (err) {
+        console.error('Dismiss copyright/concern error:', err);
+        adminAlert("Couldn't remove that submission. Please try again.");
+      }
+    }
+
+    // Marks a Copyright / Concerns submission as resolved: emails the
+    // person who submitted it (at the address they gave) to let them know
+    // it's been handled, then clears it out of the admin queue — same
+    // end state as Dismiss, but with the submitter actually notified.
+    //
+    // Backend contract: 'resolveCopyrightConcern' must look up the email
+    // template appropriate to `type` (copyright vs concern), send it to
+    // `email`, and return { status: 'ok' } once the email is sent (or at
+    // least successfully queued) — mirroring how 'banByNickname' /
+    // 'unbanByEmail' already report success/failure back through
+    // jsonpRequest above. The submission is only removed from Firebase
+    // once that confirmation comes back, so a failed send leaves it in
+    // the list to retry instead of silently vanishing unresolved.
+    async function resolveCopyrightConcernEntry(key) {
+      if (!isAdminUser(currentChatUser)) return;
+      const e = ccAdminEntries.find((x) => x.key === key);
+      if (!e) return;
+
+      const confirmed = await adminConfirm(
+        `Mark this ${e.type === 'copyright' ? 'copyright request' : 'concern'} as resolved? ` +
+        `This will send an email to ${e.email || '(no email on file)'} letting them know it's been resolved.`
+      );
+      if (!confirmed) return;
+
+      if (!e.email) {
+        adminAlert('No email is on file for this submission, so a resolution email cannot be sent.');
+        return;
+      }
+
+      const btn = document.getElementById('cc-detail-resolve-btn');
+      if (btn) { btn.disabled = true; btn.textContent = 'RESOLVING\u2026'; }
+
+      jsonpRequest({
+        action: 'resolveCopyrightConcern',
+        email: e.email,
+        callsign: e.callsign || '',
+        type: e.type || 'copyright'
+      }, async (result) => {
+        if (btn) { btn.disabled = false; btn.textContent = 'RESOLVE'; }
+
+        if (!result || result.status !== 'ok') {
+          adminAlert(`Could not send the resolution email: ${(result && result.message) || 'could not reach the server.'}`);
+          return;
+        }
+
+        try {
+          ensureFirebaseApp();
+          await nsRef('copyrightConcerns/' + key).remove();
+          // No manual reload needed — the live 'copyrightConcerns' listener
+          // above already re-renders the list once the removal lands.
+          closeCcDetail();
+          adminAlert(`Resolved. An email was sent to ${e.email}.`);
+        } catch (err) {
+          console.error('Remove resolved copyright/concern error:', err);
+          adminAlert('The email was sent, but the submission could not be removed from the list. Please try dismissing it manually.');
+        }
+      });
+    }
+
     let flightOverlayShownAt = 0;
     let flightOverlayLoopId = null;
     let flightOverlayDotsId = null;
@@ -12561,6 +13161,178 @@ Answer: C</pre>
     function adminAlert(message) { return openAdminModal('alert', message); }
     function adminConfirm(message) { return openAdminModal('confirm', message); }
     function adminPrompt(message, defaultValue) { return openAdminModal('prompt', message, { defaultValue }); }
+
+    // ---- "About the Creator" popup + admin editor ----
+    // Stored once at nsRef('creatorProfile') in Firebase (namespaced like
+    // everything else) so every visitor sees the same name/photo/bio; only
+    // the signed-in admin (isAdminUser) can write to it, matching every
+    // other admin tool on this page.
+    const CREATOR_PROFILE_DEFAULT = {
+      name: 'Nad',
+      bio: 'Creator of aerodynadmics — a platform for Aeronautical Engineering students and graduates.',
+      image: ''
+    };
+    let creatorProfileData = null; // cached last-loaded profile
+    let creatorProfileEditImage = ''; // pending photo in the edit popup (data URL or '')
+
+    function creatorProfileRef() { return nsRef('creatorProfile'); }
+
+    async function openCreatorProfile() {
+      const overlay = document.getElementById('creator-profile-overlay');
+      renderCreatorProfileView(Object.assign({}, CREATOR_PROFILE_DEFAULT, creatorProfileData || {}));
+      overlay.classList.add('visible');
+      try {
+        const snap = await creatorProfileRef().once('value');
+        creatorProfileData = snap.val() || {};
+        renderCreatorProfileView(Object.assign({}, CREATOR_PROFILE_DEFAULT, creatorProfileData));
+      } catch (e) {
+        // Keep showing whatever we had cached/defaulted above.
+      }
+    }
+
+    function closeCreatorProfile() {
+      document.getElementById('creator-profile-overlay').classList.remove('visible');
+    }
+
+    function renderCreatorProfileView(data) {
+      const avatarEl = document.getElementById('creator-profile-avatar');
+      setAvatarElContent(avatarEl, data.image || DEFAULT_AVATAR);
+      // Only the real uploaded photo is worth viewing full-size — clicking
+      // the fallback emoji avatar wouldn't show anything useful.
+      if (data.image) {
+        avatarEl.classList.add('clickable-avatar');
+        avatarEl.onclick = () => openImageLightbox(data.image);
+      } else {
+        avatarEl.classList.remove('clickable-avatar');
+        avatarEl.onclick = null;
+      }
+      document.getElementById('creator-profile-name').textContent = data.name || 'Nad';
+      const bioEl = document.getElementById('creator-profile-bio');
+      bioEl.textContent = data.bio || 'No bio yet.';
+      bioEl.classList.toggle('empty', !data.bio);
+      const editBtnEl = document.getElementById('creator-profile-edit-btn');
+      if (editBtnEl) editBtnEl.style.display = isAdminUser(currentChatUser) ? '' : 'none';
+    }
+
+    // ---- full-size image viewer (currently just used by the photo
+    // avatar above; any other photo avatar could reuse this the same
+    // way). ----
+    function openImageLightbox(src) {
+      if (!src) return;
+      document.getElementById('image-lightbox-img').src = src;
+      document.getElementById('image-lightbox-overlay').classList.add('visible');
+    }
+
+    function closeImageLightbox() {
+      document.getElementById('image-lightbox-overlay').classList.remove('visible');
+      document.getElementById('image-lightbox-img').src = '';
+    }
+
+    async function openCreatorProfileEditModal() {
+      if (!isAdminUser(currentChatUser)) return;
+      // Show cached/default values immediately so the modal doesn't feel
+      // stuck, then refresh from Firebase — on a fresh page load
+      // creatorProfileData is still null (it's normally only populated
+      // once the "About the Creator" view popup has been opened), so
+      // without this fetch the form would show the hardcoded defaults
+      // instead of the actually-saved name/photo.
+      const applyCreatorProfileEditData = (data) => {
+        creatorProfileEditImage = data.image || '';
+        document.getElementById('creator-profile-edit-name').value = data.name || 'Nad';
+        document.getElementById('creator-profile-edit-bio').value = data.bio || '';
+        setAvatarElContent(document.getElementById('creator-profile-edit-preview'), creatorProfileEditImage || DEFAULT_AVATAR);
+      };
+      applyCreatorProfileEditData(Object.assign({}, CREATOR_PROFILE_DEFAULT, creatorProfileData || {}));
+      document.getElementById('creator-profile-edit-overlay').classList.add('visible');
+      try {
+        const snap = await creatorProfileRef().once('value');
+        creatorProfileData = snap.val() || {};
+        applyCreatorProfileEditData(Object.assign({}, CREATOR_PROFILE_DEFAULT, creatorProfileData));
+      } catch (e) {
+        // Keep showing whatever we had cached/defaulted above.
+      }
+    }
+
+    function closeCreatorProfileEditModal() {
+      document.getElementById('creator-profile-edit-overlay').classList.remove('visible');
+    }
+
+    function removeCreatorProfileImage() {
+      creatorProfileEditImage = '';
+      setAvatarElContent(document.getElementById('creator-profile-edit-preview'), DEFAULT_AVATAR);
+    }
+
+    // Target size for the stored photo. Quality is capped at up to 4K
+    // resolution (3840px on the long edge) rather than crushed down to a
+    // tiny byte budget, so the saved photo stays sharp.
+    const CREATOR_PROFILE_MAX_WIDTH = 3840;
+    const CREATOR_PROFILE_MAX_BYTES = 4 * 1024 * 1024; // generous ceiling, not a compression target
+
+    function handleCreatorProfileImageUpload(event) {
+      const inputEl = event.target;
+      const file = inputEl.files && inputEl.files[0];
+      inputEl.value = '';
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        adminAlert('Please choose an image file.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          compressCreatorProfileImage(img, (dataUrl) => {
+            creatorProfileEditImage = dataUrl;
+            setAvatarElContent(document.getElementById('creator-profile-edit-preview'), dataUrl);
+          });
+        };
+        img.onerror = () => adminAlert('Could not read that image. Try a different file.');
+        img.src = reader.result;
+      };
+      reader.onerror = () => adminAlert('Could not read that image. Try a different file.');
+      reader.readAsDataURL(file);
+    }
+
+    // Keeps the photo at up to 4K resolution (long edge capped at
+    // CREATOR_PROFILE_MAX_WIDTH) and high JPEG quality. Only backs off
+    // quality, and only if the result would blow past the generous
+    // CREATOR_PROFILE_MAX_BYTES ceiling — this is a safety net, not a
+    // target, so ordinary photos come out sharp instead of crushed.
+    function compressCreatorProfileImage(img, callback) {
+      const width = Math.min(img.width, CREATOR_PROFILE_MAX_WIDTH);
+      let quality = 0.92;
+      function attempt() {
+        const scale = width / img.width;
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        const approxBytes = Math.round(dataUrl.length * 0.75);
+        if (approxBytes <= CREATOR_PROFILE_MAX_BYTES || quality <= 0.6) {
+          callback(dataUrl);
+          return;
+        }
+        quality = Math.round((quality - 0.08) * 100) / 100;
+        attempt();
+      }
+      attempt();
+    }
+
+    async function saveCreatorProfileEdit() {
+      if (!isAdminUser(currentChatUser)) return;
+      const name = document.getElementById('creator-profile-edit-name').value.trim() || 'Nad';
+      const bio = document.getElementById('creator-profile-edit-bio').value.trim();
+      const payload = { name: name, bio: bio, image: creatorProfileEditImage || '', updatedAt: Date.now() };
+      try {
+        await creatorProfileRef().set(payload);
+        creatorProfileData = payload;
+        closeCreatorProfileEditModal();
+      } catch (e) {
+        adminAlert('Could not save the profile. Please try again.');
+      }
+    }
 
     // ---- one-time data migration (old flat/shared paths -> DB_NAMESPACE) ----
     // Not run automatically on page load — call migrateAppDataToNamespace()
@@ -16569,6 +17341,7 @@ Answer: C</pre>
         if (document.getElementById('bg-fee-note-overlay').classList.contains('visible')) { closeBgFeeNoteModal(); return; }
         if (document.getElementById('bg-upload-confirm-overlay').classList.contains('visible')) { cancelProfileBackgroundUpload(); return; }
         if (document.getElementById('quiz-settings-overlay').classList.contains('visible')) { closeQuizSettings(); return; }
+        if (document.getElementById('image-lightbox-overlay').classList.contains('visible')) { closeImageLightbox(); return; }
         closeNicknameList(); closeUserProfile(); closeEditBio(); closeEditBackground(); closeFlightAlerts();
       }
     });
@@ -16584,13 +17357,14 @@ Answer: C</pre>
       if (!isOnline) return { statusClass: 'sleeping', statusLabel: 'sleeping' };
       if (section === 'taking a mock exam') return { statusClass: 'mock-exam', statusLabel: 'taking a mock exam' };
       if (section === 'taking a mock board exam') return { statusClass: 'mock-board', statusLabel: 'taking a mock board exam' };
+      if (section === 'taking a quiz') return { statusClass: 'quiz', statusLabel: 'taking a quiz' };
       if (section === 'still sleeping, but in homepage') return { statusClass: 'homepage-idle', statusLabel: 'online' };
       if (section === 'browsing the Flight Store') return { statusClass: 'shopping', statusLabel: 'browsing the flight store' };
       if (section === 'checking their Hangar') return { statusClass: 'hangar', statusLabel: 'checking their hangar' };
       // Anything else (including the 'reviewing' section itself) falls back
       // to "reviewing" — but only sections that are genuinely unaccounted
-      // for should ever reach this line now that shop/hangar are handled
-      // above.
+      // for should ever reach this line now that shop/hangar/quiz are
+      // handled above.
       return { statusClass: 'reviewing', statusLabel: 'reviewing' };
     }
 
@@ -17952,7 +18726,7 @@ Answer: C</pre>
 
     function updateProfileBioCharCount() {
       const val = document.getElementById('profile-edit-bio').value || '';
-      document.getElementById('profile-edit-charcount').textContent = `${val.length} / 50`;
+      document.getElementById('profile-edit-charcount').textContent = `${val.length}`;
     }
 
     // A single "upload your own" tile — the Flight Store no longer sells
@@ -18147,7 +18921,7 @@ Answer: C</pre>
       if (!currentChatUser || !currentChatUser.nickname) return;
       const btn = document.getElementById('profile-edit-bio-save-btn');
       const status = document.getElementById('profile-edit-bio-status');
-      const bio = document.getElementById('profile-edit-bio').value.slice(0, 50).trim();
+      const bio = document.getElementById('profile-edit-bio').value.trim();
 
       btn.disabled = true;
       status.textContent = 'Saving\u2026';
@@ -25797,9 +26571,11 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   // opener should be used instead — set one and it takes priority below.
   privacyPolicyUrl: '',
   openPrivacyPolicy: null,
-  // The existing content-removal / copyright concerns form (the same one
-  // linked from "Notice Regarding Mock Exam Materials" on the homepage).
-  copyrightConcernsUrl: 'https://forms.gle/Xc6HyAYFMp183DLR6'
+  // Copyright / Concerns now opens an in-page pop-up (see
+  // openCopyrightConcerns() below) instead of the old external Google
+  // Form. This override stays available for anyone who wants to point it
+  // back at an external form instead — set it and it takes priority.
+  copyrightConcernsUrl: ''
 };
 
 (function () {
@@ -26001,9 +26777,16 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   window.closePrivacyPolicy = function () { closeDoc(DOCS.privacy); };
 
   // ---- Copyright / Concerns / Content Removal ----
+  // In-page pop-up: the person picks Copyright or Concern, gives an email
+  // + Callsign, and writes as much as they need. Saved to Firebase at
+  // 'copyrightConcerns' (see submitCopyrightConcern()/loadCopyrightConcernsList()
+  // further down) so the admin can review every submission from the admin
+  // gear menu. An explicit AERO_LEGAL.copyrightConcernsUrl still overrides
+  // this and reopens the old external-form behavior if ever needed.
   window.openCopyrightConcerns = function () {
     var cfg = window.AERO_LEGAL || {};
-    if (cfg.copyrightConcernsUrl) window.open(cfg.copyrightConcernsUrl, '_blank', 'noopener,noreferrer');
+    if (cfg.copyrightConcernsUrl) { window.open(cfg.copyrightConcernsUrl, '_blank', 'noopener,noreferrer'); return; }
+    if (typeof openCopyrightConcernsModal === 'function') openCopyrightConcernsModal();
   };
 
   // ---- ticking the box inside a pop-up: record it, then close the pop-up so
