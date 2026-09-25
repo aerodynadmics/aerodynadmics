@@ -266,6 +266,7 @@
     margin-bottom: 22px;
   }
   #signin-direct-submit:disabled { opacity: 0.6; cursor: default; }
+  @media (hover: hover) { #signin-direct-submit:not(:disabled):hover { filter: brightness(1.08); } }
   .signin-card p.signup-google-divider {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
@@ -297,6 +298,7 @@
     cursor: pointer;
     text-decoration: none;
   }
+  @media (hover: hover) { .google-back-btn:hover { color: var(--accent); } }
 
   /* ---- flight alert: existing account signed in with Google but has no
      Flight Code on file yet, so Callsign + Flight Code sign-in isn't set
@@ -367,6 +369,7 @@
     cursor: pointer;
   }
   #flight-alert-submit:disabled { opacity: 0.6; cursor: default; }
+  @media (hover: hover) { #flight-alert-submit:not(:disabled):hover { filter: brightness(1.08); } }
 
   /* ---- forgot Flight Code / password reset flow ---- */
   #forgot-flightcode-step { display: none; }
@@ -431,6 +434,7 @@
     margin-bottom: 10px;
   }
   .forgot-stage-submit:disabled { opacity: 0.6; cursor: default; }
+  @media (hover: hover) { .forgot-stage-submit:not(:disabled):hover { filter: brightness(1.08); } }
   .forgot-resend-link {
     display: block;
     margin: 0 auto 4px;
@@ -444,6 +448,7 @@
     cursor: pointer;
   }
   .forgot-resend-link:disabled { opacity: 0.5; cursor: default; text-decoration: none; }
+  @media (hover: hover) { .forgot-resend-link:not(:disabled):hover { color: var(--accent); } }
   .forgot-success-icon { font-size: 28px; text-align: center; margin: 4px 0 10px; }
   .forgot-success-msg {
     font-family: 'IBM Plex Mono', monospace;
@@ -550,6 +555,7 @@
     margin-bottom: 10px;
   }
   #connection-issue-step .conn-retry-btn:disabled { opacity: 0.6; cursor: default; }
+  @media (hover: hover) { #connection-issue-step .conn-retry-btn:not(:disabled):hover { filter: brightness(1.08); } }
   #connection-issue-step .conn-newuser-btn {
     width: 100%;
     background: none;
@@ -561,6 +567,7 @@
     cursor: pointer;
     padding: 6px;
   }
+  @media (hover: hover) { #connection-issue-step .conn-newuser-btn:hover { color: var(--accent); } }
   #nickname-step .nick-hint {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
@@ -638,6 +645,7 @@
     margin-bottom: 0;
   }
   #nickname-step > button:disabled { opacity: 0.6; cursor: default; pointer-events: none; }
+  @media (hover: hover) { #nickname-step > button:not(:disabled):hover { filter: brightness(1.08); } }
   #nickname-step .nick-checking {
     display: none;
     font-family: 'IBM Plex Mono', monospace;
@@ -768,7 +776,7 @@
     letter-spacing: 0.02em;
     text-decoration: none;
   }
-  @media (hover: hover) { .ai-note-link:hover { color: var(--rivet); } }
+  @media (hover: hover) { .ai-note-link:hover { color: var(--accent); } }
 
   .ai-note-overlay {
     position: fixed;
@@ -1098,6 +1106,7 @@
     margin-top: 10px;
   }
   .avatar-change-save-btn:disabled { opacity: 0.6; cursor: default; }
+  @media (hover: hover) { .avatar-change-save-btn:not(:disabled):hover { filter: brightness(1.08); } }
 
   .wrap {
     max-width: 780px;
@@ -2060,8 +2069,8 @@
   .copilot-btn.state-taken { background: #5a636b; }
   .copilot-btn.state-sent { background: var(--rivet); opacity: 0.9; }
   @media (hover: hover) { .copilot-btn.state-sent:hover { background: #ff8f8f; color: #3a0000; } }
-  .copilot-btn.state-incoming { background: #ffd166; color: #3a2900; }
-  @media (hover: hover) { .copilot-btn.state-incoming:hover { background: #ffdd8f; } }
+  .copilot-btn.state-incoming { background: var(--accent); color: var(--blueprint-dark); }
+  @media (hover: hover) { .copilot-btn.state-incoming:hover { filter: brightness(1.08); } }
   .copilot-btn.state-copilot {
     background: transparent;
     color: #ff6fb0;
@@ -2995,6 +3004,7 @@
     cursor: pointer;
   }
   .profile-edit-save-btn:disabled { opacity: 0.6; cursor: default; }
+  @media (hover: hover) { .profile-edit-save-btn:not(:disabled):hover { filter: brightness(1.08); } }
   .profile-edit-status {
     display: none;
     font-family: 'IBM Plex Mono', monospace;
@@ -3124,7 +3134,6 @@
   }
   .quiz-score-pill {
     background: transparent;
-    border: 1px solid var(--line);
     border-radius: 999px;
     padding: 4px 12px;
     color: var(--paper);
@@ -3168,7 +3177,7 @@
     height: 34px;
     margin-left: auto;
     background: transparent;
-    border: 1px solid var(--line);
+    border: none;
     border-radius: 999px;
     color: var(--paper);
     cursor: pointer;
@@ -3219,7 +3228,7 @@
     background: var(--blueprint-dark);
     transition: transform 0.1s ease, opacity 0.15s ease, background 0.1s ease;
   }
-  @media (hover: hover) { .quiz-choice-btn:hover:not(:disabled) { transform: scale(1.02); background: #0d3860; } }
+  @media (hover: hover) { .quiz-choice-btn:hover:not(:disabled) { transform: scale(1.02); background: var(--accent); color: #1a1200; } }
   .quiz-choice-btn:disabled { cursor: default; }
   .quiz-choice-btn.correct {
     background: var(--green) !important;
@@ -3252,6 +3261,7 @@
     background: var(--accent);
     color: var(--blueprint-dark);
   }
+  @media (hover: hover) { .quiz-nav-btn.quiz-next-btn:hover { filter: brightness(1.08); } }
   .quiz-nav-btn.quiz-prev-btn {
     background: transparent;
     border: 1px solid var(--line);
@@ -3573,7 +3583,7 @@
     cursor: pointer;
     transition: filter 0.15s ease, transform 0.15s ease;
   }
-  @media (hover: hover) { .trivia-next-btn:hover { filter: brightness(1.1); } }
+  @media (hover: hover) { .trivia-next-btn:hover { filter: brightness(1.08); } }
 
   /* ---- mock board exam ---- */
   .board-btn {
@@ -3592,7 +3602,7 @@
     margin: 16px 0 28px;
     transition: background 0.15s ease, transform 0.15s ease;
   }
-  @media (hover: hover) { .board-btn:hover { background: #ffc233; } }
+  @media (hover: hover) { .board-btn:hover { filter: brightness(1.08); } }
   .board-btn svg { width: 14px; height: 14px; }
 
   /* Row holding Generate + Reset together; the row now carries the
@@ -3997,6 +4007,7 @@
     white-space: nowrap;
     flex-shrink: 0;
   }
+  @media (hover: hover) { .chat-guidelines-link:hover { color: var(--accent); } }
 
   .chat-guidelines-overlay {
     position: fixed;
@@ -4156,7 +4167,7 @@
     border-radius: 999px;
     cursor: pointer;
   }
-  @media (hover: hover) { .banned-list-item-unban:hover { opacity: 0.85; } }
+  @media (hover: hover) { .banned-list-item-unban:hover { filter: brightness(1.08); } }
   .banned-list-manual {
     border-top: 1px solid var(--line);
     padding-top: 14px;
@@ -4225,6 +4236,14 @@
   #mockadmin-moveto-overlay {
     background: none;
   }
+  /* These two stack directly on top of the backdrop-less #mockadmin-overlay
+     panel (see comment above) and share the same card background, so
+     without their own visual separation they read as merged into one
+     surface. A soft elevation shadow (no border) gives them depth instead. */
+  #admin-modal-overlay .mockadmin-card,
+  #mockadmin-moveto-overlay .mockadmin-card {
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 4px 14px rgba(0, 0, 0, 0.4);
+  }
 
   /* ---- admin mock exam manager ---- */
   .mockadmin-card {
@@ -4288,6 +4307,7 @@
   }
   @media (hover: hover) { .mockadmin-subject-btn:hover { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); } }
   .mockadmin-subject-btn.active { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
+  @media (hover: hover) { .mockadmin-subject-btn.active:hover { filter: brightness(1.08); } }
   .mockadmin-list-head {
     display: flex;
     align-items: center;
@@ -4309,7 +4329,7 @@
   }
   @media (hover: hover) { .mockadmin-new-btn:hover,
 .mockadmin-add-q-btn:hover,
-.mockadmin-add-opt-btn:hover { opacity: 0.85; } }
+.mockadmin-add-opt-btn:hover { filter: brightness(1.08); } }
   .mockadmin-add-opt-btn { padding: 5px 11px; font-size: 10.5px; margin-top: 4px; }
   .mockadmin-set-row {
     display: flex;
@@ -4458,7 +4478,7 @@
   }
   .mockadmin-publish-btn { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
   @media (hover: hover) { .mockadmin-save-btn:hover { color: var(--accent); } }
-  @media (hover: hover) { .mockadmin-publish-btn:hover { opacity: 0.85; } }
+  @media (hover: hover) { .mockadmin-publish-btn:hover { filter: brightness(1.08); } }
 
   /* ---- bulk mock exam creator (BEC) ---- */
   .bec-steps-bar {
@@ -4601,6 +4621,7 @@
     transition: background 0.15s ease, color 0.15s ease;
   }
   .gift-wings-mode-btn.active { background: var(--accent); color: var(--blueprint-dark); }
+  @media (hover: hover) { .gift-wings-mode-btn.active:hover { filter: brightness(1.08); } }
   .gift-wings-divider {
     border: none;
     border-top: 1px solid var(--line);
@@ -4904,7 +4925,6 @@
     gap: 8px;
     padding: 8px 18px;
     border-top: 1px solid var(--line);
-    background: rgba(255,177,0,0.06);
   }
   .chat-reply-preview.visible { display: flex; }
   .chat-reply-preview-text { min-width: 0; }
@@ -4988,6 +5008,7 @@
     cursor: pointer;
   }
   .chat-input-row button:disabled { opacity: 0.5; cursor: default; }
+  @media (hover: hover) { .chat-input-row button:not(:disabled):hover { filter: brightness(1.08); } }
 
   .chat-emoji-btn {
     flex-shrink: 0;
@@ -5308,6 +5329,14 @@
     align-items: flex-start;
     gap: 3px;
     height: auto;
+    /* This stack's only child (#account-name) is always display:none in
+       practice (nothing in the app ever un-hides it), so the stack itself
+       is an empty, invisible flex item — but it still counts toward
+       .account-badge's `gap`, leaving a phantom 10px space between the
+       bar's left edge and the first real icon (Wings) that the matching
+       right-edge icon (Depart) doesn't have. Canceling the gap after it
+       closes that gap without touching spacing anywhere else. */
+    margin-right: -10px;
   }
   .account-name-line {
     font-family: 'IBM Plex Mono', monospace;
@@ -5349,6 +5378,7 @@
     cursor: pointer;
     white-space: nowrap;
   }
+  @media (hover: hover) { .daily-claim-btn:hover { filter: brightness(1.08); } }
   .topbar-nav-btn {
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 600;
@@ -5560,6 +5590,7 @@
     background: var(--accent);
     color: var(--blueprint-dark);
   }
+  @media (hover: hover) { .store-subnav-btn.active:hover { filter: brightness(1.08); } }
   .shop-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -5624,6 +5655,7 @@
     color: var(--blueprint-dark);
     font-weight: 600;
   }
+  @media (hover: hover) { .shop-page-btn.active:hover { filter: brightness(1.08); } }
   .shop-page-ellipsis {
     color: var(--rivet);
     font-size: 11px;
@@ -5847,10 +5879,12 @@
     color: var(--blueprint-dark);
     border: none;
   }
+  @media (hover: hover) { .shop-buy-wings-btn:not(.shop-item-buy-btn):not(:disabled):hover { filter: brightness(1.08); } }
   .shop-buy-cash-btn {
     border: 1px solid var(--rivet);
     color: var(--rivet);
   }
+  @media (hover: hover) { .shop-buy-cash-btn:hover { color: var(--accent); } }
   .shop-buy-cash-item-btn {
     background: var(--accent);
     color: var(--blueprint-dark);
@@ -5884,6 +5918,10 @@
     border-color: var(--accent);
     color: var(--blueprint-dark);
   } }
+  /* Clickable equipped (unequip) buttons get the same yellow-button hover
+     as everywhere else; the disabled "✓ Owned" pill is excluded since it
+     isn't a clickable action. */
+  @media (hover: hover) { .shop-equip-btn.equipped:not(:disabled):hover { filter: brightness(1.08); } }
   .shop-buy-wings-btn:disabled {
     opacity: 0.45;
     cursor: default;
@@ -6888,6 +6926,7 @@
     border-radius: 999px;
     cursor: pointer;
   }
+  @media (hover: hover) { .wings-thankyou-close:hover { filter: brightness(1.08); } }
 
   /* buy-wings pack store */
   .wings-store-overlay {
@@ -7099,6 +7138,7 @@
     border-radius: 999px;
     cursor: pointer;
   }
+  @media (hover: hover) { .daily-reward-card .day-claim-btn:hover { filter: brightness(1.08); } }
   .daily-rewards-note {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
@@ -7114,6 +7154,7 @@
     cursor: pointer;
     text-decoration: underline;
   }
+  @media (hover: hover) { .daily-rewards-close:hover { color: var(--accent); } }
 /* ============ IN-APP MOCK EXAM (site theme, now an in-page view — not a popup) ============ */
 .gform-overlay {
   /* This used to be a fixed, floating side-panel (position:fixed, its own
@@ -7452,6 +7493,7 @@
    unfilled even though the mouse is still on it; it comes off on mouseleave. */
 @media (hover: hover) { .gform-pin-btn:not(.hover-suppressed):hover { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); } }
 .gform-pin-btn.active { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
+@media (hover: hover) { .gform-pin-btn.active:not(.hover-suppressed):hover { filter: brightness(1.08); } }
 .gform-option {
   display: flex; align-items: center; padding: 8px 0; cursor: pointer;
   font-size: 14px; color: var(--paper);
@@ -8198,6 +8240,7 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
       transition: transform 0.15s ease;
     }
     .topbar-more-btn.open svg { transform: rotate(180deg); }
+    @media (hover: hover) { .topbar-more-btn:hover { color: var(--accent); } }
     .topbar-more-menu {
       display: none;
       position: absolute;
@@ -8306,29 +8349,10 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
        padding/row-gap everywhere, so once it wraps onto two lines on
        phones (title, then note-link + close) it reads as squished. */
     .store-popup-head {
-      position: relative;
-      padding: 14px 44px 14px 16px;
+      padding: 14px 16px;
       row-gap: 10px;
     }
     .store-popup-head h3 { font-size: 15px; }
-    /* Close (×) stays pinned to the top-right corner of the header at all
-       times instead of dropping down to the second line alongside the
-       note link when things wrap. The divider that used to sit in front
-       of it (only meaningful when it was inline next to the note text)
-       is hidden here too, since it's floating on its own now. */
-    .store-popup-head .nick-modal-close {
-      position: absolute;
-      top: 14px;
-      right: 16px;
-      margin: 0;
-      border-left: none;
-      padding: 0 4px;
-    }
-    /* The desktop divider made this button's padding asymmetric (14px
-       left / 4px right), so its × glyph was nudged +5px to stay centred
-       in the button box. Padding is symmetric again now that the divider
-       is gone, so the glyph goes back to dead-center. */
-    #view-shop .store-popup-head .nick-modal-close::after { left: 50%; }
   }
   @media (max-width: 900px) and (prefers-reduced-motion: reduce) {
     .reviewees-sidebar, .mobile-drawer-backdrop { transition-duration: 1ms; }
@@ -8651,7 +8675,6 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
     <div class="ai-note-modal">
       <div class="ai-note-modal-head">
         <h3>Before you buy</h3>
-        <button type="button" class="ai-note-modal-close" onclick="closeShopAckModal()">&times;</button>
       </div>
       <div class="ai-note-body">
         <p>When you spend Wings in the Flight Store, that amount is treated as a voluntary contribution supporting this platform's continued development, maintenance, and hosting costs. It is not a direct commercial purchase of goods or services in the traditional sense. This platform is a passion project built and maintained independently, and every contribution helps keep it running and improving for the aerodynadmics community.</p>
@@ -9372,7 +9395,6 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
     <div class="nick-modal" style="max-width: 320px;">
       <div class="nick-modal-head">
         <h3>Delete this Flight Alert?</h3>
-        <button class="nick-modal-close" onclick="cancelDeleteWingsAlert()">&times;</button>
       </div>
       <div class="nick-modal-body" style="padding: 18px 18px 20px;">
         <div class="wings-alert-confirm-actions">
@@ -9519,12 +9541,12 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
     <div class="nick-modal">
       <div class="nick-modal-head">
         <h3>Quiz Settings</h3>
-        <button class="nick-modal-back" onclick="closeQuizSettings()" aria-label="Back">&lsaquo;</button>
+        <button class="nick-modal-close" onclick="closeQuizSettings()" aria-label="Close">&times;</button>
       </div>
       <div class="nick-modal-body">
         <div style="padding: 4px 16px 16px;">
           <p class="profile-edit-label">Auto-next delay (seconds)</p>
-          <input type="text" id="quiz-autonext-input" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="1–11" onkeydown="return quizAutoNextKeydown(event);" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); if (this.value !== '' && parseInt(this.value, 10) > 11) this.value = '11';">
+          <input type="text" id="quiz-autonext-input" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="1–11" autocomplete="off" onkeydown="return quizAutoNextKeydown(event);" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); if (this.value !== '' && parseInt(this.value, 10) > 11) this.value = '11';">
           <p class="quiz-autonext-hint">How long to wait after you answer before the next question loads automatically. 1–11 seconds only. Saved to your profile.</p>
 
           <button type="button" class="profile-edit-save-btn" id="quiz-settings-save-btn" onclick="saveQuizAutoNextSeconds()">SAVE</button>
@@ -10066,7 +10088,6 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
 
   <div class="shop-pay-overlay" id="wings-confirm-overlay">
     <div class="shop-pay-box">
-      <button class="shop-pay-x" onclick="closeWingsConfirmModal()" aria-label="Close">&times;</button>
       <h3 id="wings-confirm-title">Confirm Purchase</h3>
       <p id="wings-confirm-subtitle">—</p>
       <div style="display:flex; gap:10px;">
@@ -10082,7 +10103,6 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
        and grants a shop item, which is not what's happening here. -->
   <div class="shop-pay-overlay" id="bg-upload-confirm-overlay" style="z-index: 2400;">
     <div class="shop-pay-box">
-      <button class="shop-pay-x" onclick="cancelProfileBackgroundUpload()" aria-label="Close">&times;</button>
       <h3 id="bg-upload-confirm-title">Upload background?</h3>
       <p id="bg-upload-confirm-subtitle">—</p>
       <div style="display:flex; gap:10px;">
@@ -10145,7 +10165,7 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         <div class="gift-wings-self-label">CURRENT BALANCE</div>
         <div class="gift-wings-self-balance" id="gift-wings-self-balance">— 🪽</div>
         <div class="gift-wings-self-controls">
-          <input type="number" id="gift-wings-self-amount" placeholder="Amount" min="0" step="any">
+          <input type="number" id="gift-wings-self-amount" placeholder="Amount" min="0" step="any" autocomplete="off">
           <button type="button" class="gift-wings-self-btn add" onclick="adjustOwnWings(1)">＋ ADD</button>
           <button type="button" class="gift-wings-self-btn reduce" id="gift-wings-self-reduce-btn" onclick="adjustOwnWings(-1)">－ REDUCE</button>
         </div>
@@ -10162,7 +10182,6 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
        Only ever opened by the signed-in admin from the admin gear menu. -->
   <div class="banned-list-overlay" id="board-admin-settings-overlay">
     <div class="mockadmin-card" style="max-width:420px;" onclick="event.stopPropagation();">
-      <button class="banned-list-close" onclick="closeBoardAdminSettingsModal()">&times;</button>
       <h3>Board Settings</h3>
 
       <label class="mockadmin-field-label">BOARD TIMER MINUTES PER SET</label>
@@ -10187,7 +10206,6 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
        adminPrompt() below. -->
   <div class="banned-list-overlay" id="admin-modal-overlay" style="z-index:2000;">
     <div class="mockadmin-card" style="max-width:420px;" onclick="event.stopPropagation();">
-      <button class="banned-list-close" onclick="adminModalCancel()">&times;</button>
       <p id="admin-modal-message" style="margin:0 0 14px; font-size:13.5px; line-height:1.55; color:var(--paper); white-space:pre-wrap;"></p>
       <input type="text" id="admin-modal-input" class="mockadmin-input" style="display:none;"
         autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false"
@@ -10230,10 +10248,10 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         <button type="button" class="mockadmin-back-btn" onclick="closeMockAdminEditor()">&larr; BACK TO EXAMS</button>
 
         <label class="mockadmin-field-label">EXAM NAME</label>
-        <input type="text" id="mockadmin-edit-title" class="mockadmin-input">
+        <input type="text" id="mockadmin-edit-title" class="mockadmin-input" autocomplete="off">
 
         <label class="mockadmin-field-label">TIMER (MINUTES)</label>
-        <input type="number" id="mockadmin-edit-duration" class="mockadmin-input" min="1" placeholder="240" style="max-width:160px;">
+        <input type="number" id="mockadmin-edit-duration" class="mockadmin-input" min="1" placeholder="240" style="max-width:160px;" autocomplete="off">
 
         <label class="mockadmin-field-label" style="margin-top:20px;">QUESTIONS</label>
         <div id="mockadmin-questions-list"></div>
@@ -10307,9 +10325,9 @@ Answer: C</pre>
         <!-- STEP 3 — exam settings -->
         <div id="bec-step-3" style="display:none;">
           <label class="mockadmin-field-label">EXAM NAME</label>
-          <input type="text" id="bec-exam-title" class="mockadmin-input">
+          <input type="text" id="bec-exam-title" class="mockadmin-input" autocomplete="off">
           <label class="mockadmin-field-label">TIMER (MINUTES)</label>
-          <input type="number" id="bec-exam-duration" class="mockadmin-input" min="1" placeholder="240" style="max-width:160px;">
+          <input type="number" id="bec-exam-duration" class="mockadmin-input" min="1" placeholder="240" style="max-width:160px;" autocomplete="off">
           <div class="bec-step-nav">
             <button type="button" class="mockadmin-save-btn" onclick="BEC_showStep(2)">&larr; BACK TO REVIEW</button>
             <button type="button" class="mockadmin-publish-btn" onclick="BEC_toDestinationStep()">NEXT: DESTINATION</button>
@@ -10452,10 +10470,11 @@ Answer: C</pre>
             } catch (err) { console.error('Live ban signal error:', err); }
           }
           adminAlert(`Banned "${nickname}".`);
+          noteAdminSecretSuccess();
         } else if (result && result.message === 'Too many attempts. Please wait a few minutes and try again.') {
           adminAlert('Too many admin secret attempts recently. Please wait a few minutes and try again.');
         } else if (result && result.message === 'Invalid Admin Secret') {
-          adminAlert('Wrong admin secret. Nothing was banned. Try again.');
+          adminAlert(adminSecretWrongMessage('Wrong admin secret. Nothing was banned. Try again.'));
         } else {
           adminAlert(`Could not ban "${nickname}": ${(result && result.message) || 'could not reach the server.'}`);
         }
@@ -11137,6 +11156,36 @@ Answer: C</pre>
       // shows up there immediately too.
       try { renderNicknameListFromCache(); } catch (err) { console.error('Nickname list refresh error:', err); }
       closeAvatarChangeModal();
+    }
+
+    // ---- admin secret failure tracking ----
+    // Ban, unban, and the delete-message secret check all share ONE
+    // rate-limit bucket on the backend (5 wrong attempts / 5 minutes locks
+    // all three out — see the comments at each call site below). When
+    // locked out, the backend doesn't always come back with a clean
+    // "rate limited" signal — sometimes it just looks identical to a
+    // wrong secret, which is confusing if you know you typed it right.
+    // This client-side counter can't know for certain, but after a few
+    // "wrong" results in a row within a short window, it's much more
+    // likely a lockout than a typo, so the alert gets an extra hint.
+    let adminSecretFailStreak = 0;
+    let adminSecretFailStreakAt = 0;
+    function noteAdminSecretFailure() {
+      const now = Date.now();
+      if (now - adminSecretFailStreakAt > 5 * 60 * 1000) adminSecretFailStreak = 0;
+      adminSecretFailStreak++;
+      adminSecretFailStreakAt = now;
+      return adminSecretFailStreak;
+    }
+    function noteAdminSecretSuccess() {
+      adminSecretFailStreak = 0;
+    }
+    function adminSecretWrongMessage(base) {
+      // 3+ "wrong" results within 5 minutes: likely the shared lockout,
+      // not a mistyped secret.
+      return noteAdminSecretFailure() >= 3
+        ? `${base} If you're sure it's correct, you may be temporarily rate-limited from too many attempts — wait a few minutes and try again.`
+        : base;
     }
 
     function jsonpRequest(params, onResult, opts) {
@@ -12212,13 +12261,14 @@ Answer: C</pre>
             } catch (err) { console.error('Live unban signal error:', err); }
           }
           adminAlert(`Unbanned "${email}".`);
+          noteAdminSecretSuccess();
           // No manual reload needed — the banned-list modal (if open) is
           // watching 'banned'/'bannedMeta' live, so the .remove() calls
           // above already update it on their own.
         } else if (result && result.message === 'Too many attempts. Please wait a few minutes and try again.') {
           adminAlert('Too many admin secret attempts recently. Please wait a few minutes and try again.');
         } else if (result && result.message === 'Invalid Admin Secret') {
-          adminAlert('Wrong admin secret. Nothing was unbanned. Try again.');
+          adminAlert(adminSecretWrongMessage('Wrong admin secret. Nothing was unbanned. Try again.'));
         } else {
           adminAlert(`Could not unban "${email}": ${(result && result.message) || 'could not reach the server.'}`);
         }
@@ -14861,7 +14911,7 @@ Answer: C</pre>
             <span class="gift-wings-item-nick">${escapeHtml(nick)}</span>
           </div>
           <div class="gift-wings-item-controls">
-            <input type="number" class="gift-wings-item-amount" id="${safeId}" placeholder="Amount" min="0" step="any">
+            <input type="number" class="gift-wings-item-amount" id="${safeId}" placeholder="Amount" min="0" step="any" autocomplete="off">
             <button type="button" class="gift-wings-mini-btn add" onclick="adjustUserWings(${dataIndex}, 1)">＋</button>
             ${giftWingsMode === 'gift' ? '' : `<button type="button" class="gift-wings-mini-btn reduce" onclick="adjustUserWings(${dataIndex}, -1)">－</button>`}
           </div>
@@ -15937,9 +15987,10 @@ Answer: C</pre>
           return;
         }
         if (!result || !result.valid) {
-          adminAlert('Wrong admin secret. Nothing was deleted. Try again.');
+          adminAlert(adminSecretWrongMessage('Wrong admin secret. Nothing was deleted. Try again.'));
           return;
         }
+        noteAdminSecretSuccess();
 
         ensureFirebaseApp();
         nsRef('chat/messages/' + key).remove()
@@ -20662,7 +20713,7 @@ Answer: C</pre>
           : `Question ${(saved.index || 0) + 1} of ${total}`;
         badgeHtml = `
             <span class="exam-timer scored">${escapeHtml(badgeText)}</span>
-            <button type="button" class="exam-timer-reset" onclick="resetQuizProgressFromCard(event, '${subjectKey}', '${id}')">RESET</button>`;
+            <button type="button" class="exam-timer-reset" title="Reset this quiz" onclick="resetQuizProgressFromCard(event, '${subjectKey}', '${id}')">RESET</button>`;
       }
       return `<li><a class="exam-card quiz-exam-card" href="javascript:void(0)" onclick="openQuizModeExam('${subjectKey}', '${id}'); return false;">
           <div class="exam-row"><span class="exam-idx">${String(index).padStart(2, '0')}</span>
