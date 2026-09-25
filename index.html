@@ -19,25 +19,23 @@
       if (deviceW >= PHONE_LAYOUT_WIDTH) {
         var m = document.querySelector('meta[name="viewport"]');
         if (m) m.setAttribute('content', 'width=device-width, initial-scale=1, user-scalable=no');
+      } else {
+        // Once the viewport is pinned to the 720 virtual width above, the
+        // page's CSS layout viewport is 720px on every phone, no matter how
+        // narrow the screen actually is. That means @media (max-width: …)
+        // queries below 720 can never match here — CSS only sees the layout
+        // viewport, not the real screen. Several rules further down (exam
+        // cards, the terms/mock-admin modals, the home tabs grid, etc.) were
+        // written assuming those queries would fire on real narrow phones.
+        // Since real device width isn't visible to CSS in this mode, expose
+        // it as classes on <html> instead so those rules can target it.
+        var root = document.documentElement;
+        if (deviceW <= 600) root.classList.add('pw-600');
+        if (deviceW <= 480) root.classList.add('pw-480');
+        if (deviceW <= 360) root.classList.add('pw-360');
+        if (deviceW <= 320) root.classList.add('pw-320');
       }
     } catch (e) {}
-  })();
-  (function () {
-    var LAYOUT_W = 720, root = document.documentElement;
-    function applyPcScale() {
-      var vw = window.innerWidth || root.clientWidth;
-      if (vw && vw < LAYOUT_W - 20) {
-        root.classList.add('pc-scale');
-        root.style.setProperty('--pc-zoom', (vw / LAYOUT_W).toFixed(4));
-      } else {
-        root.classList.remove('pc-scale');
-        root.style.removeProperty('--pc-zoom');
-      }
-    }
-    applyPcScale();
-    window.addEventListener('resize', applyPcScale);
-    window.addEventListener('DOMContentLoaded', applyPcScale);
-    window.addEventListener('load', applyPcScale);
   })();
 </script>
 <title>aerodynadmics</title>
@@ -922,6 +920,10 @@
   @media (hover: hover) { .account-badge .signout-btn:hover {
     color: var(--accent);
   } }
+  /* Hidden by default (desktop row, and the phone dropdown while closed);
+     only shown for the row layout inside the open #topbar-more-menu
+     dropdown — see the (max-width: 900px) block further down. */
+  .topbar-more-menu-label { display: none; }
   .account-badge .signout-icon-btn {
     display: inline-flex;
     align-items: center;
@@ -1349,10 +1351,8 @@
     overflow: hidden;
     pointer-events: auto;
   }
-  @media (max-width: 600px) {
-    .store-popup-overlay { padding: 8px 0; }
-    .store-popup { height: calc(100vh - 16px); height: calc(100dvh - 16px); max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px); }
-  }
+  html.pw-600 .store-popup-overlay { padding: 8px 0; }
+  html.pw-600 .store-popup { height: calc(100vh - 16px); height: calc(100dvh - 16px); max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px); }
   .store-popup-head {
     display: flex;
     align-items: center;
@@ -3048,9 +3048,7 @@
     margin: 0 0 18px;
     letter-spacing: -0.01em;
   }
-  @media (max-width: 480px) {
-    .home-tabs-question { font-size: 21px; }
-  }
+  html.pw-480 .home-tabs-question { font-size: 21px; }
 
   .home-tabs {
     display: grid;
@@ -3088,12 +3086,10 @@
     font-size: 12px;
     color: var(--rivet);
   }
-  @media (max-width: 480px) {
-    .home-tabs { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-    .home-tab-btn { padding: 16px 12px; }
-    .home-tab-btn-title { font-size: 14px; }
-    .home-tab-btn-sub { font-size: 10px; }
-  }
+  html.pw-480 .home-tabs { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  html.pw-480 .home-tab-btn { padding: 16px 12px; }
+  html.pw-480 .home-tab-btn-title { font-size: 14px; }
+  html.pw-480 .home-tab-btn-sub { font-size: 10px; }
 
   /* individually colored tabs */
   .home-tab-btn.tab-review { border-color: #ff6b6b; }
@@ -3153,10 +3149,9 @@
     gap: 12px;
     margin-top: 4px;
   }
-  /* Phones keep the 2x2 layout too; the buttons just get a bit more compact
-     so two fit side by side. */
+  /* Phones: single column (1x4) so each choice gets the full width. */
   @media (max-width: 640px) {
-    .quiz-choices-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .quiz-choices-grid { grid-template-columns: 1fr; gap: 8px; }
     .quiz-choice-btn {
       min-width: 0;
       min-height: 72px;
@@ -3406,13 +3401,11 @@
      getting clipped at the viewport edge (the timer/reset/open-form group
      alone is wider than what's left after the name). Letting the row wrap
      moves that group onto its own line instead of spilling off-screen. */
-  @media (max-width: 600px) {
-    .exam-row {
-      flex-wrap: wrap;
-      row-gap: 8px;
-    }
-    .exam-name { min-width: 120px; }
+  html.pw-600 .exam-row {
+    flex-wrap: wrap;
+    row-gap: 8px;
   }
+  html.pw-600 .exam-name { min-width: 120px; }
   .exam-idx {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 12px;
@@ -3766,9 +3759,7 @@
     border: none;
     background: var(--paper);
   }
-  @media (max-width: 480px) {
-    .form-popup-card { width: 100%; }
-  }
+  html.pw-480 .form-popup-card { width: 100%; }
 
   /* ---- reviewee chat ---- */
   /* Large side panel pinned to the right edge. It uses the same vertical
@@ -4220,12 +4211,10 @@
     max-height: calc(100vh - 32px);
     max-height: calc(100dvh - 32px);
   }
-  @media (max-width: 600px) {
-    #mockadmin-overlay { padding: 8px 0; }
-    #mockadmin-overlay .mockadmin-card {
-      height: calc(100vh - 16px); height: calc(100dvh - 16px);
-      max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px);
-    }
+  html.pw-600 #mockadmin-overlay { padding: 8px 0; }
+  html.pw-600 #mockadmin-overlay .mockadmin-card {
+    height: calc(100vh - 16px); height: calc(100dvh - 16px);
+    max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px);
   }
   /* The rename/delete confirm prompt (admin-modal-overlay) and the "Move
      Exam" popup (mockadmin-moveto-overlay) render on top of the now
@@ -5429,7 +5418,35 @@
     margin-right: 0;
     border-right: 1px solid var(--line);
   }
-  .account-badge .topbar-icon-nav + .signout-icon-btn { margin-left: -3px; }
+  /* Depart no longer directly follows #topbar-icon-nav in the markup
+     (it's nested inside #topbar-more-menu now, see the phone dropdown
+     below), so this nudges it the same -3px via id instead of the old
+     adjacent-sibling selector, which no longer matches. */
+  #topbar-depart-btn { margin-left: -3px; }
+  /* "More" toggle (Flight Store / Hangar / Admin) only exists as a separate
+     dropdown on phones — see the (max-width: 900px) block below. On desktop
+     there's room for these inline, so the toggle stays hidden and the
+     wrapper around them uses display:contents, which removes the wrapper's
+     own box from layout entirely: its children (Flight Store, Hangar, the
+     admin gear) render exactly as if they were still direct children of
+     .account-badge, so this restructuring is a visual no-op on desktop. */
+  .topbar-more-btn { display: none; }
+  .topbar-more-menu { display: contents; }
+  /* Wings and Depart now live inside #topbar-more-menu (see the phone
+     dropdown below) instead of being direct children of .account-badge,
+     so on desktop — where #topbar-more-menu is display:contents and its
+     children become flex items of .account-badge directly — this order
+     list puts every icon back in its original left-to-right position. */
+  #account-avatar-btn { order: 1; }
+  .account-badge .account-name-stack { order: 2; }
+  #account-wings-badge { order: 3; }
+  #daily-claim-btn { order: 4; }
+  #topbar-more-btn { order: 5; }
+  #topbar-flight-store-btn { order: 6; }
+  #topbar-hangar-btn { order: 7; }
+  #admin-settings-wrap { order: 8; }
+  #topbar-icon-nav { order: 9; }
+  #topbar-depart-btn { order: 10; }
   .topbar-icon-btn {
     --tab-color: var(--accent);
     display: inline-flex;
@@ -7020,9 +7037,7 @@
     gap: 10px;
     margin-bottom: 16px;
   }
-  @media (max-width: 480px) {
-    .daily-rewards-grid { grid-template-columns: repeat(4, 1fr); }
-  }
+  html.pw-480 .daily-rewards-grid { grid-template-columns: repeat(4, 1fr); }
   .daily-reward-card {
     position: relative;
     background: transparent;
@@ -7545,22 +7560,20 @@
   font-size: 14px; font-weight: 600; cursor: pointer;
 }
 @media (hover: hover) { .gform-score-modal .gform-score-leave-btn:hover { color: var(--accent); } }
-@media (max-width: 600px) {
-  .gform-title { font-size: 16px; }
-  /* Title + timer/Pins/Back can't all fit on one line on a phone —
-     let them wrap to a second line instead of crowding or overflowing. */
-  .gform-sticky-head .site-title-row { flex-wrap: wrap; row-gap: 8px; }
-  /* The absolute centering above assumes a single-line row; once the row
-     wraps here, an absolutely positioned timer would float independently
-     over both wrapped lines instead of sitting in the flow. Drop it back
-     into normal flow so it wraps along with the title/Pins row. */
-  .gform-timer-centered {
-    position: static;
-    transform: none;
-    margin-left: auto;
-  }
-  .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; width: 100%; }
+html.pw-600 .gform-title { font-size: 16px; }
+/* Title + timer/Pins/Back can't all fit on one line on a phone —
+   let them wrap to a second line instead of crowding or overflowing. */
+html.pw-600 .gform-sticky-head .site-title-row { flex-wrap: wrap; row-gap: 8px; }
+/* The absolute centering above assumes a single-line row; once the row
+   wraps here, an absolutely positioned timer would float independently
+   over both wrapped lines instead of sitting in the flow. Drop it back
+   into normal flow so it wraps along with the title/Pins row. */
+html.pw-600 .gform-timer-centered {
+  position: static;
+  transform: none;
+  margin-left: auto;
 }
+html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; width: 100%; }
 
   /* =====================================================================
      TERMS AND CONDITIONS / LEGAL LINKS
@@ -7848,12 +7861,10 @@
     .legal-links { flex-direction: column; gap: 8px; }
     .legal-links .legal-sep { display: none; }
   }
-  @media (max-width: 600px) {
-    #terms-overlay, #privacy-overlay { padding: 10px; }
-    #terms-overlay .terms-modal, #privacy-overlay .terms-modal { max-height: 94vh; max-height: 94dvh; }
-    #terms-overlay .terms-body, #privacy-overlay .terms-body { padding: 14px 14px 18px; }
-    #terms-overlay .terms-title, #privacy-overlay .terms-title { font-size: 18px; }
-  }
+  html.pw-600 #terms-overlay, html.pw-600 #privacy-overlay { padding: 10px; }
+  html.pw-600 #terms-overlay .terms-modal, html.pw-600 #privacy-overlay .terms-modal { max-height: 94vh; max-height: 94dvh; }
+  html.pw-600 #terms-overlay .terms-body, html.pw-600 #privacy-overlay .terms-body { padding: 14px 14px 18px; }
+  html.pw-600 #terms-overlay .terms-title, html.pw-600 #privacy-overlay .terms-title { font-size: 18px; }
   @media (prefers-reduced-motion: reduce) {
     .legal-notice-toast { transition: none; }
   }
@@ -8066,15 +8077,28 @@
     body.sidebar-active { padding-left: 0; padding-right: 0; }
     .wrap { padding: 10px 10px 90px; }
 
-    /* top icon row becomes the same rounded card as on desktop */
+    /* top icon row becomes the same rounded card as on desktop, but moved
+       to a fixed bar pinned to the BOTTOM of the screen (like a mobile app's
+       bottom nav) instead of sitting inline above the page content. */
     .top-bar {
-      position: relative;
+      position: fixed;
       isolation: isolate;
       flex-wrap: nowrap;
       min-height: 54px;
       padding: 0 8px;
-      margin-bottom: 18px;
+      margin: 0;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+      top: auto;
+      z-index: 500;
+      gap: 20px;
     }
+    /* .wrap no longer needs to clear a top-bar that used to sit above the
+       content (it's fixed now, out of normal flow) — instead it needs
+       clearance at the BOTTOM so the last bit of page content doesn't end
+       up hidden underneath the now-fixed bottom bar. */
+    .wrap { padding-bottom: 110px; }
     .top-bar::after {
       content: '';
       position: absolute;
@@ -8085,27 +8109,164 @@
       border-radius: 14px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     }
-    /* icon buttons scale with the screen width so the whole row (wings,
-       store, hangar, admin, 5 tabs, depart) always fits inside the card
-       instead of squeezing/overlapping or running off the right edge */
-    .top-bar { --tb-btn: clamp(24px, calc((100vw - 60px) / 10.4), 46px); }
+    /* icon buttons scale with the screen width so the row (wings, store,
+       hangar, admin, depart) always fits inside the card instead of
+       squeezing/overlapping or running off the right edge. The 5 section
+       tabs (home/review/quiz/mock-exam/mock-board) used to shrink along
+       with these — now they keep a fixed, comfortably-tappable size and
+       the tab strip itself scrolls horizontally instead (see
+       .topbar-icon-nav below), so the divisor here only accounts for the
+       5 remaining icon-only buttons, not all 10. */
+    .top-bar { --tb-btn: clamp(32px, calc((100vw - 60px) / 5.4), 46px); }
     .account-badge { gap: 1px; min-width: 0; }
     .account-wings-badge.icon-only,
     .topbar-nav-btn.icon-only,
     .account-badge .signout-btn.icon-only,
-    .account-badge .signout-icon-btn,
-    .topbar-icon-btn {
+    .account-badge .signout-icon-btn {
       width: var(--tb-btn);
       flex: 0 0 auto;
     }
     .account-wings-badge.icon-only,
     .topbar-nav-btn.icon-only,
     .account-badge .signout-btn.icon-only { font-size: clamp(14px, calc(var(--tb-btn) * 0.55), 17px); }
-    .topbar-icon-btn svg {
-      width: clamp(18px, calc(var(--tb-btn) * 0.6), 23px);
-      height: clamp(18px, calc(var(--tb-btn) * 0.6), 23px);
+    /* ---- section tabs: fixed size + horizontal slide instead of shrinking ----
+       Previously these 5 icons shrank along with everything else, which is
+       what made the whole row need such small icons on narrow phones. Now
+       .topbar-icon-nav is the one flexible-width piece of the row (min-width:0
+       lets a flex item shrink below its content's natural width; overflow-x
+       turns that into a scroll area instead of a squeeze) while the icons
+       inside it stay a fixed, comfortably-tappable size and simply scroll
+       into view. The other icons beside it (wings/store/hangar/admin/depart,
+       flex: 0 0 auto above) are unaffected and keep their own sizing. */
+    .topbar-icon-nav {
+      flex: 0 1 auto;
+      min-width: 0;
+      gap: 20px;
+      padding-right: 8px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x proximity;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      /* Divider that separates this icon group from the rest of the bar
+         (Depart, etc.) is only meaningful in the desktop inline layout;
+         on the mobile bottom-bar it just reads as clutter, so it's hidden
+         here rather than in the shared base rule. */
+      border-right: none;
     }
-    .topbar-icon-nav { gap: 0; padding-right: 4px; flex: 0 0 auto; }
+    .topbar-icon-nav::-webkit-scrollbar { display: none; }
+    .topbar-icon-btn {
+      width: 42px;
+      height: 42px;
+      flex: 0 0 auto;
+      scroll-snap-align: start;
+    }
+    .topbar-icon-btn svg { width: 22px; height: 22px; }
+
+    /* ---- "More" toggle + dropdown (Flight Store / Hangar / Admin) ----
+       These three used to sit inline in the row, competing for the same
+       shrinking space as everything else. On phones they collapse behind
+       a single arrow next to Wings; tapping it drops down a short vertical
+       list instead. The tab strip and its horizontal slide (above) are
+       untouched by this — this only affects Store/Hangar/Admin. */
+    .topbar-more-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      flex: 0 0 auto;
+      padding: 0;
+      /* With the avatar/name/claim button hidden (guest / collapsed state),
+         this arrow becomes the first visible item in the bar and was
+         sitting flush against the bar's own 8px edge padding, reading as
+         glued to the left edge. This pulls it in a bit further. */
+      margin-left: 10px;
+      background: none;
+      border: none;
+      color: var(--rivet);
+      cursor: pointer;
+    }
+    .topbar-more-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: transform 0.15s ease;
+    }
+    .topbar-more-btn.open svg { transform: rotate(180deg); }
+    .topbar-more-menu {
+      display: none;
+      position: absolute;
+      /* Bar now lives at the BOTTOM of the screen, so the menu opens
+         upward off its top edge instead of downward off its bottom edge —
+         otherwise it would spill off-screen. Left-aligned to line up with
+         the arrow toggle itself (10px, matching the arrow's own
+         margin-left) rather than centered on the whole bar. */
+      bottom: calc(100% + 8px);
+      top: auto;
+      left: 10px;
+      z-index: 20;
+      min-width: 170px;
+      background: var(--blueprint-dark);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+    .topbar-more-menu.visible {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    /* Inside the open dropdown these read as labeled rows, not bare icons —
+       the emoji stays, a text label is added, and the fixed square sizing
+       from the shrink-to-fit rules earlier is overridden to a full-width row. */
+    .topbar-more-menu #topbar-flight-store-btn,
+    .topbar-more-menu #topbar-hangar-btn,
+    .topbar-more-menu #admin-settings-btn,
+    .topbar-more-menu #account-wings-badge,
+    .topbar-more-menu #topbar-depart-btn {
+      width: 100%;
+      height: 40px;
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+      padding: 0 12px;
+      font-size: 14px;
+    }
+    .topbar-more-menu #topbar-flight-store-btn::after,
+    .topbar-more-menu #topbar-hangar-btn::after,
+    .topbar-more-menu #admin-settings-btn::after,
+    .topbar-more-menu #account-wings-badge::after {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      color: var(--paper);
+    }
+    .topbar-more-menu #topbar-flight-store-btn::after { content: "Flight Store"; }
+    .topbar-more-menu #topbar-hangar-btn::after { content: "Hangar"; }
+    .topbar-more-menu #admin-settings-btn::after { content: "Admin Settings"; }
+    .topbar-more-menu #account-wings-badge::after { content: "Wings"; }
+    .topbar-more-menu .admin-settings-wrap { width: 100%; }
+    /* Depart's own ::after is already used for its hover-highlight layer
+       (see .account-badge .signout-icon-btn::after), so its label is a
+       real <span> in the markup instead of generated content — hidden
+       everywhere else, shown only here in the open dropdown row. */
+    .topbar-more-menu #topbar-depart-btn .topbar-more-menu-label {
+      display: inline;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      color: var(--paper);
+    }
+
+    /* Quiz / mock-exam answer choices: single column (1x4) instead of the
+       2x2 grid, so each choice gets the full width on phones. */
+    .quiz-choices-grid { grid-template-columns: 1fr; }
 
     /* sidebar: off-canvas drawer on the left */
     .reviewees-sidebar {
@@ -8140,6 +8301,34 @@
     /* pop-ups that used to sit between the two panels now use the full width */
     .store-popup-overlay,
     #mockadmin-overlay { left: 10px; right: 10px; }
+
+    /* Flight Store / Hangar header: was using the same tight desktop
+       padding/row-gap everywhere, so once it wraps onto two lines on
+       phones (title, then note-link + close) it reads as squished. */
+    .store-popup-head {
+      position: relative;
+      padding: 14px 44px 14px 16px;
+      row-gap: 10px;
+    }
+    .store-popup-head h3 { font-size: 15px; }
+    /* Close (×) stays pinned to the top-right corner of the header at all
+       times instead of dropping down to the second line alongside the
+       note link when things wrap. The divider that used to sit in front
+       of it (only meaningful when it was inline next to the note text)
+       is hidden here too, since it's floating on its own now. */
+    .store-popup-head .nick-modal-close {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      margin: 0;
+      border-left: none;
+      padding: 0 4px;
+    }
+    /* The desktop divider made this button's padding asymmetric (14px
+       left / 4px right), so its × glyph was nudged +5px to stay centred
+       in the button box. Padding is symmetric again now that the divider
+       is gone, so the glyph goes back to dead-center. */
+    #view-shop .store-popup-head .nick-modal-close::after { left: 50%; }
   }
   @media (max-width: 900px) and (prefers-reduced-motion: reduce) {
     .reviewees-sidebar, .mobile-drawer-backdrop { transition-duration: 1ms; }
@@ -8181,16 +8370,14 @@
   /* Phones: exam cards (idx, title, timer, RESET, TAKE EXAM) stay on ONE
      straight line instead of wrapping "TAKE EXAM" onto a second row; the
      pieces are made compact and the title takes whatever room is left. */
-  @media (max-width: 600px) {
-html:not(.pc-scale) .exam-card { padding: 12px 10px; }
-html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-row { flex-wrap: nowrap; gap: 6px; }
-html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-name { min-width: 0; font-size: 14px; line-height: 1.3; overflow-wrap: anywhere; }
-html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-idx { min-width: 18px; font-size: 11px; }
-html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-timer { font-size: 10px; padding: 3px 5px; letter-spacing: 0; }
-html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-timer-reset { font-size: 9px; padding: 3px 5px; }
-html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-go { font-size: 10px; gap: 3px; }
-html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-go svg { width: 10px; height: 10px; }
-  }
+  html.pw-600 .exam-card { padding: 12px 10px; }
+  html.pw-600 .exam-card:not(.quiz-exam-card) .exam-row { flex-wrap: nowrap; gap: 6px; }
+  html.pw-600 .exam-card:not(.quiz-exam-card) .exam-name { min-width: 0; font-size: 14px; line-height: 1.3; overflow-wrap: anywhere; }
+  html.pw-600 .exam-card:not(.quiz-exam-card) .exam-idx { min-width: 18px; font-size: 11px; }
+  html.pw-600 .exam-card:not(.quiz-exam-card) .exam-timer { font-size: 10px; padding: 3px 5px; letter-spacing: 0; }
+  html.pw-600 .exam-card:not(.quiz-exam-card) .exam-timer-reset { font-size: 9px; padding: 3px 5px; }
+  html.pw-600 .exam-card:not(.quiz-exam-card) .exam-go { font-size: 10px; gap: 3px; }
+  html.pw-600 .exam-card:not(.quiz-exam-card) .exam-go svg { width: 10px; height: 10px; }
 
   /* Very narrow screens / small windows (the wide phone layout isn't in
      effect): stack the exam & quiz cards neatly instead of squeezing them.
@@ -8198,35 +8385,66 @@ html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-go svg { width: 10px; 
      row 2 = timer / progress badge, RESET, and TAKE EXAM / QUIZ ME, all on
      one straight line lined up under the title. Cards with nothing extra
      (no timer/badge) stay a single line. */
-  @media (max-width: 600px) {
-html:not(.pc-scale) .quiz-exam-card .exam-row { flex-wrap: wrap; gap: 8px; row-gap: 8px; }
-html:not(.pc-scale) .quiz-exam-card .exam-idx { min-width: 18px; font-size: 11px; }
-html:not(.pc-scale) .quiz-exam-card .exam-name { min-width: 0; font-size: 14px; line-height: 1.3; }
-html:not(.pc-scale) .quiz-exam-card .exam-row:has(.exam-timer) .exam-name { flex: 1 1 calc(100% - 26px); }
-html:not(.pc-scale) .quiz-exam-card .exam-name + .exam-timer { margin-left: 26px; }
-html:not(.pc-scale) .quiz-exam-card .exam-timer { font-size: 10px; padding: 3px 6px; }
-html:not(.pc-scale) .quiz-exam-card .exam-timer-reset { font-size: 9px; padding: 3px 6px; }
-html:not(.pc-scale) .quiz-exam-card .exam-go { font-size: 10px; margin-left: auto; }
-html:not(.pc-scale) .quiz-exam-card .exam-row:not(:has(.exam-timer)) .exam-go { margin-left: 0; }
-  }
-  @media (max-width: 360px) {
-html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-row:has(.exam-timer) { flex-wrap: wrap; row-gap: 8px; gap: 8px; }
-html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-row:has(.exam-timer) .exam-name { flex: 1 1 calc(100% - 26px); }
-html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-name + .exam-timer { margin-left: 26px; }
-html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-row:has(.exam-timer) .exam-go { margin-left: auto; }
-  }
-  @media (max-width: 320px) {
-html:not(.pc-scale) .quiz-exam-card .exam-name + .exam-timer,
-    html:not(.pc-scale) .exam-card:not(.quiz-exam-card) .exam-name + .exam-timer { margin-left: 0; }
-html:not(.pc-scale) .exam-card .exam-timer { letter-spacing: 0; }
-  }
+  html.pw-600 .quiz-exam-card .exam-row { flex-wrap: wrap; gap: 8px; row-gap: 8px; }
+  html.pw-600 .quiz-exam-card .exam-idx { min-width: 18px; font-size: 11px; }
+  html.pw-600 .quiz-exam-card .exam-name { min-width: 0; font-size: 14px; line-height: 1.3; }
+  html.pw-600 .quiz-exam-card .exam-row:has(.exam-timer) .exam-name { flex: 1 1 calc(100% - 26px); }
+  html.pw-600 .quiz-exam-card .exam-name + .exam-timer { margin-left: 26px; }
+  html.pw-600 .quiz-exam-card .exam-timer { font-size: 10px; padding: 3px 6px; }
+  html.pw-600 .quiz-exam-card .exam-timer-reset { font-size: 9px; padding: 3px 6px; }
+  html.pw-600 .quiz-exam-card .exam-go { font-size: 10px; margin-left: auto; }
+  html.pw-600 .quiz-exam-card .exam-row:not(:has(.exam-timer)) .exam-go { margin-left: 0; }
+  /* Quiz cards' row 2 (badge + RESET + QUIZ ME) didn't get the same
+     narrower-phone shrink treatment regular exam cards get below 600px —
+     on real narrow screens (~360-480px wide) that group was wider than
+     the card and spilled off the right edge instead of fitting on its
+     line. Shrinking it further, and dropping the 26px timer offset
+     earlier (it was only removed at pw-320), fixes the overflow. */
+  html.pw-480 .quiz-exam-card .exam-name + .exam-timer,
+  html.pw-360 .quiz-exam-card .exam-name + .exam-timer { margin-left: 0; }
+  html.pw-480 .quiz-exam-card .exam-timer,
+  html.pw-360 .quiz-exam-card .exam-timer { font-size: 9px; padding: 3px 5px; letter-spacing: 0; }
+  html.pw-480 .quiz-exam-card .exam-timer-reset,
+  html.pw-360 .quiz-exam-card .exam-timer-reset { font-size: 9px; padding: 3px 5px; }
+  html.pw-480 .quiz-exam-card .exam-go,
+  html.pw-360 .quiz-exam-card .exam-go { font-size: 9px; gap: 3px; }
+  html.pw-480 .quiz-exam-card .exam-go svg,
+  html.pw-360 .quiz-exam-card .exam-go svg { width: 10px; height: 10px; }
+  html.pw-360 .exam-card:not(.quiz-exam-card) .exam-row:has(.exam-timer) { flex-wrap: wrap; row-gap: 8px; gap: 8px; }
+  html.pw-360 .exam-card:not(.quiz-exam-card) .exam-row:has(.exam-timer) .exam-name { flex: 1 1 calc(100% - 26px); }
+  html.pw-360 .exam-card:not(.quiz-exam-card) .exam-name + .exam-timer { margin-left: 26px; }
+  html.pw-360 .exam-card:not(.quiz-exam-card) .exam-row:has(.exam-timer) .exam-go { margin-left: auto; }
+  html.pw-320 .quiz-exam-card .exam-name + .exam-timer,
+  html.pw-320 .exam-card:not(.quiz-exam-card) .exam-name + .exam-timer { margin-left: 0; }
+  html.pw-320 .exam-card .exam-timer { letter-spacing: 0; }
 
-  /* PC-scale fallback: when a browser ignores the phone viewport tag (narrow
-     desktop window, some in-app browsers), the JS in <head> adds .pc-scale
-     and sets --pc-zoom so the page column is still drawn at the wide PC
-     layout (720px) and shrunk to fit, instead of being squeezed. */
-  html.pc-scale .wrap { zoom: var(--pc-zoom, 1); }
-  html.pc-scale .top-bar { --tb-btn: 46px; }
+  /* ---- Touch-target enlargement ----
+     These elements are visually fine but were sized for a mouse pointer:
+     the exam-card RESET/TAKE EXAM controls and the admin answer-radio are
+     comfortably readable but small to tap accurately, especially once the
+     720px virtual-viewport scaling above shrinks them further on phones.
+     Real padding would be safest visually, but .exam-go/.exam-timer-reset
+     sit in a row that's deliberately kept tight to avoid wrapping (see the
+     comments above), so real padding could push it back into wrapping.
+     Instead, padding is paired with an equal negative margin: the element's
+     own clickable/tappable box grows, but its footprint in the flex row
+     (and therefore sibling spacing and the wrap decision) stays identical,
+     since the negative margin cancels the padding out for layout purposes. */
+  @media (hover: none), (max-width: 900px) {
+    .exam-go, .exam-timer-reset {
+      padding-top: 8px;
+      padding-bottom: 8px;
+      margin-top: -8px;
+      margin-bottom: -8px;
+    }
+    /* .mockadmin-option-row's radio (exam-authoring admin tool): isolated
+       from other controls in its row, so a straight size increase is safe. */
+    .mockadmin-option-row input[type="radio"] { width: 22px; height: 22px; }
+    /* Generic modal close/back buttons (not the fixed-height header variants,
+       which are already sized to align with a title row and would clip if
+       grown) get a plain padding increase — there's spare room beside them. */
+    .nick-modal-close, .nick-modal-back { padding: 8px 10px; }
+  }
 </style>
 </head>
 <body class="gate-active">
@@ -9430,21 +9648,27 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         </span>
         <div class="account-name-stack">
           <span id="account-name" class="account-name-line" style="display:none;"></span>
-          <span class="account-wings-badge icon-only" id="account-wings-badge" title="Wings" aria-label="Wings" onclick="openBuyWingsModal()" style="display:none;">🪽</span>
         </div>
         <button class="daily-claim-btn" id="daily-claim-btn" onclick="openDailyRewardsModal()" style="display:none;">🎁 CLAIM</button>
-        <button class="topbar-nav-btn icon-only" id="topbar-flight-store-btn" title="Flight Store" aria-label="Flight Store" onclick="showFlightStore()">🛒</button>
-        <button class="topbar-nav-btn icon-only" id="topbar-hangar-btn" title="Hangar" aria-label="Hangar" onclick="showHangar()">📦</button>
-        <div class="admin-settings-wrap" id="admin-settings-wrap" style="display:none;">
-          <button class="signout-btn icon-only" id="admin-settings-btn" title="Admin" aria-label="Admin" onclick="toggleAdminSettingsMenu(event)">&#9881;&#65039;</button>
-          <div class="admin-settings-menu" id="admin-settings-menu">
-            <button id="admin-gift-wings-btn" onclick="openGiftWingsModal(); closeAdminSettingsMenu();">ADJUST BALANCE</button>
-            <button id="admin-board-settings-btn" onclick="openBoardAdminSettingsModal(); closeAdminSettingsMenu();">BOARD SETTINGS</button>
-            <button id="admin-deleted-items-btn" onclick="openDeletedItemsModal(); closeAdminSettingsMenu();">DELETED SHOP ITEMS</button>
-            <button id="admin-toggle-flightstore-btn" onclick="toggleFlightStoreEnabled(); closeAdminSettingsMenu();">DISABLE FLIGHT STORE</button>
-            <button id="admin-mock-exams-btn" onclick="openMockExamAdmin(); closeAdminSettingsMenu();">MOCK EXAMS</button>
-            <button id="admin-unban-btn" onclick="openBannedListModal(); closeAdminSettingsMenu();">UNBAN</button>
+        <button type="button" class="topbar-more-btn" id="topbar-more-btn" onclick="toggleTopbarMore()" aria-label="More options" aria-expanded="false" aria-controls="topbar-more-menu" title="More">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="topbar-more-menu" id="topbar-more-menu">
+          <span class="account-wings-badge icon-only" id="account-wings-badge" title="Wings" aria-label="Wings" onclick="openBuyWingsModal()" style="display:none;">🪽</span>
+          <button class="topbar-nav-btn icon-only" id="topbar-flight-store-btn" title="Flight Store" aria-label="Flight Store" onclick="showFlightStore()">🛒</button>
+          <button class="topbar-nav-btn icon-only" id="topbar-hangar-btn" title="Hangar" aria-label="Hangar" onclick="showHangar()">📦</button>
+          <div class="admin-settings-wrap" id="admin-settings-wrap" style="display:none;">
+            <button class="signout-btn icon-only" id="admin-settings-btn" title="Admin" aria-label="Admin" onclick="toggleAdminSettingsMenu(event)">&#9881;&#65039;</button>
+            <div class="admin-settings-menu" id="admin-settings-menu">
+              <button id="admin-gift-wings-btn" onclick="openGiftWingsModal(); closeAdminSettingsMenu();">ADJUST BALANCE</button>
+              <button id="admin-board-settings-btn" onclick="openBoardAdminSettingsModal(); closeAdminSettingsMenu();">BOARD SETTINGS</button>
+              <button id="admin-deleted-items-btn" onclick="openDeletedItemsModal(); closeAdminSettingsMenu();">DELETED SHOP ITEMS</button>
+              <button id="admin-toggle-flightstore-btn" onclick="toggleFlightStoreEnabled(); closeAdminSettingsMenu();">DISABLE FLIGHT STORE</button>
+              <button id="admin-mock-exams-btn" onclick="openMockExamAdmin(); closeAdminSettingsMenu();">MOCK EXAMS</button>
+              <button id="admin-unban-btn" onclick="openBannedListModal(); closeAdminSettingsMenu();">UNBAN</button>
+            </div>
           </div>
+          <button class="signout-btn signout-icon-btn" id="topbar-depart-btn" title="Depart" onclick="signOutUser()">🛫<span class="topbar-more-menu-label">Depart</span></button>
         </div>
         <div class="topbar-icon-nav" id="topbar-icon-nav">
           <button type="button" class="topbar-icon-btn tab-home" title="Homepage" aria-label="Homepage" onclick="goHomeFromHeader()">
@@ -9463,7 +9687,6 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5-10-5z"/><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/><path d="M22 9v6"/></svg>
           </button>
         </div>
-        <button class="signout-btn signout-icon-btn" title="Depart" onclick="signOutUser()">🛫</button>
       </div>
     </div>
 
@@ -10171,6 +10394,28 @@ Answer: C</pre>
     document.addEventListener('click', (evt) => {
       const wrap = document.getElementById('admin-settings-wrap');
       if (wrap && !wrap.contains(evt.target)) closeAdminSettingsMenu();
+    });
+
+    // ---- phone top-bar "more" dropdown (Flight Store / Hangar / Admin) ----
+    function toggleTopbarMore(evt) {
+      if (evt) evt.stopPropagation();
+      const menu = document.getElementById('topbar-more-menu');
+      const btn = document.getElementById('topbar-more-btn');
+      if (!menu || !btn) return;
+      const open = menu.classList.toggle('visible');
+      btn.classList.toggle('open', open);
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    function closeTopbarMore() {
+      const menu = document.getElementById('topbar-more-menu');
+      const btn = document.getElementById('topbar-more-btn');
+      if (menu) menu.classList.remove('visible');
+      if (btn) { btn.classList.remove('open'); btn.setAttribute('aria-expanded', 'false'); }
+    }
+    document.addEventListener('click', (evt) => {
+      const menu = document.getElementById('topbar-more-menu');
+      const btn = document.getElementById('topbar-more-btn');
+      if (menu && !menu.contains(evt.target) && btn && !btn.contains(evt.target)) closeTopbarMore();
     });
 
     function banKey(email) {
