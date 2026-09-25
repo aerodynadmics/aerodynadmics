@@ -4368,6 +4368,28 @@
     border-radius: 999px;
     cursor: pointer;
   }
+  /* CHOOSE / ✓ SELECTED toggle in the Instant Creator's destination-set
+     list. Two separate problems made this box move:
+     1. "✓ SELECTED" is longer than "CHOOSE", so without a fixed width
+        the button (and the row around it) resized and shifted.
+     2. The ✓ glyph isn't in Space Grotesk, so the browser silently
+        substitutes a fallback font just for that character — and that
+        fallback's line-height is taller, which was stretching the
+        button's height too (only ever noticeable on the "SELECTED"
+        state, since "CHOOSE" has no ✓ in it).
+     Fixing width alone only solved #1. Locking width AND height (via a
+     flex box that centers the label, with nowrap so it can never wrap
+     to a second line) fixes both regardless of which glyphs render. */
+  .mockadmin-mini-btn-select {
+    width: 104px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
   @media (hover: hover) { .mockadmin-mini-btn:hover { color: var(--accent); } }
   @media (hover: hover) { .mockadmin-mini-btn.danger:hover { color: #f07a6a; } }
   .mockadmin-back-btn {
@@ -4505,8 +4527,13 @@
     background: transparent;
   }
   .bec-review-toolbar { display: flex; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
-  .bec-q-head { justify-content: space-between; }
+  .bec-q-head { justify-content: space-between; margin-bottom: 0; cursor: pointer; }
   .bec-q-head-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  /* .bec-q-head no longer carries margin-bottom (removed above so a
+     collapsed card — no visible .bec-q-body — has equal padding above
+     and below the header instead of sitting too close to the top).
+     This puts the spacing back only when the body is actually shown. */
+  .bec-q-body { margin-top: 8px; }
   .bec-q-card.bec-needs-review { border-color: #f0c96a; }
   .bec-q-card.bec-needs-review .bec-q-badge { color: #f0c96a; }
   .bec-issue-box {
@@ -7401,6 +7428,16 @@
   content: attr(data-placeholder);
   color: var(--rivet);
   pointer-events: none;
+}
+/* A run of 2+ underscores typed as a fill-in-the-blank: the underscore
+   characters are still real, editable text underneath (so the cursor lands
+   and backspace works exactly as if it were plain "_"), just painted
+   invisible with a single solid line drawn under the whole run instead —
+   so it reads as one connected blank instead of separate glyphs. */
+.mx-live-blank {
+  color: transparent;
+  border-bottom: 1.5px solid var(--paper);
+  vertical-align: -0.05em;
 }
 .mx-slot { display: inline-block; min-width: 10px; }
 .mx-frac-num.mx-slot:empty:before,
@@ -20227,6 +20264,19 @@ Answer: C</pre>
             out += `<sup>${s[i + 1]}</sup>`; i += 2; continue;
           }
         }
+        // Runs of 2+ underscores are fill-in-the-blank lines (e.g. "_______"),
+        // not subscript markup. Left to the single-underscore branch below,
+        // each adjacent pair would get wrapped in its own <sub>_</sub>, which
+        // renders as a row of small, disconnected dashes instead of one solid
+        // line. Render the whole run as a single continuous line instead.
+        if (s[i] === '_' && s[i + 1] === '_') {
+          let j = i;
+          while (j < n && s[j] === '_') j++;
+          const len = j - i;
+          out += `<span class="mx-blank" style="display:inline-block;width:${len}ch;border-bottom:1.5px solid currentColor;vertical-align:-0.05em;"></span>`;
+          i = j;
+          continue;
+        }
         if (s[i] === '_') {
           if (s[i + 1] === '{') {
             const arg = readBraceArg(s, i + 1);
@@ -20326,6 +20376,18 @@ Answer: C</pre>
           } else if (i + 1 < n && s[i + 1] !== ' ') {
             out += `<sup class="mx-editsup" contenteditable="false"><span class="mx-editslot mx-slot" contenteditable="true">${s[i + 1]}</span></sup>`; i += 2; continue;
           }
+        }
+        // Same fill-in-the-blank fix as mathMarkupToHtml (see there for why):
+        // a stored run of 2+ underscores must load into the editor as one
+        // connected, still-editable blank — not as N/2 separate subscript
+        // structures — or reopening a saved question would show it broken
+        // even before the admin touches it.
+        if (s[i] === '_' && s[i + 1] === '_') {
+          let j = i;
+          while (j < n && s[j] === '_') j++;
+          out += `<span class="mx-live-blank">${s.slice(i, j)}</span>`;
+          i = j;
+          continue;
         }
         if (s[i] === '_') {
           if (s[i + 1] === '{') {
@@ -21176,6 +21238,12 @@ Answer: C</pre>
       document.getElementById('mockadmin-overlay').classList.remove('visible');
       document.body.style.overflow = '';
       detachMockAdminListeners();
+      // Closing the whole manager (e.g. the X button) while the Instant
+      // Creator is open needs to reset ITS view too, not just the manual
+      // editor's — otherwise mockadmin-bulk-view is left visible (never
+      // hidden by closeMockAdminEditor below), and it renders stacked
+      // underneath the subjects list the next time this modal opens.
+      closeBulkExamCreator();
       closeMockAdminEditor();
     }
 
@@ -22044,9 +22112,9 @@ Answer: C</pre>
       }
       el.innerHTML = BEC.questions.map((q, qi) => `
         <div class="mockadmin-question-card bec-q-card ${q._valid ? '' : 'bec-needs-review'}" data-qi="${qi}">
-          <div class="mockadmin-question-head bec-q-head">
-            <span style="cursor:pointer;" onclick="BEC_toggleCard(${qi})">QUESTION ${qi + 1} &nbsp; <span class="bec-q-badge">${q._valid ? '✓ VALID' : '⚠ NEEDS REVIEW'}</span></span>
-            <span class="bec-q-head-actions">
+          <div class="mockadmin-question-head bec-q-head" onclick="BEC_toggleCard(${qi})">
+            <span>QUESTION ${qi + 1} &nbsp; <span class="bec-q-badge">${q._valid ? '✓ VALID' : '⚠ NEEDS REVIEW'}</span></span>
+            <span class="bec-q-head-actions" onclick="event.stopPropagation();">
               <button type="button" class="mockadmin-mini-btn" title="Move up" onclick="BEC_moveQuestion(${qi}, -1)" ${qi === 0 ? 'disabled' : ''}>&uarr;</button>
               <button type="button" class="mockadmin-mini-btn" title="Move down" onclick="BEC_moveQuestion(${qi}, 1)" ${qi === BEC.questions.length - 1 ? 'disabled' : ''}>&darr;</button>
               <button type="button" class="mockadmin-mini-btn danger" onclick="BEC_removeQuestion(${qi})">REMOVE</button>
@@ -22254,7 +22322,7 @@ Answer: C</pre>
         <div class="mockadmin-set-row">
           <div class="mockadmin-set-info"><span class="mockadmin-set-title">${escapeHtml(group.title || 'Untitled Set')}</span></div>
           <div class="mockadmin-set-controls">
-            <button type="button" class="mockadmin-mini-btn" onclick="BEC_selectDestGroup('${id}','${titleAttr}')">${selected ? '✓ SELECTED' : 'CHOOSE'}</button>
+            <button type="button" class="mockadmin-mini-btn mockadmin-mini-btn-select" onclick="BEC_selectDestGroup('${id}','${titleAttr}')">${selected ? '✓ SELECTED' : 'CHOOSE'}</button>
           </div>
         </div>`;
       }).join('');
@@ -25026,7 +25094,89 @@ Answer: C</pre>
     // oninput handler shared by every ∑ Math-enabled field.
     function mxHandleInput(field) {
       mxSanitizeSlots(field);
+      mxBlankifyUnderscores(field);
       mxSyncField(field);
+    }
+
+    // Absolute character offset of the caret within field's full text
+    // content (counting through every descendant, including inside
+    // mx-live-blank spans), or null if the selection isn't in this field.
+    function mxCaretOffset(field) {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0) return null;
+      const range = sel.getRangeAt(0);
+      if (!field.contains(range.startContainer)) return null;
+      const pre = document.createRange();
+      pre.selectNodeContents(field);
+      pre.setEnd(range.startContainer, range.startOffset);
+      return pre.toString().length;
+    }
+
+    // Inverse of mxCaretOffset: places the caret at that same absolute
+    // character offset after the DOM has been rebuilt.
+    function mxSetCaretOffset(field, offset) {
+      if (offset === null) return;
+      const walker = document.createTreeWalker(field, NodeFilter.SHOW_TEXT, null);
+      let node, remaining = offset;
+      while ((node = walker.nextNode())) {
+        const len = node.nodeValue.length;
+        if (remaining <= len) {
+          const range = document.createRange();
+          range.setStart(node, remaining);
+          range.collapse(true);
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+          return;
+        }
+        remaining -= len;
+      }
+      const range = document.createRange();
+      range.selectNodeContents(field);
+      range.collapse(false);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+
+    // Redraws runs of 2+ underscores in field's plain text as connected
+    // .mx-live-blank spans (see CSS) the instant they're typed, so a blank
+    // never visibly appears as separate broken dashes even mid-keystroke.
+    // Unwraps and rebuilds from scratch every time so it's idempotent and
+    // never drifts out of sync with what was actually typed; the caret is
+    // restored by absolute character offset, which this never changes
+    // (only the DOM structure around the same characters changes), so
+    // typing position is unaffected.
+    function mxBlankifyUnderscores(field) {
+      const caret = mxCaretOffset(field);
+      field.querySelectorAll('.mx-live-blank').forEach((span) => {
+        span.replaceWith(document.createTextNode(span.textContent));
+      });
+      field.normalize();
+      const walker = document.createTreeWalker(field, NodeFilter.SHOW_TEXT, {
+        acceptNode: (node) => /__/.test(node.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP,
+      });
+      const targets = [];
+      let node;
+      while ((node = walker.nextNode())) targets.push(node);
+      targets.forEach((textNode) => {
+        const parts = textNode.nodeValue.split(/(_{2,})/);
+        if (parts.length === 1) return;
+        const frag = document.createDocumentFragment();
+        parts.forEach((part) => {
+          if (!part) return;
+          if (/^_{2,}$/.test(part)) {
+            const span = document.createElement('span');
+            span.className = 'mx-live-blank';
+            span.textContent = part;
+            frag.appendChild(span);
+          } else {
+            frag.appendChild(document.createTextNode(part));
+          }
+        });
+        textNode.parentNode.replaceChild(frag, textNode);
+      });
+      mxSetCaretOffset(field, caret);
     }
 
     // Inserts plain text (a symbol, a pasted string, or a manual line
@@ -25043,6 +25193,7 @@ Answer: C</pre>
       const sel = window.getSelection();
       sel.removeAllRanges();
       sel.addRange(after);
+      mxBlankifyUnderscores(field);
       mxSyncField(field);
     }
 
