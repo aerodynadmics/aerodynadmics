@@ -96,7 +96,7 @@
   html, body {
     margin: 0;
     padding: 0;
-    background: radial-gradient(ellipse at 50% 35%, rgb(8, 45, 82), rgb(2, 12, 24) 70%);
+    background: radial-gradient(ellipse at 50% 50%, rgb(8, 45, 82), rgb(2, 12, 24) 70%);
     background-attachment: fixed;
     font-family: 'Space Grotesk', sans-serif;
     color: var(--paper);
@@ -181,7 +181,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(ellipse at 50% 35%, rgb(8, 45, 82), rgb(2, 12, 24) 70%);
+    background: radial-gradient(ellipse at 50% 50%, rgb(8, 45, 82), rgb(2, 12, 24) 70%);
     background-attachment: fixed;
     padding: 24px;
   }
@@ -992,7 +992,7 @@
     display: none;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(ellipse at 50% 35%, rgb(8, 45, 82), rgb(2, 12, 24) 70%);
+    background: radial-gradient(ellipse at 50% 50%, rgb(8, 45, 82), rgb(2, 12, 24) 70%);
   }
   .taxi-out-overlay.visible { display: flex; }
   .taxi-out-inner {
@@ -1030,6 +1030,145 @@
     font-size: 13px;
     letter-spacing: 0.08em;
     color: var(--rivet);
+  }
+  /* ---- connection-loss ("stall") overlay: unclosable while offline,
+     shows a brief recovery animation once the connection returns ---- */
+  .stall-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at 50% 50%, rgb(58, 10, 10), rgb(2, 12, 24) 75%);
+  }
+  .stall-overlay.visible { display: flex; }
+  .stall-overlay.recovering,
+  .stall-overlay.recovered {
+    background: radial-gradient(ellipse at 50% 50%, rgb(8, 45, 82), rgb(2, 12, 24) 70%);
+  }
+  .stall-inner {
+    text-align: center;
+    max-width: 360px;
+    padding: 0 24px;
+  }
+  .stall-icon {
+    font-size: 40px;
+    display: inline-block;
+    animation: stallWobble 1.6s ease-in-out infinite;
+  }
+  .stall-overlay.recovered .stall-icon {
+    animation: none;
+    transform: none;
+  }
+  @keyframes stallWobble {
+    0%, 100% { transform: rotate(-14deg) translateY(0); }
+    50% { transform: rotate(10deg) translateY(6px); }
+  }
+  .stall-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    letter-spacing: 0.06em;
+    color: #ff8f8f;
+    margin: 18px 0 8px;
+  }
+  .stall-overlay.recovering .stall-title,
+  .stall-overlay.recovered .stall-title {
+    color: var(--rivet);
+  }
+  .stall-subtext {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12.5px;
+    color: var(--rivet);
+    line-height: 1.5;
+  }
+  .stall-timer {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    margin-top: 10px;
+    min-height: 14px;
+  }
+  .stall-overlay.deep-stall .stall-timer {
+    color: #ff3b3b;
+  }
+  .stall-bar {
+    width: 200px;
+    height: 3px;
+    margin: 18px auto 0;
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px;
+    overflow: hidden;
+    display: none;
+  }
+  .stall-overlay.recovering .stall-bar { display: block; }
+  .stall-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--rivet);
+    border-radius: 2px;
+  }
+  .stall-overlay.recovering .stall-bar-fill {
+    animation: stallRecoverFill 10s linear forwards;
+  }
+  @keyframes stallRecoverFill {
+    0% { width: 0%; }
+    100% { width: 100%; }
+  }
+  /* ---- deep-stall escalation (after 1 min continuously offline) ---- */
+  .stall-overlay.deep-stall {
+    background: radial-gradient(ellipse at 50% 50%, rgb(94, 9, 9), rgb(2, 6, 14) 72%);
+    animation: stallScreenFlash 0.9s ease-in-out infinite;
+  }
+  @keyframes stallScreenFlash {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.4); }
+  }
+  .stall-overlay.deep-stall .stall-icon {
+    animation: stallWobbleDeep 0.7s ease-in-out infinite;
+  }
+  @keyframes stallWobbleDeep {
+    0%, 100% { transform: rotate(-28deg) translateY(0); }
+    50% { transform: rotate(22deg) translateY(16px); }
+  }
+  .stall-overlay.deep-stall .stall-title {
+    color: #ff3b3b;
+  }
+  /* ---- crash (after a further 30s continuously offline) ---- */
+  .stall-overlay.crashed {
+    background: #050506;
+    animation: none;
+  }
+  .stall-overlay.crashed .stall-icon {
+    animation: none;
+    transform: none;
+    font-size: 46px;
+  }
+  .stall-overlay.crashed .stall-title {
+    color: #ff3b3b;
+  }
+  /* ---- post-crash "it was only a dream" sequence, played once the
+     connection returns after a full crash, before falling back to the
+     normal recovered/hidden state ---- */
+  .stall-overlay.post-crash {
+    background: radial-gradient(ellipse at 50% 50%, rgb(8, 45, 82), rgb(2, 12, 24) 70%);
+    animation: none;
+    transition: background 1.2s ease;
+  }
+  .stall-overlay.post-crash .stall-icon {
+    animation: stallWobble 3.2s ease-in-out infinite;
+    font-size: 40px;
+  }
+  .stall-overlay.post-crash.post-crash-still .stall-icon {
+    animation: none;
+    transform: none;
+  }
+  .stall-overlay.post-crash .stall-title {
+    color: var(--rivet);
+  }
+  .stall-overlay.post-crash .stall-subtext {
+    color: var(--paper);
   }
   /* ---- admin settings dropdown (unban / reset wings) ---- */
   .admin-settings-wrap {
@@ -2095,7 +2234,7 @@
       right: -8px;
       z-index: -2;
       pointer-events: none;
-      background: radial-gradient(ellipse at 50% 35%, rgb(8, 45, 82), rgb(2, 12, 24) 70%);
+      background: radial-gradient(ellipse at 50% 50%, rgb(8, 45, 82), rgb(2, 12, 24) 70%);
       background-attachment: fixed;
     }
     /* The header card itself, solid (no see-through) and drawn above the cover. */
@@ -7698,7 +7837,7 @@
   bottom: 0;
   z-index: -2;
   pointer-events: none;
-  background: radial-gradient(ellipse at 50% 35%, rgb(8, 45, 82), rgb(2, 12, 24) 70%);
+  background: radial-gradient(ellipse at 50% 50%, rgb(8, 45, 82), rgb(2, 12, 24) 70%);
   background-attachment: fixed;
 }
 @media (max-width: 900px) {
@@ -10119,6 +10258,16 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         <span class="taxi-out-plane" id="taxi-out-plane">🛬</span>
       </div>
       <div class="taxi-out-text" id="taxi-out-label">Departing<span class="taxi-out-dots"></span></div>
+    </div>
+  </div>
+
+  <div class="stall-overlay" id="stall-overlay">
+    <div class="stall-inner">
+      <span class="stall-icon" id="stall-icon">✈️</span>
+      <div class="stall-title" id="stall-title">AIRCRAFT IS STALLING</div>
+      <div class="stall-subtext" id="stall-subtext">The aircraft has lost its connection.<br>Please reconnect to the internet to regain control and recover from the stall.</div>
+      <div class="stall-timer" id="stall-timer"></div>
+      <div class="stall-bar"><div class="stall-bar-fill" id="stall-bar-fill"></div></div>
     </div>
   </div>
 
@@ -25000,7 +25149,7 @@ Answer: C</pre>
     }
 
     // Paints the page's own background onto the canvas:
-    //   radial-gradient(ellipse at 50% 35%, rgb(8,45,82), rgb(2,12,24) 70%)
+    //   radial-gradient(ellipse at 50% 50%, rgb(8,45,82), rgb(2,12,24) 70%)
     // with CSS's default farthest-corner size. It is computed pixel by pixel
     // (rather than with createRadialGradient) so the geometry is exactly the
     // CSS one, and a little noise is added before rounding to 8-bit colour
@@ -27947,6 +28096,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
       '.profile-card-overlay', '.shop-pay-overlay', '.store-popup-overlay',
       '.taxi-out-overlay', '.wings-store-overlay', '.wings-thankyou-overlay',
       '.confirm-dialog-overlay', '.gform-overlay', '.gform-score-overlay',
+      '.stall-overlay',
       '#mig-viewer-overlay', '#qimg-preview-overlay'
     ].join(', ');
     var root = document.documentElement;
@@ -27979,6 +28129,210 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
       subtree: true, attributes: true, attributeFilter: ['class', 'style']
     });
     scheduleCheck();
+  })();
+</script>
+<script>
+  /* ---- Connection-loss ("stall") overlay ----
+     Shows an unclosable full-screen warning when the internet drops,
+     and a brief 3s "recovering" animation when it comes back. Uses
+     navigator.onLine/offline events for instant reaction, backed by a
+     periodic real network probe (a no-cors fetch) since onLine only
+     reflects the local network adapter, not actual internet reachability. */
+  (function () {
+    const overlay = document.getElementById('stall-overlay');
+    if (!overlay) return;
+    const titleEl = document.getElementById('stall-title');
+    const subtextEl = document.getElementById('stall-subtext');
+    const iconEl = document.getElementById('stall-icon');
+    const timerEl = document.getElementById('stall-timer');
+
+    const CHECK_URL = 'https://www.gstatic.com/generate_204';
+    const CHECK_INTERVAL_MS = 4000;
+    const RECOVER_ANIM_MS = 10000;
+    const HIDE_DELAY_MS = 5000;
+    const DEEP_STALL_AFTER_MS = 60000;   // 1 minute of continuous stall
+    const CRASH_AFTER_MS = 30000;        // 30s further into deep stall
+
+    const PHASE_CLASSES = ['deep-stall', 'crashed', 'recovering', 'recovered', 'post-crash'];
+
+    // Once a full crash has actually happened, reconnecting doesn't just
+    // "recover" — it plays a short "it was only a dream" narrative instead
+    // of the normal stall-bar recovery, then falls back to hidden.
+    const CRASH_DREAM_SEQUENCE = [
+      { title: 'SEARCHING FOR SURVIVORS', subtext: 'Cannot determine if there are any survivors', icon: '\ud83d\udd0d', duration: 5000 },
+      { title: '', subtext: 'Wait', icon: '\u2753', duration: 3000 },
+      { title: '', subtext: 'The crash\u2026 never happened', icon: '\u2753', duration: 4000 },
+      { title: '', subtext: 'Your eyes slowly open. The aircraft is still flying. Everyone is safe.', icon: '\ud83d\udc41\ufe0f', duration: 5000, still: true },
+      { title: 'IT WAS ONLY A DREAM \ud83d\ude2d\ud83d\ude42\u200d\u2195\ufe0f :3', subtext: '', icon: '\ud83d\udca4', duration: 5000 },
+      { title: 'DO NOT FALL ASLEEP AGAIN WHILE FLYING AN AIRCRAFT \ud83d\ude3e!!!', subtext: '', icon: '\u2708\ufe0f', duration: 5000, still: true },
+      { title: '', subtext: 'Lucky you have your Co-Pilot \ud83e\udef6\ud83c\udf38 :3', icon: '\ud83e\uddd1\u200d\u2708\ufe0f', duration: 5000, still: true }
+    ];
+
+    let isOffline = false;
+    let phase = 'none'; // 'stall' | 'deep-stall' | 'crashed' | 'recovering' | 'recovered' | 'post-crash' | 'none'
+    let wasCrashed = false;
+    let deepStallTimer = null;
+    let crashTimer = null;
+    let recoveryTimer = null;
+    let hideTimer = null;
+    let deepStallAt = 0;
+    let crashAt = 0;
+    let tickTimer = null;
+
+    function setPhase(p) {
+      phase = p;
+      overlay.classList.remove(...PHASE_CLASSES);
+      overlay.classList.add('visible');
+      if (p && p !== 'stall') overlay.classList.add(p);
+    }
+
+    function tickCountdown() {
+      if (phase === 'stall') {
+        const remaining = Math.max(0, Math.ceil((deepStallAt - Date.now()) / 1000));
+        timerEl.textContent = 'Deep stall in ' + remaining + 's';
+      } else if (phase === 'deep-stall') {
+        const remaining = Math.max(0, Math.ceil((crashAt - Date.now()) / 1000));
+        timerEl.textContent = 'Crash in ' + remaining + 's';
+      } else {
+        timerEl.textContent = '';
+      }
+    }
+
+    function startTicking() {
+      clearInterval(tickTimer);
+      tickCountdown();
+      tickTimer = setInterval(tickCountdown, 250);
+    }
+
+    function stopTicking() {
+      clearInterval(tickTimer);
+      tickTimer = null;
+      timerEl.textContent = '';
+    }
+
+    function showStalled() {
+      setPhase('stall');
+      titleEl.textContent = 'AIRCRAFT IS STALLING';
+      subtextEl.innerHTML = 'The aircraft has lost its connection.<br>Please reconnect to the internet to regain control and recover from the stall.';
+      iconEl.textContent = '\u2708\ufe0f';
+      deepStallAt = Date.now() + DEEP_STALL_AFTER_MS;
+      startTicking();
+    }
+
+    function showDeepStall() {
+      setPhase('deep-stall');
+      titleEl.textContent = 'DEEP STALL LOSING ALTITUDE';
+      subtextEl.innerHTML = 'The stall has not recovered.<br>Reconnect immediately to avoid losing the aircraft.';
+      iconEl.textContent = '\u2708\ufe0f';
+      crashAt = Date.now() + CRASH_AFTER_MS;
+      startTicking();
+    }
+
+    function showCrashed() {
+      setPhase('crashed');
+      wasCrashed = true;
+      titleEl.textContent = 'AIRCRAFT HAS CRASHED';
+      subtextEl.innerHTML = 'Flight crashed after a prolonged loss of connection.<br>Reconnect to the internet to search for survivors.';
+      iconEl.textContent = '\ud83d\udca5';
+      stopTicking();
+    }
+
+    function runCrashDreamSequence(stepIndex) {
+      stepIndex = stepIndex || 0;
+      // If the connection drops again mid-sequence, drop straight back into
+      // the normal stall flow instead of continuing the narrative.
+      if (isOffline) {
+        showStalled();
+        deepStallTimer = setTimeout(enterDeepStall, DEEP_STALL_AFTER_MS);
+        return;
+      }
+      if (stepIndex >= CRASH_DREAM_SEQUENCE.length) {
+        hideOverlay();
+        return;
+      }
+      const step = CRASH_DREAM_SEQUENCE[stepIndex];
+      setPhase('post-crash');
+      overlay.classList.toggle('post-crash-still', !!step.still);
+      titleEl.textContent = step.title;
+      subtextEl.textContent = step.subtext;
+      iconEl.textContent = step.icon;
+      recoveryTimer = setTimeout(() => runCrashDreamSequence(stepIndex + 1), step.duration);
+    }
+
+    function showRecovering() {
+      setPhase('recovering');
+      titleEl.textContent = 'RECOVERING FROM STALL';
+      subtextEl.textContent = 'Regaining lift and airspeed\u2026';
+      iconEl.textContent = '\u2708\ufe0f';
+      stopTicking();
+    }
+
+    function showRecovered() {
+      setPhase('recovered');
+      titleEl.textContent = 'STALL RECOVERED';
+      subtextEl.textContent = 'Now in normal, steady level flight';
+      iconEl.textContent = '\u2708\ufe0f';
+    }
+
+    function hideOverlay() {
+      phase = 'none';
+      overlay.classList.remove('visible', 'post-crash-still', ...PHASE_CLASSES);
+      stopTicking();
+    }
+
+    function enterDeepStall() {
+      if (!isOffline) return;
+      showDeepStall();
+      crashTimer = setTimeout(enterCrashed, CRASH_AFTER_MS);
+    }
+
+    function enterCrashed() {
+      if (!isOffline) return;
+      showCrashed();
+    }
+
+    function markOffline() {
+      if (isOffline) return;
+      isOffline = true;
+      clearTimeout(recoveryTimer);
+      clearTimeout(hideTimer);
+      showStalled();
+      deepStallTimer = setTimeout(enterDeepStall, DEEP_STALL_AFTER_MS);
+    }
+
+    function markOnline() {
+      if (!isOffline) return;
+      isOffline = false;
+      clearTimeout(deepStallTimer);
+      clearTimeout(crashTimer);
+      if (wasCrashed) {
+        wasCrashed = false;
+        runCrashDreamSequence();
+        return;
+      }
+      showRecovering();
+      recoveryTimer = setTimeout(() => {
+        showRecovered();
+        hideTimer = setTimeout(hideOverlay, HIDE_DELAY_MS);
+      }, RECOVER_ANIM_MS);
+    }
+
+    function pingCheck() {
+      fetch(CHECK_URL, { mode: 'no-cors', cache: 'no-store' })
+        .then(() => { if (navigator.onLine) markOnline(); })
+        .catch(() => { markOffline(); });
+    }
+
+    window.addEventListener('offline', markOffline);
+    window.addEventListener('online', pingCheck);
+
+    setInterval(pingCheck, CHECK_INTERVAL_MS);
+
+    if (!navigator.onLine) {
+      markOffline();
+    } else {
+      pingCheck();
+    }
   })();
 </script>
 </body>
