@@ -4080,6 +4080,24 @@
     cursor: default;
     opacity: 0.5;
   }
+  /* Once the whole 3-day set is finished, a finished subject's card stops
+     being just "locked" and becomes reviewable: the reviewee can open it
+     again to see their answers and the score breakdown. Re-enables
+     pointer-events on the card itself (so its main click-through to
+     openInAppMockExam works again) and drops the dimmed "locked" look
+     entirely, since a reviewable card isn't inert — it's meant to be
+     clicked. The timer badge / RESET / FINISH NOW still don't apply to an
+     already-graded exam, so they're hidden rather than just disabled. */
+  .exam-card.board-past.board-reviewable {
+    pointer-events: auto;
+    cursor: pointer;
+    opacity: 1;
+  }
+  .exam-card.board-past.board-reviewable .exam-timer,
+  .exam-card.board-past.board-reviewable .exam-timer-reset,
+  .exam-card.board-past.board-reviewable .exam-instant-finish {
+    display: none;
+  }
 
   /* Countdown to when the current 3-day board set expires (mirrors
      BOARD_SET_TTL_MS in the JS below). Only shown once a set has
@@ -21866,7 +21884,7 @@ Answer: C</pre>
       if (String(examId).indexOf('boardmix:') === 0) {
         const subjectKey = examId.slice('boardmix:'.length);
         const mix = BOARD_MIX_CACHE[subjectKey];
-        if (mix) return { title: mix.title, description: '', questions: mix.questions || [] };
+        if (mix) return { title: mix.title, titleMain: mix.titleMain, description: '', questions: mix.questions || [] };
       }
       return null;
     }
@@ -24172,8 +24190,9 @@ Answer: C</pre>
 
       // If this exam was already fully submitted last time, re-grade
       // immediately so the score and answer key are restored too, not
-      // just the raw selections.
-      if (saved.submitted) submitInAppMockExam(examId, true, false);
+      // just the raw selections. isRestore=true so a Mock Board exam
+      // re-grades and stays open for review instead of closing itself.
+      if (saved.submitted) submitInAppMockExam(examId, true, false, false, true);
     }
 
     function updatePinsCount() {
@@ -24227,8 +24246,33 @@ Answer: C</pre>
     }
 
     function openInAppMockExam(examId, examCard) {
-      // Mock Board exams on a finished day can't be opened any more.
-      if (examCard && examCard.classList && examCard.classList.contains('board-past')) return;
+      // Mock Board exams on a finished day can't be opened any more — unless
+      // the whole 3-day set is done, in which case "board-reviewable" is
+      // also set and this exam opens read-only to show the saved answers
+      // and score (restoreExamProgress below re-grades it automatically
+      // since it was already submitted).
+      if (examCard && examCard.classList && examCard.classList.contains('board-past') && !examCard.classList.contains('board-reviewable')) return;
+
+      // gformIsBoard has to be set for THIS exam before anything below reads
+      // it — getOrderedExamQuestions (right after this) decides whether to
+      // reuse a saved question order via loadExamProgress(examId), which
+      // defaults to reading from the Mock Board's storage scope or the
+      // regular one based on gformIsBoard. Setting it only later (as this
+      // used to) meant a board exam's order got looked up under the wrong
+      // (non-board) key here, so re-opening an already-submitted board exam
+      // silently drew a brand new shuffle instead of reusing the one it was
+      // actually answered and scored under — which then made restoring the
+      // saved answers below fail (they're saved by on-screen position, and
+      // the positions no longer matched) and made a finished exam look
+      // blank/reset instead of showing what was actually answered.
+      const activeView = document.querySelector('.view.visible');
+      if (examCard && examCard.closest) gformIsBoard = !!examCard.closest('#view-board');
+      else if (activeView) gformIsBoard = (activeView.id === 'view-board');
+      if (gformIsBoard) gformReturnViewId = 'view-board';
+      else if (activeView) gformReturnViewId = activeView.id;
+      else if (!gformReturnViewId || gformReturnViewId === 'view-board') gformReturnViewId = 'view-mock-exam';
+      gformReturnScrollY = window.scrollY;
+
       const ordered = getOrderedExamQuestions(examId);
       if (!ordered) return;
       const exam = ordered.exam;
@@ -24272,7 +24316,7 @@ Answer: C</pre>
         <div class="gform-modal">
           <header class="has-back gform-sticky-head" id="gform-header">
             <div class="site-title-row">
-              <h1>${escapeHtml(exam.title)}</h1>
+              <h1>${escapeHtml(exam.titleMain || exam.title)}</h1>
               <span id="gform-popup-timer" class="gform-timer gform-timer-centered" style="display:none;"></span>
               <div class="gform-head-actions">
                 <button type="button" class="gform-pin-btn" id="gform-pins-btn" onclick="jumpToNextPinned()">&#128204; Pins <span id="gform-pins-count">(0)</span></button>
@@ -24298,22 +24342,23 @@ Answer: C</pre>
       // (Mock Exam subject list, Quiz list, a subject page, etc.) and drop
       // this exam into the page in its place, the same way the app's other
       // views swap in and out — then remember it so closing the exam can
-      // bring that view back.
-      const activeView = document.querySelector('.view.visible');
-      if (examCard && examCard.closest) gformIsBoard = !!examCard.closest('#view-board');
-      else if (activeView) gformIsBoard = (activeView.id === 'view-board');
-      if (gformIsBoard) gformReturnViewId = 'view-board';
-      else if (activeView) gformReturnViewId = activeView.id;
-      else if (!gformReturnViewId || gformReturnViewId === 'view-board') gformReturnViewId = 'view-mock-exam';
-      gformReturnScrollY = window.scrollY;
+      // bring that view back. (gformIsBoard/gformReturnViewId/
+      // gformReturnScrollY are already set, right at the top of this
+      // function — see the comment there.)
       document.querySelectorAll('.view').forEach(v => v.classList.remove('visible'));
       document.querySelector('.wrap').appendChild(overlay);
       window.scrollTo(0, 0);
-      // Lock in this attempt's question order right away (even before any
-      // answer is picked) so a reload or re-open before answering anything
-      // resumes the same shuffle instead of drawing a new one.
-      saveExamProgress(examId);
+      // Restore whatever was already saved for this exam FIRST — answers,
+      // pins, and submitted/graded state — then save. Saving first would
+      // capture the overlay exactly as it was just built (blank, nothing
+      // checked, not submitted) and overwrite any real saved progress with
+      // that before restore ever got a chance to read it, so a re-open
+      // always came back empty. Restoring first fills the DOM from
+      // whatever's saved (a no-op for a brand-new exam), and the save
+      // right after just locks in the order/choiceOrder for that case —
+      // now without stomping on real answers the rest of the time.
       restoreExamProgress(examId);
+      saveExamProgress(examId);
 
       // Same 4-hour countdown as the other mock exams, shown right in this
       // popup's own header and kept in sync with the timer badge on the
@@ -24328,6 +24373,14 @@ Answer: C</pre>
           localStorage.setItem(key, String(Date.now()));
         }
         startGformPopupTimer(key, getExamDuration(examCard));
+        const timerEl = examCard.querySelector('.exam-timer');
+        if (timerEl) updateExamTimer(examCard, timerEl);
+      } else if (examCard && alreadyFinished) {
+        // Defensive cleanup: a finished exam should never carry a live
+        // countdown key (e.g. one left over from before this fix). Clear
+        // it so the card's badge doesn't keep showing a stray timer.
+        const key = userScopedKey(TIMER_STORAGE_PREFIX + examKey(examCard));
+        localStorage.removeItem(key);
         const timerEl = examCard.querySelector('.exam-timer');
         if (timerEl) updateExamTimer(examCard, timerEl);
       }
@@ -24455,7 +24508,12 @@ Answer: C</pre>
     // forced = grade right now even if some questions are unanswered (used
     // when the countdown hits zero, and when re-showing an already-graded
     // exam). timedOut = additionally tells the reviewee the time ran out.
-    function submitInAppMockExam(examId, forced, timedOut, confirmed) {
+    // isRestore = this call is only re-displaying a previously-submitted
+    // exam (from restoreExamProgress), not a brand-new submission — so for
+    // a Mock Board exam, skip recording the score again and don't auto-
+    // close: the reviewee opened this on purpose to see their results, and
+    // should stay on them instead of being bounced straight back out.
+    function submitInAppMockExam(examId, forced, timedOut, confirmed, isRestore) {
       const ordered = getOrderedExamQuestions(examId);
       if (!ordered) return;
       const exam = ordered.exam;
@@ -24554,10 +24612,15 @@ Answer: C</pre>
 
       // Mock Board Exam: no score popup. The score is recorded for the
       // board (where it stays hidden until the whole set is finished) and
-      // the exam just closes, back to the board page.
+      // the exam just closes, back to the board page. None of that applies
+      // when this is just re-displaying an already-submitted exam (opened
+      // from VIEW RESULT after the set is done) — the score is already on
+      // record, and the whole point is to stay open so it can be read.
       if (gformIsBoard) {
-        recordBoardScore(examId, score, exam.questions.length);
-        closeInAppMockExam();
+        if (!isRestore) {
+          recordBoardScore(examId, score, exam.questions.length);
+          closeInAppMockExam();
+        }
         return;
       }
       showScoreModal(examId, score, exam.questions.length, !!timedOut);
@@ -24841,6 +24904,16 @@ Answer: C</pre>
       return later.length > 0 && isDayUnlocked(Math.min(...later));
     }
 
+    // A finished subject becomes reviewable (openable again, read-only, to
+    // see the answer key and score) once the WHOLE 3-day set is done —
+    // never mid-set, so a reviewee can't peek back at an earlier day's
+    // exam while later subjects are still in progress. Every subject is
+    // "board-past" by the time boardSetCompleted is true, so this is just
+    // that flag plus a defensive check that a score actually exists.
+    function isBoardSubjectReviewable(s) {
+      return boardSetCompleted && !!boardScores[s.key];
+    }
+
     // Builds the exam-slot markup for one subject: a lock note while its
     // day hasn't started yet, otherwise the normal exam card (or the
     // "nothing indexed" note if no exam has been picked for it).
@@ -24856,6 +24929,13 @@ Answer: C</pre>
       }
       const durationSec = s.hours * 3600;
       const past = isBoardSubjectLocked(s);
+      const reviewable = isBoardSubjectReviewable(s);
+      // Reviewable cards keep the "board-past" class (so RESET / FINISH NOW
+      // stay dead, and the day/score-completion logic that reads that class
+      // elsewhere is untouched) but add "board-reviewable" on top, which the
+      // CSS above uses to turn pointer-events back on for the card itself.
+      const cardClass = past ? (reviewable ? ' board-past board-reviewable' : ' board-past') : '';
+      const goLabel = reviewable ? 'VIEW RESULT' : 'TAKE EXAM';
       // A mixed board paper carries its subject name and "(Mixed Random
       // Questions)" suffix as separate fields (see buildBoardSubjectPick)
       // so the suffix can be styled dimmer than the subject name here.
@@ -24863,12 +24943,12 @@ Answer: C</pre>
         ? `${escapeHtml(pick[1].titleMain)} <span class="board-mix-suffix">(${escapeHtml(pick[1].titleSuffix)})</span>`
         : escapeHtml(pick[1].title || 'Untitled Set');
       return `<ul class="exam-list">
-          <li><a class="exam-card${past ? ' board-past' : ''}" ${past ? 'tabindex="-1" aria-disabled="true"' : ''} href="javascript:void(0)" data-duration-sec="${durationSec}"
+          <li><a class="exam-card${cardClass}" ${(past && !reviewable) ? 'tabindex="-1" aria-disabled="true"' : ''} href="javascript:void(0)" data-duration-sec="${durationSec}"
               onclick="openInAppMockExam('${pick[0]}', this); return false;">
             <div class="exam-row">
               <span class="exam-idx">${s.pct}%</span>
               <span class="exam-name">${nameHtml}</span>
-              <span class="exam-go">TAKE EXAM <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg></span>
+              <span class="exam-go">${goLabel} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg></span>
             </div>
           </a></li>
         </ul>`;
@@ -24885,9 +24965,18 @@ Answer: C</pre>
       const card = area && area.querySelector('.exam-card');
       if (!card) return;
       const past = isBoardSubjectLocked(s);
+      const reviewable = isBoardSubjectReviewable(s);
       card.classList.toggle('board-past', past);
-      if (past) { card.setAttribute('tabindex', '-1'); card.setAttribute('aria-disabled', 'true'); }
+      card.classList.toggle('board-reviewable', reviewable);
+      if (past && !reviewable) { card.setAttribute('tabindex', '-1'); card.setAttribute('aria-disabled', 'true'); }
       else { card.removeAttribute('tabindex'); card.removeAttribute('aria-disabled'); }
+      // Swap TAKE EXAM <-> VIEW RESULT in place, keeping the arrow icon.
+      const goEl = card.querySelector('.exam-go');
+      if (goEl) {
+        const svg = goEl.querySelector('svg');
+        goEl.textContent = reviewable ? 'VIEW RESULT ' : 'TAKE EXAM ';
+        if (svg) goEl.appendChild(svg);
+      }
     }
 
     function refreshAllBoardPastCards() {
@@ -25848,7 +25937,7 @@ Answer: C</pre>
         stopBoardCountdown();
         freezeBoardCountdownAsCompleted();
         saveBoardState();
-        refreshAllBoardPastCards(); // everything is done: no exam is clickable any more
+        refreshAllBoardPastCards(); // everything is done: cards flip to reviewable (VIEW RESULT)
         updateBoardScoreDisplays(); // ...and the scores are revealed
       }
 
@@ -28095,7 +28184,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
       '.hours-info-overlay', '.image-lightbox-overlay', '.nick-modal-overlay',
       '.profile-card-overlay', '.shop-pay-overlay', '.store-popup-overlay',
       '.taxi-out-overlay', '.wings-store-overlay', '.wings-thankyou-overlay',
-      '.confirm-dialog-overlay', '.gform-overlay', '.gform-score-overlay',
+      '.confirm-dialog-overlay', '.gform-score-overlay',
       '.stall-overlay',
       '#mig-viewer-overlay', '#qimg-preview-overlay'
     ].join(', ');
