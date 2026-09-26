@@ -126,6 +126,11 @@
      visible change: <html> still clips horizontal overflow exactly as
      before. */
   body { overflow-x: visible; overflow-y: visible; }
+  /* Applied to <html> (the real page scroller, per the comment above)
+     whenever any popup/overlay is open, so the mouse wheel can't scroll the
+     page underneath while a popup's own content is being scrolled — see the
+     scroll-lock JS near the bottom of the document. */
+  html.scroll-locked { overflow-y: hidden; }
   html::-webkit-scrollbar, body::-webkit-scrollbar {
     display: none;
   }
@@ -160,7 +165,7 @@
     touch-action: none;
   }
   #app-scrollbar-thumb.dragging { background: var(--rivet); }
-  @media (hover: hover) { #app-scrollbar-thumb:hover { background: var(--rivet); } }
+  @media (hover: hover) { #app-scrollbar-thumb:hover { background: var(--rivet); cursor: grab; } }
   #app-scrollbar-thumb.dragging { cursor: grabbing; }
 
   /* ---- sign-in gate ---- */
@@ -3367,6 +3372,20 @@
   .home-tab-btn.tab-music .home-tab-btn-title { color: #ff8fc0; }
 
   /* ============ QUIZ (Quizizz-style, per exam) ============ */
+  /* Hide the page scrollbar only while actively answering a quiz
+     (i.e. while #quiz-play-area is visible), without disabling
+     scrolling itself. */
+  html:has(#quiz-play-area:not([style*="none"])),
+  html:has(#quiz-play-area:not([style*="none"])) body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  html:has(#quiz-play-area:not([style*="none"]))::-webkit-scrollbar,
+  html:has(#quiz-play-area:not([style*="none"])) body::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
   .quiz-play-head {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
@@ -3653,6 +3672,11 @@
     display: flex;
     align-items: center;
     gap: 14px;
+    /* Fixed floor so the row (and the card around it) stays the same
+       height whether or not the timer/score badge + RESET button are
+       present — otherwise the card visibly grows/shrinks (and the whole
+       list jumps) the moment a score appears or RESET clears it. */
+    min-height: 26px;
   }
   /* On narrow screens, exam-idx + exam-name + exam-timer + exam-timer-reset
      + exam-go can't all fit on one line without overflowing the card and
@@ -3677,6 +3701,16 @@
     font-weight: 500;
     color: #fff;
     flex: 1;
+  }
+  /* Mock Board Exam's "(Mixed Random Questions)" suffix, on the mixed-
+     paper card — dimmed/lighter so the subject name itself reads as the
+     prominent part of the row. */
+  .exam-name .board-mix-suffix {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--rivet);
+    opacity: 1;
   }
   .exam-go {
     font-family: 'IBM Plex Mono', monospace;
@@ -3882,7 +3916,7 @@
   }
   @media (hover: hover) { .board-reset-btn:hover { background: rgba(255, 107, 107, 0.12); } }
   .board-reset-btn svg { width: 14px; height: 14px; }
-  /* GENERATE RANDOM SET: same outlined look as RESET, but green. */
+  /* GENERATE RANDOM QUESTIONS: same outlined look as RESET, but green. */
   .board-generate-btn {
     display: inline-flex;
     align-items: center;
@@ -4524,6 +4558,37 @@
   @media (hover: hover) { .mockadmin-card::-webkit-scrollbar-thumb:hover {
     background-color: var(--rivet);
   } }
+  /* The mock exam editor's own scrollbar (#mockadmin-overlay .mockadmin-card
+     specifically — the big editor panel, not the smaller confirm/move
+     modals that reuse .mockadmin-card) is swapped for real elements below
+     instead of the native themed one right above, so it can carry a
+     pointer cursor — a real scrollbar's cursor can't be styled by CSS.
+     Same 10px lane / 6px visible bar / same colors, just redrawn. */
+  #mockadmin-overlay .mockadmin-card {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  #mockadmin-overlay .mockadmin-card::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  #mockadmin-scrollbar-track {
+    position: fixed;
+    width: 10px;
+    z-index: 1499;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+    background: transparent;
+  }
+  #mockadmin-scrollbar-track.visible { opacity: 1; pointer-events: auto; }
+  #mockadmin-scrollbar-thumb {
+    position: absolute;
+    left: 2px;
+    width: 6px;
+    border-radius: 6px;
+    background: var(--line);
+    cursor: grab;
+  }
+  #mockadmin-scrollbar-thumb.dragging { background: var(--rivet); cursor: grabbing; }
+  @media (hover: hover) { #mockadmin-scrollbar-thumb:hover { background: var(--rivet); cursor: grab; } }
   /* The ~10px scrollbar above renders in addition to the box's padding
      (not eaten out of it), so the right side ends up ~10px wider than the
      left's plain 26px. Trimming just the right padding here — scoped to
@@ -5244,13 +5309,9 @@
     padding: 7px 12px;
     cursor: pointer;
   }
-  .chat-mention-option.active {
-    background: rgba(255,177,0,0.12);
-    color: var(--accent);
-  }
   @media (hover: hover) { .chat-mention-option:hover {
-    background: rgba(255,177,0,0.12);
-    color: var(--accent);
+    background: var(--accent);
+    color: var(--blueprint-dark);
   } }
   .chat-input-row {
     display: flex;
@@ -5259,18 +5320,42 @@
     border-top: 1px solid var(--line);
     flex-shrink: 0;
   }
-  .chat-input-row input {
+  .chat-input-wrap {
+    position: relative;
     flex: 1;
     min-width: 0;
+  }
+  .chat-input-row input {
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
     background: transparent;
     border: 1px solid var(--line);
     border-radius: 3px;
-    color: var(--paper);
+    color: transparent;
+    caret-color: var(--paper);
     font-family: 'Space Grotesk', sans-serif;
     font-size: 14px;
     padding: 10px 12px;
   }
   .chat-input-row input:focus { outline: none; }
+  .chat-input-row input::placeholder { color: var(--rivet); }
+  .chat-input-highlight {
+    position: absolute;
+    inset: 0;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    color: var(--paper);
+    white-space: pre;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .chat-input-highlight .chat-input-mention {
+    color: var(--accent);
+  }
   .chat-input-row button {
     background: var(--accent);
     border: none;
@@ -5285,18 +5370,41 @@
   .chat-input-row button:disabled { opacity: 0.5; cursor: default; }
   @media (hover: hover) { .chat-input-row button:not(:disabled):hover { filter: brightness(1.08); } }
 
-  .chat-emoji-btn {
+  .chat-send-btn,
+  .chat-input-row .chat-send-btn {
     flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    padding: 0;
     background: transparent;
-    border: 1px solid var(--line);
-    border-radius: 3px;
+    border-radius: 0;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .chat-send-btn svg { display: block; }
+  .chat-send-btn { transform: translate(5.5px, 2px); }
+
+  .chat-emoji-btn,
+  .chat-input-row .chat-emoji-btn {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background: var(--accent);
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 16px;
+    transform: translate(-3.8px, 1px);
     line-height: 1;
-    padding: 8px 9px;
     cursor: pointer;
   }
   @media (hover: hover) { .chat-emoji-btn:hover { filter: brightness(1.15); } }
-  .chat-emoji-btn.active { border-color: var(--accent); background: rgba(255,177,0,0.1); }
+  .chat-emoji-btn.active { box-shadow: 0 0 0 3px rgba(255,177,0,0.35); }
 
   .chat-emoji-picker {
     display: none;
@@ -5325,21 +5433,51 @@
     border-bottom: 2px solid transparent;
   }
   @media (hover: hover) { .chat-emoji-tab:hover { opacity: 0.85; } }
-  .chat-emoji-tab.active { opacity: 1; border-bottom-color: var(--accent); }
+  .chat-emoji-tab[data-active] { opacity: 1; border-bottom-color: var(--accent); }
   .chat-emoji-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
-    gap: 2px;
     padding: 8px;
-    max-height: 220px;
+    /* Exactly 4 rows of .chat-emoji-item (34px each) + the 3 gaps between
+       them + the grid's own top/bottom padding: (34*4) + (2*3) + (8*2) =
+       160px. Because .chat-emoji-item below has a fixed height/line-height
+       instead of relying on font metrics, this is exact — not a guess — so
+       switching category tabs never resizes the picker: fewer rows just
+       leave empty space, more rows scroll. */
+    height: 160px;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    /* This scroller sits inside a very large page (thousands of nodes,
+       several live-updating widgets elsewhere). Without containment the
+       browser has to consider the rest of the page's layout/paint on every
+       scroll frame here; `contain` tells it this subtree's internals never
+       affect anything outside it, so scrolling/tab-switching inside the
+       picker can't be slowed down by unrelated work elsewhere on the page. */
+    contain: content;
+    /* Promotes the scroller to its own compositor layer. The page runs a
+       lot of continuous CSS animation elsewhere (nickname text effects on
+       chat messages/online members) that keeps the main thread busy; a
+       plain in-flow scroller has to wait its turn behind that work, while a
+       layer like this can be scrolled by the compositor thread directly,
+       so it stays smooth regardless of what else is animating on the page.
+       Only costs anything while the picker is actually open — the parent
+       is display:none the rest of the time, which removes this from the
+       render tree entirely. */
+    transform: translateZ(0);
+    will-change: transform;
   }
+  .chat-emoji-panel {
+    display: none;
+    grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+    align-content: start;
+    gap: 2px;
+  }
+  .chat-emoji-panel[data-active] { display: grid; }
   .chat-emoji-item {
     background: none;
     border: none;
+    height: 34px;
+    line-height: 34px;
     font-size: 19px;
-    line-height: 1;
-    padding: 5px 0;
+    padding: 0;
     border-radius: 4px;
     cursor: pointer;
     text-align: center;
@@ -5811,6 +5949,34 @@
   /* Subject pages: the Back to Subjects button now lives in this row,
      on the right of the title, instead of stacked above it. */
   .site-title-row .back-btn { margin-bottom: 0; flex-shrink: 0; }
+  /* Small icon button (gear) sharing the title row with an h1 — used for the
+     Mock Exam view's per-user randomization settings, right-aligned via
+     .site-title-row's own space-between. Bare icon, no border/box. */
+  .mock-exam-settings-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    color: var(--rivet);
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.15s ease;
+  }
+  .mock-exam-settings-btn svg { width: 20px; height: 20px; }
+  @media (hover: hover) { .mock-exam-settings-btn:hover { color: var(--accent); } }
+  /* Mock Exam's title row is only as tall as it is because the 34px gear
+     button sits in it — Quiz's title row has no such button, so its row
+     (and the divider/content below it) would otherwise be a few px
+     shorter/higher than Mock Exam's. Pinning both rows to the gear
+     button's own height keeps the header identical between the two
+     views, so switching back and forth shows zero shift — only the gear
+     icon itself appears/disappears. */
+  #view-mock-exam .site-title-row,
+  #quiz-header .site-title-row { min-height: 34px; }
   /* The app hides the subtitle (display:none) once a subject has exams.
      The 12px title->subtitle gap therefore belongs on the subtitle, not on
      the row, otherwise it stays behind as empty space above the divider. */
@@ -5914,11 +6080,16 @@
     margin: 0 4px;
   }
   .shop-page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     background: none;
     border: 1px solid transparent;
     color: var(--rivet);
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
+    line-height: 1;
+    padding: 0;
     width: 22px;
     height: 22px;
     border-radius: 50%;
@@ -5928,7 +6099,7 @@
   .shop-page-btn.active {
     background: var(--accent);
     color: var(--blueprint-dark);
-    font-weight: 600;
+    font-weight: 400;
   }
   @media (hover: hover) { .shop-page-btn.active:hover { filter: brightness(1.08); } }
   .shop-page-ellipsis {
@@ -9825,7 +9996,7 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
   <div class="nick-modal-overlay" id="quiz-settings-overlay">
     <div class="nick-modal">
       <div class="nick-modal-head">
-        <h3>Quiz Settings</h3>
+        <h3>Quiz Timer Settings</h3>
         <button class="nick-modal-close" onclick="closeQuizSettings()" aria-label="Close">&times;</button>
       </div>
       <div class="nick-modal-body">
@@ -9932,8 +10103,13 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
     </div>
     <div class="chat-input-row">
       <button class="chat-emoji-btn" id="chat-emoji-btn" type="button" onclick="toggleEmojiPicker()">&#9992;&#65039;</button>
-      <input type="text" id="chat-input" placeholder="Type a message&hellip;" maxlength="300" autocomplete="off">
-      <button id="chat-send-btn" onclick="sendChatMessage()">SEND</button>
+      <div class="chat-input-wrap">
+        <div class="chat-input-highlight" id="chat-input-highlight" aria-hidden="true"></div>
+        <input type="text" id="chat-input" placeholder="Type a message&hellip;" maxlength="300" autocomplete="off">
+      </div>
+      <button id="chat-send-btn" class="chat-send-btn" onclick="sendChatMessage()" aria-label="Send" title="Send">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
     </div>
   </div>
 
@@ -10088,23 +10264,108 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
     <!-- ============ MOCK BOARD EXAM VIEW ============ -->
     <!-- ============ MOCK EXAM VIEW ============ -->
     <section id="view-mock-exam" class="view">
-      <header>
-        <h1>Mock Exam</h1>
+      <header class="has-back">
+        <div class="site-title-row">
+          <h1>Mock Exam</h1>
+          <button type="button" class="mock-exam-settings-btn" onclick="openMockExamSettingsModal()" aria-label="Mock Exam Settings" title="Mock Exam Settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          </button>
+        </div>
       </header>
 
       <p class="group-label">SUBJECTS</p>
       <ul class="subject-list" id="subject-list"></ul>
     </section>
 
+    <!-- ---- Mock Exam Settings: lets a reviewee turn randomized question
+         order and randomized answer-choice order on/off for every mock exam
+         they take. OFF shows the exam exactly as the admin authored it
+         (original question order / original choice order). Only affects
+         attempts started from here on — one already in progress keeps
+         whatever order it started with. Independent from Quiz's own
+         randomization settings below — the two are separate toggles. ---- -->
+    <div class="banned-list-overlay" id="mock-exam-settings-overlay">
+      <div class="mockadmin-card" style="max-width:420px;" onclick="event.stopPropagation();">
+        <h3>Mock Exam Settings</h3>
+
+        <label class="mockadmin-publish-toggle" style="font-size:12.5px;">
+          <input type="checkbox" id="mock-exam-setting-randomize-questions">
+          RANDOMIZE QUESTION ORDER
+        </label>
+        <p style="margin:6px 0 0; font-size:11px; color:var(--rivet); line-height:1.5;">When off, questions appear in the same order the admin arranged them in.</p>
+
+        <label class="mockadmin-publish-toggle" style="margin-top:18px; font-size:12.5px;">
+          <input type="checkbox" id="mock-exam-setting-randomize-choices">
+          RANDOMIZE ANSWER CHOICES
+        </label>
+        <p style="margin:6px 0 0; font-size:11px; color:var(--rivet); line-height:1.5;">When off, each question's choices appear in the same order the admin entered them in.</p>
+
+        <div class="mockadmin-editor-actions" style="margin-top:20px;">
+          <button type="button" class="mockadmin-publish-btn" onclick="applyMockExamSettings()">SAVE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- Quiz Randomization Settings: same idea as Mock Exam Settings
+         above, but a separate toggle/storage key so turning randomization
+         off for Quiz does NOT affect Mock Exam, and vice versa. ---- -->
+    <div class="banned-list-overlay" id="quiz-randomize-settings-overlay">
+      <div class="mockadmin-card" style="max-width:420px;" onclick="event.stopPropagation();">
+        <h3>Quiz Settings</h3>
+
+        <label class="mockadmin-publish-toggle" style="font-size:12.5px;">
+          <input type="checkbox" id="quiz-setting-randomize-questions">
+          RANDOMIZE QUESTION ORDER
+        </label>
+        <p style="margin:6px 0 0; font-size:11px; color:var(--rivet); line-height:1.5;">When off, questions appear in the same order the admin arranged them in.</p>
+
+        <label class="mockadmin-publish-toggle" style="margin-top:18px; font-size:12.5px;">
+          <input type="checkbox" id="quiz-setting-randomize-choices">
+          RANDOMIZE ANSWER CHOICES
+        </label>
+        <p style="margin:6px 0 0; font-size:11px; color:var(--rivet); line-height:1.5;">When off, each question's choices appear in the same order the admin entered them in.</p>
+
+        <div class="mockadmin-editor-actions" style="margin-top:20px;">
+          <button type="button" class="mockadmin-publish-btn" onclick="applyQuizRandomizeSettings()">SAVE</button>
+        </div>
+      </div>
+    </div>
+
+
+
     <!-- ============ REVIEW VIEW ============ -->
     <section id="view-review" class="view">
-      <header>
-        <h1>Review</h1>
+      <header class="has-back">
+        <div class="site-title-row">
+          <h1>Review</h1>
+          <!-- Review Settings: no settings feature built yet, so this just
+               shows a "coming soon" popup (#review-settings-soon-overlay)
+               instead of doing nothing. -->
+          <button type="button" class="mock-exam-settings-btn" aria-label="Review Settings" title="Review Settings" onclick="openReviewSettingsComingSoon()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          </button>
+        </div>
       </header>
 
       <p class="group-label">SUBJECTS</p>
       <ul class="subject-list" id="review-subject-list"></ul>
     </section>
+
+    <!-- ---- Review Settings: coming-soon popup, shown when the Review
+         view's settings gear is tapped (no settings feature built yet). ---- -->
+    <div class="nick-modal-overlay" id="review-settings-soon-overlay">
+      <div class="nick-modal" style="max-width: 380px;">
+        <div class="nick-modal-head">
+          <h3>Review Settings</h3>
+          <button class="nick-modal-close" onclick="closeReviewSettingsComingSoon()" aria-label="Close">&times;</button>
+        </div>
+        <div class="nick-modal-body">
+          <div style="padding: 16px; text-align: center; color: var(--text-secondary, #888);">
+            Coming soon
+          </div>
+        </div>
+      </div>
+    </div>
 
     <section id="view-board" class="view">
       <header>
@@ -10123,7 +10384,7 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         </button>
         <button class="board-generate-btn" onclick="confirmGenerateBoardSet()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2.1l4 4-4 4M3 12.9v-2a4 4 0 014-4h12.8M7 21.9l-4-4 4-4M21 11.1v2a4 4 0 01-4 4H4.2"/></svg>
-          <span>GENERATE RANDOM SET</span>
+          <span>GENERATE RANDOM QUESTIONS</span>
         </button>
         <button class="board-reset-btn" id="board-reset-btn" style="display:none;" onclick="confirmResetBoardSet()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"/><path d="M10 11v6M14 11v6"/></svg>
@@ -10179,6 +10440,9 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
       <header class="has-back" id="quiz-header">
         <div class="site-title-row">
           <h1 id="quiz-header-title">Quiz</h1>
+          <button type="button" class="mock-exam-settings-btn" onclick="openQuizRandomizeSettingsModal()" aria-label="Quiz Settings" title="Quiz Settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          </button>
         </div>
       </header>
 
@@ -10196,7 +10460,7 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         <div class="quiz-play-head">
           <span class="quiz-progress" id="quiz-progress">Question 1 of 50</span>
           <span class="quiz-score-pill" id="quiz-score-pill">Score: 0</span>
-          <button class="quiz-settings-btn" id="quiz-settings-btn" onclick="openQuizSettings()" aria-label="Quiz settings" title="Quiz settings">
+          <button class="quiz-settings-btn" id="quiz-settings-btn" onclick="openQuizSettings()" aria-label="Quiz timer settings" title="Quiz timer settings">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           </button>
         </div>
@@ -10216,8 +10480,9 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         <p class="quiz-results-score" id="quiz-results-score">0%</p>
         <p class="quiz-results-sub" id="quiz-results-sub"></p>
         <div class="quiz-results-actions">
+          <button type="button" class="quiz-nav-btn quiz-prev-btn" onclick="reviewQuizAnswers()">&#8592; BACK</button>
           <button type="button" class="quiz-start-btn" onclick="retakeCurrentQuizExam()">RETAKE</button>
-          <button type="button" class="quiz-start-btn quiz-secondary-btn" onclick="backToQuizExamList()">CHOOSE ANOTHER EXAM</button>
+          <button type="button" class="quiz-start-btn quiz-secondary-btn" onclick="backToQuizExamList()">CHOOSE ANOTHER QUIZ</button>
         </div>
       </div>
     </section>
@@ -10802,6 +11067,14 @@ Answer: C</pre>
 
     function isAdminUser(user) {
       return !!(user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase());
+    }
+
+    // ---- Review Settings: coming-soon popup ----
+    function openReviewSettingsComingSoon() {
+      document.getElementById('review-settings-soon-overlay').classList.add('visible');
+    }
+    function closeReviewSettingsComingSoon() {
+      document.getElementById('review-settings-soon-overlay').classList.remove('visible');
     }
 
     // ---- admin settings dropdown (unban / reset wings) ----
@@ -12882,6 +13155,10 @@ Answer: C</pre>
         return;
       }
 
+      // Always ask fresh — never reuse a remembered secret for a moderation action.
+      const secret = await adminPrompt('Enter the admin secret to confirm this resolution:');
+      if (!secret) return;
+
       const btn = document.getElementById('cc-detail-resolve-btn');
       if (btn) { btn.disabled = true; btn.textContent = 'RESOLVING\u2026'; }
 
@@ -12889,11 +13166,20 @@ Answer: C</pre>
         action: 'resolveCopyrightConcern',
         email: e.email,
         callsign: e.callsign || '',
-        type: e.type || 'copyright'
+        type: e.type || 'copyright',
+        secret
       }, async (result) => {
         if (btn) { btn.disabled = false; btn.textContent = 'RESOLVE'; }
 
-        if (!result || result.status !== 'ok') {
+        if (result && result.status === 'ok') {
+          noteAdminSecretSuccess();
+        } else if (result && result.message === 'Too many attempts. Please wait a few minutes and try again.') {
+          adminAlert('Too many admin secret attempts recently. Please wait a few minutes and try again.');
+          return;
+        } else if (result && result.message === 'Invalid Admin Secret') {
+          adminAlert(adminSecretWrongMessage('Wrong admin secret. Nothing was sent. Try again.'));
+          return;
+        } else {
           adminAlert(`Could not send the resolution email: ${(result && result.message) || 'could not reach the server.'}`);
           return;
         }
@@ -16642,10 +16928,16 @@ Answer: C</pre>
       return [...new Set(matches.map(m => m.slice(1)))];
     }
 
+    function isMentionableCrewmate(name) {
+      if (!name) return false;
+      return getCrewmateStatus(name) === 'crewmates';
+    }
+
     function renderMessageText(text) {
       const escaped = escapeHtml(text);
-      return escaped.replace(/@([a-z0-9]{3,20})/g, (full, name) => {
+      return escaped.replace(/@([a-z0-9]{3,20})/gi, (full, name) => {
         const isMe = currentChatUser && currentChatUser.nickname === name;
+        if (!isMe && !isMentionableCrewmate(name)) return full;
         return `<span class="chat-mention${isMe ? ' chat-mention-me' : ''}">@${name}</span>`;
       });
     }
@@ -16701,13 +16993,23 @@ Answer: C</pre>
 
     // ---- @mention autocomplete ----
     function getMentionCandidates() {
-      const set = new Set(onlineNicknames);
-      document.querySelectorAll('.chat-msg-avatar[data-nickname]').forEach(el => {
-        const n = el.getAttribute('data-nickname');
-        if (n) set.add(n);
+      const keys = Object.keys(myCrewmates || {});
+      const names = keys
+        .map(key => (latestPresenceData[key] && latestPresenceData[key].nickname) || key)
+        .filter(n => !(currentChatUser && currentChatUser.nickname === n));
+      return Array.from(new Set(names)).sort();
+    }
+
+    function updateInputHighlight() {
+      const input = document.getElementById('chat-input');
+      const layer = document.getElementById('chat-input-highlight');
+      if (!input || !layer) return;
+      const escaped = escapeHtml(input.value);
+      layer.innerHTML = escaped.replace(/@([a-z0-9]{3,20})/gi, (full, name) => {
+        if (!isMentionableCrewmate(name)) return full;
+        return `<span class="chat-input-mention">@${name}</span>`;
       });
-      if (currentChatUser && currentChatUser.nickname) set.delete(currentChatUser.nickname);
-      return Array.from(set).sort();
+      layer.scrollLeft = input.scrollLeft;
     }
 
     function updateMentionSuggestions() {
@@ -16765,6 +17067,7 @@ Answer: C</pre>
       input.setSelectionRange(newCaret, newCaret);
       mentionSuggestState = null;
       document.getElementById('chat-mention-suggest').classList.remove('visible');
+      updateInputHighlight();
     }
 
     function removeChatMessageFromDom(key) {
@@ -16870,24 +17173,83 @@ Answer: C</pre>
       { icon: '🎉', name: 'Symbols', items: ['🌸','💮','🏵️','🌹','🥀','🌺','🌻','🌼','🌷','🌱','🪴','🌲','🌳','🌴','🌵','🌾','🌿','☘️','🍀','🍁','🍂','🍃','🪹','🪺','✅','❌','❎','➕','➖','➗','✔️','☑️','🔴','🟠','🟡','🟢','🔵','🟣','🟤','⚫','⚪','🔶','🔷','🔸','🔹','🔺','🔻','💠','🔘','🔳','🔲','⭐','🌟','✨','⚡','🔥','💧','🌈','☀️','🌤️','⛅','☁️','🌧️','⛈️','🌩️','❄️','☃️','⛄','🌊','🎃','🎄','🎆','🎇','🧨','🎐','🎗️','🎟️','🎫','🔔','🔕','🎵','🎶','💯','🔞','📵','🚫','⛔','📛','🚸','🔱','⚜️','🔰','♻️','✳️','❇️','❗','❕','❓','❔','‼️','⁉️','🔅','🔆','🔱','〽️','⚠️','🚸','🔯','💹','❤️‍🔥','💟','🆘','🆗','🆙','🆒','🆕','🆓','🈁','🈂️','🈚','🈯','🈲','🈳','🈴','🈵','🈶','🈷️','㊗️','㊙️'] }
     ];
     let emojiActiveCategory = 0;
+    let emojiPickerBuilt = false;
+    const emojiTabEls = [];
+    const emojiPanelEls = [];
 
-    function renderEmojiTabs() {
+    // Built once, the first time the picker opens. Every category's tab and
+    // full emoji grid is created up front and left in the DOM; switching
+    // categories after that only ever toggles a `data-active` attribute
+    // (see selectEmojiCategory) instead of tearing down and re-parsing
+    // ~100 buttons' worth of HTML on every click. That rebuild-per-click
+    // was the source of the original lag: it also fired the page's global
+    // tooltip MutationObserver (which walks every node added anywhere in
+    // the document) on every single category switch. `data-active` is used
+    // instead of a CSS class deliberately: the page also has a global
+    // MutationObserver (for auto scroll-locking behind popups) watching
+    // every `class`/`style` change on the whole document body, and calls
+    // getComputedStyle() when it fires — which forces a synchronous
+    // full-page layout. Toggling `.active` classes on tab/panel switches
+    // was waking that observer on every click and causing exactly that
+    // forced layout, which is what was still making category switches feel
+    // sticky even after the rebuild was removed. A plain data attribute
+    // isn't in that observer's attributeFilter, so switching no longer
+    // touches it at all.
+    // A single delegated click listener per container replaces the ~100
+    // individual inline onclick handlers this used to generate.
+    function buildEmojiPicker() {
+      if (emojiPickerBuilt) return;
+      emojiPickerBuilt = true;
+
       const tabsEl = document.getElementById('chat-emoji-tabs');
-      tabsEl.innerHTML = EMOJI_CATEGORIES.map((cat, i) => `
-        <button type="button" class="chat-emoji-tab${i === emojiActiveCategory ? ' active' : ''}" onclick="selectEmojiCategory(${i})">${cat.icon}</button>
-      `).join('');
-    }
+      const tabsFrag = document.createDocumentFragment();
+      EMOJI_CATEGORIES.forEach((cat, i) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'chat-emoji-tab';
+        if (i === 0) btn.dataset.active = '';
+        btn.textContent = cat.icon;
+        btn.dataset.cat = i;
+        tabsFrag.appendChild(btn);
+        emojiTabEls.push(btn);
+      });
+      tabsEl.appendChild(tabsFrag);
+      tabsEl.addEventListener('click', e => {
+        const btn = e.target.closest('.chat-emoji-tab');
+        if (btn) selectEmojiCategory(Number(btn.dataset.cat));
+      });
 
-    function renderEmojiGrid() {
       const gridEl = document.getElementById('chat-emoji-grid');
-      const cat = EMOJI_CATEGORIES[emojiActiveCategory];
-      gridEl.innerHTML = cat.items.map(e => `<button type="button" class="chat-emoji-item" onclick="insertEmoji('${e}')">${e}</button>`).join('');
+      EMOJI_CATEGORIES.forEach((cat, i) => {
+        const panel = document.createElement('div');
+        panel.className = 'chat-emoji-panel';
+        if (i === 0) panel.dataset.active = '';
+        const itemsFrag = document.createDocumentFragment();
+        cat.items.forEach(e => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'chat-emoji-item';
+          btn.textContent = e;
+          itemsFrag.appendChild(btn);
+        });
+        panel.appendChild(itemsFrag);
+        gridEl.appendChild(panel);
+        emojiPanelEls.push(panel);
+      });
+      gridEl.addEventListener('click', e => {
+        const btn = e.target.closest('.chat-emoji-item');
+        if (btn) insertEmoji(btn.textContent);
+      });
     }
 
     function selectEmojiCategory(i) {
+      if (i === emojiActiveCategory) return;
+      delete emojiTabEls[emojiActiveCategory].dataset.active;
+      delete emojiPanelEls[emojiActiveCategory].dataset.active;
       emojiActiveCategory = i;
-      renderEmojiTabs();
-      renderEmojiGrid();
+      emojiTabEls[i].dataset.active = '';
+      emojiPanelEls[i].dataset.active = '';
+      emojiPanelEls[i].scrollTop = 0;
     }
 
     function insertEmoji(emoji) {
@@ -16898,19 +17260,19 @@ Answer: C</pre>
       const newCaret = start + emoji.length;
       input.focus();
       input.setSelectionRange(newCaret, newCaret);
+      updateInputHighlight();
     }
 
     function toggleEmojiPicker() {
       const picker = document.getElementById('chat-emoji-picker');
       const btn = document.getElementById('chat-emoji-btn');
       const opening = !picker.classList.contains('visible');
-      if (opening) {
-        renderEmojiTabs();
-        renderEmojiGrid();
-      }
       picker.classList.toggle('visible', opening);
       btn.classList.toggle('active', opening);
-      if (opening) document.getElementById('chat-input').focus();
+      if (opening) {
+        buildEmojiPicker();
+        document.getElementById('chat-input').focus();
+      }
     }
 
     function sendChatMessage() {
@@ -16942,6 +17304,7 @@ Answer: C</pre>
       document.getElementById('chat-mention-suggest').classList.remove('visible');
       document.getElementById('chat-emoji-picker').classList.remove('visible');
       document.getElementById('chat-emoji-btn').classList.remove('active');
+      updateInputHighlight();
     }
 
     function updateUnreadBadge() {
@@ -17070,7 +17433,9 @@ Answer: C</pre>
           if (e.key === 'Enter') sendChatMessage();
         });
         chatInput.addEventListener('input', updateMentionSuggestions);
+        chatInput.addEventListener('input', updateInputHighlight);
         chatInput.addEventListener('click', updateMentionSuggestions);
+        chatInput.addEventListener('scroll', updateInputHighlight);
       }
     });
 
@@ -19376,7 +19741,11 @@ Answer: C</pre>
 
           // RESET also wipes every answer/pin/graded state saved for this
           // exam (and its Mock Board score), not just the timer — so the
-          // next time it's opened every question is blank again.
+          // next time it's opened every question is blank again. For a
+          // Mock Board card specifically, the question/choice ORDER is kept
+          // exactly as it was (not reshuffled): only answers/pins/submitted
+          // are cleared, since the mixed paper itself isn't being
+          // regenerated here.
           const m = /openInAppMockExam\('([^']+)'/.exec(card.getAttribute('onclick') || '');
           if (m) {
             const examId = m[1];
@@ -19394,9 +19763,37 @@ Answer: C</pre>
               gformIsBoard = false;
             }
             const isBoardCard = !!card.closest('#view-board');
-            try { localStorage.removeItem(examProgressKey(examId, isBoardCard)); } catch (err) {}
-            // Only a Mock Board card's own reset touches the board score.
-            if (isBoardCard) clearBoardScore(examId);
+            if (isBoardCard) {
+              // Keep the same locked-in order/choiceOrder — only clear
+              // what the reviewee actually did with this attempt.
+              const progKey = examProgressKey(examId, true);
+              let saved = null;
+              try {
+                const raw = localStorage.getItem(progKey);
+                saved = raw ? JSON.parse(raw) : null;
+              } catch (err) {}
+              if (saved) {
+                try {
+                  localStorage.setItem(progKey, JSON.stringify({
+                    answers: {},
+                    pinned: [],
+                    submitted: false,
+                    order: saved.order,
+                    choiceOrder: saved.choiceOrder
+                  }));
+                } catch (err) {}
+              }
+              // In-memory shuffle caches deliberately left untouched here —
+              // they already match the order just kept in localStorage.
+              clearBoardScore(examId);
+            } else {
+              try { localStorage.removeItem(examProgressKey(examId, false)); } catch (err) {}
+              // Also drop the in-memory shuffle caches for this exam, or the
+              // next open would reuse the same question/choice order even
+              // though the saved progress that backed it was just wiped.
+              delete examQuestionOrders[examId];
+              delete examChoiceOrders[examId];
+            }
           }
         });
 
@@ -19555,7 +19952,11 @@ Answer: C</pre>
       try {
         localStorage.setItem(
           examProgressKey(examId, true),
-          JSON.stringify({ answers, pinned: [], submitted: true })
+          // order: identity — these fabricated answers are keyed to
+          // exam.questions' original order (this never opens the real,
+          // possibly-shuffled exam screen), so record that as this
+          // attempt's order too.
+          JSON.stringify({ answers, pinned: [], submitted: true, order: exam.questions.map((_, i) => i) })
         );
         localStorage.removeItem(userScopedKey(TIMER_STORAGE_PREFIX + examKey(card)));
       } catch (e) {}
@@ -19574,10 +19975,17 @@ Answer: C</pre>
       if (!saved || !saved.submitted) return null;
       const exam = getMockExam(examId);
       if (!exam || !exam.questions) return null;
+      // Saved answers are keyed by on-screen position, so grade them against
+      // this attempt's own question order (falls back to original order for
+      // older saved attempts from before shuffling was added).
+      const order = (Array.isArray(saved.order) && saved.order.length === exam.questions.length)
+        ? saved.order
+        : exam.questions.map((_, i) => i);
       let score = 0;
-      exam.questions.forEach((item, i) => {
+      order.forEach((qIdx, i) => {
+        const item = exam.questions[qIdx];
         const selected = saved.answers ? saved.answers[i] : undefined;
-        if (selected !== undefined && selected === item.correct) score++;
+        if (item && selected !== undefined && selected === item.correct) score++;
       });
       return { score, total: exam.questions.length };
     }
@@ -21282,9 +21690,20 @@ Answer: C</pre>
     const LIVE_MOCK_EXAM_CACHE = {}; // subjectKey -> { setId: set }
     const liveMockExamListenerKeys = {}; // subjectKey -> true, once attached
 
+    // Holds each subject's current Mock Board "mixed" paper: a synthetic
+    // exam built out of a random (uneven, can-be-zero) number of questions
+    // drawn from EVERY published Mock Exam set for that subject, rather
+    // than handing the reviewee one whole existing set. Populated by
+    // buildBoardSubjectPick() below and persisted alongside the rest of
+    // the board set in saveBoardState/loadBoardState, since — unlike a
+    // real published set — this content has no other source to re-fetch
+    // it from on reload. subjectKey -> { title, questions }.
+    const BOARD_MIX_CACHE = {};
+
     // Combined lookup used everywhere an exam is opened/graded/reviewed —
     // checks the hardcoded sets first, then admin-added live sets (examId
-    // format "live:<subjectKey>:<setId>").
+    // format "live:<subjectKey>:<setId>"), then a Mock Board mixed paper
+    // (examId format "boardmix:<subjectKey>").
     function getMockExam(examId) {
       if (!examId) return null;
       if (IN_APP_MOCK_EXAMS[examId]) return IN_APP_MOCK_EXAMS[examId];
@@ -21295,7 +21714,63 @@ Answer: C</pre>
         const set = LIVE_MOCK_EXAM_CACHE[subjectKey] && LIVE_MOCK_EXAM_CACHE[subjectKey][setId];
         if (set) return { title: set.title, description: '', questions: set.questions || [] };
       }
+      if (String(examId).indexOf('boardmix:') === 0) {
+        const subjectKey = examId.slice('boardmix:'.length);
+        const mix = BOARD_MIX_CACHE[subjectKey];
+        if (mix) return { title: mix.title, description: '', questions: mix.questions || [] };
+      }
       return null;
+    }
+
+    // Randomly splits `total` units across the given per-bucket caps, one
+    // unit at a time into a randomly-chosen bucket that still has room.
+    // Deliberately uneven (no even/round-robin split) and any bucket can
+    // end up with zero — exactly like drawing 50 raffle tickets one at a
+    // time out of several jars, each jar capped at what it actually holds.
+    function distributeRandomCounts(caps, total) {
+      const n = caps.length;
+      let remaining = Math.min(total, caps.reduce((a, b) => a + b, 0));
+      const counts = new Array(n).fill(0);
+      while (remaining > 0) {
+        const avail = [];
+        for (let i = 0; i < n; i++) if (counts[i] < caps[i]) avail.push(i);
+        if (!avail.length) break;
+        const pick = avail[Math.floor(Math.random() * avail.length)];
+        counts[pick]++;
+        remaining--;
+      }
+      return counts;
+    }
+
+    // Builds (or rebuilds) one subject's Mock Board paper: pools every
+    // published Mock Exam set for that subject and randomly draws an
+    // uneven number of questions (some sets can contribute zero) from
+    // each, totalling roughly a full-length paper — the size of the
+    // largest single published set for that subject, so a subject with
+    // only one set behaves exactly as before (the whole thing). Returns
+    // a [examId, examData] pick (matching the shape currentBoardSet
+    // entries already used), or null if nothing is published yet.
+    function buildBoardSubjectPick(subjectKey) {
+      const subjectName = (subjects.find(x => x.key === subjectKey) || {}).name || 'Subject';
+      const cache = LIVE_MOCK_EXAM_CACHE[subjectKey] || {};
+      const entries = Object.entries(cache).filter(([, set]) => set && set.published && Array.isArray(set.questions) && set.questions.length);
+      if (!entries.length) {
+        delete BOARD_MIX_CACHE[subjectKey];
+        return null;
+      }
+      const caps = entries.map(([, set]) => set.questions.length);
+      const target = Math.max(...caps);
+      const counts = distributeRandomCounts(caps, target);
+      const questions = [];
+      entries.forEach(([, set], i) => {
+        const n = counts[i];
+        if (n <= 0) return;
+        const idxs = shuffle(set.questions.map((_, k) => k)).slice(0, n);
+        idxs.forEach(k => questions.push(set.questions[k]));
+      });
+      const examData = { title: `${subjectName} (Mixed Random Questions)`, titleMain: subjectName, titleSuffix: 'Mixed Random Questions', questions };
+      BOARD_MIX_CACHE[subjectKey] = examData;
+      return ['boardmix:' + subjectKey, examData];
     }
 
     function renderMockExamCardsHTML(subjectKey, sets, isAdmin) {
@@ -21400,7 +21875,7 @@ Answer: C</pre>
       // Construction, Econ, and Math share a single on-screen container
       // (view-empty) that only listens live while that particular subject
       // page is open, so on its own it wouldn't have fresh data the moment
-      // "GENERATE RANDOM SET" is pressed on the Mock Board Exam page.
+      // "GENERATE RANDOM QUESTIONS" is pressed on the Mock Board Exam page.
       // Prime a background cache-only listener for each of them here so
       // LIVE_MOCK_EXAM_CACHE always has every subject's latest published
       // sets, no matter which page is currently open.
@@ -21687,6 +22162,7 @@ Answer: C</pre>
     let quizUserAnswers = []; // chosen choice-index per question, or null if unanswered yet
     let quizIndex = 0;
     let quizScore = 0;
+    let quizFinished = false; // true once results are showing for the current attempt
     let currentQuizExamRef = null; // { subjectKey, setId } — so Retake can reload the same exam
     let quizAutoAdvanceTimer = null; // pending auto-next timeout after answering
     function clearQuizAutoAdvance() {
@@ -21781,13 +22257,23 @@ Answer: C</pre>
     function buildQuizChoicesForItem(item) {
       // Quizizz-style: always show up to 4 boxes. If a question was
       // authored with more than 4 choices, keep the correct one plus 3
-      // random distractors; if it has fewer, just show however many it has.
+      // distractors; if it has fewer, just show however many it has.
+      // Respects Quiz's own Randomization Settings toggle (separate from
+      // Mock Exam's): OFF keeps the admin-authored order (and, when
+      // trimming to 4, keeps the first 3 non-correct options in their
+      // authored order rather than picking distractors at random).
       let choices = item.options.slice();
+      const randomize = quizRandomizeChoicesOn();
       if (choices.length > 4) {
         const correct = item.correct;
-        const others = shuffle(choices.filter(o => o !== correct));
-        choices = shuffle([correct].concat(others.slice(0, 3)));
-      } else {
+        if (randomize) {
+          const others = shuffle(choices.filter(o => o !== correct));
+          choices = shuffle([correct].concat(others.slice(0, 3)));
+        } else {
+          const keepOthers = choices.filter(o => o !== correct).slice(0, 3);
+          choices = choices.filter(o => o === correct || keepOthers.indexOf(o) !== -1);
+        }
+      } else if (randomize) {
         choices = shuffle(choices);
       }
       return choices;
@@ -21819,6 +22305,7 @@ Answer: C</pre>
           document.getElementById('quiz-play-area').style.display = 'none';
           showQuizResults();
         } else {
+          quizFinished = false;
           document.getElementById('quiz-results-card').style.display = 'none';
           document.getElementById('quiz-play-area').style.display = '';
           renderQuizQuestion();
@@ -21827,11 +22314,15 @@ Answer: C</pre>
         return;
       }
 
-      quizQuestions = shuffle(set.questions.slice()); // same items as the real exam, shuffled order
+      // Respects Quiz's own Randomization Settings toggle (separate from
+      // Mock Exam's) — OFF shows the quiz's questions in the order the
+      // admin authored them.
+      quizQuestions = quizRandomizeQuestionsOn() ? shuffle(set.questions.slice()) : set.questions.slice();
       quizItemChoices = quizQuestions.map(buildQuizChoicesForItem);
       quizUserAnswers = new Array(quizQuestions.length).fill(null);
       quizIndex = 0;
       quizScore = 0;
+      quizFinished = false;
 
       document.getElementById('quiz-header-title').textContent = set.title || 'Quiz';
       document.getElementById('quiz-exam-list-panel').style.display = 'none';
@@ -21905,6 +22396,17 @@ Answer: C</pre>
       }
     }
 
+    // Results screen's own "← BACK": leaves the score card and shows the
+    // question view alone (right where the person left off, i.e. the last
+    // question) so they can page through BACK/NEXT to review answers.
+    // Pressing FINISH on the last question (nextQuizQuestion) brings them
+    // back to the score via showQuizResults().
+    function reviewQuizAnswers() {
+      document.getElementById('quiz-results-card').style.display = 'none';
+      document.getElementById('quiz-play-area').style.display = '';
+      renderQuizQuestion();
+    }
+
     function selectQuizAnswer(idx) {
       if (quizUserAnswers[quizIndex] !== null && quizUserAnswers[quizIndex] !== undefined) return; // already locked in
       quizUserAnswers[quizIndex] = idx;
@@ -21947,7 +22449,28 @@ Answer: C</pre>
       renderQuizQuestion();
     }
 
+    // Left/Right arrow keys mirror the BACK/NEXT (FINISH) buttons while a
+    // question is on screen — ignored while typing anywhere, or while the
+    // quiz settings modal is open.
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      const playArea = document.getElementById('quiz-play-area');
+      if (!playArea || playArea.style.display === 'none') return;
+      const active = document.activeElement;
+      const tag = active ? active.tagName : '';
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (active && active.isContentEditable)) return;
+      const settingsOverlay = document.getElementById('quiz-settings-overlay');
+      if (settingsOverlay && settingsOverlay.classList.contains('visible')) return;
+      const btn = document.getElementById(e.key === 'ArrowLeft' ? 'quiz-prev-btn' : 'quiz-next-btn');
+      if (!btn || btn.style.display === 'none') return;
+      e.preventDefault();
+      btn.click();
+    });
+
     function showQuizResults() {
+      // Score screen only — the question view (and its BACK/NEXT buttons)
+      // is hidden here; reviewQuizAnswers() is the only way back to it.
+      quizFinished = true;
       document.getElementById('quiz-play-area').style.display = 'none';
       const total = quizQuestions.length;
       const pct = total > 0 ? Math.round((quizScore / total) * 100) : 0;
@@ -22011,6 +22534,7 @@ Answer: C</pre>
     function closeMockExamAdmin() {
       document.getElementById('mockadmin-overlay').classList.remove('visible');
       document.body.style.overflow = '';
+      if (window.hideMockadminScrollbarNow) window.hideMockadminScrollbarNow();
       detachMockAdminListeners();
       // Closing the whole manager (e.g. the X button) while the Instant
       // Creator is open needs to reset ITS view too, not just the manual
@@ -23289,6 +23813,148 @@ Answer: C</pre>
     // happens to be showing later, so a Mock Board attempt can never leak
     // into the regular Mock Exam lists (or the other way round).
     let gformIsBoard = false;
+
+    // ---- Mock Exam Settings: reviewee-facing on/off for the two kinds of
+    // randomization below. Defaults to ON for both (matches the behavior
+    // before this setting existed). Turning either off makes new mock exam
+    // attempts show the exam exactly as the admin authored it (original
+    // question order / original choice order). Independent from Quiz's own
+    // randomization settings (QUIZ_RANDOMIZE_*_KEY below) — separate keys,
+    // separate modal, changing one never touches the other.
+    const EXAM_RANDOMIZE_QUESTIONS_KEY = 'examRandomizeQuestions';
+    const EXAM_RANDOMIZE_CHOICES_KEY = 'examRandomizeChoices';
+
+    function examRandomizeQuestionsOn() {
+      const v = localStorage.getItem(userScopedKey(EXAM_RANDOMIZE_QUESTIONS_KEY));
+      return v === null ? true : v === '1';
+    }
+    function examRandomizeChoicesOn() {
+      const v = localStorage.getItem(userScopedKey(EXAM_RANDOMIZE_CHOICES_KEY));
+      return v === null ? true : v === '1';
+    }
+
+    function openMockExamSettingsModal() {
+      document.getElementById('mock-exam-setting-randomize-questions').checked = examRandomizeQuestionsOn();
+      document.getElementById('mock-exam-setting-randomize-choices').checked = examRandomizeChoicesOn();
+      document.getElementById('mock-exam-settings-overlay').classList.add('visible');
+    }
+
+    function closeMockExamSettingsModal() {
+      document.getElementById('mock-exam-settings-overlay').classList.remove('visible');
+    }
+
+    // Only saves when SAVE is clicked — checking/unchecking a box just
+    // changes the checkbox itself; nothing is written to storage (and
+    // nothing new is read by future attempts) until applyMockExamSettings
+    // runs, which SAVE's onclick calls directly.
+    function applyMockExamSettings() {
+      const randomizeQuestions = document.getElementById('mock-exam-setting-randomize-questions').checked;
+      const randomizeChoices = document.getElementById('mock-exam-setting-randomize-choices').checked;
+      try {
+        localStorage.setItem(userScopedKey(EXAM_RANDOMIZE_QUESTIONS_KEY), randomizeQuestions ? '1' : '0');
+        localStorage.setItem(userScopedKey(EXAM_RANDOMIZE_CHOICES_KEY), randomizeChoices ? '1' : '0');
+      } catch (e) {}
+      closeMockExamSettingsModal();
+    }
+
+    // ---- Quiz Randomization Settings: the same idea as Mock Exam Settings
+    // above, but with its own storage keys/modal so toggling Quiz's
+    // randomization never affects Mock Exam, and vice versa. Also defaults
+    // to ON for both (matches Quiz's original always-shuffle behavior).
+    const QUIZ_RANDOMIZE_QUESTIONS_KEY = 'quizRandomizeQuestions';
+    const QUIZ_RANDOMIZE_CHOICES_KEY = 'quizRandomizeChoices';
+
+    function quizRandomizeQuestionsOn() {
+      const v = localStorage.getItem(userScopedKey(QUIZ_RANDOMIZE_QUESTIONS_KEY));
+      return v === null ? true : v === '1';
+    }
+    function quizRandomizeChoicesOn() {
+      const v = localStorage.getItem(userScopedKey(QUIZ_RANDOMIZE_CHOICES_KEY));
+      return v === null ? true : v === '1';
+    }
+
+    function openQuizRandomizeSettingsModal() {
+      document.getElementById('quiz-setting-randomize-questions').checked = quizRandomizeQuestionsOn();
+      document.getElementById('quiz-setting-randomize-choices').checked = quizRandomizeChoicesOn();
+      document.getElementById('quiz-randomize-settings-overlay').classList.add('visible');
+    }
+
+    function closeQuizRandomizeSettingsModal() {
+      document.getElementById('quiz-randomize-settings-overlay').classList.remove('visible');
+    }
+
+    // Only saves when SAVE is clicked — same as Mock Exam's settings above,
+    // toggling a checkbox alone writes nothing until this runs.
+    function applyQuizRandomizeSettings() {
+      const randomizeQuestions = document.getElementById('quiz-setting-randomize-questions').checked;
+      const randomizeChoices = document.getElementById('quiz-setting-randomize-choices').checked;
+      try {
+        localStorage.setItem(userScopedKey(QUIZ_RANDOMIZE_QUESTIONS_KEY), randomizeQuestions ? '1' : '0');
+        localStorage.setItem(userScopedKey(QUIZ_RANDOMIZE_CHOICES_KEY), randomizeChoices ? '1' : '0');
+      } catch (e) {}
+      closeQuizRandomizeSettingsModal();
+    }
+
+
+    // Randomized question order for mock exams — same idea as the Quiz
+    // mode: a fresh shuffle every time a new attempt starts, but the SAME
+    // order is kept while resuming an in-progress (or already-submitted)
+    // attempt, since answers/pins are saved by on-screen position. In-memory
+    // cache keyed by examId, backed by the "order" field persisted alongside
+    // the rest of that exam's saved progress so a page reload mid-attempt
+    // doesn't reshuffle it.
+    let examQuestionOrders = {};
+
+    function getExamQuestionOrder(examId, exam) {
+      const cached = examQuestionOrders[examId];
+      if (Array.isArray(cached) && cached.length === exam.questions.length) return cached;
+      const saved = loadExamProgress(examId);
+      if (saved && Array.isArray(saved.order) && saved.order.length === exam.questions.length) {
+        examQuestionOrders[examId] = saved.order;
+        return examQuestionOrders[examId];
+      }
+      const identity = exam.questions.map((_, i) => i);
+      examQuestionOrders[examId] = examRandomizeQuestionsOn() ? shuffle(identity) : identity;
+      return examQuestionOrders[examId];
+    }
+
+    // Returns { exam, order, questions } where `questions` is exam.questions
+    // rearranged into this attempt's display order. Everything that renders,
+    // saves, or grades the exam should use `questions`/`order` from here
+    // rather than reading exam.questions directly, so it all agrees on what
+    // question is showing at each position.
+    function getOrderedExamQuestions(examId) {
+      const exam = getMockExam(examId);
+      if (!exam || !exam.questions) return null;
+      const order = getExamQuestionOrder(examId, exam);
+      const questions = order.map(idx => exam.questions[idx]);
+      const choiceOrder = getExamChoiceOrder(examId, questions);
+      const choices = questions.map((item, i) => (choiceOrder[i] || []).map(k => item.options[k]));
+      return { exam: exam, order: order, questions: questions, choiceOrder: choiceOrder, choices: choices };
+    }
+
+    // Per-question answer-choice order, same shuffle-once-per-attempt idea as
+    // the question order above. Grading compares the selected option's TEXT
+    // against item.correct, not its position, so shuffling the choices never
+    // needs to touch submitInAppMockExam/computeSavedExamScore — only how
+    // the options render.
+    let examChoiceOrders = {};
+
+    function getExamChoiceOrder(examId, orderedQuestions) {
+      const cached = examChoiceOrders[examId];
+      if (Array.isArray(cached) && cached.length === orderedQuestions.length) return cached;
+      const saved = loadExamProgress(examId);
+      if (saved && Array.isArray(saved.choiceOrder) && saved.choiceOrder.length === orderedQuestions.length) {
+        examChoiceOrders[examId] = saved.choiceOrder;
+        return examChoiceOrders[examId];
+      }
+      examChoiceOrders[examId] = orderedQuestions.map(item => {
+        const identity = (item.options || []).map((_, k) => k);
+        return examRandomizeChoicesOn() ? shuffle(identity) : identity;
+      });
+      return examChoiceOrders[examId];
+    }
+
     // Review exams share the exam screen but not the confirm-before-submit.
     function gformIsReviewExam() {
       if (gformIsBoard) return false;
@@ -23308,10 +23974,10 @@ Answer: C</pre>
 
     function saveExamProgress(examId) {
       if (!examId) return;
-      const exam = getMockExam(examId);
-      if (!exam) return;
+      const ordered = getOrderedExamQuestions(examId);
+      if (!ordered) return;
       const answers = {};
-      exam.questions.forEach((item, i) => {
+      ordered.questions.forEach((item, i) => {
         const selected = document.querySelector(`input[name="gform-q-${i}"]:checked`);
         if (selected) answers[i] = selected.value;
       });
@@ -23320,7 +23986,7 @@ Answer: C</pre>
       const questionsEl = document.getElementById('gform-questions');
       const submitted = !!(questionsEl && questionsEl.dataset.submitted === 'true');
       try {
-        localStorage.setItem(examProgressKey(examId), JSON.stringify({ answers, pinned, submitted }));
+        localStorage.setItem(examProgressKey(examId), JSON.stringify({ answers, pinned, submitted, order: ordered.order, choiceOrder: ordered.choiceOrder }));
       } catch (e) {}
     }
 
@@ -23414,8 +24080,10 @@ Answer: C</pre>
     function openInAppMockExam(examId, examCard) {
       // Mock Board exams on a finished day can't be opened any more.
       if (examCard && examCard.classList && examCard.classList.contains('board-past')) return;
-      const exam = getMockExam(examId);
-      if (!exam) return;
+      const ordered = getOrderedExamQuestions(examId);
+      if (!ordered) return;
+      const exam = ordered.exam;
+      const orderedQuestions = ordered.questions;
 
       // Guard against a stale hidden copy left in the page (e.g. from a
       // reopen without going through closeInAppMockExam) so two elements
@@ -23427,22 +24095,22 @@ Answer: C</pre>
       overlay.className = 'gform-overlay view visible';
       overlay.id = 'gform-overlay';
 
-      const qCardsHtml = exam.questions.map((item, i) => `
+      const qCardsHtml = orderedQuestions.map((item, i) => `
         <div class="gform-card" id="gform-card-${i}" data-qindex="${i}">
           <div class="gform-qhead">
-            <p class="gform-qnum">Question ${i + 1} of ${exam.questions.length}</p>
+            <p class="gform-qnum">Question ${i + 1} of ${orderedQuestions.length}</p>
             <button type="button" class="gform-pin-btn" id="gform-pin-${i}" aria-pressed="false" onclick="togglePinQuestion(${i})">&#128204; Pin</button>
           </div>
           <p class="gform-qtext">${renderMathText(item.q)}</p>
           ${item.image ? `<img class="gform-question-image" src="${item.image}" alt="Question ${i + 1} image" onload="sizeQuestionImage(this)" onclick="openQuestionImagePreview(this)">` : ''}
-          ${item.options.map((opt, j) => {
+          ${(ordered.choices[i] || item.options).map((opt, j) => {
             const optionHtml = `
             <label class="gform-option">
               <input type="radio" name="gform-q-${i}" value="${escapeHtml(opt)}" onchange="document.getElementById('gform-card-${i}').classList.add('answered'); saveExamProgress('${examId}')">
               <span>${renderMathText(opt)}</span>
             </label>`;
             // "Clear selection" sits on the right, on the same line as the last choice
-            if (j !== item.options.length - 1) return optionHtml;
+            if (j !== (ordered.choices[i] || item.options).length - 1) return optionHtml;
             return `<div class="gform-option-row">${optionHtml}
               <button type="button" class="gform-clear-btn" id="gform-clear-${i}" onclick="clearSelection(${i})">Clear selection</button>
             </div>`;
@@ -23492,6 +24160,10 @@ Answer: C</pre>
       document.querySelectorAll('.view').forEach(v => v.classList.remove('visible'));
       document.querySelector('.wrap').appendChild(overlay);
       window.scrollTo(0, 0);
+      // Lock in this attempt's question order right away (even before any
+      // answer is picked) so a reload or re-open before answering anything
+      // resumes the same shuffle instead of drawing a new one.
+      saveExamProgress(examId);
       restoreExamProgress(examId);
 
       // Same 4-hour countdown as the other mock exams, shown right in this
@@ -23597,6 +24269,8 @@ Answer: C</pre>
       // close and reopen it so every question comes back blank and
       // re-enabled instead of showing the old graded state.
       try { localStorage.removeItem(examProgressKey(examId)); } catch (e) {}
+      delete examQuestionOrders[examId]; // draw a fresh shuffle for the retake
+      delete examChoiceOrders[examId];
       if (gformIsBoard) clearBoardScore(examId); // only a Mock Board retake resets the board score
       const overlay = document.getElementById('gform-overlay');
       if (overlay) overlay.remove();
@@ -23633,15 +24307,17 @@ Answer: C</pre>
     // when the countdown hits zero, and when re-showing an already-graded
     // exam). timedOut = additionally tells the reviewee the time ran out.
     function submitInAppMockExam(examId, forced, timedOut, confirmed) {
-      const exam = getMockExam(examId);
-      if (!exam) return;
+      const ordered = getOrderedExamQuestions(examId);
+      if (!ordered) return;
+      const exam = ordered.exam;
+      const orderedQuestions = ordered.questions;
 
       const warning = document.getElementById('gform-warning');
 
       // First pass: only check what's unanswered. Nothing gets graded or
       // revealed until every question has a selection.
       const unansweredIndexes = [];
-      exam.questions.forEach((item, i) => {
+      orderedQuestions.forEach((item, i) => {
         const selected = document.querySelector(`input[name="gform-q-${i}"]:checked`);
         if (!selected) unansweredIndexes.push(i);
       });
@@ -23683,7 +24359,7 @@ Answer: C</pre>
 
       // All 50 answered — now grade everything and reveal the answer key.
       let score = 0;
-      exam.questions.forEach((item, i) => {
+      orderedQuestions.forEach((item, i) => {
         const selected = document.querySelector(`input[name="gform-q-${i}"]:checked`);
         const card = document.getElementById(`gform-card-${i}`);
         const feedback = document.getElementById(`gform-feedback-${i}`);
@@ -23819,7 +24495,7 @@ Answer: C</pre>
 
     // Tracks which days' subjects have already had their exam randomly
     // picked (keyed by day number, e.g. {1: true}). Day 1 is picked the
-    // moment GENERATE RANDOM SET is pressed; Day 2 and Day 3 are each
+    // moment GENERATE RANDOM QUESTIONS is pressed; Day 2 and Day 3 are each
     // picked only once that day actually unlocks (see generateDaySubjects /
     // updateBoardDayLocks below) — so, like a real 3-day board exam,
     // nobody can see a later day's papers before that day arrives.
@@ -23835,6 +24511,11 @@ Answer: C</pre>
         localStorage.setItem(userScopedKey(BOARD_SET_STORAGE_KEY), JSON.stringify({
           generatedAt: boardSetGeneratedAt,
           pickedIds,
+          // Each subject's mixed paper (see buildBoardSubjectPick) has no
+          // other source to re-fetch its exact questions from, so the
+          // content itself is saved here — otherwise a reload would just
+          // show an empty/unresolved pick instead of the same paper.
+          boardMix: BOARD_MIX_CACHE,
           boardScores,
           completed: boardSetCompleted,
           daysGenerated: boardDaysGenerated
@@ -23842,10 +24523,13 @@ Answer: C</pre>
       } catch (e) {}
     }
 
-    // Rebuilds currentBoardSet/boardScores from localStorage, resolving each
-    // stored exam id back against the live Firebase cache so the content
-    // shown always reflects the exam's current title/questions rather than
-    // a frozen snapshot. Returns true only if a still-valid set was found.
+    // Rebuilds currentBoardSet/boardScores from localStorage. A subject's
+    // mixed-paper pick ("boardmix:<subjectKey>") is restored from the saved
+    // boardMix content itself, since it has no other source; a legacy
+    // single-exam pick ("live:<subjectKey>:<setId>", from a set generated
+    // before mixing existed) is still resolved against the live Firebase
+    // cache so its content stays current. Returns true only if a still-valid
+    // set was found.
     function loadBoardState() {
       try {
         const raw = localStorage.getItem(userScopedKey(BOARD_SET_STORAGE_KEY));
@@ -23871,11 +24555,21 @@ Answer: C</pre>
             return false;
           }
         }
+        Object.keys(BOARD_MIX_CACHE).forEach(k => delete BOARD_MIX_CACHE[k]);
+        Object.assign(BOARD_MIX_CACHE, data.boardMix || {});
         currentBoardSet = {};
         subjects.forEach(s => {
           const examId = data.pickedIds ? data.pickedIds[s.key] : null;
-          const cache = LIVE_MOCK_EXAM_CACHE[s.key] || {};
-          currentBoardSet[s.key] = (examId && cache[examId]) ? [examId, cache[examId]] : null;
+          let examData = null;
+          if (examId && examId.indexOf('boardmix:') === 0) {
+            examData = BOARD_MIX_CACHE[examId.slice('boardmix:'.length)] || null;
+          } else if (examId && examId.indexOf('live:') === 0) {
+            const parts = examId.split(':');
+            const setId = parts.slice(2).join(':');
+            const cache = LIVE_MOCK_EXAM_CACHE[s.key] || {};
+            examData = cache[setId] || null;
+          }
+          currentBoardSet[s.key] = (examId && examData) ? [examId, examData] : null;
         });
         boardScores = data.boardScores || {};
         boardSetGeneratedAt = data.generatedAt;
@@ -24013,12 +24707,18 @@ Answer: C</pre>
       }
       const durationSec = s.hours * 3600;
       const past = isBoardSubjectLocked(s);
+      // A mixed board paper carries its subject name and "(Mixed Random
+      // Questions)" suffix as separate fields (see buildBoardSubjectPick)
+      // so the suffix can be styled dimmer than the subject name here.
+      const nameHtml = pick[1].titleMain
+        ? `${escapeHtml(pick[1].titleMain)} <span class="board-mix-suffix">(${escapeHtml(pick[1].titleSuffix)})</span>`
+        : escapeHtml(pick[1].title || 'Untitled Set');
       return `<ul class="exam-list">
           <li><a class="exam-card${past ? ' board-past' : ''}" ${past ? 'tabindex="-1" aria-disabled="true"' : ''} href="javascript:void(0)" data-duration-sec="${durationSec}"
-              onclick="openInAppMockExam('live:${s.key}:${pick[0]}', this); return false;">
+              onclick="openInAppMockExam('${pick[0]}', this); return false;">
             <div class="exam-row">
               <span class="exam-idx">${s.pct}%</span>
-              <span class="exam-name">${escapeHtml(pick[1].title || 'Untitled Set')}</span>
+              <span class="exam-name">${nameHtml}</span>
               <span class="exam-go">TAKE EXAM <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg></span>
             </div>
           </a></li>
@@ -24755,9 +25455,9 @@ Answer: C</pre>
       // so it asks first.
       if (boardSetCompleted) {
         openConfirmDialog(
-          'Generate a brand-new random set? Your current scores and result will be cleared.',
+          'Generate a brand-new set of random questions? Your current scores and result will be cleared.',
           generateBoardSet,
-          'Generate New Set',
+          'Generate New Questions',
           'generate'
         );
         return;
@@ -24769,9 +25469,9 @@ Answer: C</pre>
       const hasScores = daySubjects.some(s => boardScores[s.key]);
       if (!hasExistingPicks && !hasScores) { regenerateBoardDay(day); return; }
       openConfirmDialog(
-        `Generate a new random set for Day ${day}? Your current picks and any recorded score for Day ${day} will be lost. Other days are not affected.`,
+        `Generate new random questions for Day ${day}? Your current picks and any recorded score for Day ${day} will be lost. Other days are not affected.`,
         () => regenerateBoardDay(day),
-        'Generate New Set',
+        'Generate New Questions',
         'generate'
       );
     }
@@ -24795,19 +25495,16 @@ Answer: C</pre>
       renderBoardSet();
     }
 
-    // Randomly picks one published exam per subject for a single day, and
-    // marks that day as generated so it's never re-picked later (by a
-    // fresh countdown tick, or by re-opening the page). Called for the
-    // first day right when GENERATE RANDOM SET is pressed, and again,
-    // automatically, for each later day the instant it unlocks.
+    // Builds each subject's randomly-mixed paper (see buildBoardSubjectPick)
+    // for a single day, and marks that day as generated so it's never
+    // re-picked later (by a fresh countdown tick, or by re-opening the
+    // page). Called for the first day right when GENERATE RANDOM QUESTIONS is
+    // pressed, and again, automatically, for each later day the instant
+    // it unlocks.
     function generateDaySubjects(dayNum) {
       if (boardDaysGenerated[dayNum]) return;
       subjects.filter(s => s.day === dayNum).forEach(s => {
-        const cache = LIVE_MOCK_EXAM_CACHE[s.key] || {};
-        const entries = Object.entries(cache).filter(([, set]) => set && set.published);
-        currentBoardSet[s.key] = entries.length > 0
-          ? entries[Math.floor(Math.random() * entries.length)]
-          : null;
+        currentBoardSet[s.key] = buildBoardSubjectPick(s.key);
       });
       boardDaysGenerated[dayNum] = true;
       saveBoardState();
@@ -24825,14 +25522,10 @@ Answer: C</pre>
       clearBoardExamTimers(
         subjects
           .filter(s => s.day === day && currentBoardSet[s.key])
-          .map(s => 'live:' + s.key + ':' + currentBoardSet[s.key][0])
+          .map(s => currentBoardSet[s.key][0])
       );
       subjects.filter(s => s.day === day).forEach(s => {
-        const cache = LIVE_MOCK_EXAM_CACHE[s.key] || {};
-        const entries = Object.entries(cache).filter(([, set]) => set && set.published);
-        currentBoardSet[s.key] = entries.length > 0
-          ? entries[Math.floor(Math.random() * entries.length)]
-          : null;
+        currentBoardSet[s.key] = buildBoardSubjectPick(s.key);
         delete boardScores[s.key];
       });
       boardDaysGenerated[day] = true;
@@ -24912,7 +25605,7 @@ Answer: C</pre>
     function boardSubjectKeyForExam(examId) {
       for (const s of subjects) {
         const pick = currentBoardSet[s.key];
-        if (pick && ('live:' + s.key + ':' + pick[0]) === examId) return s.key;
+        if (pick && pick[0] === examId) return s.key;
       }
       return null;
     }
@@ -25013,7 +25706,7 @@ Answer: C</pre>
       boardResultLatest = { total, allAtOrAbove50, passed: total >= 75 && allAtOrAbove50, rows };
 
       // The result itself lives in the popup; the page only keeps a
-      // VIEW RESULT button (top right, beside GENERATE RANDOM SET / RESET)
+      // VIEW RESULT button (top right, beside GENERATE RANDOM QUESTIONS / RESET)
       // to reopen it.
       refreshBoardViewResultBtn();
 
@@ -27013,6 +27706,125 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   })();
 </script>
 <script>
+  // ---- custom scrollbar for the Mock Exam editor panel (#mockadmin-overlay
+  // .mockadmin-card) ----
+  // Same idea as the page-level indicator above: draws a clickable/
+  // draggable thumb over the panel's own right edge, in exactly the lane
+  // the native scrollbar used to occupy, and drives the panel's real
+  // scrollTop — wheel/touch/keyboard scrolling on the panel itself still
+  // works exactly as before. This exists only so the thumb can carry a
+  // pointer cursor, which a real scrollbar's can't.
+  (function () {
+    var track = document.createElement('div');
+    track.id = 'mockadmin-scrollbar-track';
+    var thumb = document.createElement('div');
+    thumb.id = 'mockadmin-scrollbar-thumb';
+    track.appendChild(thumb);
+    document.body.appendChild(track);
+
+    var raf = null;
+    var dragging = false;
+
+    function getCard() {
+      var overlay = document.getElementById('mockadmin-overlay');
+      if (!overlay || !overlay.classList.contains('visible')) return null;
+      return overlay.querySelector('.mockadmin-card');
+    }
+
+    function update() {
+      raf = null;
+      var card = getCard();
+      if (!card) { track.classList.remove('visible'); return; }
+      var scrollable = card.scrollHeight - card.clientHeight;
+      if (scrollable <= 4) { track.classList.remove('visible'); return; }
+
+      var rect = card.getBoundingClientRect();
+      // Inset 3px top/bottom so the thumb never pokes past the panel's
+      // own 6px rounded corners (the native scrollbar was clipped there
+      // by the panel's overflow; a fixed-position element wouldn't be).
+      track.style.top = (rect.top + 3) + 'px';
+      track.style.left = (rect.right - 10) + 'px'; // flush to the panel's own right edge — same lane the native scrollbar drew in
+      var trackHeight = rect.height - 6;
+      track.style.height = trackHeight + 'px';
+
+      var thumbHeight = Math.max(30, (card.clientHeight / card.scrollHeight) * trackHeight);
+      thumb.style.height = thumbHeight + 'px';
+      if (!dragging) {
+        var frac = scrollable > 0 ? Math.min(1, Math.max(0, card.scrollTop / scrollable)) : 0;
+        thumb.style.top = frac * (trackHeight - thumbHeight) + 'px';
+      }
+      track.classList.add('visible');
+    }
+    function scheduleUpdate() {
+      if (raf) return;
+      raf = requestAnimationFrame(update);
+    }
+
+    // ---- dragging the thumb ----
+    thumb.addEventListener('pointerdown', function (e) {
+      var card = getCard();
+      if (!card) return;
+      e.preventDefault();
+      e.stopPropagation();
+      dragging = true;
+      thumb.classList.add('dragging');
+      thumb.setPointerCapture(e.pointerId);
+      var startY = e.clientY;
+      var startTop = thumb.offsetTop;
+
+      function move(ev) {
+        var trackHeight = track.clientHeight;
+        var thumbHeight = thumb.offsetHeight;
+        var range = trackHeight - thumbHeight;
+        var newTop = Math.min(Math.max(0, startTop + (ev.clientY - startY)), range);
+        thumb.style.top = newTop + 'px';
+        var scrollable = card.scrollHeight - card.clientHeight;
+        var frac = range > 0 ? newTop / range : 0;
+        card.scrollTop = frac * scrollable;
+      }
+      function up() {
+        dragging = false;
+        thumb.classList.remove('dragging');
+        document.removeEventListener('pointermove', move);
+        document.removeEventListener('pointerup', up);
+      }
+      document.addEventListener('pointermove', move);
+      document.addEventListener('pointerup', up);
+    });
+
+    // ---- clicking the track (above/below the thumb) jumps to that spot ----
+    track.addEventListener('pointerdown', function (e) {
+      if (e.target !== track) return; // the thumb's own handler covers itself
+      var card = getCard();
+      if (!card) return;
+      var trackRect = track.getBoundingClientRect();
+      var thumbHeight = thumb.offsetHeight;
+      var range = trackRect.height - thumbHeight;
+      var clickTop = Math.min(Math.max(0, e.clientY - trackRect.top - thumbHeight / 2), range);
+      var scrollable = card.scrollHeight - card.clientHeight;
+      var frac = range > 0 ? clickTop / range : 0;
+      card.scrollTop = frac * scrollable;
+    });
+
+    document.addEventListener('scroll', function (e) {
+      if (e.target && e.target.classList && e.target.classList.contains('mockadmin-card')) scheduleUpdate();
+    }, true);
+    window.addEventListener('resize', scheduleUpdate);
+    if (window.ResizeObserver) {
+      var ro = new ResizeObserver(scheduleUpdate);
+      ro.observe(document.body);
+    }
+    // The editor's own content (question rows added/removed, textareas
+    // growing) changes the panel's scrollHeight with no scroll/resize
+    // event of its own — a light poll catches that without hooking into
+    // every editor function individually.
+    setInterval(scheduleUpdate, 400);
+    window.hideMockadminScrollbarNow = function () { track.classList.remove('visible'); };
+
+    scheduleUpdate();
+  })();
+</script>
+<script>
   /* ---- Mobile swipe navigation (phones / narrow screens only) ----
      Swipe right: open the sidebar (or close the Black Box if it is open).
      Swipe left:  open the Black Box (or close the sidebar if it is open). */
@@ -27082,6 +27894,91 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     new MutationObserver(function () {
       if (body.classList.contains('gate-active') && sidebarOpen()) setSidebar(false);
     }).observe(body, { attributes: true, attributeFilter: ['class'] });
+  })();
+</script>
+<script>
+  /* ---- Quiz header gear icon: top-level subjects list ONLY ----
+     The Quiz view's <header> (with the Quiz Settings gear) sits above the
+     subjects list, a subject's own exam list, AND the actual
+     quiz-play-area — all three are just panels inside the same section,
+     toggled by their own inline display style. The gear should only show
+     on the outermost "pick a subject" screen (quiz-subjects-panel) — once
+     the person has gone into a subject's exam list, or is actually taking
+     a quiz (where the play area has its own, different gear for
+     auto-advance settings), the header's gear hides. Watching
+     quiz-subjects-panel's own display style covers both of those deeper
+     screens without touching every place in the code that switches
+     between them. */
+  (function () {
+    var btn = document.querySelector('#quiz-header .mock-exam-settings-btn');
+    var subjectsPanel = document.getElementById('quiz-subjects-panel');
+    if (!btn || !subjectsPanel) return;
+    function sync() {
+      var atTopLevel = subjectsPanel.style.display !== 'none';
+      btn.style.display = atTopLevel ? '' : 'none';
+    }
+    new MutationObserver(sync).observe(subjectsPanel, { attributes: true, attributeFilter: ['style'] });
+    sync();
+  })();
+</script>
+<script>
+  /* ---- Freeze background page scroll while any popup is open ----
+     The site has dozens of different popups/overlays (info notes, confirm
+     dialogs, the shop, the mock exam, profile modals, image lightboxes,
+     etc.), each shown/hidden its own way (a "visible" class in most cases,
+     inline style.display for a few dynamically-built ones). Rather than
+     touching every individual open/close function, this watches the whole
+     document for class/style changes and, whenever ANY of the popup
+     overlay elements below is actually visible, locks <html> (the page's
+     real scroller — see the comment on the html,body rule near the top of
+     this file) so the mouse wheel can't scroll the page underneath. That
+     way a popup that has its own internal scrolling content doesn't fight
+     with the background page also scrolling at the same time.
+     Deliberately NOT `[class*="overlay"]`: a few unrelated, always-visible
+     decorative elements also happen to have "overlay" in their class name
+     (e.g. .list-item-cover-overlay, .sidebar-profile-overlay), and those
+     must never be treated as popups or the page would end up permanently
+     scroll-locked. */
+  (function () {
+    var POPUP_OVERLAY_SELECTOR = [
+      '.ai-note-overlay', '.banned-list-overlay', '.chat-guidelines-overlay',
+      '.daily-rewards-overlay', '.form-popup-overlay', '.gift-wings-overlay',
+      '.hours-info-overlay', '.image-lightbox-overlay', '.nick-modal-overlay',
+      '.profile-card-overlay', '.shop-pay-overlay', '.store-popup-overlay',
+      '.taxi-out-overlay', '.wings-store-overlay', '.wings-thankyou-overlay',
+      '.confirm-dialog-overlay', '.gform-overlay', '.gform-score-overlay',
+      '#mig-viewer-overlay', '#qimg-preview-overlay'
+    ].join(', ');
+    var root = document.documentElement;
+
+    function isAnyPopupOpen() {
+      var overlays = document.querySelectorAll(POPUP_OVERLAY_SELECTOR);
+      for (var i = 0; i < overlays.length; i++) {
+        if (getComputedStyle(overlays[i]).display !== 'none') return true;
+      }
+      // The Black Box chat panel isn't display:none/flex-toggled like the
+      // overlays above — it's always display:flex once "available", and
+      // slides on/off screen via a transform driven by its own "visible"
+      // class — so it needs its own check rather than a computed-display one.
+      var chatPanel = document.getElementById('chat-panel');
+      if (chatPanel && chatPanel.classList.contains('visible')) return true;
+      return false;
+    }
+
+    var pending = false;
+    function scheduleCheck() {
+      if (pending) return;
+      pending = true;
+      requestAnimationFrame(function () {
+        pending = false;
+        root.classList.toggle('scroll-locked', isAnyPopupOpen());
+      });
+    }
+
+    new MutationObserver(scheduleCheck).observe(document.body, {
+      subtree: true, attributes: true, attributeFilter: ['class', 'style']
+    });
+    scheduleCheck();
   })();
 </script>
 </body>
