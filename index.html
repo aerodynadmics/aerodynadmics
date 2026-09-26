@@ -155,6 +155,30 @@
     border-radius: 4px;
   }
   #app-scrollbar-track.visible { opacity: 1; pointer-events: auto; }
+  /* Controller navigation (D-pad/stick) replaces manual scrolling once a
+     controller is actually connected, so the visual scrollbar just adds
+     clutter — hide it outright rather than only fading it. */
+  html.gc-connected #app-scrollbar-track { display: none !important; }
+  /* Mouse is redundant (and can conflict with) controller navigation once
+     a pad is actually connected: hide the cursor and make the page itself
+     click-through, but keep the top bar, the "Souls on Board" sidebar,
+     and the Black Box chat panel fully mouse-usable — none of those three
+     have a controller-driven equivalent. pointer-events:none on <body>
+     cascades to every descendant by inheritance; the three exceptions
+     (and everything inside them) explicitly opt back in. */
+  html.gc-connected, html.gc-connected * { cursor: none !important; }
+  html.gc-connected body { pointer-events: none; }
+  html.gc-connected .top-bar,
+  html.gc-connected .top-bar *,
+  html.gc-connected .reviewees-sidebar,
+  html.gc-connected .reviewees-sidebar *,
+  html.gc-connected .chat-panel,
+  html.gc-connected .chat-panel *,
+  html.gc-connected .chat-panel-peek,
+  html.gc-connected .chat-panel-peek * {
+    pointer-events: auto !important;
+    cursor: auto !important;
+  }
   #app-scrollbar-thumb {
     position: absolute;
     left: 0;
@@ -1219,15 +1243,19 @@
     display: inline-block;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
-    font-weight: 600;
+    font-weight: 500;
     letter-spacing: 0.04em;
     padding: 3px 8px;
     border-radius: 999px;
     text-transform: uppercase;
     flex-shrink: 0;
   }
-  .cc-badge.copyright { background: rgba(230,90,90,0.18); color: #e65a5a; border: 1px solid rgba(230,90,90,0.4); }
-  .cc-badge.concern { background: rgba(79,209,160,0.18); color: var(--green); border: 1px solid rgba(79,209,160,0.4); }
+  .cc-badge.copyright { background: #e65a5a; color: #000; border: 1px solid #e65a5a; }
+  .cc-badge.concern { background: var(--green); color: #000; border: 1px solid var(--green); }
+  .cc-badge.qr-wrong-correct { background: #b18cff; color: #000; border: 1px solid #b18cff; }
+  .cc-badge.qr-no-correct { background: #5aa9e6; color: #000; border: 1px solid #5aa9e6; }
+  .cc-badge.qr-copyright { background: #e65a5a; color: #000; border: 1px solid #e65a5a; }
+  .cc-badge.qr-other { background: var(--green); color: #000; border: 1px solid var(--green); }
   .cc-admin-items { display: flex; flex-direction: column; gap: 10px; margin-bottom: 6px; }
   .cc-admin-item {
     display: flex;
@@ -1316,6 +1344,20 @@
     cursor: pointer;
   }
   @media (hover: hover) { .cc-admin-item-resolve:hover { filter: brightness(1.1); } }
+  .cc-admin-item-locate,
+  .cc-admin-item-justify {
+    flex-shrink: 0;
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--rivet);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 11px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  @media (hover: hover) { .cc-admin-item-locate:hover, .cc-admin-item-justify:hover { color: var(--accent); } }
 
   /* ---- single-submission detail pop-up: message + timestamp grouped
      into one bordered box, with the Resolve action sitting below it
@@ -1334,6 +1376,55 @@
   #admin-cc-detail-overlay .cc-admin-item-resolve {
     font-size: 13px;
     padding: 10px 22px;
+  }
+
+  /* ---- Question Reports detail pop-up: reuses the Copyright/Concerns
+     detail box styling above, plus a couple of report-specific bits
+     (small section labels, and the answer-choice list for a "wrong
+     correct answer" report). ---- */
+  .qr-detail-label {
+    margin: 14px 0 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--rivet);
+  }
+  .qr-detail-label:first-child { margin-top: 0; }
+  .qr-detail-options { display: flex; flex-direction: column; gap: 6px; margin: 0 0 4px; }
+  .qr-detail-option {
+    font-size: 12.5px;
+    color: var(--paper);
+    line-height: 1.5;
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--line);
+  }
+  .qr-detail-option.qr-option-suggested {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--blueprint-dark);
+  }
+  #admin-qr-detail-overlay .cc-admin-item-foot { justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+  #admin-qr-detail-overlay .cc-admin-item-dismiss,
+  #admin-qr-detail-overlay .cc-admin-item-resolve,
+  #admin-qr-detail-overlay .cc-admin-item-locate,
+  #admin-qr-detail-overlay .cc-admin-item-justify {
+    font-size: 13px;
+    padding: 10px 22px;
+  }
+
+  /* ---- Locate-in-editor flash: briefly highlights the question card in
+     the Mock Exam editor that a "Locate" click from Question Reports just
+     scrolled to, so it's obvious which card is the reported one among a
+     long list. See scrollToMockAdminQuestion(). ---- */
+  .mockadmin-qcard-highlight {
+    animation: mockadminLocateFlash 2.2s ease-out;
+  }
+  @keyframes mockadminLocateFlash {
+    0%   { box-shadow: 0 0 0 2px var(--accent); }
+    70%  { box-shadow: 0 0 0 2px var(--accent); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 180, 84, 0); }
   }
 
   /* Submission pop-up only: fully non-scrolling (no scrollbar and no
@@ -2532,7 +2623,7 @@
   .confirm-dialog-overlay {
     position: fixed;
     inset: 0;
-    z-index: 1900;
+    z-index: 1975;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2606,6 +2697,160 @@
     background: var(--accent);
   }
   @media (hover: hover) { .confirm-dialog-btn.yellow:hover { filter: brightness(1.08); } }
+  /* Plain outline, no fill -- same look as the dialog's own Cancel
+     button, just a distinct class so it can be the CONFIRM button too
+     (e.g. Disconnect) without borrowing the "cancel" class's onclick. */
+  .confirm-dialog-btn.neutral {
+    border-color: var(--line);
+    color: var(--paper);
+    background: none;
+  }
+  @media (hover: hover) { .confirm-dialog-btn.neutral:hover { background: rgba(255,255,255,0.08); } }
+
+  /* ---- "Report" a question, from inside a Mock Exam / Quiz card ---- */
+  .qreport-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1950;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(4, 18, 32, 0.72);
+    padding: 24px;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+  }
+  .qreport-overlay.visible { opacity: 1; }
+  .qreport-modal {
+    width: 100%;
+    max-width: 460px;
+    height: 680px;
+    max-height: 92vh;
+    overflow-y: hidden;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    background: var(--blueprint-dark);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+    padding: 18px;
+    padding-bottom: 66px;
+    position: relative;
+    font-family: 'IBM Plex Mono', monospace;
+    display: flex;
+    flex-direction: column;
+  }
+  .qreport-modal::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  .qreport-title { margin: 0 0 16px; font-size: 17px; font-weight: 700; font-family: 'Space Grotesk', sans-serif; color: var(--paper); }
+  .qreport-qtext { margin: 0 0 16px; font-size: 12px; line-height: 1.5; color: var(--paper); opacity: 0.75; height: 90px; flex-shrink: 0; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: rgba(255,255,255,0.03); }
+  .qreport-qtext::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  .qreport-reasons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 4px;
+    margin-bottom: 4px;
+  }
+  .qreport-reason-btn {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 11.5px;
+    letter-spacing: 0.02em;
+    text-align: center;
+    padding: 9px 8px;
+    border-radius: 10px;
+    border: none;
+    background: transparent;
+    color: var(--rivet);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  @media (hover: hover) { .qreport-reason-btn:not(.active):hover { background: var(--accent); color: var(--blueprint-dark); } }
+  .qreport-reason-btn.active {
+    background: var(--accent);
+    color: var(--blueprint-dark);
+  }
+  @media (hover: hover) { .qreport-reason-btn.active:hover { filter: brightness(1.08); } }
+  .qreport-extra { margin-top: 14px; }
+  .qreport-extra-label { margin: 0 0 8px; font-size: 12px; color: var(--paper); }
+  .qreport-extra-note { margin: 0; font-size: 12px; color: var(--paper); opacity: 0.75; }
+  .qreport-option-grid { display: flex; flex-direction: column; gap: 8px; }
+  .qreport-option-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    text-align: left;
+    padding: 9px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    background: none;
+    color: var(--paper);
+    cursor: pointer;
+  }
+  @media (hover: hover) { .qreport-option-btn:not(.active):hover { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); } }
+  .qreport-option-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--blueprint-dark);
+  }
+  .qreport-option-btn.disabled,
+  .qreport-option-btn:disabled {
+    cursor: not-allowed;
+  }
+  @media (hover: hover) { .qreport-option-btn.disabled:hover, .qreport-option-btn:disabled:hover { background: none; border-color: var(--line); color: var(--paper); } }
+  .qreport-option-letter {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    font-size: 10.5px;
+  }
+  .qreport-textarea {
+    width: 100%;
+    min-height: 76px;
+    resize: vertical;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--paper);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 8px 10px;
+    box-sizing: border-box;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .qreport-textarea::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  .qreport-actions { display: flex; justify-content: flex-end; gap: 8px; position: absolute; left: 18px; right: 18px; bottom: 18px; }
+  .qreport-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    border-radius: 6px;
+    padding: 8px 14px;
+    cursor: pointer;
+    border: 1px solid var(--line);
+    background: none;
+    color: var(--paper);
+  }
+  @media (hover: hover) { .qreport-btn.cancel:hover { color: var(--accent); } }
+  .qreport-btn.submit {
+    border-color: var(--accent);
+    color: var(--blueprint-dark);
+    background: var(--accent);
+  }
+  .qreport-btn.submit:disabled { opacity: 0.4; cursor: not-allowed; }
+  @media (hover: hover) { .qreport-btn.submit:not(:disabled):hover { filter: brightness(1.08); } }
 
 
   /* ---- site-wide custom tooltip for every native title="" tooltip ----
@@ -3534,6 +3779,7 @@
     font-size: 12px;
     color: var(--rivet);
   }
+  .quiz-progress-wrap { display: flex; align-items: center; gap: 8px; }
   .quiz-play-head .quiz-settings-btn {
     justify-self: end;
     margin-left: 0;
@@ -3598,17 +3844,45 @@
     line-height: 1.6;
     margin: 0 0 14px;
   }
+  /* ---- Auto-next delay stepper: no more boxed text input -- a big
+     centered yellow number with an up/down arrow above and below,
+     stacked vertically. The arrows are a mouse/touch equivalent of the
+     same bump the controller's D-pad/stick up-down already does (see
+     bumpQuizAutoNextSeconds / the pollGamepad handling for this popup). */
+  .qs-timer-stepper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin: 14px 0 18px;
+  }
+  .qs-timer-arrow {
+    background: none;
+    border: none;
+    color: var(--rivet);
+    font-size: 22px;
+    line-height: 1;
+    padding: 4px 14px;
+    cursor: pointer;
+  }
+  @media (hover: hover) { .qs-timer-arrow:hover { color: var(--accent); } }
+  /* While a controller is connected and the D-pad/stick is actually
+     held in that direction, the matching arrow lights up yellow for as
+     long as it's held (see the pollGamepad handling for this popup) --
+     released the instant the button/stick is let go. */
+  .qs-timer-arrow.qs-timer-arrow-pressed { color: var(--accent) !important; }
   #quiz-autonext-input {
-    width: 100%;
+    width: 90px;
     background: transparent;
-    border: 1px solid var(--line);
-    border-radius: 3px;
-    color: var(--paper);
+    border: none;
+    color: var(--accent);
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 14px;
+    font-size: 36px;
+    font-weight: 700;
+    text-align: center;
     letter-spacing: 0.03em;
-    padding: 10px 12px;
-    margin-bottom: 4px;
+    padding: 0;
+    margin: 0;
   }
   #quiz-autonext-input:focus { outline: none; }
   .quiz-autonext-hint {
@@ -3806,6 +4080,100 @@
     outline: none;
   }
   .back-btn:focus-visible { outline: none; }
+
+  /* ---- Game Mode controller focus: yellow filled highlight ----
+     While a Bluetooth controller is connected, moving the D-pad/stick on
+     the Quiz "pick a subject" list or a subject's own exam list moves this
+     highlight from card to card (see the pollGamepad list-navigation
+     branch), and pressing A clicks whichever card currently carries it.
+     Solid accent fill, so it reads clearly as "this is the selected one"
+     even from a few feet away; text recolored dark to stay legible on the
+     bright fill. */
+  .gc-focused {
+    background: var(--accent) !important;
+    border-color: var(--accent) !important;
+    color: var(--blueprint-dark) !important;
+  }
+  .gc-focused .subject-pct,
+  .gc-focused .subject-name,
+  .gc-focused .subject-status,
+  .gc-focused .subject-status svg,
+  .gc-focused .exam-idx,
+  .gc-focused .exam-name,
+  .gc-focused .exam-name .board-mix-suffix,
+  .gc-focused .exam-go,
+  .gc-focused .exam-go svg,
+  .gc-focused .exam-timer-reset {
+    color: var(--blueprint-dark) !important;
+  }
+  .gc-focused .exam-timer.scored,
+  .gc-focused .exam-timer.running {
+    background: var(--blueprint-dark);
+    color: var(--accent);
+    border-color: var(--blueprint-dark);
+  }
+  .gc-focused .exam-timer-reset {
+    border-color: var(--blueprint-dark);
+  }
+
+  /* ---- Quiz Settings box chooser: the two randomize toggles live inside
+     a scrollable box (#quiz-settings-box-chooser) so that once a
+     controller is connected, D-pad/stick up-down can move the same
+     yellow gc-focused highlight between rows and A toggles whichever
+     one is highlighted -- the Cancel/Save row below it is then
+     navigated left-right exactly like the Game Mode popup's own
+     Cancel/Connect row (same gcNavigateButtonRow function). With no
+     controller connected this is just a plain list; the checkboxes
+     still work by mouse/touch as before. ---- */
+  .qs-box-chooser {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  html.gc-connected .qs-box-chooser {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    max-height: 220px;
+    overflow-y: auto;
+    padding: 12px;
+    gap: 4px;
+  }
+  .qs-box-chooser-row {
+    border-radius: 8px;
+    transition: background 0.15s ease;
+  }
+  html.gc-connected .qs-box-chooser-row {
+    padding: 10px;
+  }
+  .qs-box-chooser-row.gc-focused .mockadmin-publish-toggle,
+  .qs-box-chooser-row.gc-focused p {
+    color: var(--blueprint-dark) !important;
+  }
+  /* SAVE is normally solid yellow by default (.mockadmin-publish-btn),
+     same as every other Save button in the app. But once a controller is
+     connected, that permanent fill would make it look already
+     "selected" even while the highlight actually sits on the box chooser
+     above it -- so here it starts outlined like CANCEL, and only regains
+     the yellow fill once gc-focused (the D-pad/stick highlight) actually
+     reaches it. Leaves the button's look untouched whenever no
+     controller is connected. */
+  html.gc-connected #quiz-settings-popup-save-btn:not(.gc-focused) {
+    background: none;
+    border-color: var(--line);
+    color: var(--paper);
+  }
+
+  /* Quiz Timer Settings popup's SAVE follows the exact same rule as the
+     Quiz Settings (randomize) popup's SAVE above: solid yellow by default
+     (matching every other Save button in the app when no controller is
+     connected), but starting outlined like CANCEL once a controller is
+     connected, so it doesn't look pre-selected before the D-pad/stick
+     highlight actually reaches it. */
+  html.gc-connected #quiz-settings-save-btn:not(.gc-focused) {
+    background: none;
+    border-color: var(--line);
+    color: var(--paper);
+  }
 
   .exam-row {
     display: flex;
@@ -6133,7 +6501,26 @@
      views, so switching back and forth shows zero shift — only the gear
      icon itself appears/disappears. */
   #view-mock-exam .site-title-row,
-  #quiz-header .site-title-row { min-height: 34px; }
+  #quiz-header .site-title-row {
+    min-height: 34px;
+    /* Three slots (title / controller / gear) instead of the plain
+       two-item flex row: the outer two columns share the leftover space
+       equally, so whatever sits in the middle column (the Game Mode
+       controller button) lands visually centered in the row regardless
+       of how long the title on the left is. */
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 12px;
+  }
+  #view-mock-exam .site-title-row h1,
+  #quiz-header .site-title-row h1 { justify-self: start; }
+  #view-mock-exam .site-title-row .mock-exam-settings-btn:last-child,
+  #quiz-header .site-title-row .mock-exam-settings-btn:last-child { justify-self: end; }
+  /* Controller icon shares the gear's bare-icon look; tinted accent while
+     Game Mode is on, green once a controller is actually connected. */
+  .game-mode-header-btn { font-size: 17px; }
+  .game-mode-header-btn.active { color: var(--accent); }
+  .game-mode-header-btn.gm-connected { color: var(--green); }
   /* The app hides the subtitle (display:none) once a subject has exams.
      The 12px title->subtitle gap therefore belongs on the subtitle, not on
      the row, otherwise it stays behind as empty space above the divider. */
@@ -7962,6 +8349,10 @@
 }
 .gform-qhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
 .gform-qnum { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--rivet); margin: 0; letter-spacing: 0.03em; }
+/* Groups "Question n of N" with the Report flag right after it, so the pair
+   sits together on the left while Pin stays pinned to the right via the
+   .gform-qhead space-between above. */
+.gform-qnum-wrap { display: flex; align-items: center; gap: 8px; }
 .gform-qtext { font-size: 15px; font-weight: 400; margin: 0 0 14px; color: var(--paper); white-space: pre-wrap; }
 
 /* ---- lightweight math markup: \frac{}{}, \sqrt{}, ^{}, _{} ---- */
@@ -8102,6 +8493,16 @@
    inside each question card reuses .gform-pin-btn too and should keep its
    original, easier-to-tap size there. */
 .gform-card .gform-pin-btn { font-size: 13px; padding: 5px 8px; }
+.gform-qhead-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.gform-report-btn { color: #ffb454; border-color: rgba(255, 180, 84, 0.4); cursor: pointer; }
+@media (hover: hover) { .gform-report-btn:not(.hover-suppressed):hover { background: rgba(255, 180, 84, 0.16); border-color: rgba(255, 180, 84, 0.6); color: #ffb454; } }
+/* Icon-only variant: a plain red flag, no label — used on the per-question
+   Report button. Native title="" attribute on the button supplies the tooltip. */
+.gform-report-btn-icon { padding: 5px 7px; gap: 0; font-size: 14px; line-height: 1; }
+/* Borderless variant: sits right next to "Question n of N", so it doesn't
+   need its own pill outline like the icon still does elsewhere. */
+.gform-report-btn-borderless { border: none; background: none; padding: 0; }
+@media (hover: hover) { .gform-report-btn-borderless:not(.hover-suppressed):hover { background: none; border: none; } }
 /* .hover-suppressed is set right after unpinning, so the button goes back to
    unfilled even though the mouse is still on it; it comes off on mouseleave. */
 @media (hover: hover) { .gform-pin-btn:not(.hover-suppressed):hover { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); } }
@@ -8129,11 +8530,15 @@
 .gform-card.incorrect .gform-option-row .gform-option { flex: 1 1 auto; }
 .gform-clear-btn {
   background: none; border: none; color: var(--rivet); font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px; cursor: pointer; padding: 8px 0; margin-left: auto; flex-shrink: 0;
+  font-size: 11px; cursor: pointer; padding: 8px 0; flex-shrink: 0;
   white-space: nowrap; text-decoration: underline; text-underline-offset: 2px;
   position: relative; top: 5px; /* nudged down so it lines up with the choice circle */
 }
 @media (hover: hover) { .gform-clear-btn:hover { color: var(--accent); } }
+/* Groups "Clear selection" and "Report" together on the right of the last
+   choice's row, in that order, instead of Report sitting on its own line
+   (which used to add extra vertical space and shove that choice down). */
+.gform-option-row-actions { display: flex; align-items: center; gap: 14px; margin-left: auto; flex-shrink: 0; }
 .gform-card.correct {
   border-color: var(--green);
   background: rgba(79, 209, 160, 0.1);
@@ -10149,20 +10554,38 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
   </div>
 
   <!-- ---- quiz settings modal (preferred auto-next delay, saved to the
-       signed-in user's profile so it applies on every future quiz) ---- -->
+       signed-in user's profile so it applies on every future quiz).
+       Opened mid-quiz by SELECT once a controller is connected: D-pad/
+       stick up-down then bumps the seconds value directly (it's the only
+       field, so no separate focus step needed for it), and left-right
+       moves the yellow gc-focused highlight between CANCEL/SAVE, same as
+       every other button-row popup in the app (see gcNavigateButtonRow).
+       SAVE is solid yellow by default, same as the Quiz Settings
+       (randomize) popup and every other Save button in the app -- but
+       once a controller connects it starts outlined like CANCEL instead,
+       so neither looks "pre-selected", and only regains the yellow fill
+       once the D-pad/stick highlight actually reaches it (see the
+       html.gc-connected rule above). No close (X): B or CANCEL back out
+       instead, same as the other controller-driven popups. ---- -->
   <div class="nick-modal-overlay" id="quiz-settings-overlay">
     <div class="nick-modal">
       <div class="nick-modal-head">
         <h3>Quiz Timer Settings</h3>
-        <button class="nick-modal-close" onclick="closeQuizSettings()" aria-label="Close">&times;</button>
       </div>
       <div class="nick-modal-body">
         <div style="padding: 4px 16px 16px;">
           <p class="profile-edit-label">Auto-next delay (seconds)</p>
-          <input type="text" id="quiz-autonext-input" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="1–11" autocomplete="off" onkeydown="return quizAutoNextKeydown(event);" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); if (this.value !== '' && parseInt(this.value, 10) > 11) this.value = '11';">
+          <div class="qs-timer-stepper">
+            <button type="button" class="qs-timer-arrow" id="quiz-autonext-up" onclick="bumpQuizAutoNextSeconds(1)" aria-label="Increase seconds">&and;</button>
+            <input type="text" id="quiz-autonext-input" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="1–11" autocomplete="off" onkeydown="return quizAutoNextKeydown(event);" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 2); if (this.value !== '' && parseInt(this.value, 10) > 11) this.value = '11';">
+            <button type="button" class="qs-timer-arrow" id="quiz-autonext-down" onclick="bumpQuizAutoNextSeconds(-1)" aria-label="Decrease seconds">&or;</button>
+          </div>
           <p class="quiz-autonext-hint">How long to wait after you answer before the next question loads automatically. 1–11 seconds only. Saved to your profile.</p>
 
-          <button type="button" class="profile-edit-save-btn" id="quiz-settings-save-btn" onclick="saveQuizAutoNextSeconds()">SAVE</button>
+          <div class="mockadmin-editor-actions" style="margin-top:20px;">
+            <button type="button" class="mockadmin-save-btn" id="quiz-settings-cancel-btn" onclick="closeQuizSettings()">CANCEL</button>
+            <button type="button" class="mockadmin-publish-btn" id="quiz-settings-save-btn" onclick="saveQuizAutoNextSeconds()">SAVE</button>
+          </div>
           <div class="profile-edit-status" id="quiz-settings-status"></div>
         </div>
       </div>
@@ -10313,6 +10736,7 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
               <button id="admin-gift-wings-btn" onclick="openGiftWingsModal(); closeAdminSettingsMenu();">ADJUST BALANCE</button>
               <button id="admin-board-settings-btn" onclick="openBoardAdminSettingsModal(); closeAdminSettingsMenu();">BOARD SETTINGS</button>
               <button id="admin-cc-btn" onclick="openAdminCopyrightConcernsModal(); closeAdminSettingsMenu();">COPYRIGHT/CONCERNS</button>
+              <button id="admin-qreports-btn" onclick="openAdminQuestionReportsModal(); closeAdminSettingsMenu();">QUESTION REPORTS</button>
               <button id="admin-creator-profile-btn" onclick="openCreatorProfileEditModal(); closeAdminSettingsMenu();">CREATOR PROFILE</button>
               <button id="admin-deleted-items-btn" onclick="openDeletedItemsModal(); closeAdminSettingsMenu();">DELETED SHOP ITEMS</button>
               <button id="admin-toggle-flightstore-btn" onclick="toggleFlightStoreEnabled(); closeAdminSettingsMenu();">DISABLE FLIGHT STORE</button>
@@ -10434,6 +10858,9 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
       <header class="has-back">
         <div class="site-title-row">
           <h1>Mock Exam</h1>
+          <button type="button" class="mock-exam-settings-btn game-mode-header-btn" onclick="openGameModePopup()" aria-label="Game Mode (Bluetooth Controller)" title="Game Mode (Bluetooth Controller)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="6" x2="10" y1="11" y2="11"/><line x1="8" x2="8" y1="9" y2="13"/><line x1="15" x2="15.01" y1="12" y2="12"/><line x1="18" x2="18.01" y1="10" y2="10"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.152A4 4 0 0 0 17.32 5z"/></svg>
+          </button>
           <button type="button" class="mock-exam-settings-btn" onclick="openMockExamSettingsModal()" aria-label="Mock Exam Settings" title="Mock Exam Settings">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           </button>
@@ -10475,30 +10902,111 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
 
     <!-- ---- Quiz Randomization Settings: same idea as Mock Exam Settings
          above, but a separate toggle/storage key so turning randomization
-         off for Quiz does NOT affect Mock Exam, and vice versa. ---- -->
+         off for Quiz does NOT affect Mock Exam, and vice versa. The two
+         rows sit inside a scrollable box chooser (see .qs-box-chooser
+         above) and CANCEL discards whatever was toggled, same as the B
+         button already did -- only SAVE persists it. ---- -->
     <div class="banned-list-overlay" id="quiz-randomize-settings-overlay">
       <div class="mockadmin-card" style="max-width:420px;" onclick="event.stopPropagation();">
         <h3>Quiz Settings</h3>
 
-        <label class="mockadmin-publish-toggle" style="font-size:12.5px;">
-          <input type="checkbox" id="quiz-setting-randomize-questions">
-          RANDOMIZE QUESTION ORDER
-        </label>
-        <p style="margin:6px 0 0; font-size:11px; color:var(--rivet); line-height:1.5;">When off, questions appear in the same order the admin arranged them in.</p>
+        <div class="qs-box-chooser" id="quiz-settings-box-chooser">
+          <div class="qs-box-chooser-row" id="qs-box-row-questions">
+            <label class="mockadmin-publish-toggle" style="font-size:12.5px;">
+              <input type="checkbox" id="quiz-setting-randomize-questions">
+              RANDOMIZE QUESTION ORDER
+            </label>
+            <p style="margin:6px 0 0; font-size:11px; color:var(--rivet); line-height:1.5;">When off, questions appear in the same order the admin arranged them in.</p>
+          </div>
 
-        <label class="mockadmin-publish-toggle" style="margin-top:18px; font-size:12.5px;">
-          <input type="checkbox" id="quiz-setting-randomize-choices">
-          RANDOMIZE ANSWER CHOICES
-        </label>
-        <p style="margin:6px 0 0; font-size:11px; color:var(--rivet); line-height:1.5;">When off, each question's choices appear in the same order the admin entered them in.</p>
+          <div class="qs-box-chooser-row" id="qs-box-row-choices">
+            <label class="mockadmin-publish-toggle" style="font-size:12.5px;">
+              <input type="checkbox" id="quiz-setting-randomize-choices">
+              RANDOMIZE ANSWER CHOICES
+            </label>
+            <p style="margin:6px 0 0; font-size:11px; color:var(--rivet); line-height:1.5;">When off, each question's choices appear in the same order the admin entered them in.</p>
+          </div>
+        </div>
 
         <div class="mockadmin-editor-actions" style="margin-top:20px;">
-          <button type="button" class="mockadmin-publish-btn" onclick="applyQuizRandomizeSettings()">SAVE</button>
+          <button type="button" class="mockadmin-save-btn" id="quiz-settings-popup-cancel-btn" onclick="closeQuizRandomizeSettingsModal()">CANCEL</button>
+          <button type="button" class="mockadmin-publish-btn" id="quiz-settings-popup-save-btn" onclick="applyQuizRandomizeSettings()">SAVE</button>
         </div>
       </div>
     </div>
 
+    <!-- ---- Game Mode (Bluetooth Controller) popup: opened from the
+         controller icon in the Mock Exam / Quiz headers. Shows how a
+         paired controller's buttons map onto the app, then lets the
+         person turn Game Mode on/off — the same on/off state as the
+         floating controller button elsewhere on the page, just reachable
+         from here too. Turning it off (once connected) asks for
+         confirmation first so a stray tap mid-exam doesn't silently drop
+         the controller. ---- -->
+    <div class="banned-list-overlay" id="game-mode-overlay">
+      <div class="banned-list-card game-mode-card" onclick="event.stopPropagation();">
+        <h3>Game Mode Bluetooth Controller</h3>
+        <p class="game-mode-intro">Pair a Bluetooth controller with your device first (this happens outside the app, in your device's Bluetooth settings). Once it's paired, press CONNECT below, then press any button on the controller.</p>
 
+        <div class="game-mode-diagram-wrap">
+          <svg class="game-mode-diagram" viewBox="0 0 700 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram showing which controller buttons control which app actions">
+            <rect x="220" y="120" width="260" height="130" rx="65" ry="65" fill="rgba(255,255,255,0.04)" stroke="#3f6d92" stroke-width="2"/>
+
+            <circle cx="280" cy="155" r="22" fill="rgba(255,255,255,0.05)" stroke="#3f6d92" stroke-width="2"/>
+            <circle cx="280" cy="155" r="9" fill="#3f6d92"/>
+
+            <rect x="260" y="205" width="14" height="42" rx="3" fill="#3f6d92"/>
+            <rect x="259" y="219" width="42" height="14" rx="3" fill="#3f6d92"/>
+
+            <rect x="315" y="128" width="26" height="10" rx="5" fill="none" stroke="#3f6d92" stroke-width="1.5"/>
+            <rect x="359" y="128" width="26" height="10" rx="5" fill="none" stroke="#3f6d92" stroke-width="1.5"/>
+
+            <circle cx="420" cy="160" r="13" fill="rgba(255,177,0,0.16)" stroke="#ffb100" stroke-width="1.5"/>
+            <text x="420" y="164" font-size="12" fill="#ffb100" text-anchor="middle" font-family="'IBM Plex Mono', monospace">Y</text>
+            <circle cx="397" cy="183" r="13" fill="rgba(255,177,0,0.16)" stroke="#ffb100" stroke-width="1.5"/>
+            <text x="397" y="187" font-size="12" fill="#ffb100" text-anchor="middle" font-family="'IBM Plex Mono', monospace">X</text>
+            <circle cx="443" cy="183" r="13" fill="rgba(255,177,0,0.16)" stroke="#ffb100" stroke-width="1.5"/>
+            <text x="443" y="187" font-size="12" fill="#ffb100" text-anchor="middle" font-family="'IBM Plex Mono', monospace">B</text>
+            <circle cx="420" cy="206" r="13" fill="rgba(255,177,0,0.16)" stroke="#ffb100" stroke-width="1.5"/>
+            <text x="420" y="210" font-size="12" fill="#ffb100" text-anchor="middle" font-family="'IBM Plex Mono', monospace">A</text>
+
+            <line x1="120" y1="70" x2="258" y2="140" stroke="#7fa8c9" stroke-width="1"/>
+            <text x="118" y="64" font-size="13" fill="#eef3f6" text-anchor="end" font-weight="600" font-family="'Space Grotesk', sans-serif">LEFT STICK</text>
+            <text x="118" y="80" font-size="10.5" fill="#7fa8c9" text-anchor="end" font-family="'IBM Plex Mono', monospace">Scroll / move between questions</text>
+
+            <line x1="120" y1="312" x2="262" y2="236" stroke="#7fa8c9" stroke-width="1"/>
+            <text x="118" y="306" font-size="13" fill="#eef3f6" text-anchor="end" font-weight="600" font-family="'Space Grotesk', sans-serif">D-PAD</text>
+            <text x="118" y="322" font-size="10.5" fill="#7fa8c9" text-anchor="end" font-family="'IBM Plex Mono', monospace">Scroll (Mock Exam) / Prev &amp; Next (Quiz)</text>
+
+            <line x1="120" y1="205" x2="320" y2="133" stroke="#7fa8c9" stroke-width="1"/>
+            <text x="118" y="199" font-size="13" fill="#eef3f6" text-anchor="end" font-weight="600" font-family="'Space Grotesk', sans-serif">SELECT</text>
+            <text x="118" y="215" font-size="10.5" fill="#7fa8c9" text-anchor="end" font-family="'IBM Plex Mono', monospace">Go back / Exit</text>
+
+            <line x1="580" y1="70" x2="426" y2="150" stroke="#7fa8c9" stroke-width="1"/>
+            <text x="582" y="64" font-size="13" fill="#eef3f6" font-weight="600" font-family="'Space Grotesk', sans-serif">Y / B / A (Quiz)</text>
+            <text x="582" y="80" font-size="10.5" fill="#7fa8c9" font-family="'IBM Plex Mono', monospace">Answer choices 4 / 2 / 1</text>
+            <text x="582" y="96" font-size="10.5" fill="#7fa8c9" font-family="'IBM Plex Mono', monospace">X (Quiz): Back</text>
+
+            <line x1="345" y1="72" x2="337" y2="126" stroke="#7fa8c9" stroke-width="1"/>
+            <text x="345" y="46" font-size="13" fill="#eef3f6" text-anchor="middle" font-weight="600" font-family="'Space Grotesk', sans-serif">L1 / R1 / L2 / R2</text>
+            <text x="345" y="62" font-size="10.5" fill="#7fa8c9" text-anchor="middle" font-family="'IBM Plex Mono', monospace">Answer choices A / B / C / D (Quiz)</text>
+
+            <line x1="580" y1="312" x2="372" y2="140" stroke="#7fa8c9" stroke-width="1"/>
+            <text x="582" y="306" font-size="13" fill="#eef3f6" font-weight="600" font-family="'Space Grotesk', sans-serif">START</text>
+            <text x="582" y="322" font-size="10.5" fill="#7fa8c9" font-family="'IBM Plex Mono', monospace">Submit exam</text>
+          </svg>
+        </div>
+
+        <div class="game-mode-status-row" id="game-mode-popup-status">Not connected</div>
+
+        <div class="mockadmin-editor-actions" style="margin-top:14px;">
+          <!-- Always-visible way to close the popup without connecting/
+               disconnecting (replaces the old × close button). -->
+          <button type="button" class="mockadmin-save-btn" id="game-mode-popup-cancel-btn" onclick="closeGameModePopup()">CANCEL</button>
+          <button type="button" class="mockadmin-publish-btn" id="game-mode-popup-btn" onclick="handleGameModePopupButton()">CONNECT</button>
+        </div>
+      </div>
+    </div>
 
     <!-- ============ REVIEW VIEW ============ -->
     <section id="view-review" class="view">
@@ -10607,6 +11115,9 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
       <header class="has-back" id="quiz-header">
         <div class="site-title-row">
           <h1 id="quiz-header-title">Quiz</h1>
+          <button type="button" class="mock-exam-settings-btn game-mode-header-btn" onclick="openGameModePopup()" aria-label="Game Mode (Bluetooth Controller)" title="Game Mode (Bluetooth Controller)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="6" x2="10" y1="11" y2="11"/><line x1="8" x2="8" y1="9" y2="13"/><line x1="15" x2="15.01" y1="12" y2="12"/><line x1="18" x2="18.01" y1="10" y2="10"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.152A4 4 0 0 0 17.32 5z"/></svg>
+          </button>
           <button type="button" class="mock-exam-settings-btn" onclick="openQuizRandomizeSettingsModal()" aria-label="Quiz Settings" title="Quiz Settings">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           </button>
@@ -10625,7 +11136,10 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
 
       <div class="quiz-play-area" id="quiz-play-area" style="display:none;">
         <div class="quiz-play-head">
-          <span class="quiz-progress" id="quiz-progress">Question 1 of 50</span>
+          <span class="quiz-progress-wrap">
+            <span class="quiz-progress" id="quiz-progress">Question 1 of 50</span>
+            <button type="button" class="gform-report-btn gform-report-btn-icon gform-report-btn-borderless" id="quiz-report-btn" onclick="openQuizQuestionReport()" title="Report" aria-label="Report">&#128681;</button>
+          </span>
           <span class="quiz-score-pill" id="quiz-score-pill">Score: 0</span>
           <button class="quiz-settings-btn" id="quiz-settings-btn" onclick="openQuizSettings()" aria-label="Quiz timer settings" title="Quiz timer settings">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
@@ -11030,11 +11544,88 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         <span class="cc-admin-item-ts" id="cc-detail-ts"></span>
       </div>
       <div class="cc-admin-item-foot">
-        <button type="button" class="cc-admin-item-dismiss" id="cc-detail-dismiss-btn">DISMISS</button>
+        <button type="button" class="cc-admin-item-dismiss" id="cc-detail-dismiss-btn">DELETE</button>
         <button type="button" class="cc-admin-item-resolve" id="cc-detail-resolve-btn">RESOLVE</button>
       </div>
     </div>
   </div>
+
+  <!-- ---- Question Reports: admin-only viewer. Opened from the admin gear
+       menu (ADMIN SETTINGS -> QUESTION REPORTS). Same live .on('value')
+       pattern as Copyright/Concerns above, backed by Firebase at
+       'questionReports' — a report from any student, on any exam, shows
+       up here immediately. Reports are filed from the "Report" button on
+       each question card while taking a Mock Exam / Quiz / Mock Board
+       Exam (see openQuestionReport() near submitInAppMockExam). ---- -->
+  <div class="banned-list-overlay" id="admin-qr-overlay">
+    <div class="banned-list-card" style="max-width:580px;">
+      <button class="banned-list-close" onclick="closeAdminQuestionReportsModal()">&times;</button>
+      <h3>&#128681; Question Reports</h3>
+      <div id="admin-qr-items"></div>
+    </div>
+  </div>
+
+  <!-- ---- Question Reports: single-report detail pop-up. Opened by
+       clicking an item in the admin list above (see openQrDetail()).
+       Resolve emails the reporting student that it's been handled (same
+       backend contract as resolveCopyrightConcernEntry — see
+       resolveQuestionReportEntry for the 'resolveQuestionReport' action
+       shape); Dismiss just clears it with no email. ---- -->
+  <div class="banned-list-overlay" id="admin-qr-detail-overlay">
+    <div class="mockadmin-card" style="max-width:720px;" onclick="event.stopPropagation();">
+      <button class="banned-list-close" onclick="closeQrDetail()">&times;</button>
+      <div class="cc-admin-item-head" style="margin-bottom:14px;">
+        <span class="cc-badge" id="qr-detail-badge"></span>
+        <span class="cc-admin-item-who" id="qr-detail-who"></span>
+      </div>
+      <div class="cc-detail-message-box">
+        <p class="qr-detail-label">Question</p>
+        <p class="cc-admin-item-msg" id="qr-detail-question" style="-webkit-line-clamp:unset; overflow:visible;"></p>
+        <div id="qr-detail-options" class="qr-detail-options"></div>
+        <p class="qr-detail-label">Current correct answer on record</p>
+        <p class="cc-admin-item-msg" id="qr-detail-current-answer" style="-webkit-line-clamp:unset; overflow:visible;"></p>
+        <div id="qr-detail-extra"></div>
+        <span class="cc-admin-item-ts" id="qr-detail-ts"></span>
+        <span class="cc-admin-item-ts" id="qr-detail-examinfo" style="display:block; margin-top:4px;"></span>
+      </div>
+      <div class="cc-admin-item-foot">
+        <button type="button" class="cc-admin-item-dismiss" id="qr-detail-dismiss-btn">DELETE</button>
+        <button type="button" class="cc-admin-item-locate" id="qr-detail-locate-btn">LOCATE</button>
+        <button type="button" class="cc-admin-item-justify" id="qr-detail-justify-btn">JUSTIFY</button>
+        <button type="button" class="cc-admin-item-resolve" id="qr-detail-resolve-btn">RESOLVE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- Question Reports: "Justify" pop-up. Opened from the JUSTIFY
+       button in the detail pop-up above (see openJustifyQuestionReport()).
+       Lets the admin attach a reference/solution image (plus an optional
+       note) proving the report was wrong, which is emailed to the student
+       who filed it — see submitJustifyQuestionReport() for the send +
+       backend-contract notes. ---- -->
+  <div class="banned-list-overlay" id="qr-justify-overlay">
+    <div class="mockadmin-card" style="max-width:460px;" onclick="event.stopPropagation();">
+      <h3 style="margin:0 0 4px; font-size:16px;">Justify Report</h3>
+      <p style="margin:0 0 16px; font-size:12px; color:var(--rivet); line-height:1.55;">
+        Upload an image (e.g. the solution or a reference) showing why this report doesn't hold up. It'll be emailed to the student who filed it, and the report will be cleared from this list.
+      </p>
+      <input type="file" accept="image/*" id="qr-justify-image-input" style="display:none;" onchange="handleJustifyImageSelect(this)">
+      <button type="button" class="mockadmin-image-upload-btn" id="qr-justify-upload-btn"
+        onclick="document.getElementById('qr-justify-image-input').click()">&#128247; UPLOAD IMAGE</button>
+      <div id="qr-justify-image-preview-wrap" style="display:none; margin-top:10px;">
+        <img id="qr-justify-image-preview" style="max-width:100%; border-radius:6px; border:1px solid var(--line); display:block;" alt="Justification image">
+        <button type="button" class="mockadmin-mini-btn danger" style="margin-top:8px;" onclick="removeJustifyImage()">REMOVE IMAGE</button>
+      </div>
+      <p class="qr-detail-label" style="margin-top:16px;">Note to include (optional)</p>
+      <textarea id="qr-justify-note" class="qreport-textarea" placeholder="Add any extra explanation..." style="min-height:80px;"></textarea>
+      <div id="qr-justify-error" style="display:none; font-size:11.5px; color:#e67a7a; margin-top:10px;"></div>
+      <div class="mockadmin-editor-actions" style="margin-top:18px;">
+        <button type="button" class="mockadmin-save-btn" onclick="closeJustifyQuestionReport()">CANCEL</button>
+        <button type="button" class="mockadmin-publish-btn" id="qr-justify-send-btn" onclick="submitJustifyQuestionReport()">SEND</button>
+      </div>
+    </div>
+  </div>
+
 
   <!-- Generic in-page replacement for window.alert/confirm/prompt, used
        everywhere in the admin tools so nothing pops the browser's native
@@ -13279,7 +13870,7 @@ Answer: C</pre>
 
     async function dismissCopyrightConcernEntry(key) {
       if (!isAdminUser(currentChatUser)) return;
-      const confirmed = await adminConfirm('Remove this submission from the list? This cannot be undone.');
+      const confirmed = await adminConfirm('Delete this submission from the list? This cannot be undone.');
       if (!confirmed) return;
       try {
         ensureFirebaseApp();
@@ -13288,8 +13879,8 @@ Answer: C</pre>
         // above already re-renders the list once the removal lands.
         closeCcDetail();
       } catch (err) {
-        console.error('Dismiss copyright/concern error:', err);
-        adminAlert("Couldn't remove that submission. Please try again.");
+        console.error('Delete copyright/concern error:', err);
+        adminAlert("Couldn't delete that submission. Please try again.");
       }
     }
 
@@ -13362,6 +13953,673 @@ Answer: C</pre>
           console.error('Remove resolved copyright/concern error:', err);
           adminAlert('The email was sent, but the submission could not be removed from the list. Please try dismissing it manually.');
         }
+      });
+    }
+
+    // ---- Question Reports: admin-only viewer ----
+    // Reports are filed by students from the "Report" button on a question
+    // card while taking a Mock Exam / Quiz / Mock Board Exam (see
+    // openQuestionReport() near submitInAppMockExam), saved to Firebase at
+    // 'questionReports'. Same live .on('value') list + detail-popup shape
+    // as Copyright/Concerns above.
+    const QR_REASON_LABELS = {
+      'wrong-correct': 'Wrong correct answer',
+      'no-correct': 'No correct answer',
+      'copyright': 'Copyrighted question',
+      'other': 'Others'
+    };
+    const QR_REASON_BADGE_CLASS = {
+      'wrong-correct': 'qr-wrong-correct',
+      'no-correct': 'qr-no-correct',
+      'copyright': 'qr-copyright',
+      'other': 'qr-other'
+    };
+
+    let qrAdminRef = null;
+    let qrAdminEntries = [];
+
+    function openAdminQuestionReportsModal() {
+      if (!isAdminUser(currentChatUser)) return;
+      document.getElementById('admin-qr-overlay').classList.add('visible');
+      loadQuestionReportsList();
+    }
+
+    function closeAdminQuestionReportsModal() {
+      document.getElementById('admin-qr-overlay').classList.remove('visible');
+      if (qrAdminRef) { qrAdminRef.off('value'); qrAdminRef = null; }
+    }
+
+    function loadQuestionReportsList() {
+      const listEl = document.getElementById('admin-qr-items');
+      listEl.innerHTML = '<div class="banned-list-empty">Loading&hellip;</div>';
+      if (!chatConfigIsFilledIn()) {
+        listEl.innerHTML = '<div class="banned-list-empty">Chat isn\'t connected.</div>';
+        return;
+      }
+      try {
+        ensureFirebaseApp();
+        if (qrAdminRef) qrAdminRef.off('value'); // avoid stacking duplicate listeners on repeat opens
+        qrAdminRef = nsRef('questionReports');
+        qrAdminRef.on('value', (snap) => {
+          const val = snap.val() || {};
+          qrAdminEntries = Object.keys(val)
+            .map((key) => Object.assign({ key }, val[key]))
+            .sort((a, b) => (b.ts || 0) - (a.ts || 0));
+          renderQuestionReportsList();
+        }, (err) => {
+          console.error('Live question reports list error:', err);
+          listEl.innerHTML = '<div class="banned-list-empty">Could not load reports.</div>';
+        });
+      } catch (err) {
+        console.error('Load question reports list error:', err);
+        listEl.innerHTML = '<div class="banned-list-empty">Could not load reports.</div>';
+      }
+    }
+
+    function renderQuestionReportsList() {
+      const listEl = document.getElementById('admin-qr-items');
+      if (!qrAdminEntries.length) {
+        listEl.innerHTML = '<div class="banned-list-empty">No reports yet.</div>';
+        return;
+      }
+      listEl.innerHTML = `<div class="cc-admin-items">${qrAdminEntries.map((e) => {
+        const badgeClass = QR_REASON_BADGE_CLASS[e.reason] || 'qr-other';
+        const label = QR_REASON_LABELS[e.reason] || 'Report';
+        const when = e.ts ? new Date(e.ts).toLocaleString([], { hour12: false }) : '';
+        return `
+        <div class="cc-admin-item" onclick="openQrDetail('${e.key}')">
+          <span class="cc-badge cc-badge-list ${badgeClass}">${escapeHtml(label)}</span>
+          <div class="cc-admin-item-info">
+            <span class="cc-admin-item-who"><strong>${escapeHtml(e.reporterCallsign || '(no callsign)')}</strong> &middot; ${escapeHtml(e.reporterEmail || 'no email on file')}</span>
+            <span class="cc-admin-item-ts">${escapeHtml(when)}</span>
+          </div>
+        </div>`;
+      }).join('')}</div>`;
+    }
+
+    // Bumped on every openQrDetail() call so a slow getReportExamData()
+    // fetch from an earlier click can't overwrite the Q# of whatever report
+    // the admin has since clicked into instead.
+    let qrDetailToken = 0;
+
+    // Set by locateReportedQuestion() when it hides the Question Reports
+    // popup(s) to jump into the Mock Exam editor, so closeMockExamAdmin()
+    // knows to bring them back up afterwards instead of leaving the admin
+    // to reopen them by hand from the gear menu.
+    let qrLocatePendingReturn = false;
+    let qrLocateDetailWasOpen = false;
+
+    // Resolves the subject display name (e.g. "Aerodynamics") from a report's
+    // examId, which is in the "live:<subjectKey>:<setId>" or
+    // "boardmix:<subjectKey>" form (see submitQuestionReport()/getMockExam()).
+    // Falls back to the raw key, or '' if the examId doesn't match either shape.
+    function getSubjectNameFromExamId(examId) {
+      if (!examId || typeof examId !== 'string') return '';
+      const parts = examId.split(':');
+      let subjectKey = null;
+      if (parts[0] === 'live' && parts.length >= 2) subjectKey = parts[1];
+      else if (parts[0] === 'boardmix' && parts.length >= 2) subjectKey = parts[1];
+      if (!subjectKey) return '';
+      const s = subjects.find((x) => x.key === subjectKey);
+      return s ? s.name : subjectKey;
+    }
+
+    function openQrDetail(key) {
+      const e = qrAdminEntries.find((x) => x.key === key);
+      if (!e) return;
+      const token = ++qrDetailToken;
+      const badgeClass = QR_REASON_BADGE_CLASS[e.reason] || 'qr-other';
+      const label = QR_REASON_LABELS[e.reason] || 'Report';
+      const when = e.ts ? new Date(e.ts).toLocaleString([], { hour12: false }) : '';
+
+      const badge = document.getElementById('qr-detail-badge');
+      badge.textContent = label;
+      badge.className = 'cc-badge ' + badgeClass;
+      document.getElementById('qr-detail-who').innerHTML =
+        `<strong>${escapeHtml(e.reporterCallsign || '(no callsign)')}</strong> &middot; ${escapeHtml(e.reporterEmail || 'no email on file')}`;
+      // Exam name + question number stay here in the detail view (just not
+      // in the list preview above), reading as "Subject · Exam Title — Q##".
+      // Both the title and Q# start out from whatever was frozen into the
+      // report at submit time (e.examTitle / e.questionIndex) — for a
+      // boardmix report that's just the generic "<Subject> (Mixed Random
+      // Questions)" title and a per-reviewee shuffled index, so it's shown
+      // as a "Loading…" placeholder instead of that misleading value, then
+      // replaced once getReportExamData() resolves the real set: its real
+      // title, and the question's real (unshuffled) position found by
+      // matching the reported question's actual text against that set —
+      // see findReportedQuestionNumber.
+      const subjectName = getSubjectNameFromExamId(e.examId);
+      const isBoardmix = String(e.examId || '').indexOf('boardmix:') === 0;
+      const initialTitle = isBoardmix ? 'Loading\u2026' : (e.examTitle || 'Exam');
+      const initialQnum = isBoardmix ? '?' : (typeof e.questionIndex === 'number' ? e.questionIndex + 1 : '?');
+      document.getElementById('qr-detail-examinfo').innerHTML =
+        `${subjectName ? escapeHtml(subjectName) + ' &middot; ' : ''}<span id="qr-detail-examtitle">${escapeHtml(initialTitle)}</span> — Q<span id="qr-detail-qnum">${initialQnum}</span>`;
+      getReportExamData(e, (data) => {
+        if (token !== qrDetailToken) return; // a newer detail view has been opened since
+        const titleEl = document.getElementById('qr-detail-examtitle');
+        const qnumEl = document.getElementById('qr-detail-qnum');
+        if (!data) {
+          if (titleEl && isBoardmix) titleEl.textContent = e.examTitle || 'Exam';
+          return;
+        }
+        const num = findReportedQuestionNumber(data.questions, e);
+        if (titleEl) titleEl.textContent = data.title || e.examTitle || 'Exam';
+        if (qnumEl && num) qnumEl.textContent = String(num);
+      });
+      document.getElementById('qr-detail-question').textContent = e.question || '';
+
+      const optionsEl = document.getElementById('qr-detail-options');
+      const options = e.options || [];
+      if (options.length) {
+        optionsEl.innerHTML = options.map((opt) => {
+          const isSuggested = e.reason === 'wrong-correct' && e.studentSuggestedAnswer === opt;
+          return `<div class="qr-detail-option${isSuggested ? ' qr-option-suggested' : ''}">${escapeHtml(opt)}${isSuggested ? ' \u2014 student\u2019s pick' : ''}</div>`;
+        }).join('');
+      } else {
+        optionsEl.innerHTML = '';
+      }
+
+      document.getElementById('qr-detail-current-answer').textContent = e.currentCorrectAnswer || '(none on record)';
+
+      const extraEl = document.getElementById('qr-detail-extra');
+      if (e.reason === 'no-correct' && e.studentSuggestedAnswer) {
+        extraEl.innerHTML = `<p class="qr-detail-label">Student thinks the correct answer is</p><p class="cc-admin-item-msg" style="-webkit-line-clamp:unset; overflow:visible;">${escapeHtml(e.studentSuggestedAnswer)}</p>`;
+      } else if (e.reason === 'other' && e.note) {
+        extraEl.innerHTML = `<p class="qr-detail-label">Reported reason</p><p class="cc-admin-item-msg" style="-webkit-line-clamp:unset; overflow:visible;">${escapeHtml(e.note)}</p>`;
+      } else {
+        extraEl.innerHTML = '';
+      }
+
+      document.getElementById('qr-detail-ts').textContent = when;
+      document.getElementById('qr-detail-resolve-btn').onclick = () => resolveQuestionReportEntry(e.key);
+      document.getElementById('qr-detail-dismiss-btn').onclick = () => dismissQuestionReportEntry(e.key);
+      document.getElementById('qr-detail-justify-btn').onclick = () => openJustifyQuestionReport(e);
+      // "Locate" only makes sense for a question that actually lives in an
+      // editable admin exam set (examId format "live:<subjectKey>:<setId>",
+      // see getMockExam()) — or a Mock Board "Mixed Random Questions" report
+      // ("boardmix:..."). A boardmix report ideally carries originSetId,
+      // the real set the question was drawn from (see
+      // buildBoardSubjectPick()/submitQuestionReport()), but plenty won't:
+      // any board set that was already generated (and sitting in a
+      // student's localStorage) before that tagging existed has no
+      // per-question origin, so its reports come in with originSetId
+      // missing. Rather than hide Locate for every one of those, show it
+      // for any boardmix report and let locateReportedQuestion() fall back
+      // to a text search across the subject's published sets when
+      // originSetId isn't there. Built-in hardcoded exams (no admin editor
+      // to jump to at all) are still the only case that hides it.
+      const locateBtn = document.getElementById('qr-detail-locate-btn');
+      const isLocatable = !!e.examId && (
+        String(e.examId).indexOf('live:') === 0 ||
+        String(e.examId).indexOf('boardmix:') === 0
+      );
+      locateBtn.style.display = isLocatable ? '' : 'none';
+      locateBtn.onclick = () => locateReportedQuestion(e);
+      document.getElementById('admin-qr-detail-overlay').classList.add('visible');
+    }
+
+    // Resolves a report's real, current exam data — its actual title and
+    // question array — for display (see openQrDetail(), which uses this to
+    // show the real "Subject · Exam Title — Q##" instead of whatever was
+    // frozen into the report at submit time) and reuses the same lookup for
+    // locateReportedQuestion() below. Same "live:<subjectKey>:<setId>" /
+    // "boardmix:<subjectKey>" / hardcoded-set shapes as getMockExam(), but
+    // reads mockExamSets fresh via a one-time Firebase fetch instead of
+    // relying on whichever live caches happen to already be warm (the admin
+    // may never have opened that particular subject this session). Calls
+    // back with { setId, title, questions }, or null if it can't be
+    // determined. Results are cached per examId+originSetId since several
+    // reports commonly point at the same exam.
+    //
+    // A "boardmix:<subjectKey>" report is stored with only a generic
+    // "<Subject> (Mixed Random Questions)" title/titleMain — never the real
+    // set the question came from — so showing that stored title next to the
+    // subject name just repeats the subject name twice. When the report
+    // carries originSetId (the real set the question was drawn from — see
+    // buildBoardSubjectPick()/submitQuestionReport()) that real set is
+    // fetched directly. Older board reports filed before that tagging
+    // existed have no originSetId, so every currently published set for the
+    // subject is searched instead for one containing a question matching
+    // the report's text/options (same matching rule as
+    // findReportedQuestionNumber below) — best-effort, since the question
+    // may since have been edited, moved, or deleted.
+    const QR_EXAM_DATA_CACHE = {};
+    function getReportExamData(entry, cb) {
+      const examId = entry && entry.examId;
+      if (!examId) { cb(null); return; }
+      if (IN_APP_MOCK_EXAMS[examId]) {
+        const ex = IN_APP_MOCK_EXAMS[examId];
+        cb({ setId: null, title: ex.titleMain || ex.title || '', questions: ex.questions || [] });
+        return;
+      }
+      const originSetId = entry.originSetId;
+      const cacheKey = String(examId).indexOf('boardmix:') === 0 ? examId + '::' + (originSetId || '') : examId;
+      if (Object.prototype.hasOwnProperty.call(QR_EXAM_DATA_CACHE, cacheKey)) { cb(QR_EXAM_DATA_CACHE[cacheKey]); return; }
+      const finish = (data) => { QR_EXAM_DATA_CACHE[cacheKey] = data; cb(data); };
+      const subjectKey = String(examId).split(':')[1];
+
+      if (String(examId).indexOf('live:') === 0 || (String(examId).indexOf('boardmix:') === 0 && originSetId)) {
+        const setId = String(examId).indexOf('boardmix:') === 0 ? originSetId : String(examId).split(':').slice(2).join(':');
+        if (!subjectKey || !setId || !ensureFirebaseApp()) { finish(null); return; }
+        nsRef(`mockExamSets/${subjectKey}/${setId}`).once('value').then((snap) => {
+          const exam = snap.val();
+          if (!exam) { finish(null); return; }
+          finish({ setId, title: exam.title || '', questions: Array.isArray(exam.questions) ? exam.questions : [] });
+        }).catch(() => finish(null));
+        return;
+      }
+
+      if (String(examId).indexOf('boardmix:') === 0) {
+        if (!subjectKey || !ensureFirebaseApp()) { finish(null); return; }
+        nsRef(`mockExamSets/${subjectKey}`).once('value').then((snap) => {
+          const sets = snap.val() || {};
+          for (const [setId, set] of Object.entries(sets)) {
+            if (!set || !Array.isArray(set.questions)) continue;
+            if (findReportedQuestionNumber(set.questions, entry)) {
+              finish({ setId, title: set.title || '', questions: set.questions });
+              return;
+            }
+          }
+          finish(null);
+        }).catch(() => finish(null));
+        return;
+      }
+      finish(null);
+    }
+
+    // Same idea as findMockAdminQuestionIndex() above but reads a plain
+    // {q, options, correct}[] array (as fetched by getReportExamData)
+    // rather than the editor's live mockAdminEditingQuestions, and returns
+    // a 1-based question number (or null if no match was found).
+    function findReportedQuestionNumber(questions, entry) {
+      if (!questions || !questions.length || !entry) return null;
+      const targetQ = entry.question || '';
+      const targetOptions = Array.isArray(entry.options) ? entry.options : null;
+      const candidates = [];
+      questions.forEach((q, idx) => { if (q && q.q === targetQ) candidates.push(idx); });
+      if (candidates.length > 1 && targetOptions) {
+        const refined = candidates.filter((idx) => {
+          const opts = (questions[idx] && questions[idx].options) || [];
+          return opts.length === targetOptions.length && opts.every((o, k) => o === targetOptions[k]);
+        });
+        if (refined.length) return refined[0] + 1;
+      }
+      if (candidates.length) return candidates[0] + 1;
+      return null;
+    }
+
+    // ---- "Locate" a reported question: opens the Mock Exam admin editor
+    // to the exact exam/subject the report came from and scrolls straight
+    // to that question card, so the admin doesn't have to hunt for it by
+    // hand across subjects/sets. examId on a report is in the "live:
+    // <subjectKey>:<setId>" form (see getMockExam() / submitQuestionReport()
+    // above) for anything that lives in the admin-editable mockExamSets
+    // tree. A "boardmix:<subjectKey>" report (Mock Board's "Mixed Random
+    // Questions" paper) has no setId of its own, so its originSetId (which
+    // real set the question was drawn from) is used instead when present;
+    // when it's missing, getReportExamData() above is tried as a
+    // text-search fallback before giving up. ----
+    async function locateReportedQuestion(entry) {
+      if (!entry || !entry.examId) return;
+      if (!isAdminUser(currentChatUser)) return;
+      const parts = String(entry.examId).split(':');
+      const subjectKey = parts[1];
+      let setId = parts[0] === 'boardmix' ? entry.originSetId : parts.slice(2).join(':');
+      if (!subjectKey) return;
+      if (!ensureFirebaseApp()) { await adminAlert('Chat/database is not configured yet.'); return; }
+
+      if (parts[0] === 'boardmix' && !setId) {
+        const found = await new Promise((resolve) => getReportExamData(entry, resolve));
+        setId = found && found.setId;
+        if (!setId) {
+          await adminAlert("Couldn't automatically figure out which set this question belongs to (it may have been edited, moved, or removed since the report was filed). Try finding it manually from this subject's exam list.");
+          return;
+        }
+      }
+      if (!setId) return;
+
+      // Hide (not close) the Question Reports popup(s) instead of tearing
+      // them down: #mockadmin-overlay sits at a lower z-index (1499) than
+      // .banned-list-overlay (1500) so the editor would otherwise open
+      // underneath them, but they should still be there, right behind the
+      // editor, once the admin is done — see closeMockExamAdmin().
+      qrLocatePendingReturn = true;
+      qrLocateDetailWasOpen = document.getElementById('admin-qr-detail-overlay').classList.contains('visible');
+      document.getElementById('admin-qr-detail-overlay').classList.remove('visible');
+      document.getElementById('admin-qr-overlay').classList.remove('visible');
+
+      // Same opening sequence as openMockExamAdmin(), but pinned to the
+      // report's subject instead of whichever one was last open.
+      document.getElementById('mockadmin-overlay').classList.add('visible');
+      document.body.style.overflow = 'hidden';
+      document.getElementById('mockadmin-main-title').style.display = '';
+      document.getElementById('mockadmin-subject-picker').style.display = '';
+      renderMockAdminSubjectPicker();
+      selectMockAdminSubject(subjectKey);
+
+      waitForMockAdminExam(subjectKey, setId, entry, 0);
+    }
+
+    // selectMockAdminSubject() attaches a live Firebase listener that fills
+    // mockAdminExamsCache asynchronously, so the exam we want to jump to
+    // may not be there yet on the same tick — poll briefly until it (or a
+    // timeout) shows up.
+    function waitForMockAdminExam(subjectKey, setId, entry, attempt) {
+      if (mockAdminCurrentSubject !== subjectKey) return; // admin navigated elsewhere while waiting
+      const exam = mockAdminExamsCache[setId];
+      if (exam) {
+        // Route through the exam's set first (if known yet) so the editor's
+        // "back" button returns to that set's exam list instead of the
+        // top-level set list.
+        if (exam.groupId) {
+          openMockAdminGroup(exam.groupId);
+        }
+        openMockAdminEditor(setId);
+        const found = findMockAdminQuestionIndex(entry);
+        scrollToMockAdminQuestion(found.index);
+        if (!found.exact) {
+          adminAlert("Couldn't find this exact question text (it may have been edited since the report was filed) \u2014 jumped to its best-guess position instead. Please double-check you're looking at the right question.");
+        }
+        return;
+      }
+      if (attempt >= 50) { // ~5s
+        adminAlert("Couldn't find that question's exam \u2014 it may have been deleted, moved, or renamed since the report was filed.");
+        return;
+      }
+      setTimeout(() => waitForMockAdminExam(subjectKey, setId, entry, attempt + 1), 100);
+    }
+
+    // The report's questionIndex is the position the question happened to
+    // land in for THAT reviewee — Mock Exams can randomize question order
+    // per attempt (see EXAM_RANDOMIZE_QUESTIONS_KEY / getOrderedExamQuestions),
+    // so it very often does NOT match the question's real position in the
+    // admin editor's (unshuffled) array. Match on the reported question's
+    // actual text instead — that's stable regardless of shuffle order —
+    // and only fall back to the stored index if no text match is found
+    // (e.g. the question was since reworded).
+    function findMockAdminQuestionIndex(entry) {
+      const targetQ = (entry && entry.question) || '';
+      const targetOptions = entry && Array.isArray(entry.options) ? entry.options : null;
+      const candidates = [];
+      mockAdminEditingQuestions.forEach((q, idx) => {
+        if ((q.q || '') === targetQ) candidates.push(idx);
+      });
+      if (candidates.length > 1 && targetOptions) {
+        // Same question text appears more than once — disambiguate by
+        // comparing the full answer-choice list too.
+        const refined = candidates.filter(idx => {
+          const opts = mockAdminEditingQuestions[idx].options || [];
+          return opts.length === targetOptions.length && opts.every((o, k) => o === targetOptions[k]);
+        });
+        if (refined.length) return { index: refined[0], exact: true };
+      }
+      if (candidates.length) return { index: candidates[0], exact: true };
+      // No text match at all (question edited/removed since the report was
+      // filed) — fall back to the originally-reported index, clamped to
+      // the current question count, as a best-effort guess.
+      const fallback = typeof (entry && entry.questionIndex) === 'number' ? entry.questionIndex : 0;
+      return { index: Math.max(0, Math.min(fallback, mockAdminEditingQuestions.length - 1)), exact: false };
+    }
+
+    function scrollToMockAdminQuestion(qIndex) {
+      requestAnimationFrame(() => {
+        const card = document.getElementById('mockadmin-qcard-' + qIndex);
+        if (!card) return;
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.classList.remove('mockadmin-qcard-highlight');
+        void card.offsetWidth; // restart the flash animation if it's already run once
+        card.classList.add('mockadmin-qcard-highlight');
+        setTimeout(() => card.classList.remove('mockadmin-qcard-highlight'), 2200);
+      });
+    }
+
+    function closeQrDetail() {
+      document.getElementById('admin-qr-detail-overlay').classList.remove('visible');
+    }
+
+    async function dismissQuestionReportEntry(key) {
+      if (!isAdminUser(currentChatUser)) return;
+      const confirmed = await adminConfirm('Delete this report from the list? This cannot be undone.');
+      if (!confirmed) return;
+      try {
+        ensureFirebaseApp();
+        await nsRef('questionReports/' + key).remove();
+        // No manual reload needed — the live 'questionReports' listener
+        // above already re-renders the list once the removal lands.
+        closeQrDetail();
+      } catch (err) {
+        console.error('Delete question report error:', err);
+        adminAlert("Couldn't delete that report. Please try again.");
+      }
+    }
+
+    // Marks a Question Report as resolved: emails the student who filed it
+    // (at the address on their account) to let them know it's been
+    // handled, then clears it out of the admin queue — same end state as
+    // Dismiss, but with the student actually notified.
+    //
+    // Backend contract: 'resolveQuestionReport' (a separate Apps Script
+    // action from 'resolveCopyrightConcern', to be added later) must send
+    // the notification email to `email` and return { status: 'ok' } once
+    // sent (or at least queued) — same success/failure shape as
+    // 'resolveCopyrightConcern' / 'banByNickname' / 'unbanByEmail' already
+    // report back through jsonpRequest above. The report is only removed
+    // from Firebase once that confirmation comes back, so a failed send
+    // leaves it in the list to retry instead of silently vanishing
+    // unresolved.
+    async function resolveQuestionReportEntry(key) {
+      if (!isAdminUser(currentChatUser)) return;
+      const e = qrAdminEntries.find((x) => x.key === key);
+      if (!e) return;
+
+      const confirmed = await adminConfirm(
+        `Mark this report as resolved? This will send an email to ${e.reporterEmail || '(no email on file)'} letting them know it's been resolved.`
+      );
+      if (!confirmed) return;
+
+      if (!e.reporterEmail) {
+        adminAlert('No email is on file for this report, so a resolution email cannot be sent.');
+        return;
+      }
+
+      // Always ask fresh — never reuse a remembered secret for a moderation action.
+      const secret = await adminPrompt('Enter the admin secret to confirm this resolution:');
+      if (!secret) return;
+
+      const btn = document.getElementById('qr-detail-resolve-btn');
+      if (btn) { btn.disabled = true; btn.textContent = 'RESOLVING\u2026'; }
+
+      jsonpRequest({
+        action: 'resolveQuestionReport',
+        email: e.reporterEmail,
+        callsign: e.reporterCallsign || '',
+        reason: e.reason || 'other',
+        examTitle: e.examTitle || '',
+        question: e.question || '',
+        secret
+      }, async (result) => {
+        if (btn) { btn.disabled = false; btn.textContent = 'RESOLVE'; }
+
+        if (result && result.status === 'ok') {
+          noteAdminSecretSuccess();
+        } else if (result && result.message === 'Too many attempts. Please wait a few minutes and try again.') {
+          adminAlert('Too many admin secret attempts recently. Please wait a few minutes and try again.');
+          return;
+        } else if (result && result.message === 'Invalid Admin Secret') {
+          adminAlert(adminSecretWrongMessage('Wrong admin secret. Nothing was sent. Try again.'));
+          return;
+        } else {
+          adminAlert(`Could not send the resolution email: ${(result && result.message) || 'could not reach the server.'}`);
+          return;
+        }
+
+        try {
+          ensureFirebaseApp();
+          await nsRef('questionReports/' + key).remove();
+          // No manual reload needed — the live 'questionReports' listener
+          // above already re-renders the list once the removal lands.
+          closeQrDetail();
+          adminAlert(`Resolved. An email was sent to ${e.reporterEmail}.`);
+        } catch (err) {
+          console.error('Remove resolved question report error:', err);
+          adminAlert('The email was sent, but the report could not be removed from the list. Please try dismissing it manually.');
+        }
+      });
+    }
+
+    // ---- "Justify" a reported question ----
+    // Opened from the JUSTIFY button in the report detail pop-up. Lets the
+    // admin attach an image (e.g. the worked solution) plus an optional
+    // note explaining why the report was wrong, then emails that to the
+    // student who filed it and clears the report — same end state as
+    // Resolve, but with an actual explanation attached instead of a plain
+    // "handled" notice.
+    let qrJustifyContext = null; // { entry, imageDataUrl }
+
+    function openJustifyQuestionReport(entry) {
+      if (!entry) return;
+      qrJustifyContext = { entry, imageDataUrl: null };
+      document.getElementById('qr-justify-image-input').value = '';
+      document.getElementById('qr-justify-image-preview-wrap').style.display = 'none';
+      document.getElementById('qr-justify-image-preview').src = '';
+      document.getElementById('qr-justify-note').value = '';
+      const err = document.getElementById('qr-justify-error');
+      err.style.display = 'none';
+      err.textContent = '';
+      const sendBtn = document.getElementById('qr-justify-send-btn');
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'SEND';
+      document.getElementById('qr-justify-overlay').classList.add('visible');
+    }
+
+    function closeJustifyQuestionReport() {
+      document.getElementById('qr-justify-overlay').classList.remove('visible');
+      qrJustifyContext = null;
+    }
+
+    function handleJustifyImageSelect(inputEl) {
+      const file = inputEl.files && inputEl.files[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        adminAlert('Please choose an image file.');
+        inputEl.value = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          // Same downscale/compress as the exam-question image uploader
+          // (handleMockAdminImageSelect) — keeps a full-size phone photo
+          // from bloating the outgoing email.
+          const MAX_W = 900;
+          const scale = Math.min(1, MAX_W / img.width);
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          if (qrJustifyContext) qrJustifyContext.imageDataUrl = dataUrl;
+          const preview = document.getElementById('qr-justify-image-preview');
+          preview.src = dataUrl;
+          document.getElementById('qr-justify-image-preview-wrap').style.display = '';
+        };
+        img.onerror = () => adminAlert('Could not read that image. Try a different file.');
+        img.src = reader.result;
+      };
+      reader.onerror = () => adminAlert('Could not read that image. Try a different file.');
+      reader.readAsDataURL(file);
+      inputEl.value = '';
+    }
+
+    function removeJustifyImage() {
+      if (qrJustifyContext) qrJustifyContext.imageDataUrl = null;
+      document.getElementById('qr-justify-image-preview-wrap').style.display = 'none';
+      document.getElementById('qr-justify-image-preview').src = '';
+    }
+
+    function qrJustifyShowError(msg) {
+      const err = document.getElementById('qr-justify-error');
+      if (!err) return;
+      err.textContent = msg;
+      err.style.display = '';
+    }
+
+    // Backend contract: a new 'justifyQuestionReport' Apps Script action
+    // (alongside 'resolveQuestionReport'/'resolveCopyrightConcern') must
+    // email `image` (a data: URL) and `note` to `email`. This goes out as
+    // a plain no-cors POST to SHEET_LOG_URL — the same fire-and-forget
+    // pattern already used elsewhere in this file for registerNickname/
+    // avatar updates/wings — rather than through jsonpRequest, because a
+    // compressed screenshot is comfortably too big for a GET/query-string
+    // request. That means, unlike Resolve, this can't read back a real
+    // success/failure from the server once sent. To still catch a wrong
+    // admin secret before anything goes out, it's verified up front with
+    // a normal jsonpRequest('verifySecret') call (same one deleteChatMessage
+    // uses), and sent again in the POST body for the backend to re-check.
+    async function submitJustifyQuestionReport() {
+      if (!qrJustifyContext || !isAdminUser(currentChatUser)) return;
+      const entry = qrJustifyContext.entry;
+      qrJustifyShowError('');
+      document.getElementById('qr-justify-error').style.display = 'none';
+
+      if (!qrJustifyContext.imageDataUrl) { qrJustifyShowError('Upload an image first.'); return; }
+      if (!entry.reporterEmail) { qrJustifyShowError('No email is on file for this report, so nothing can be sent.'); return; }
+
+      const secret = await adminPrompt('Enter the admin secret to send this justification:');
+      if (!secret) return;
+
+      const sendBtn = document.getElementById('qr-justify-send-btn');
+      if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = 'VERIFYING\u2026'; }
+
+      jsonpRequest({ action: 'verifySecret', secret }, (result) => {
+        if (result && result.rateLimited) {
+          if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'SEND'; }
+          adminAlert('Too many admin secret attempts recently. Please wait a few minutes and try again.');
+          return;
+        }
+        if (!result || !result.valid) {
+          if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'SEND'; }
+          adminAlert(adminSecretWrongMessage('Wrong admin secret. Nothing was sent. Try again.'));
+          return;
+        }
+        noteAdminSecretSuccess();
+        if (sendBtn) sendBtn.textContent = 'SENDING\u2026';
+
+        const note = document.getElementById('qr-justify-note').value.trim();
+        fetch(SHEET_LOG_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({
+            action: 'justifyQuestionReport',
+            app: APP_ID,
+            email: entry.reporterEmail,
+            callsign: entry.reporterCallsign || '',
+            examTitle: entry.examTitle || '',
+            question: entry.question || '',
+            note,
+            image: qrJustifyContext.imageDataUrl,
+            secret
+          })
+        }).catch(() => {});
+
+        (async () => {
+          try {
+            ensureFirebaseApp();
+            await nsRef('questionReports/' + entry.key).remove();
+            // No manual reload needed — the live 'questionReports' listener
+            // above already re-renders the list once the removal lands.
+            closeJustifyQuestionReport();
+            closeQrDetail();
+            adminAlert(`Justification sent to ${entry.reporterEmail}.`);
+          } catch (errRemove) {
+            console.error('Remove justified question report error:', errRemove);
+            closeJustifyQuestionReport();
+            adminAlert('The justification was sent, but the report could not be removed from the list. Please try dismissing it manually.');
+          }
+        })();
       });
     }
 
@@ -18492,12 +19750,12 @@ Answer: C</pre>
     // Themed replacement for native confirm() — shows a centered dialog
     // with Cancel/Remove buttons and calls onConfirm only if the person
     // clicks Remove. Used by removeCrewmate and removeCopilot below.
-    function openConfirmDialog(message, onConfirm, confirmLabel, tone) {
+    function openConfirmDialog(message, onConfirm, confirmLabel, tone, preventOutsideClose) {
       closeConfirmDialog();
       const overlay = document.createElement('div');
       overlay.id = 'confirm-dialog-overlay';
       overlay.className = 'confirm-dialog-overlay';
-      const toneClass = (tone === 'affirm' || tone === 'generate' || tone === 'danger' || tone === 'yellow') ? tone : 'confirm';
+      const toneClass = (tone === 'affirm' || tone === 'generate' || tone === 'danger' || tone === 'yellow' || tone === 'neutral') ? tone : 'confirm';
       overlay.innerHTML = `
         <div class="confirm-dialog">
           <p class="confirm-dialog-message">${escapeHtml(message)}</p>
@@ -18507,7 +19765,9 @@ Answer: C</pre>
           </div>
         </div>
       `;
-      overlay.addEventListener('click', (e) => { if (e.target === overlay) closeConfirmDialog(); });
+      if (!preventOutsideClose) {
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) closeConfirmDialog(); });
+      }
       document.body.appendChild(overlay);
       requestAnimationFrame(() => overlay.classList.add('visible'));
       document.getElementById('confirm-dialog-confirm-btn').addEventListener('click', () => {
@@ -21929,11 +23189,15 @@ Answer: C</pre>
       const target = Math.max(...caps);
       const counts = distributeRandomCounts(caps, target);
       const questions = [];
-      entries.forEach(([, set], i) => {
+      entries.forEach(([setId, set], i) => {
         const n = counts[i];
         if (n <= 0) return;
         const idxs = shuffle(set.questions.map((_, k) => k)).slice(0, n);
-        idxs.forEach(k => questions.push(set.questions[k]));
+        // Tag each pulled question with the real Mock Exam set it came
+        // from (_boardOriginSetId) — otherwise a report filed against
+        // this synthetic mixed paper has no editable exam to point back
+        // to. See submitQuestionReport() / locateReportedQuestion().
+        idxs.forEach(k => questions.push(Object.assign({}, set.questions[k], { _boardOriginSetId: setId })));
       });
       const examData = { title: `${subjectName} (Mixed Random Questions)`, titleMain: subjectName, titleSuffix: 'Mixed Random Questions', questions };
       BOARD_MIX_CACHE[subjectKey] = examData;
@@ -22358,16 +23622,41 @@ Answer: C</pre>
       return true;
     }
 
+    // Shared with the gamepad-polling code further down: which of
+    // CANCEL/SAVE currently carries the yellow gc-focused highlight in
+    // this popup. Reset fresh every time it opens so it never comes back
+    // highlighting wherever it was left last time.
+    window.__quizTimerPopupFocus = { btnState: { index: 0, latch: false }, holdDir: 0, holdFrames: 0 };
+
     function openQuizSettings() {
       const status = document.getElementById('quiz-settings-status');
       status.textContent = '';
       status.classList.remove('visible');
       document.getElementById('quiz-autonext-input').value = getQuizAutoNextSeconds();
       document.getElementById('quiz-settings-overlay').classList.add('visible');
+      window.__quizTimerPopupFocus.btnState = { index: 0, latch: false };
+      window.__quizTimerPopupFocus.holdDir = 0;
+      window.__quizTimerPopupFocus.holdFrames = 0;
     }
 
     function closeQuizSettings() {
       document.getElementById('quiz-settings-overlay').classList.remove('visible');
+      const upArrow = document.getElementById('quiz-autonext-up');
+      const downArrow = document.getElementById('quiz-autonext-down');
+      if (upArrow) upArrow.classList.remove('qs-timer-arrow-pressed');
+      if (downArrow) downArrow.classList.remove('qs-timer-arrow-pressed');
+    }
+
+    // Shared by the on-screen up/down arrows and the controller's D-pad/
+    // stick up-down (see the pollGamepad handling for this popup) — bumps
+    // the seconds value by delta, clamped to the same 1-11 range the
+    // typed field enforces.
+    function bumpQuizAutoNextSeconds(delta) {
+      const input = document.getElementById('quiz-autonext-input');
+      if (!input) return;
+      const current = parseInt(input.value, 10);
+      const base = Number.isFinite(current) ? current : getQuizAutoNextSeconds();
+      input.value = Math.min(11, Math.max(1, base + delta));
     }
 
     function saveQuizAutoNextSeconds() {
@@ -22710,6 +23999,15 @@ Answer: C</pre>
       // underneath the subjects list the next time this modal opens.
       closeBulkExamCreator();
       closeMockAdminEditor();
+
+      // Bring the Question Reports popup(s) back if a "Locate" click sent
+      // us here — see locateReportedQuestion(). They were only hidden, not
+      // torn down, so this just restores the state the admin left behind.
+      if (qrLocatePendingReturn) {
+        qrLocatePendingReturn = false;
+        document.getElementById('admin-qr-overlay').classList.add('visible');
+        if (qrLocateDetailWasOpen) document.getElementById('admin-qr-detail-overlay').classList.add('visible');
+      }
     }
 
     function renderMockAdminSubjectPicker() {
@@ -23184,6 +24482,7 @@ Answer: C</pre>
 
     function openMockAdminEditor(examId) {
       mockAdminCurrentExamId = examId;
+      document.getElementById('mockadmin-list-view').style.display = 'none';
       document.getElementById('mockadmin-examlist-view').style.display = 'none';
       document.getElementById('mockadmin-editor-view').style.display = '';
       document.getElementById('mockadmin-main-title').style.display = 'none';
@@ -23227,7 +24526,7 @@ Answer: C</pre>
         return;
       }
       el.innerHTML = mockAdminEditingQuestions.map((q, qi) => `
-        <div class="mockadmin-question-card">
+        <div class="mockadmin-question-card" id="mockadmin-qcard-${qi}">
           <div class="mockadmin-question-head">
             <span>QUESTION ${qi + 1}</span>
             <button type="button" class="mockadmin-mini-btn danger" onclick="removeMockAdminQuestion(${qi})">REMOVE</button>
@@ -24040,10 +25339,21 @@ Answer: C</pre>
       return v === null ? true : v === '1';
     }
 
+    // Shared with the gamepad-polling code further down: which zone (the
+    // box chooser rows vs. the Cancel/Save row) currently carries the
+    // yellow gc-focused highlight in this popup. Reset fresh every time
+    // the popup opens so it never comes back highlighting wherever it
+    // was left last time.
+    window.__qsPopupFocus = { zone: 'box', boxIndex: 0, vlatch: false, btnState: { index: 0, latch: false } };
+
     function openQuizRandomizeSettingsModal() {
       document.getElementById('quiz-setting-randomize-questions').checked = quizRandomizeQuestionsOn();
       document.getElementById('quiz-setting-randomize-choices').checked = quizRandomizeChoicesOn();
       document.getElementById('quiz-randomize-settings-overlay').classList.add('visible');
+      window.__qsPopupFocus.zone = 'box';
+      window.__qsPopupFocus.boxIndex = 0;
+      window.__qsPopupFocus.vlatch = false;
+      window.__qsPopupFocus.btnState = { index: 0, latch: false };
     }
 
     function closeQuizRandomizeSettingsModal() {
@@ -24252,27 +25562,6 @@ Answer: C</pre>
       // and score (restoreExamProgress below re-grades it automatically
       // since it was already submitted).
       if (examCard && examCard.classList && examCard.classList.contains('board-past') && !examCard.classList.contains('board-reviewable')) return;
-
-      // gformIsBoard has to be set for THIS exam before anything below reads
-      // it — getOrderedExamQuestions (right after this) decides whether to
-      // reuse a saved question order via loadExamProgress(examId), which
-      // defaults to reading from the Mock Board's storage scope or the
-      // regular one based on gformIsBoard. Setting it only later (as this
-      // used to) meant a board exam's order got looked up under the wrong
-      // (non-board) key here, so re-opening an already-submitted board exam
-      // silently drew a brand new shuffle instead of reusing the one it was
-      // actually answered and scored under — which then made restoring the
-      // saved answers below fail (they're saved by on-screen position, and
-      // the positions no longer matched) and made a finished exam look
-      // blank/reset instead of showing what was actually answered.
-      const activeView = document.querySelector('.view.visible');
-      if (examCard && examCard.closest) gformIsBoard = !!examCard.closest('#view-board');
-      else if (activeView) gformIsBoard = (activeView.id === 'view-board');
-      if (gformIsBoard) gformReturnViewId = 'view-board';
-      else if (activeView) gformReturnViewId = activeView.id;
-      else if (!gformReturnViewId || gformReturnViewId === 'view-board') gformReturnViewId = 'view-mock-exam';
-      gformReturnScrollY = window.scrollY;
-
       const ordered = getOrderedExamQuestions(examId);
       if (!ordered) return;
       const exam = ordered.exam;
@@ -24291,8 +25580,13 @@ Answer: C</pre>
       const qCardsHtml = orderedQuestions.map((item, i) => `
         <div class="gform-card" id="gform-card-${i}" data-qindex="${i}">
           <div class="gform-qhead">
-            <p class="gform-qnum">Question ${i + 1} of ${orderedQuestions.length}</p>
-            <button type="button" class="gform-pin-btn" id="gform-pin-${i}" aria-pressed="false" onclick="togglePinQuestion(${i})">&#128204; Pin</button>
+            <div class="gform-qnum-wrap">
+              <p class="gform-qnum">Question ${i + 1} of ${orderedQuestions.length}</p>
+              <button type="button" class="gform-report-btn gform-report-btn-icon gform-report-btn-borderless" id="gform-report-${i}" onclick="openQuestionReport(${i})" title="Report" aria-label="Report">&#128681;</button>
+            </div>
+            <div class="gform-qhead-actions">
+              <button type="button" class="gform-pin-btn" id="gform-pin-${i}" aria-pressed="false" onclick="togglePinQuestion(${i})">&#128204; Pin</button>
+            </div>
           </div>
           <p class="gform-qtext">${renderMathText(item.q)}</p>
           ${item.image ? `<img class="gform-question-image" src="${item.image}" alt="Question ${i + 1} image" onload="sizeQuestionImage(this)" onclick="openQuestionImagePreview(this)">` : ''}
@@ -24302,10 +25596,12 @@ Answer: C</pre>
               <input type="radio" name="gform-q-${i}" value="${escapeHtml(opt)}" onchange="document.getElementById('gform-card-${i}').classList.add('answered'); saveExamProgress('${examId}')">
               <span>${renderMathText(opt)}</span>
             </label>`;
-            // "Clear selection" sits on the right, on the same line as the last choice
+            // Clear selection sits on the right, on the same line as the last choice.
             if (j !== (ordered.choices[i] || item.options).length - 1) return optionHtml;
             return `<div class="gform-option-row">${optionHtml}
-              <button type="button" class="gform-clear-btn" id="gform-clear-${i}" onclick="clearSelection(${i})">Clear selection</button>
+              <div class="gform-option-row-actions">
+                <button type="button" class="gform-clear-btn" id="gform-clear-${i}" onclick="clearSelection(${i})">Clear selection</button>
+              </div>
             </div>`;
           }).join('')}
           <div class="gform-feedback" id="gform-feedback-${i}" style="display:none;"></div>
@@ -24342,9 +25638,14 @@ Answer: C</pre>
       // (Mock Exam subject list, Quiz list, a subject page, etc.) and drop
       // this exam into the page in its place, the same way the app's other
       // views swap in and out — then remember it so closing the exam can
-      // bring that view back. (gformIsBoard/gformReturnViewId/
-      // gformReturnScrollY are already set, right at the top of this
-      // function — see the comment there.)
+      // bring that view back.
+      const activeView = document.querySelector('.view.visible');
+      if (examCard && examCard.closest) gformIsBoard = !!examCard.closest('#view-board');
+      else if (activeView) gformIsBoard = (activeView.id === 'view-board');
+      if (gformIsBoard) gformReturnViewId = 'view-board';
+      else if (activeView) gformReturnViewId = activeView.id;
+      else if (!gformReturnViewId || gformReturnViewId === 'view-board') gformReturnViewId = 'view-mock-exam';
+      gformReturnScrollY = window.scrollY;
       document.querySelectorAll('.view').forEach(v => v.classList.remove('visible'));
       document.querySelector('.wrap').appendChild(overlay);
       window.scrollTo(0, 0);
@@ -24411,6 +25712,231 @@ Answer: C</pre>
       const card = document.getElementById(`gform-card-${i}`);
       if (card) card.classList.remove('answered');
       saveExamProgress(currentExamId);
+    }
+
+    // ---- "Report" a question ----
+    // Always available from a Mock Exam / Quiz card's header — whether the
+    // reviewee has picked an answer yet or not, and even after the exam is
+    // finished (the button lives in the card's head, which is never
+    // rewritten by grading). Reports are saved to Firebase at
+    // 'questionReports' (same shared-storage pattern as
+    // 'copyrightConcerns') so the admin viewer below (ADMIN SETTINGS ->
+    // QUESTION REPORTS) sees them live, from any student, immediately.
+    let qreportContext = null;
+
+    function openQuestionReport(i) {
+      if (!currentExamId) return;
+      const ordered = getOrderedExamQuestions(currentExamId);
+      if (!ordered) return;
+      const item = ordered.questions[i];
+      if (!item) return;
+      renderQuestionReportModal(currentExamId, i, item, 'exam');
+    }
+
+    // Same report modal, opened from the live Quiz view instead of a Mock
+    // Exam review. Builds the same "live:<subjectKey>:<setId>" examId
+    // getMockExam() already knows how to resolve, so admin QUESTION REPORTS
+    // shows the quiz's real title without needing a separate lookup path.
+    function openQuizQuestionReport() {
+      if (!currentQuizExamRef || !Array.isArray(quizQuestions) || !quizQuestions.length) return;
+      const item = quizQuestions[quizIndex];
+      if (!item) return;
+      const examId = 'live:' + currentQuizExamRef.subjectKey + ':' + currentQuizExamRef.setId;
+      renderQuestionReportModal(examId, quizIndex, item, 'quiz');
+    }
+
+    function renderQuestionReportModal(examId, qIndex, item, source) {
+      closeQuestionReport();
+      qreportContext = { examId, qIndex, item, reason: null, chosenOption: null, textValue: '', source };
+
+      const overlay = document.createElement('div');
+      overlay.id = 'qreport-overlay';
+      overlay.className = 'qreport-overlay';
+      overlay.innerHTML = `
+        <div class="qreport-modal">
+          <p class="qreport-title">Report Question ${qIndex + 1}</p>
+          <p class="qreport-qtext">${renderMathText(item.q)}</p>
+          <div class="qreport-reasons" id="qreport-reasons">
+            <button type="button" class="qreport-reason-btn" data-reason="wrong-correct" onclick="selectReportReason('wrong-correct')">Wrong correct answer</button>
+            <button type="button" class="qreport-reason-btn" data-reason="no-correct" onclick="selectReportReason('no-correct')">No correct answer</button>
+            <button type="button" class="qreport-reason-btn" data-reason="copyright" onclick="selectReportReason('copyright')">Copyrighted question</button>
+            <button type="button" class="qreport-reason-btn" data-reason="other" onclick="selectReportReason('other')">Others</button>
+          </div>
+
+          <label class="mockadmin-field-label">EMAIL FOR UPDATES</label>
+          <input type="email" id="qreport-email-input" class="mockadmin-input" placeholder="you@example.com" autocomplete="email" autocapitalize="off" spellcheck="false">
+
+          <label class="mockadmin-field-label">YOUR CALLSIGN</label>
+          <input type="text" id="qreport-callsign-input" class="mockadmin-input" placeholder="Callsign" maxlength="13" autocomplete="off" autocapitalize="off" spellcheck="false" readonly style="opacity:0.7; cursor:not-allowed;">
+
+          <div class="qreport-extra" id="qreport-extra"></div>
+          <div id="qreport-submit-error" style="display:none; font-size:11.5px; color:#e67a7a; margin:10px 0 0;"></div>
+          <div class="qreport-actions">
+            <button type="button" class="qreport-btn cancel" onclick="closeQuestionReport()">Cancel</button>
+            <button type="button" class="qreport-btn submit" id="qreport-submit-btn" onclick="submitQuestionReport()" disabled>Submit report</button>
+          </div>
+        </div>
+      `;
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) closeQuestionReport(); });
+      document.body.appendChild(overlay);
+      document.getElementById('qreport-email-input').value =
+        (typeof currentChatUser !== 'undefined' && currentChatUser && currentChatUser.email) ? currentChatUser.email : '';
+      document.getElementById('qreport-callsign-input').value =
+        (typeof currentChatUser !== 'undefined' && currentChatUser && currentChatUser.nickname) ? currentChatUser.nickname : '';
+      requestAnimationFrame(() => overlay.classList.add('visible'));
+    }
+
+    function closeQuestionReport() {
+      const overlay = document.getElementById('qreport-overlay');
+      if (overlay) overlay.remove();
+      qreportContext = null;
+    }
+
+    function selectReportReason(reason) {
+      if (!qreportContext) return;
+
+      if (reason === 'wrong-correct' && qreportContext.reason !== 'wrong-correct') {
+        const activityNoun = qreportContext.source === 'quiz' ? 'quiz' : 'exam';
+        openConfirmDialog(
+          `This will show you which answer is currently marked correct. If you haven't finished this ${activityNoun} yet, continuing may spoil the answer for you. Continue anyway?`,
+          () => applyReportReason(reason),
+          'Continue',
+          'yellow',
+          true
+        );
+        return;
+      }
+
+      applyReportReason(reason);
+    }
+
+    function applyReportReason(reason) {
+      if (!qreportContext) return;
+      qreportContext.reason = reason;
+      qreportContext.chosenOption = null;
+      qreportContext.textValue = '';
+
+      document.querySelectorAll('#qreport-reasons .qreport-reason-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.reason === reason);
+      });
+
+      const extra = document.getElementById('qreport-extra');
+      const submitBtn = document.getElementById('qreport-submit-btn');
+      const item = qreportContext.item;
+      if (!extra || !submitBtn) return;
+
+      if (reason === 'wrong-correct') {
+        extra.innerHTML = `
+          <p class="qreport-extra-label">Which one do you think is actually correct?</p>
+          <div class="qreport-option-grid">
+            ${(item.options || []).map((opt, idx) => {
+              const isCurrentCorrect = opt === item.correct;
+              return `
+              <button type="button" class="qreport-option-btn${isCurrentCorrect ? ' disabled' : ''}" data-value="${escapeHtml(opt)}" ${isCurrentCorrect ? 'disabled title="This is the current correct answer"' : 'onclick="selectReportOption(this)"'}>
+                <span class="qreport-option-letter">${String.fromCharCode(65 + idx)}</span>
+                <span>${renderMathText(opt)}</span>
+              </button>
+            `;
+            }).join('')}
+          </div>
+        `;
+        submitBtn.disabled = true;
+      } else if (reason === 'no-correct') {
+        extra.innerHTML = `
+          <p class="qreport-extra-label">What do you think the correct answer should be?</p>
+          <textarea class="qreport-textarea" id="qreport-text-input" placeholder="Type the answer you believe is correct..." oninput="updateReportSubmitState()"></textarea>
+        `;
+        submitBtn.disabled = true;
+      } else if (reason === 'copyright') {
+        extra.innerHTML = `<p class="qreport-extra-note">This question will be flagged for a copyright review. No further detail is required.</p>`;
+        submitBtn.disabled = false;
+      } else if (reason === 'other') {
+        extra.innerHTML = `
+          <p class="qreport-extra-label">Tell us what's wrong with this question.</p>
+          <textarea class="qreport-textarea" id="qreport-text-input" placeholder="Describe the issue..." oninput="updateReportSubmitState()"></textarea>
+        `;
+        submitBtn.disabled = true;
+      }
+    }
+
+    function selectReportOption(btn) {
+      if (!qreportContext) return;
+      document.querySelectorAll('#qreport-extra .qreport-option-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      qreportContext.chosenOption = btn.dataset.value;
+      const submitBtn = document.getElementById('qreport-submit-btn');
+      if (submitBtn) submitBtn.disabled = false;
+    }
+
+    function updateReportSubmitState() {
+      if (!qreportContext) return;
+      const input = document.getElementById('qreport-text-input');
+      const submitBtn = document.getElementById('qreport-submit-btn');
+      if (!input || !submitBtn) return;
+      qreportContext.textValue = input.value;
+      submitBtn.disabled = !input.value.trim();
+    }
+
+    function qreportShowError(msg) {
+      const err = document.getElementById('qreport-submit-error');
+      if (!err) return;
+      err.textContent = msg;
+      err.style.display = '';
+    }
+
+    function submitQuestionReport() {
+      if (!qreportContext || !qreportContext.reason) return;
+      const { examId, qIndex, item, reason, chosenOption, textValue } = qreportContext;
+
+      const emailInput = document.getElementById('qreport-email-input');
+      const callsignInput = document.getElementById('qreport-callsign-input');
+      const email = (emailInput && emailInput.value.trim()) || '';
+      const callsign = (callsignInput && callsignInput.value.trim()) || '';
+      const errEl = document.getElementById('qreport-submit-error');
+      if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { qreportShowError('Enter a valid email address.'); return; }
+      if (!callsign) { qreportShowError('Enter your Callsign.'); return; }
+      if (!chatConfigIsFilledIn()) { qreportShowError("This isn't connected right now. Please try again later."); return; }
+
+      const exam = getMockExam(examId);
+      const report = {
+        examId,
+        examTitle: (exam && (exam.titleMain || exam.title)) || '',
+        questionIndex: qIndex,
+        question: item.q,
+        options: item.options || [],
+        currentCorrectAnswer: item.correct,
+        reason,
+        studentSuggestedAnswer: reason === 'wrong-correct' ? chosenOption : (reason === 'no-correct' ? (textValue || '').trim() : null),
+        note: reason === 'other' ? (textValue || '').trim() : null,
+        // For a Mock Board "Mixed Random Questions" report, the examId
+        // alone ("boardmix:<subjectKey>") has no set to open in the editor
+        // — carry along the real set this specific question was drawn
+        // from (tagged in buildBoardSubjectPick) so admins can still
+        // "Locate" it. Always present (null when not applicable) since
+        // Firebase rejects undefined values.
+        originSetId: item._boardOriginSetId || null,
+        reporterCallsign: callsign,
+        reporterEmail: email,
+        ts: firebase.database.ServerValue.TIMESTAMP
+      };
+
+      const submitBtn = document.getElementById('qreport-submit-btn');
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting\u2026'; }
+
+      (async () => {
+        try {
+          ensureFirebaseApp();
+          await nsRef('questionReports').push(report);
+          closeQuestionReport();
+          await adminAlert('Thank you! Your report has been submitted for review.');
+        } catch (e) {
+          console.error('Submit question report error:', e);
+          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit report'; }
+          qreportShowError("Couldn't submit that. Please try again.");
+        }
+      })();
     }
 
     function closeInAppMockExam() {
@@ -24567,10 +26093,27 @@ Answer: C</pre>
       // All 50 answered — now grade everything and reveal the answer key.
       let score = 0;
       orderedQuestions.forEach((item, i) => {
-        const selected = document.querySelector(`input[name="gform-q-${i}"]:checked`);
+        let selected = document.querySelector(`input[name="gform-q-${i}"]:checked`);
         const card = document.getElementById(`gform-card-${i}`);
         const feedback = document.getElementById(`gform-feedback-${i}`);
         const clearBtn = document.getElementById(`gform-clear-${i}`);
+
+        // Admin-only: a forced submit (FINISH NOW, or the timer running out
+        // while testing) shouldn't leave a blank question showing as
+        // "Unanswered" for the admin — fake-fill it with a random option so
+        // the review screen always reads as answered (Correct/Incorrect),
+        // same spirit as the board list's own FINISH NOW fabrication. Real
+        // reviewees are never touched by this: if they genuinely leave a
+        // question blank, they still see the truth.
+        if (!selected && forced && isAdminUser(currentChatUser)) {
+          const opts = item.options || [];
+          if (opts.length) {
+            const fakeValue = opts[Math.floor(Math.random() * opts.length)];
+            const radios = Array.from(document.getElementsByName(`gform-q-${i}`));
+            const target = radios.find(r => r.value === fakeValue) || radios[0];
+            if (target) { target.checked = true; selected = target; }
+          }
+        }
 
         const isCorrect = !!selected && selected.value === item.correct;
         if (isCorrect) score++;
@@ -27248,7 +28791,732 @@ Answer: C</pre>
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') closeMathToolbox();
     });
+
+    // ==================== Game Mode (Bluetooth controller) ====================
+    // Floating controller-icon button that turns on the Web Gamepad API and
+    // maps a standard 4-button/D-pad/stick/Start/Select controller onto the
+    // Quiz and Mock Exam / Mock Board Exam screens. Pairing itself happens
+    // at the OS/Bluetooth level — the browser only becomes aware of the pad
+    // once a button on it is pressed, so turning Game Mode on shows
+    // "Searching…" until that first press. The toggle button works from
+    // anywhere in the app, but the button/stick mappings below only ever
+    // act while a Quiz question (or its results screen), a Mock Exam /
+    // Mock Board Exam, the Quiz subject-picker, or a subject's own exam
+    // list is actually open — everywhere else they're inert. On the last
+    // two, D-pad/stick up-down moves a yellow "gc-focused" highlight
+    // between cards and A clicks whichever one currently carries it.
+    (function() {
+      let gameModeOn = false;
+      let gpConnected = false;
+      let gpIndex = null;
+      let lastPadName = '';
+      let prevButtons = [];
+      let stickLatchX = false;
+      let gcFocusIndex = 0;
+      let prevListCtx = null;
+      let gcHoldDir = 0;
+      let gcHoldFrames = 0;
+      // Remembers which card was highlighted on the subjects list and on
+      // a subject's exam list separately, so stepping A into a list and
+      // back out with B returns the yellow highlight (and, since
+      // gcApplyFocus's scrollIntoView follows it, the scroll position
+      // too) to exactly where it was left — instead of always snapping
+      // back to the first card. The exam-list slot is per-subject: it's
+      // cleared whenever a different subject's list is opened, since
+      // that's a different set of cards.
+      let gcSubjectsFocusIndex = 0;
+      let gcExamListFocusIndex = 0;
+      let gcExamListSubjectKey = null;
+      // Which of the popup's CANCEL/DISCONNECT buttons currently carries
+      // the yellow gc-focused highlight (0 = CANCEL, 1 = DISCONNECT).
+      let gmPopupFocus = { index: 0, latch: false };
+      function clearGmPopupFocusHighlight() {
+        const cancelBtn = document.getElementById('game-mode-popup-cancel-btn');
+        const discBtn = document.getElementById('game-mode-popup-btn');
+        if (cancelBtn) cancelBtn.classList.remove('gc-focused');
+        if (discBtn) discBtn.classList.remove('gc-focused');
+      }
+      // Quiz Settings popup: the box-chooser rows holding the two
+      // randomize toggles, and a helper to clear whichever one (row or
+      // Cancel/Save button) currently carries the highlight so switching
+      // zones never leaves a stale highlight behind.
+      function qsBoxRows() {
+        return Array.from(document.querySelectorAll('#quiz-settings-box-chooser .qs-box-chooser-row'));
+      }
+      function qsClearFocusHighlight() {
+        const card = document.getElementById('quiz-randomize-settings-overlay');
+        if (card) card.querySelectorAll('.gc-focused').forEach(el => el.classList.remove('gc-focused'));
+      }
+      // Same two-button, D-pad/stick + A navigation, generalized for the
+      // app's shared Cancel/Confirm dialog (openConfirmDialog) — a fresh
+      // <div id="confirm-dialog-overlay"> each time it opens, so a plain
+      // reference check is enough to notice "this is a new dialog" and
+      // reset the highlight to Cancel.
+      let confirmDialogFocus = { index: 0, latch: false };
+      let lastConfirmOverlayEl = null;
+      // Shared by both popups above: moves `state.index` between `els`
+      // (filtered to whichever are actually on screen) from the D-pad or
+      // the left stick's horizontal axis, paints the gc-focused
+      // highlight, and returns the element A should activate this frame
+      // (or null).
+      function gcNavigateButtonRow(gp, justPressed, els, state) {
+        const visible = els.filter(isVisible);
+        if (!visible.length) return null;
+        if (state.index > visible.length - 1) state.index = visible.length - 1;
+        const ax = gp.axes[0] || 0;
+        let dir = 0;
+        if (justPressed(BTN.DRIGHT)) dir = 1;
+        else if (justPressed(BTN.DLEFT)) dir = -1;
+        else if (!state.latch && ax > DEADZONE) { dir = 1; state.latch = true; }
+        else if (!state.latch && ax < -DEADZONE) { dir = -1; state.latch = true; }
+        if (Math.abs(ax) < DEADZONE * 0.5) state.latch = false;
+        if (dir !== 0) state.index = Math.max(0, Math.min(visible.length - 1, state.index + dir));
+        visible.forEach((b, i) => b.classList.toggle('gc-focused', i === state.index));
+        return justPressed(BTN.A) ? visible[state.index] : null;
+      }
+      const DEADZONE = 0.5;
+      const SCROLL_SPEED = 16; // px per animation frame while a scroll direction is held
+
+      const BTN = { A: 0, B: 1, X: 2, Y: 3, L1: 4, R1: 5, L2: 6, R2: 7, SELECT: 8, START: 9, DUP: 12, DDOWN: 13, DLEFT: 14, DRIGHT: 15 };
+
+      function isVisible(el) { return !!(el && el.offsetParent !== null); }
+      function clickIfVisible(el) { if (isVisible(el)) el.click(); }
+
+      // Which of the two controller-enabled screens (if any) is on screen
+      // right now — mirrors the same visible-view checks the rest of the
+      // app uses (see refreshTopbarTabIcons's quizView.classList.contains
+      // ('visible') check above).
+      function gcContext() {
+        if (document.getElementById('gform-overlay')) return 'exam';
+        const quizView = document.getElementById('view-quiz');
+        if (quizView && quizView.classList.contains('visible')) {
+          const playArea = document.getElementById('quiz-play-area');
+          const resultsCard = document.getElementById('quiz-results-card');
+          const playVisible = playArea && playArea.style.display !== 'none';
+          const resultsVisible = resultsCard && resultsCard.style.display !== 'none';
+          if (playVisible || resultsVisible) return 'quiz';
+          const examListPanel = document.getElementById('quiz-exam-list-panel');
+          if (examListPanel && examListPanel.style.display !== 'none') return 'quiz-examlist';
+          const subjectsPanel = document.getElementById('quiz-subjects-panel');
+          if (subjectsPanel && subjectsPanel.style.display !== 'none') return 'quiz-subjects';
+        }
+        return null;
+      }
+
+      // ---- Quiz subject list / exam list: D-pad or stick moves a yellow
+      // "gc-focused" highlight between cards, A clicks whichever one
+      // currently carries it. ----
+      function gcListItems(ctx) {
+        if (ctx === 'quiz-subjects') return Array.from(document.querySelectorAll('#quiz-subject-list .subject-card'));
+        if (ctx === 'quiz-examlist') return Array.from(document.querySelectorAll('#quiz-exam-list .exam-card'));
+        return [];
+      }
+      function gcClearFocusHighlight() {
+        document.querySelectorAll('.gc-focused').forEach(el => el.classList.remove('gc-focused'));
+      }
+      // Wipes every yellow controller-highlight the moment the controller
+      // itself goes away (disconnected, or Game Mode turned off) --
+      // .gc-focused everywhere (subject/exam cards, any open popup's
+      // Cancel/Save row or box-chooser rows) plus the Quiz Timer Settings
+      // arrows' separate pressed-state class, since a lost connection
+      // can't send a "button released" frame to clear that live. Without
+      // this, whatever was highlighted (or held) the instant the
+      // controller dropped would otherwise stay stuck filled in.
+      function gcClearAllGamepadHighlights() {
+        gcClearFocusHighlight();
+        document.querySelectorAll('.qs-timer-arrow-pressed').forEach(el => el.classList.remove('qs-timer-arrow-pressed'));
+      }
+      function gcApplyFocus(ctx, dir) {
+        const items = gcListItems(ctx);
+        gcClearFocusHighlight();
+        if (!items.length) return;
+        if (gcFocusIndex > items.length - 1) gcFocusIndex = items.length - 1;
+        if (gcFocusIndex < 0) gcFocusIndex = 0;
+        const el = items[gcFocusIndex];
+        el.classList.add('gc-focused');
+        // Scroll as if the reference point were 2 items further along in
+        // the direction of travel, not the focused item itself — so the
+        // page only actually scrolls once the highlight gets within 2
+        // items of the edge, and there are always a couple more items of
+        // the list already visible past it. Without a direction (e.g. on
+        // first entering the list) just bring the focused item itself
+        // into view.
+        if (dir > 0 && gcFocusIndex + 2 > items.length - 1) {
+          // Near the last item: there's no "2 further along" item to
+          // target, so scrollIntoView on the last item itself would stop
+          // short of the true bottom of the page (whatever sits below the
+          // list — footer text, the next section, etc.). Scroll all the
+          // way to the actual bottom instead.
+          window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'auto' });
+        } else if (dir < 0 && gcFocusIndex - 2 < 0) {
+          // Same near the first item: scroll all the way back to the
+          // true top of the page (above the list, e.g. the header),
+          // rather than stopping at the first item's own position.
+          window.scrollTo({ top: 0, behavior: 'auto' });
+        } else {
+          const scrollIdx = dir ? gcFocusIndex + dir * 2 : gcFocusIndex;
+          items[scrollIdx].scrollIntoView({ block: 'nearest' });
+        }
+      }
+      function gcActivateFocus(ctx) {
+        const items = gcListItems(ctx);
+        const el = items[gcFocusIndex];
+        if (el) el.click();
+      }
+      // SELECT inside a subject's exam list resets whichever quiz card
+      // currently carries the yellow gc-focused highlight (only quiz
+      // cards with saved progress have a RESET button — no-op otherwise),
+      // rather than opening Quiz Settings (that's SELECT's job one level
+      // up, on the subjects list).
+      function gcResetFocusedQuizExam() {
+        const items = gcListItems('quiz-examlist');
+        const el = items[gcFocusIndex];
+        if (!el) return;
+        const resetBtn = el.querySelector('.exam-timer-reset');
+        if (resetBtn) resetBtn.click();
+      }
+
+      // ---- Quiz ----
+      function quizPressLetter(idx) {
+        const grid = document.getElementById('quiz-choices-grid');
+        const btn = grid && grid.querySelector(`.quiz-choice-btn[data-idx="${idx}"]`);
+        if (btn && !btn.disabled) btn.click();
+      }
+      function quizGoBack() {
+        const prevBtn = document.getElementById('quiz-prev-btn');
+        if (prevBtn && isVisible(prevBtn)) { prevBtn.click(); return; }
+        clickIfVisible(document.querySelector('#quiz-results-card .quiz-prev-btn'));
+      }
+      function quizGoNext() { clickIfVisible(document.getElementById('quiz-next-btn')); }
+
+      // ---- Mock Exam / Mock Board Exam ----
+      // Every question sits stacked on one scrollable page, so A/B/X/Y act
+      // on whichever question card is currently nearest the middle of the
+      // screen rather than a single "current" question.
+      function getCurrentGformCard() {
+        const cards = Array.from(document.querySelectorAll('#gform-questions .gform-card'));
+        if (!cards.length) return null;
+        const mid = window.innerHeight / 2;
+        let best = null, bestDist = Infinity;
+        cards.forEach(c => {
+          const r = c.getBoundingClientRect();
+          const d = Math.abs((r.top + r.height / 2) - mid);
+          if (d < bestDist) { bestDist = d; best = c; }
+        });
+        return best;
+      }
+      function examPressLetter(idx) {
+        const card = getCurrentGformCard();
+        if (!card) return;
+        const input = document.getElementsByName(`gform-q-${card.dataset.qindex}`)[idx];
+        if (input && !input.disabled) input.click();
+      }
+      function examScroll(dir) { window.scrollBy(0, dir * SCROLL_SPEED); }
+      function examPressStart() {
+        const confirmOverlay = document.getElementById('confirm-dialog-overlay');
+        if (confirmOverlay) { clickIfVisible(document.getElementById('confirm-dialog-confirm-btn')); return; }
+        clickIfVisible(document.querySelector('#gform-submit-area .gform-submit-btn'));
+      }
+      function examPressSelect() {
+        const confirmOverlay = document.getElementById('confirm-dialog-overlay');
+        if (confirmOverlay) { clickIfVisible(confirmOverlay.querySelector('.confirm-dialog-btn.cancel')); return; }
+        if (typeof closeInAppMockExam === 'function') closeInAppMockExam();
+      }
+
+      function pollGamepad() {
+        requestAnimationFrame(pollGamepad);
+        if (!gameModeOn) return;
+        const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+        let gp = gpIndex !== null ? pads[gpIndex] : null;
+        if (!gp) { gp = Array.prototype.find.call(pads, p => p) || null; if (gp) gpIndex = gp.index; }
+        if (!gp) { if (gpConnected) { gpConnected = false; updateGameModeUI(); gcClearAllGamepadHighlights(); } prevButtons = []; return; }
+        if (!gpConnected) { gpConnected = true; updateGameModeUI(gp.id); }
+
+        const ctx = gcContext();
+        const buttons = gp.buttons.map(b => b.pressed || b.value > 0.5);
+        const justPressed = (i) => buttons[i] && !prevButtons[i];
+
+        // The app's shared Cancel/Confirm dialog (e.g. the "Disconnect
+        // the controller?" prompt from the Game Mode popup below, or any
+        // other confirm dialog) sits above absolutely everything else,
+        // including the Game Mode popup itself — check for it first. Same
+        // navigation as the CANCEL/DISCONNECT row: D-pad/stick left-right
+        // moves the yellow highlight, A activates, B cancels outright.
+        const confirmOverlay = document.getElementById('confirm-dialog-overlay');
+        if (confirmOverlay) {
+          if (confirmOverlay !== lastConfirmOverlayEl) {
+            lastConfirmOverlayEl = confirmOverlay;
+            confirmDialogFocus = { index: 0, latch: false };
+          }
+          const cancelBtn = confirmOverlay.querySelector('.confirm-dialog-btn.cancel');
+          if (justPressed(BTN.B)) { if (cancelBtn) cancelBtn.click(); prevButtons = buttons; return; }
+          const confirmBtn = document.getElementById('confirm-dialog-confirm-btn');
+          const activated = gcNavigateButtonRow(gp, justPressed, [cancelBtn, confirmBtn], confirmDialogFocus);
+          if (activated) activated.click();
+          prevButtons = buttons;
+          return;
+        }
+        lastConfirmOverlayEl = null;
+
+        // The Game Mode instructions popup, the Quiz Settings (randomize)
+        // popup, and the Quiz Timer Settings popup (opened from the
+        // header icons, or — for the timer popup — SELECT mid-quiz) sit
+        // above everything else — B closes whichever is open, the same
+        // way it backs out of a quiz level, and nothing else below
+        // should also react while one is up.
+        const gmPopup = document.getElementById('game-mode-overlay');
+        if (gmPopup && gmPopup.classList.contains('visible')) {
+          if (justPressed(BTN.B)) { closeGameModePopup(); prevButtons = buttons; return; }
+          // Once connected, CANCEL and DISCONNECT sit side by side and
+          // are navigated the same way as the subject/exam lists: D-pad
+          // or stick left/right moves the yellow highlight, A activates
+          // whichever button currently carries it.
+          if (gpConnected) {
+            const gmBtns = [
+              document.getElementById('game-mode-popup-cancel-btn'),
+              document.getElementById('game-mode-popup-btn')
+            ];
+            const activated = gcNavigateButtonRow(gp, justPressed, gmBtns, gmPopupFocus);
+            if (activated) activated.click();
+          }
+          prevButtons = buttons;
+          return;
+        }
+        const qrPopup = document.getElementById('quiz-randomize-settings-overlay');
+        if (qrPopup && qrPopup.classList.contains('visible')) {
+          if (justPressed(BTN.B)) {
+            qsClearFocusHighlight();
+            closeQuizRandomizeSettingsModal();
+            prevButtons = buttons;
+            return;
+          }
+          if (gpConnected) {
+            const qsState = window.__qsPopupFocus;
+            const rows = qsBoxRows();
+            const qsBtns = [
+              document.getElementById('quiz-settings-popup-cancel-btn'),
+              document.getElementById('quiz-settings-popup-save-btn')
+            ];
+            // Left stick's vertical axis, latched the same way the shared
+            // gcNavigateButtonRow latches its horizontal axis: one step
+            // per push past the deadzone, released once it drifts back
+            // toward center, so it doesn't repeat every single frame.
+            const ay = gp.axes[1] || 0;
+            let vdir = 0;
+            if (justPressed(BTN.DDOWN)) vdir = 1;
+            else if (justPressed(BTN.DUP)) vdir = -1;
+            else if (!qsState.vlatch && ay > DEADZONE) { vdir = 1; qsState.vlatch = true; }
+            else if (!qsState.vlatch && ay < -DEADZONE) { vdir = -1; qsState.vlatch = true; }
+            if (Math.abs(ay) < DEADZONE * 0.5) qsState.vlatch = false;
+
+            if (qsState.zone === 'box' && rows.length) {
+              qsClearFocusHighlight();
+              if (vdir === 1) {
+                if (qsState.boxIndex < rows.length - 1) qsState.boxIndex++;
+                else qsState.zone = 'buttons';
+              } else if (vdir === -1) {
+                qsState.boxIndex = Math.max(0, qsState.boxIndex - 1);
+              }
+              if (qsState.zone === 'box') {
+                const row = rows[qsState.boxIndex];
+                row.classList.add('gc-focused');
+                row.scrollIntoView({ block: 'nearest' });
+                if (justPressed(BTN.A)) {
+                  const cb = row.querySelector('input[type="checkbox"]');
+                  if (cb) cb.checked = !cb.checked;
+                }
+              }
+            } else {
+              if (vdir === -1) {
+                qsClearFocusHighlight();
+                qsState.zone = 'box';
+              } else {
+                const activated = gcNavigateButtonRow(gp, justPressed, qsBtns, qsState.btnState);
+                if (activated) activated.click();
+              }
+            }
+          }
+          prevButtons = buttons;
+          return;
+        }
+        const qtPopup = document.getElementById('quiz-settings-overlay');
+        if (qtPopup && qtPopup.classList.contains('visible')) {
+          if (justPressed(BTN.B)) {
+            gcClearFocusHighlight();
+            closeQuizSettings();
+            prevButtons = buttons;
+            return;
+          }
+          if (gpConnected) {
+            const qtState = window.__quizTimerPopupFocus;
+            // D-pad/stick up-down bumps the seconds value by 1, clamped
+            // to the same 1-11 range the typed field enforces. A held
+            // direction (not just a fresh press) keeps bumping on its
+            // own for as long as it's held — same delay-then-repeat
+            // timing as the subjects/exam-list scrolling below — instead
+            // of needing to be tapped repeatedly.
+            const ay = gp.axes[1] || 0;
+            let heldDir = 0;
+            if (buttons[BTN.DUP] || ay < -DEADZONE) heldDir = 1;
+            else if (buttons[BTN.DDOWN] || ay > DEADZONE) heldDir = -1;
+            // Light up whichever arrow matches the direction actually
+            // being held right now, off the instant it's released --
+            // independent of the delay-then-repeat timing below, which
+            // only governs how often the number itself bumps.
+            const upArrow = document.getElementById('quiz-autonext-up');
+            const downArrow = document.getElementById('quiz-autonext-down');
+            if (upArrow) upArrow.classList.toggle('qs-timer-arrow-pressed', heldDir === 1);
+            if (downArrow) downArrow.classList.toggle('qs-timer-arrow-pressed', heldDir === -1);
+            let delta = 0;
+            if (heldDir !== qtState.holdDir) {
+              qtState.holdDir = heldDir;
+              qtState.holdFrames = 0;
+              if (heldDir !== 0) delta = heldDir;
+            } else if (heldDir !== 0) {
+              qtState.holdFrames++;
+              const GC_REPEAT_DELAY = 24, GC_REPEAT_INTERVAL = 8;
+              if (qtState.holdFrames === GC_REPEAT_DELAY ||
+                  (qtState.holdFrames > GC_REPEAT_DELAY && (qtState.holdFrames - GC_REPEAT_DELAY) % GC_REPEAT_INTERVAL === 0)) {
+                delta = heldDir;
+              }
+            }
+            if (delta !== 0) bumpQuizAutoNextSeconds(delta);
+            // Left-right moves the yellow gc-focused highlight between
+            // CANCEL/SAVE, same as the Game Mode popup's own Cancel/
+            // Connect row.
+            const qtBtns = [
+              document.getElementById('quiz-settings-cancel-btn'),
+              document.getElementById('quiz-settings-save-btn')
+            ];
+            const activated = gcNavigateButtonRow(gp, justPressed, qtBtns, qtState.btnState);
+            if (activated) activated.click();
+          }
+          prevButtons = buttons;
+          return;
+        }
+
+        // Header icon — controller (Game Mode popup) — works from any
+        // Quiz screen: subjects list, a subject's exam list, or
+        // mid-quiz/results.
+        if (ctx === 'quiz' || ctx === 'quiz-subjects' || ctx === 'quiz-examlist') {
+          if (justPressed(BTN.START)) openGameModePopup();
+        }
+        // SELECT is context-dependent: Quiz Settings (the randomize
+        // toggles) only opens from the top-level subjects list. One level
+        // down, inside a subject's exam list, SELECT instead resets the
+        // exam card that's currently highlighted (see
+        // gcResetFocusedQuizExam) — it no longer opens that modal there,
+        // which used to pop up over the exam list by mistake. Mid-quiz,
+        // SELECT opens the separate Quiz Timer Settings popup instead
+        // (handled above once it's open).
+        if (justPressed(BTN.SELECT)) {
+          if (ctx === 'quiz-subjects') openQuizRandomizeSettingsModal();
+          else if (ctx === 'quiz-examlist') gcResetFocusedQuizExam();
+          else if (ctx === 'quiz') openQuizSettings();
+        }
+
+        if (ctx === 'quiz') {
+          // B mirrors the header's own back button (the "<" chevron the
+          // quiz tab turns into once you're a level deep) rather than
+          // stepping back one question — that's already covered by
+          // DLEFT/the left stick below. Pressing B here backs all the
+          // way out one level: play area -> that subject's exam list ->
+          // subjects list, same as tapping the header icon.
+          if (justPressed(BTN.B)) handleQuizBackClick();
+          if (justPressed(BTN.L1)) quizPressLetter(0);
+          if (justPressed(BTN.R1)) quizPressLetter(1);
+          if (justPressed(BTN.L2)) quizPressLetter(2);
+          if (justPressed(BTN.R2)) quizPressLetter(3);
+          if (justPressed(BTN.DLEFT)) quizGoBack();
+          if (justPressed(BTN.DRIGHT)) quizGoNext();
+          const ax = gp.axes[0] || 0;
+          if (!stickLatchX && ax < -DEADZONE) { quizGoBack(); stickLatchX = true; }
+          else if (!stickLatchX && ax > DEADZONE) { quizGoNext(); stickLatchX = true; }
+          else if (Math.abs(ax) < DEADZONE * 0.5) { stickLatchX = false; }
+        } else if (ctx === 'exam') {
+          if (justPressed(BTN.A)) examPressLetter(0);
+          if (justPressed(BTN.B)) examPressLetter(1);
+          if (justPressed(BTN.X)) examPressLetter(2);
+          if (justPressed(BTN.Y)) examPressLetter(3);
+          if (justPressed(BTN.START)) examPressStart();
+          if (justPressed(BTN.SELECT)) examPressSelect();
+
+          let scrollDir = 0;
+          if (buttons[BTN.DDOWN]) scrollDir = -1;      // Down = scroll up
+          else if (buttons[BTN.DUP]) scrollDir = 1;    // Up = scroll down
+          const ay = gp.axes[1] || 0;
+          if (scrollDir === 0 && Math.abs(ay) > DEADZONE) scrollDir = ay > 0 ? -1 : 1;
+          if (scrollDir !== 0) examScroll(scrollDir);
+        } else if (ctx === 'quiz-subjects' || ctx === 'quiz-examlist') {
+          if (ctx === 'quiz-examlist' && gcExamListSubjectKey !== currentQuizSubjectKey) {
+            // A different subject's exam list than last time — nothing
+            // to return to, so start fresh at the top.
+            gcExamListFocusIndex = 0;
+            gcExamListSubjectKey = currentQuizSubjectKey;
+          }
+          if (prevListCtx !== ctx) {
+            // Moving between the two list contexts: stash the position
+            // being left behind, then pick up this context's own saved
+            // position (0 the first time, or wherever it was left).
+            if (prevListCtx === 'quiz-subjects') gcSubjectsFocusIndex = gcFocusIndex;
+            else if (prevListCtx === 'quiz-examlist') gcExamListFocusIndex = gcFocusIndex;
+            gcFocusIndex = (ctx === 'quiz-subjects') ? gcSubjectsFocusIndex : gcExamListFocusIndex;
+            prevListCtx = ctx;
+            gcHoldDir = 0;
+            gcHoldFrames = 0;
+          }
+
+          // D-pad up/down or the left stick's vertical axis: held direction
+          // (not just a fresh press) drives movement, so a long press keeps
+          // scrolling on its own instead of needing to be tapped repeatedly.
+          const ay = gp.axes[1] || 0;
+          let heldDir = 0;
+          if (buttons[BTN.DDOWN] || ay > DEADZONE) heldDir = 1;
+          else if (buttons[BTN.DUP] || ay < -DEADZONE) heldDir = -1;
+
+          let moveDir = 0;
+          if (heldDir !== gcHoldDir) {
+            // Direction just changed (including release back to neutral):
+            // move once right away, then start the hold timer fresh.
+            gcHoldDir = heldDir;
+            gcHoldFrames = 0;
+            if (heldDir !== 0) moveDir = heldDir;
+          } else if (heldDir !== 0) {
+            // Same direction still held: after a short initial pause, keep
+            // moving automatically at a steady rate for as long as it's
+            // held, so a long hold steps through the list on its own
+            // instead of needing to be tapped repeatedly. It stops dead
+            // at the first/last card rather than cycling past the edge
+            // (see the clamp below).
+            gcHoldFrames++;
+            const GC_REPEAT_DELAY = 24, GC_REPEAT_INTERVAL = 8;
+            if (gcHoldFrames === GC_REPEAT_DELAY ||
+                (gcHoldFrames > GC_REPEAT_DELAY && (gcHoldFrames - GC_REPEAT_DELAY) % GC_REPEAT_INTERVAL === 0)) {
+              moveDir = heldDir;
+            }
+          }
+
+          if (moveDir !== 0) {
+            const items = gcListItems(ctx);
+            if (items.length) {
+              const next = gcFocusIndex + moveDir;
+              // Clamp at the edges instead of wrapping — holding the
+              // direction into the top or bottom card just stops there
+              // rather than cycling around to the other end of the list.
+              gcFocusIndex = Math.max(0, Math.min(items.length - 1, next));
+            }
+          }
+
+          gcApplyFocus(ctx, moveDir);
+          if (justPressed(BTN.A)) gcActivateFocus(ctx);
+          // Same back button as in the quiz itself: from this subject's
+          // exam list, B steps back up to the subjects list. (No-op on
+          // the subjects list itself — there's no level above it.)
+          if (justPressed(BTN.B) && ctx === 'quiz-examlist') handleQuizBackClick();
+        }
+
+        if (ctx !== 'quiz-subjects' && ctx !== 'quiz-examlist' && prevListCtx) {
+          // Leaving both list contexts entirely (e.g. A opened an exam
+          // and the quiz itself is now on screen) — stash wherever the
+          // highlight was so it's still there if a later B brings this
+          // list back up.
+          if (prevListCtx === 'quiz-subjects') gcSubjectsFocusIndex = gcFocusIndex;
+          else if (prevListCtx === 'quiz-examlist') gcExamListFocusIndex = gcFocusIndex;
+          gcClearFocusHighlight();
+          prevListCtx = null;
+        }
+
+        prevButtons = buttons;
+      }
+
+      function updateGameModeUI(padName) {
+        if (padName) lastPadName = padName;
+        // A paired controller is now the thing driving list navigation and
+        // page scrolling (D-pad/stick), so the visual scrollbar — both the
+        // custom app-scrollbar and any native one — is just noise once a
+        // controller is actually connected; hide it, matching the
+        // navigation itself rather than the Game Mode toggle alone (still
+        // "Searching…" keeps the scrollbar, since nothing is driving
+        // scrolling yet).
+        document.documentElement.classList.toggle('gc-connected', gameModeOn && gpConnected);
+        const btn = document.getElementById('game-mode-btn');
+        const status = document.getElementById('game-mode-status');
+        if (btn && status) {
+          btn.classList.toggle('active', gameModeOn);
+          btn.classList.toggle('gm-connected', gameModeOn && gpConnected);
+          if (!gameModeOn) {
+            status.textContent = ''; btn.title = 'Game Mode (Bluetooth controller)';
+          } else if (gpConnected) {
+            status.textContent = 'Connected';
+            btn.title = 'Controller connected' + (lastPadName ? ': ' + lastPadName : '') + ' — click to turn off';
+          } else {
+            status.textContent = 'Searching…';
+            btn.title = 'Press a button on your Bluetooth controller to connect';
+          }
+        }
+        // Header controller icon(s) — Mock Exam / Quiz — mirror the same
+        // on/connected state as the floating button above.
+        document.querySelectorAll('.game-mode-header-btn').forEach(hb => {
+          hb.classList.toggle('active', gameModeOn);
+          hb.classList.toggle('gm-connected', gameModeOn && gpConnected);
+        });
+        // The popup (if present) gets its own fuller status line + button.
+        const popupStatus = document.getElementById('game-mode-popup-status');
+        const popupBtn = document.getElementById('game-mode-popup-btn');
+        // CANCEL sits next to CONNECT/DISCONNECT at all times now (no more
+        // mouse-only × close button), so once a controller is actually
+        // connected the popup is fully navigable by that controller (see
+        // the CANCEL/DISCONNECT gc-focused handling in pollGamepad below).
+        const gmActuallyConnected = gameModeOn && gpConnected;
+        if (!gmActuallyConnected) { gmPopupFocus = { index: 0, latch: false }; clearGmPopupFocusHighlight(); }
+        if (popupStatus && popupBtn) {
+          popupStatus.classList.remove('game-mode-status-connected', 'game-mode-status-searching');
+          popupBtn.classList.remove('game-mode-disconnect-btn');
+          if (!gameModeOn) {
+            popupStatus.textContent = 'Not connected';
+            popupBtn.textContent = 'CONNECT';
+          } else if (gpConnected) {
+            popupStatus.textContent = 'Connected' + (lastPadName ? ': ' + lastPadName : '');
+            popupStatus.classList.add('game-mode-status-connected');
+            popupBtn.textContent = 'DISCONNECT';
+            popupBtn.classList.add('game-mode-disconnect-btn');
+          } else {
+            popupStatus.textContent = 'Searching for a controller… press any button on it';
+            popupStatus.classList.add('game-mode-status-searching');
+            popupBtn.textContent = 'CANCEL';
+          }
+        }
+      }
+
+      function toggleGameMode() {
+        gameModeOn = !gameModeOn;
+        if (!gameModeOn) { gpConnected = false; gpIndex = null; prevButtons = []; gcClearAllGamepadHighlights(); }
+        updateGameModeUI();
+      }
+
+      // ---- Header popup: instructions + Connect/Disconnect ----
+      // Same CONNECT/CANCEL button toggles Game Mode on; while connected it
+      // becomes DISCONNECT and — unlike turning it on — asks for
+      // confirmation first, so a stray tap doesn't silently drop the
+      // controller mid-exam.
+      function openGameModePopup() {
+        updateGameModeUI();
+        gmPopupFocus = { index: 0, latch: false };
+        clearGmPopupFocusHighlight();
+        const overlay = document.getElementById('game-mode-overlay');
+        if (overlay) overlay.classList.add('visible');
+      }
+      function closeGameModePopup() {
+        const overlay = document.getElementById('game-mode-overlay');
+        if (overlay) overlay.classList.remove('visible');
+        clearGmPopupFocusHighlight();
+      }
+      function handleGameModePopupButton() {
+        if (gameModeOn) {
+          openConfirmDialog(
+            'Disconnect the controller? You\'ll need to reconnect it to keep using Game Mode.',
+            () => toggleGameMode(),
+            'Disconnect',
+            'neutral'
+          );
+        } else {
+          toggleGameMode();
+        }
+      }
+      window.openGameModePopup = openGameModePopup;
+      window.closeGameModePopup = closeGameModePopup;
+      window.handleGameModePopupButton = handleGameModePopupButton;
+
+      window.addEventListener('gamepadconnected', (e) => { gpIndex = e.gamepad.index; gpConnected = true; updateGameModeUI(e.gamepad.id); });
+      window.addEventListener('gamepaddisconnected', (e) => { if (gpIndex === e.gamepad.index) { gpConnected = false; gpIndex = null; updateGameModeUI(); gcClearAllGamepadHighlights(); } });
+
+      // The floating bottom-right controller button (and its "Searching…"/
+      // "Connected" pill) used to be injected here. It's no longer created —
+      // Game Mode is now opened from the controller icon in the Mock Exam /
+      // Quiz headers instead — but updateGameModeUI()'s lookups for
+      // #game-mode-btn/#game-mode-status above are left in place (guarded by
+      // null checks) in case that floating button is ever brought back.
+
+      requestAnimationFrame(pollGamepad);
+    })();
   </script>
+  <style>
+    #game-mode-wrap {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 900;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    #game-mode-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      background: var(--blueprint-dark);
+      color: var(--paper);
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.55), 0 0 0 3px rgba(4,18,32,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 1;
+      transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+    #game-mode-btn:hover { transform: scale(1.06); }
+    #game-mode-btn.active { background: rgba(255, 177, 0, 0.28); }
+    #game-mode-btn.gm-connected { border-color: var(--green); background: rgba(79, 209, 160, 0.14); }
+    #game-mode-status {
+      font-size: 10px;
+      letter-spacing: 0.03em;
+      color: var(--rivet);
+      background: var(--blueprint-dark);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 4px 8px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+    }
+    #game-mode-status:empty { display: none; }
+
+    /* ---- Game Mode popup (header controller icon) ---- */
+    .game-mode-card { max-width: 560px; }
+    .game-mode-intro {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11.5px;
+      color: var(--rivet);
+      line-height: 1.6;
+      margin: 0 0 14px;
+    }
+    .game-mode-diagram-wrap {
+      background: rgba(0,0,0,0.18);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+    }
+    .game-mode-diagram { display: block; width: 100%; height: auto; }
+    .game-mode-status-row {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      color: var(--rivet);
+      text-align: center;
+      margin-top: 14px;
+    }
+    .game-mode-status-row.game-mode-status-connected { color: var(--green); }
+    .game-mode-status-row.game-mode-status-searching { color: var(--accent); }
+    #game-mode-popup-btn.game-mode-disconnect-btn {
+      background: none;
+      border-color: var(--line);
+      color: var(--paper);
+    }
+    @media (hover: hover) {
+      #game-mode-popup-btn.game-mode-disconnect-btn:hover { color: var(--accent); }
+    }
+  </style>
 
   <!-- Shared math-input toolbox: a single floating panel reused by every
        "∑ Math" button in the manual question editor and the BEC editor.
@@ -28135,25 +30403,29 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   })();
 </script>
 <script>
-  /* ---- Quiz header gear icon: top-level subjects list ONLY ----
-     The Quiz view's <header> (with the Quiz Settings gear) sits above the
-     subjects list, a subject's own exam list, AND the actual
-     quiz-play-area — all three are just panels inside the same section,
-     toggled by their own inline display style. The gear should only show
-     on the outermost "pick a subject" screen (quiz-subjects-panel) — once
-     the person has gone into a subject's exam list, or is actually taking
-     a quiz (where the play area has its own, different gear for
-     auto-advance settings), the header's gear hides. Watching
-     quiz-subjects-panel's own display style covers both of those deeper
-     screens without touching every place in the code that switches
-     between them. */
+  /* ---- Quiz header gear + controller icons: top-level subjects list
+     ONLY ----
+     The Quiz view's <header> (with the Quiz Settings gear and the Game
+     Mode controller icon) sits above the subjects list, a subject's own
+     exam list, AND the actual quiz-play-area — all three are just panels
+     inside the same section, toggled by their own inline display style.
+     Both header icons should only show on the outermost "pick a subject"
+     screen (quiz-subjects-panel) — once the person has gone into a
+     subject's exam list, or is actually taking a quiz (where the play
+     area has its own, different gear for auto-advance settings), the
+     header's gear AND controller icon hide. Watching quiz-subjects-panel's
+     own display style covers both of those deeper screens without
+     touching every place in the code that switches between them. */
   (function () {
-    var btn = document.querySelector('#quiz-header .mock-exam-settings-btn');
+    // Both the Quiz Settings gear and the Game Mode controller button
+    // carry .mock-exam-settings-btn (for the shared bare-icon look), so
+    // grabbing all of them under #quiz-header covers both.
+    var btns = document.querySelectorAll('#quiz-header .mock-exam-settings-btn');
     var subjectsPanel = document.getElementById('quiz-subjects-panel');
-    if (!btn || !subjectsPanel) return;
+    if (!btns.length || !subjectsPanel) return;
     function sync() {
       var atTopLevel = subjectsPanel.style.display !== 'none';
-      btn.style.display = atTopLevel ? '' : 'none';
+      btns.forEach(function (btn) { btn.style.display = atTopLevel ? '' : 'none'; });
     }
     new MutationObserver(sync).observe(subjectsPanel, { attributes: true, attributeFilter: ['style'] });
     sync();
@@ -28184,7 +30456,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
       '.hours-info-overlay', '.image-lightbox-overlay', '.nick-modal-overlay',
       '.profile-card-overlay', '.shop-pay-overlay', '.store-popup-overlay',
       '.taxi-out-overlay', '.wings-store-overlay', '.wings-thankyou-overlay',
-      '.confirm-dialog-overlay', '.gform-score-overlay',
+      '.confirm-dialog-overlay', '.gform-score-overlay', '.qreport-overlay',
       '.stall-overlay',
       '#mig-viewer-overlay', '#qimg-preview-overlay'
     ].join(', ');
