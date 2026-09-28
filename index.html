@@ -162,10 +162,11 @@
   /* Mouse is redundant (and can conflict with) controller navigation once
      a pad is actually connected: hide the cursor and make the page itself
      click-through, but keep the top bar, the "Souls on Board" sidebar,
-     and the Black Box chat panel fully mouse-usable — none of those three
-     have a controller-driven equivalent. pointer-events:none on <body>
-     cascades to every descendant by inheritance; the three exceptions
-     (and everything inside them) explicitly opt back in. */
+     the Black Box chat panel, and the Report Question popup fully
+     mouse-usable — none of those four have a controller-driven
+     equivalent. pointer-events:none on <body> cascades to every
+     descendant by inheritance; the four exceptions (and everything
+     inside them) explicitly opt back in. */
   html.gc-connected, html.gc-connected * { cursor: none !important; }
   html.gc-connected body { pointer-events: none; }
   html.gc-connected .top-bar,
@@ -175,9 +176,102 @@
   html.gc-connected .chat-panel,
   html.gc-connected .chat-panel *,
   html.gc-connected .chat-panel-peek,
-  html.gc-connected .chat-panel-peek * {
+  html.gc-connected .chat-panel-peek *,
+  /* Report Question popup: has no D-pad/A/B navigation of its own (it
+     needs real text entry -- the report's email field and its "what's
+     wrong" textarea -- which a controller can't drive), so unlike every
+     other popup in the app it stays mouse-usable rather than getting a
+     gamepad equivalent. */
+  html.gc-connected .qreport-overlay,
+  html.gc-connected .qreport-overlay * {
     pointer-events: auto !important;
     cursor: auto !important;
+  }
+  /* The blanket cursor:auto override above (needed so the popup stays
+     mouse-usable at all) flattens every element to the plain arrow,
+     wiping out cursors that are supposed to differ by element: the
+     hand/pointer on every clickable button, the text I-beam on the
+     email/callsign inputs and textareas, and the not-allowed/stop icon
+     on disabled controls (the option already marked correct, the
+     read-only callsign field, the Submit button before a reason is
+     picked). These are all more specific than the blanket rule above,
+     so they win and restore each one -- making the whole popup look
+     identical whether or not a controller is connected, without
+     touching anything else about it. */
+  html.gc-connected .qreport-overlay button:not(:disabled):not(.disabled) {
+    cursor: pointer !important;
+  }
+  html.gc-connected .qreport-overlay button:disabled,
+  html.gc-connected .qreport-overlay button.disabled,
+  html.gc-connected .qreport-overlay input[readonly] {
+    cursor: not-allowed !important;
+  }
+  html.gc-connected .qreport-overlay input:not([readonly]),
+  html.gc-connected .qreport-overlay textarea {
+    cursor: text !important;
+  }
+  /* The per-option letter circle (.qreport-option-letter) is a <span>, not
+     a <button>, so the button-only restores above don't reach it -- it was
+     left flattened to the plain arrow by the blanket cursor:auto reset.
+     Restore its normal hand cursor (and not-allowed for the locked/
+     current-correct letter) so it matches the no-controller look. */
+  html.gc-connected .qreport-overlay .qreport-option-letter:not(.locked) {
+    cursor: pointer !important;
+  }
+  html.gc-connected .qreport-overlay .qreport-option-letter.locked {
+    cursor: not-allowed !important;
+  }
+  /* The report popup's own "Continue anyway?" spoiler confirm (opened via
+     the shared confirm-dialog-overlay, a sibling of .qreport-overlay
+     rather than nested inside it) needs the same mouse-usable treatment
+     -- the controller is completely hands-off whenever the report popup
+     is open (see the pollGamepad bail-out for #qreport-overlay), spoiler
+     confirm included, so this is its only way to be answered. */
+  html.gc-connected:has(.qreport-overlay) .confirm-dialog-overlay,
+  html.gc-connected:has(.qreport-overlay) .confirm-dialog-overlay * {
+    pointer-events: auto !important;
+    cursor: auto !important;
+  }
+  /* Same reasoning: the per-option "full answer text" popup (a sibling of
+     .qreport-overlay, opened by clicking an option's box) also has no
+     controller equivalent, so it stays mouse-usable too. */
+  html.gc-connected:has(.qreport-overlay) .qreport-answer-popup-overlay,
+  html.gc-connected:has(.qreport-overlay) .qreport-answer-popup-overlay * {
+    pointer-events: auto !important;
+    cursor: auto !important;
+  }
+  /* The report popup's post-submit "Thank you! Your report has been
+     submitted for review." confirmation (opened via the shared
+     admin-modal-overlay, same as the spoiler confirm above) also needs
+     to stay mouse-usable -- .qreport-overlay is deliberately kept in
+     the DOM until this alert is dismissed specifically so this
+     exception (and the pollGamepad bail-out) keep applying to it. */
+  html.gc-connected:has(.qreport-overlay) #admin-modal-overlay,
+  html.gc-connected:has(.qreport-overlay) #admin-modal-overlay * {
+    pointer-events: auto !important;
+    cursor: auto !important;
+  }
+  /* The blanket cursor:auto reset just above flattens the OK/Cancel
+     buttons to the plain arrow (a button's "auto" cursor is default, not
+     pointer) — same issue as .qreport-overlay's own buttons above, fixed
+     the same way: restore the hand-pointer specifically for them. */
+  html.gc-connected:has(.qreport-overlay) #admin-modal-overlay button:not(:disabled):not(.disabled) {
+    cursor: pointer !important;
+  }
+  html.gc-connected:has(.qreport-overlay) #admin-modal-overlay input:not([readonly]) {
+    cursor: text !important;
+  }
+  /* Same reasoning as the pointer-events override above: the yellow
+     Continue button here never receives .gc-focused (pollGamepad bails
+     out completely while the report popup is open), so the normal
+     "starts outlined, only fills once gc-focused" yellow-button rule
+     would leave it permanently outlined even though it's fully
+     mouse-usable and is the only way to answer this spoiler confirm.
+     Restore the solid yellow fill (and its hover) for it specifically. */
+  html.gc-connected:has(.qreport-overlay) .confirm-dialog-btn.yellow {
+    background: var(--accent) !important;
+    border-color: var(--accent) !important;
+    color: var(--blueprint-dark) !important;
   }
   #app-scrollbar-thumb {
     position: absolute;
@@ -1440,6 +1534,19 @@
     display: none;
   }
 
+  /* Justify Report pop-up only: still scrolls when the image makes it
+     tall, but with the scrollbar hidden. Scoped to this overlay's ID so
+     other admin modals keep their behavior. */
+  #qr-justify-overlay,
+  #qr-justify-overlay .mockadmin-card {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  #qr-justify-overlay::-webkit-scrollbar,
+  #qr-justify-overlay .mockadmin-card::-webkit-scrollbar {
+    display: none;
+  }
+
   /* ---- "About the Creator" popup (opened from the "Nad" link in the
      footer) and its admin-only edit popup. Reuses the site's existing
      .banned-list-overlay/.mockadmin-card shells so both stay visually
@@ -2623,7 +2730,13 @@
   .confirm-dialog-overlay {
     position: fixed;
     inset: 0;
-    z-index: 1975;
+    /* Was 1975 — lower than the Score popup's own overlay (z-index 2000,
+       see .gform-score-overlay), so the Retake Exam confirmation opened
+       from on top of the Score popup rendered visually BEHIND it instead
+       of over it. Raised above that (and the same-1975-era admin modal,
+       z-index 2000) so this shared confirm dialog always sits on top of
+       whatever popup it was opened from. */
+    z-index: 2050;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2697,6 +2810,19 @@
     background: var(--accent);
   }
   @media (hover: hover) { .confirm-dialog-btn.yellow:hover { filter: brightness(1.08); } }
+  /* Same gc-connected "starts outlined, only fills once the D-pad/stick
+     highlight actually reaches it" treatment as the other yellow buttons
+     (RETAKE, the SAVE popups, the exam's own Submit button) — covers the
+     Submit-Mock-Exam confirmation ("Submit your Mock Exam?") since it
+     shares this same .yellow class, and every other yellow confirm
+     dialog for consistency. Already navigated left/right and activated
+     by A via gcNavigateButtonRow in the pollGamepad confirm-dialog
+     branch. Leaves it untouched whenever no controller is connected. */
+  html.gc-connected .confirm-dialog-btn.yellow:not(.gc-focused) {
+    background: none;
+    border-color: var(--line);
+    color: var(--paper);
+  }
   /* Plain outline, no fill -- same look as the dialog's own Cancel
      button, just a distinct class so it can be the CONFIRM button too
      (e.g. Disconnect) without borrowing the "cancel" class's onclick. */
@@ -2724,8 +2850,8 @@
   .qreport-modal {
     width: 100%;
     max-width: 460px;
-    height: 680px;
-    max-height: 92vh;
+    height: 860px;
+    max-height: 95vh;
     overflow-y: hidden;
     overflow-x: hidden;
     scrollbar-width: none;
@@ -2777,6 +2903,7 @@
   @media (hover: hover) { .qreport-reason-btn.active:hover { filter: brightness(1.08); } }
   .qreport-extra { margin-top: 14px; }
   .qreport-extra-label { margin: 0 0 8px; font-size: 12px; color: var(--paper); }
+  .qreport-extra-hint { margin: -4px 0 8px; font-size: 11px; color: var(--paper); opacity: 0.65; }
   .qreport-extra-note { margin: 0; font-size: 12px; color: var(--paper); opacity: 0.75; }
   .qreport-option-grid { display: flex; flex-direction: column; gap: 8px; }
   .qreport-option-btn {
@@ -2787,23 +2914,37 @@
     font-size: 12px;
     text-align: left;
     padding: 9px 12px;
+    /* Fixed height so a long option (see .qreport-option-text below) never
+       grows the box — the letter is clicked to select, the box itself is
+       clicked to view the full text in a popup (see openQreportAnswerPopup),
+       so nothing is actually lost by not letting the box expand. The box is
+       always clickable, even for the current-correct option (only its
+       letter is locked — see .qreport-option-letter.locked below). */
+    height: 40px;
+    flex-shrink: 0;
+    overflow: hidden;
     border-radius: 6px;
     border: 1px solid var(--line);
     background: none;
     color: var(--paper);
     cursor: pointer;
   }
-  @media (hover: hover) { .qreport-option-btn:not(.active):hover { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); } }
-  .qreport-option-btn.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--blueprint-dark);
+  @media (hover: hover) {
+    /* Whole box fills yellow on hover... */
+    .qreport-option-btn:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--blueprint-dark);
+    }
+    /* ...except while the pointer is specifically over the letter circle:
+       then the box itself stays unfilled and only the letter (via the
+       .qreport-option-letter:hover rule further below) fills yellow. */
+    .qreport-option-btn:hover:has(.qreport-option-letter:hover) {
+      background: none;
+      border-color: var(--line);
+      color: var(--paper);
+    }
   }
-  .qreport-option-btn.disabled,
-  .qreport-option-btn:disabled {
-    cursor: not-allowed;
-  }
-  @media (hover: hover) { .qreport-option-btn.disabled:hover, .qreport-option-btn:disabled:hover { background: none; border-color: var(--line); color: var(--paper); } }
   .qreport-option-letter {
     flex-shrink: 0;
     width: 20px;
@@ -2814,7 +2955,83 @@
     border-radius: 50%;
     border: 1px solid currentColor;
     font-size: 10.5px;
+    cursor: pointer;
   }
+  /* The current-correct option's letter can't be picked (it's already the
+     correct answer) — its box still opens the popup like any other. */
+  .qreport-option-letter.locked {
+    cursor: not-allowed;
+  }
+  /* Only the letter fills yellow when its option is selected — the box
+     itself no longer highlights on selection. */
+  .qreport-option-btn.active .qreport-option-letter {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--blueprint-dark);
+  }
+  @media (hover: hover) { .qreport-option-letter:not(.locked):hover { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); } }
+  .qreport-option-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  /* Popup shown when an option's box (not its letter) is clicked — reveals
+     the option's full text since .qreport-option-text above truncates it. */
+  .qreport-answer-popup-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1970;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(4, 18, 32, 0.72);
+    padding: 24px;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+  }
+  .qreport-answer-popup-overlay.visible { opacity: 1; }
+  .qreport-answer-popup {
+    width: 100%;
+    max-width: 380px;
+    max-height: 70vh;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    background: var(--blueprint-dark);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+    padding: 16px 18px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--paper);
+  }
+  .qreport-answer-popup::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  .qreport-answer-popup-letter {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    font-size: 11px;
+  }
+  /* Mirrors the option box's own selected state — filled when that
+     option's letter is currently selected in the report form. */
+  .qreport-answer-popup-letter.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--blueprint-dark);
+  }
+  .qreport-answer-popup-text { flex: 1; min-width: 0; word-wrap: break-word; }
   .qreport-textarea {
     width: 100%;
     min-height: 76px;
@@ -3979,7 +4196,14 @@
   .quiz-results-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
   .quiz-start-btn {
     background: var(--accent);
-    border: none;
+    /* 1px transparent border, not "none" — RETAKE's border-color toggles
+       between transparent and var(--line) as the controller focus state
+       changes (see the gc-connected rule below), and a real 0px-vs-1px
+       swap was growing/shrinking the button (and the whole results card
+       around it) by a couple of pixels each time. Keeping the border's
+       width constant and only ever changing its color/background means
+       the button's box never resizes on hover or focus. */
+    border: 1px solid transparent;
     color: var(--blueprint-dark);
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 700;
@@ -3998,6 +4222,24 @@
     color: var(--paper);
   }
   @media (hover: hover) { .quiz-start-btn.quiz-secondary-btn:hover { color: var(--accent); } }
+
+  /* Quiz results screen (BACK / RETAKE / CHOOSE ANOTHER QUIZ): RETAKE is
+     normally solid yellow like every other primary action. Once a
+     controller is connected, that permanent fill would make it look
+     already "selected" before the D-pad/stick highlight has actually
+     reached it — same reasoning as the Settings popups' SAVE button
+     above — so it starts outlined like the other two buttons here, and
+     only regains the yellow fill once gc-focused. Leaves it untouched
+     whenever no controller is connected. */
+  html.gc-connected #quiz-results-card .quiz-start-btn:not(.gc-focused) {
+    background: none;
+    /* Only the color, not the whole border shorthand — the width/style
+       are already set (and fixed) on the base rule above, so this just
+       swaps the color in without ever touching the button's size. */
+    border-color: var(--line);
+    color: var(--paper);
+  }
+
 
   ul.subject-list, ul.exam-list {
     list-style: none;
@@ -4158,6 +4400,14 @@
      reaches it. Leaves the button's look untouched whenever no
      controller is connected. */
   html.gc-connected #quiz-settings-popup-save-btn:not(.gc-focused) {
+    background: none;
+    border-color: var(--line);
+    color: var(--paper);
+  }
+
+  /* Mock Exam Settings popup's SAVE follows the same rule as Quiz
+     Settings' SAVE above. */
+  html.gc-connected #mock-exam-settings-popup-save-btn:not(.gc-focused) {
     background: none;
     border-color: var(--line);
     color: var(--paper);
@@ -5050,6 +5300,11 @@
   #admin-modal-overlay .mockadmin-card,
   #mockadmin-moveto-overlay .mockadmin-card {
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 4px 14px rgba(0, 0, 0, 0.4);
+  }
+  /* Belt-and-braces: guarantee the hand-pointer cursor on the alert/confirm
+     OK and Cancel buttons specifically, regardless of anything else. */
+  #admin-modal-ok-btn, #admin-modal-cancel-btn {
+    cursor: pointer;
   }
 
   /* ---- admin mock exam manager ---- */
@@ -8512,7 +8767,27 @@
   display: flex; align-items: center; padding: 8px 0; cursor: pointer;
   font-size: 14px; color: var(--paper);
 }
-.gform-option input { margin-right: 12px; width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; }
+.gform-option input { margin-right: 12px; width: 17px; height: 17px; cursor: pointer; }
+/* ---- Mock Exam / Mock Board Exam controller box chooser ----
+   Once a controller is connected, D-pad/stick up-down steps a yellow
+   gc-focused highlight through the choices (flattened across every
+   question, in on-screen order — see the pollGamepad exam-choice
+   navigation further down), and A selects whichever one currently carries
+   it. Same solid-accent look — and same rounded, padded "row" shell — as
+   the Quiz/Mock Exam Settings box-chooser rows (.qs-box-chooser-row)
+   elsewhere in the app, just applied to a choice row instead of a settings
+   toggle row. Radio's own accent-color is left at the browser default
+   (blue) rather than the app's yellow, so a *selected* choice's filled
+   circle reads as a distinct "chosen" blue against the "currently
+   highlighted" yellow row. */
+.gform-option.gc-focused {
+  border-radius: 8px !important;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+  margin: 0 -10px !important;
+}
+.gform-option.gc-focused span { color: var(--blueprint-dark) !important; }
+
 /* The clickable area of a choice is just the radio + its text, not the whole
    row — so clicking empty space beside a choice (or on "Clear selection")
    never selects it by accident. (Once graded, the highlight spans the row.) */
@@ -8535,6 +8810,13 @@
   position: relative; top: 5px; /* nudged down so it lines up with the choice circle */
 }
 @media (hover: hover) { .gform-clear-btn:hover { color: var(--accent); } }
+/* Once a controller is connected, pressing A on an already-selected
+   choice clears it directly (see the examChoiceNav A-press handling
+   above), so the on-screen "Clear selection" button is redundant --
+   hide it rather than leave a mouse-only control sitting there once
+   the controller's own A-to-toggle already covers the same job. Mouse
+   users with no controller connected keep the button exactly as before. */
+html.gc-connected .gform-clear-btn { display: none; }
 /* Groups "Clear selection" and "Report" together on the right of the last
    choice's row, in that order, instead of Report sitting on its own line
    (which used to add extra vertical space and shove that choice down). */
@@ -8580,11 +8862,31 @@
   padding: 20px 0 8px; border-top: 1px solid var(--line); margin-top: 6px;
 }
 .gform-submit-btn {
-  background: var(--accent); color: #082744; border: none; border-radius: 6px;
+  background: var(--accent); color: #082744;
+  /* 1px transparent border, not "none" — once a controller is connected
+     this button's border-color toggles between transparent and var(--line)
+     (see the html.gc-connected rule below), and a real 0px-vs-1px swap
+     would grow/shrink the button by a couple of pixels each time it
+     gains/loses focus. Keeping the border's width constant and only ever
+     changing its color/background means the button's box never resizes. */
+  border: 1px solid transparent;
+  border-radius: 6px;
   padding: 10px 22px; font-family: 'Space Grotesk', sans-serif; font-size: 14px;
   font-weight: 600; cursor: pointer;
 }
 @media (hover: hover) { .gform-submit-btn:hover { filter: brightness(1.08); } }
+/* Submit is normally solid yellow, same as every other primary action.
+   Once a controller is connected it's also reachable by D-pad/stick as
+   the last stop past the exam's final choice (see examNavTargets) — so,
+   same reasoning as the other gc-connected buttons above (RETAKE, the
+   various SAVE buttons), it starts outlined instead of pre-filled, and
+   only regains its yellow fill once the highlight (.gc-focused) actually
+   reaches it. Leaves it untouched whenever no controller is connected. */
+html.gc-connected .gform-submit-btn:not(.gc-focused) {
+  background: none;
+  border-color: var(--line);
+  color: var(--paper);
+}
 .gform-score-overlay {
   position: fixed; inset: 0; z-index: 2000;
   display: none; align-items: center; justify-content: center;
@@ -8609,11 +8911,29 @@
 }
 .gform-score-modal .gform-score-actions { display: flex; flex-direction: column; gap: 10px; }
 .gform-score-modal .gform-score-retake-btn {
-  background: var(--accent); color: #082744; border: none; border-radius: 999px;
+  background: var(--accent); color: #082744;
+  /* 1px transparent border, not "none" — like Submit and the other
+     gc-connected yellow buttons, this border's color toggles once a
+     controller is connected (see the html.gc-connected rule below), and
+     keeping its width constant means the button never resizes when it
+     gains/loses that outline. */
+  border: 1px solid transparent; border-radius: 999px;
   padding: 11px 14px; font-family: 'Space Grotesk', sans-serif; font-size: 14px;
   font-weight: 600; cursor: pointer;
 }
 @media (hover: hover) { .gform-score-modal .gform-score-retake-btn:hover { filter: brightness(1.08); } }
+/* Same "starts outlined, only fills once the D-pad/stick highlight
+   actually reaches it" treatment as Submit, RETAKE, and the SAVE popups
+   — covers both See Results and Retake Exam here (Close is already
+   outlined by default, so it needs no separate rule; it picks up the
+   yellow fill the same way through the generic .gc-focused rule once
+   it's the one highlighted). See gcNavigateButtonColumn/gformScoreFocus
+   in pollGamepad for the up/down navigation across all three. */
+html.gc-connected .gform-score-modal .gform-score-retake-btn:not(.gc-focused) {
+  background: none;
+  border-color: var(--line);
+  color: var(--paper);
+}
 .gform-score-modal .gform-score-leave-btn {
   background: transparent; border: 1px solid var(--line); color: var(--paper);
   border-radius: 999px; padding: 11px 14px; font-family: 'Space Grotesk', sans-serif;
@@ -10877,25 +11197,35 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
          (original question order / original choice order). Only affects
          attempts started from here on — one already in progress keeps
          whatever order it started with. Independent from Quiz's own
-         randomization settings below — the two are separate toggles. ---- -->
+         randomization settings below — the two are separate toggles. Same
+         box-chooser + CANCEL/SAVE shell as Quiz Settings below, so the
+         controller navigates it the same way (see the gamepad-polling
+         code's mockSettingsPopup handling). ---- -->
     <div class="banned-list-overlay" id="mock-exam-settings-overlay">
       <div class="mockadmin-card" style="max-width:420px;" onclick="event.stopPropagation();">
         <h3>Mock Exam Settings</h3>
 
-        <label class="mockadmin-publish-toggle" style="font-size:12.5px;">
-          <input type="checkbox" id="mock-exam-setting-randomize-questions">
-          RANDOMIZE QUESTION ORDER
-        </label>
-        <p style="margin:6px 0 0; font-size:11px; color:var(--rivet); line-height:1.5;">When off, questions appear in the same order the admin arranged them in.</p>
+        <div class="qs-box-chooser" id="mock-exam-settings-box-chooser">
+          <div class="qs-box-chooser-row" id="mock-settings-box-row-questions">
+            <label class="mockadmin-publish-toggle" style="font-size:12.5px;">
+              <input type="checkbox" id="mock-exam-setting-randomize-questions">
+              RANDOMIZE QUESTION ORDER
+            </label>
+            <p style="margin:6px 0 0; font-size:11px; color:var(--rivet); line-height:1.5;">When off, questions appear in the same order the admin arranged them in.</p>
+          </div>
 
-        <label class="mockadmin-publish-toggle" style="margin-top:18px; font-size:12.5px;">
-          <input type="checkbox" id="mock-exam-setting-randomize-choices">
-          RANDOMIZE ANSWER CHOICES
-        </label>
-        <p style="margin:6px 0 0; font-size:11px; color:var(--rivet); line-height:1.5;">When off, each question's choices appear in the same order the admin entered them in.</p>
+          <div class="qs-box-chooser-row" id="mock-settings-box-row-choices">
+            <label class="mockadmin-publish-toggle" style="margin-top:18px; font-size:12.5px;">
+              <input type="checkbox" id="mock-exam-setting-randomize-choices">
+              RANDOMIZE ANSWER CHOICES
+            </label>
+            <p style="margin:6px 0 0; font-size:11px; color:var(--rivet); line-height:1.5;">When off, each question's choices appear in the same order the admin entered them in.</p>
+          </div>
+        </div>
 
         <div class="mockadmin-editor-actions" style="margin-top:20px;">
-          <button type="button" class="mockadmin-publish-btn" onclick="applyMockExamSettings()">SAVE</button>
+          <button type="button" class="mockadmin-save-btn" id="mock-exam-settings-popup-cancel-btn" onclick="closeMockExamSettingsModal()">CANCEL</button>
+          <button type="button" class="mockadmin-publish-btn" id="mock-exam-settings-popup-save-btn" onclick="applyMockExamSettings()">SAVE</button>
         </div>
       </div>
     </div>
@@ -10948,53 +11278,74 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         <h3>Game Mode Bluetooth Controller</h3>
         <p class="game-mode-intro">Pair a Bluetooth controller with your device first (this happens outside the app, in your device's Bluetooth settings). Once it's paired, press CONNECT below, then press any button on the controller.</p>
 
-        <div class="game-mode-diagram-wrap">
-          <svg class="game-mode-diagram" viewBox="0 0 700 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram showing which controller buttons control which app actions">
-            <rect x="220" y="120" width="260" height="130" rx="65" ry="65" fill="rgba(255,255,255,0.04)" stroke="#3f6d92" stroke-width="2"/>
-
-            <circle cx="280" cy="155" r="22" fill="rgba(255,255,255,0.05)" stroke="#3f6d92" stroke-width="2"/>
-            <circle cx="280" cy="155" r="9" fill="#3f6d92"/>
-
-            <rect x="260" y="205" width="14" height="42" rx="3" fill="#3f6d92"/>
-            <rect x="259" y="219" width="42" height="14" rx="3" fill="#3f6d92"/>
-
-            <rect x="315" y="128" width="26" height="10" rx="5" fill="none" stroke="#3f6d92" stroke-width="1.5"/>
-            <rect x="359" y="128" width="26" height="10" rx="5" fill="none" stroke="#3f6d92" stroke-width="1.5"/>
-
-            <circle cx="420" cy="160" r="13" fill="rgba(255,177,0,0.16)" stroke="#ffb100" stroke-width="1.5"/>
-            <text x="420" y="164" font-size="12" fill="#ffb100" text-anchor="middle" font-family="'IBM Plex Mono', monospace">Y</text>
-            <circle cx="397" cy="183" r="13" fill="rgba(255,177,0,0.16)" stroke="#ffb100" stroke-width="1.5"/>
-            <text x="397" y="187" font-size="12" fill="#ffb100" text-anchor="middle" font-family="'IBM Plex Mono', monospace">X</text>
-            <circle cx="443" cy="183" r="13" fill="rgba(255,177,0,0.16)" stroke="#ffb100" stroke-width="1.5"/>
-            <text x="443" y="187" font-size="12" fill="#ffb100" text-anchor="middle" font-family="'IBM Plex Mono', monospace">B</text>
-            <circle cx="420" cy="206" r="13" fill="rgba(255,177,0,0.16)" stroke="#ffb100" stroke-width="1.5"/>
-            <text x="420" y="210" font-size="12" fill="#ffb100" text-anchor="middle" font-family="'IBM Plex Mono', monospace">A</text>
-
-            <line x1="120" y1="70" x2="258" y2="140" stroke="#7fa8c9" stroke-width="1"/>
-            <text x="118" y="64" font-size="13" fill="#eef3f6" text-anchor="end" font-weight="600" font-family="'Space Grotesk', sans-serif">LEFT STICK</text>
-            <text x="118" y="80" font-size="10.5" fill="#7fa8c9" text-anchor="end" font-family="'IBM Plex Mono', monospace">Scroll / move between questions</text>
-
-            <line x1="120" y1="312" x2="262" y2="236" stroke="#7fa8c9" stroke-width="1"/>
-            <text x="118" y="306" font-size="13" fill="#eef3f6" text-anchor="end" font-weight="600" font-family="'Space Grotesk', sans-serif">D-PAD</text>
-            <text x="118" y="322" font-size="10.5" fill="#7fa8c9" text-anchor="end" font-family="'IBM Plex Mono', monospace">Scroll (Mock Exam) / Prev &amp; Next (Quiz)</text>
-
-            <line x1="120" y1="205" x2="320" y2="133" stroke="#7fa8c9" stroke-width="1"/>
-            <text x="118" y="199" font-size="13" fill="#eef3f6" text-anchor="end" font-weight="600" font-family="'Space Grotesk', sans-serif">SELECT</text>
-            <text x="118" y="215" font-size="10.5" fill="#7fa8c9" text-anchor="end" font-family="'IBM Plex Mono', monospace">Go back / Exit</text>
-
-            <line x1="580" y1="70" x2="426" y2="150" stroke="#7fa8c9" stroke-width="1"/>
-            <text x="582" y="64" font-size="13" fill="#eef3f6" font-weight="600" font-family="'Space Grotesk', sans-serif">Y / B / A (Quiz)</text>
-            <text x="582" y="80" font-size="10.5" fill="#7fa8c9" font-family="'IBM Plex Mono', monospace">Answer choices 4 / 2 / 1</text>
-            <text x="582" y="96" font-size="10.5" fill="#7fa8c9" font-family="'IBM Plex Mono', monospace">X (Quiz): Back</text>
-
-            <line x1="345" y1="72" x2="337" y2="126" stroke="#7fa8c9" stroke-width="1"/>
-            <text x="345" y="46" font-size="13" fill="#eef3f6" text-anchor="middle" font-weight="600" font-family="'Space Grotesk', sans-serif">L1 / R1 / L2 / R2</text>
-            <text x="345" y="62" font-size="10.5" fill="#7fa8c9" text-anchor="middle" font-family="'IBM Plex Mono', monospace">Answer choices A / B / C / D (Quiz)</text>
-
-            <line x1="580" y1="312" x2="372" y2="140" stroke="#7fa8c9" stroke-width="1"/>
-            <text x="582" y="306" font-size="13" fill="#eef3f6" font-weight="600" font-family="'Space Grotesk', sans-serif">START</text>
-            <text x="582" y="322" font-size="10.5" fill="#7fa8c9" font-family="'IBM Plex Mono', monospace">Submit exam</text>
-          </svg>
+        <div class="game-mode-controls-wrap">
+          <div class="gmc-heading" id="game-mode-controls-heading">QUIZ CONTROLS</div>
+          <!-- Two separate legends -- only one is shown at a time (see
+               gcPopupContextGroup/openGameModePopup), swapped in based on
+               whichever screen the popup was opened from, since the two
+               modes don't map their buttons the same way (Quiz answers
+               with L1/R1/L2/R2 and has no pinning; Mock Exam answers with
+               A on a highlighted choice and adds Y/X for pins). -->
+          <div class="gmc-grid" id="game-mode-controls-quiz">
+            <div class="gmc-row">
+              <span class="gmc-badge gmc-badge-round gmc-badge-a">A</span>
+              <span class="gmc-label">Select highlighted item</span>
+            </div>
+            <div class="gmc-row">
+              <span class="gmc-badge-set"><span class="gmc-badge">L1</span><span class="gmc-badge">R1</span><span class="gmc-badge">L2</span><span class="gmc-badge">R2</span></span>
+              <span class="gmc-label">Answer choice A&nbsp;/&nbsp;B&nbsp;/&nbsp;C&nbsp;/&nbsp;D</span>
+            </div>
+            <div class="gmc-row">
+              <span class="gmc-badge-set"><span class="gmc-badge gmc-badge-dir">&#9664;</span><span class="gmc-badge gmc-badge-dir">&#9654;</span></span>
+              <span class="gmc-label">Left stick / D-Pad &mdash; navigate list / move between questions</span>
+            </div>
+            <div class="gmc-row">
+              <span class="gmc-badge gmc-badge-round gmc-badge-y">Y</span>
+              <span class="gmc-label">Quiz timer settings</span>
+            </div>
+            <div class="gmc-row">
+              <span class="gmc-badge">SELECT</span>
+              <span class="gmc-label">Report question / quiz settings / reset quiz progress</span>
+            </div>
+            <div class="gmc-row">
+              <span class="gmc-badge gmc-badge-round gmc-badge-b">B</span>
+              <span class="gmc-label">Back / exit</span>
+            </div>
+            <div class="gmc-row">
+              <span class="gmc-badge">START</span>
+              <span class="gmc-label">Controller settings (this menu)</span>
+            </div>
+          </div>
+          <div class="gmc-grid" id="game-mode-controls-mock" style="display:none;">
+            <div class="gmc-row">
+              <span class="gmc-badge gmc-badge-round gmc-badge-a">A</span>
+              <span class="gmc-label">Select highlighted item / choice</span>
+            </div>
+            <div class="gmc-row">
+              <span class="gmc-badge-set"><span class="gmc-badge gmc-badge-dir">&#9650;</span><span class="gmc-badge gmc-badge-dir">&#9660;</span></span>
+              <span class="gmc-label">Left stick / D-Pad &mdash; navigate list / move between choices</span>
+            </div>
+            <div class="gmc-row">
+              <span class="gmc-badge gmc-badge-round gmc-badge-y">Y</span>
+              <span class="gmc-label">Pin / unpin question</span>
+            </div>
+            <div class="gmc-row">
+              <span class="gmc-badge gmc-badge-round gmc-badge-x">X</span>
+              <span class="gmc-label">Jump to next pinned question</span>
+            </div>
+            <div class="gmc-row">
+              <span class="gmc-badge">SELECT</span>
+              <span class="gmc-label">Report question / exam settings / reset exam progress</span>
+            </div>
+            <div class="gmc-row">
+              <span class="gmc-badge gmc-badge-round gmc-badge-b">B</span>
+              <span class="gmc-label">Back / exit</span>
+            </div>
+            <div class="gmc-row">
+              <span class="gmc-badge">START</span>
+              <span class="gmc-label">Controller settings (this menu)</span>
+            </div>
+          </div>
         </div>
 
         <div class="game-mode-status-row" id="game-mode-popup-status">Not connected</div>
@@ -11162,7 +11513,7 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         <p class="quiz-results-sub" id="quiz-results-sub"></p>
         <div class="quiz-results-actions">
           <button type="button" class="quiz-nav-btn quiz-prev-btn" onclick="reviewQuizAnswers()">&#8592; BACK</button>
-          <button type="button" class="quiz-start-btn" onclick="retakeCurrentQuizExam()">RETAKE</button>
+          <button type="button" class="quiz-start-btn" onclick="confirmRetakeQuizExam()">RETAKE</button>
           <button type="button" class="quiz-start-btn quiz-secondary-btn" onclick="backToQuizExamList()">CHOOSE ANOTHER QUIZ</button>
         </div>
       </div>
@@ -14509,17 +14860,20 @@ Answer: C</pre>
       reader.onload = () => {
         const img = new Image();
         img.onload = () => {
-          // Same downscale/compress as the exam-question image uploader
-          // (handleMockAdminImageSelect) — keeps a full-size phone photo
-          // from bloating the outgoing email.
-          const MAX_W = 900;
+          // 4K-quality justification image: keeps the original resolution
+          // up to 3840 px wide (never upscaled, so a smaller image stays as
+          // is) and saves at high JPEG quality. Only images wider than 4K
+          // are scaled down.
+          const MAX_W = 3840;
           const scale = Math.min(1, MAX_W / img.width);
           const canvas = document.createElement('canvas');
           canvas.width = Math.round(img.width * scale);
           canvas.height = Math.round(img.height * scale);
           const ctx = canvas.getContext('2d');
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
           if (qrJustifyContext) qrJustifyContext.imageDataUrl = dataUrl;
           const preview = document.getElementById('qr-justify-image-preview');
           preview.src = dataUrl;
@@ -14599,6 +14953,7 @@ Answer: C</pre>
             callsign: entry.reporterCallsign || '',
             examTitle: entry.examTitle || '',
             question: entry.question || '',
+            reason: entry.reason || 'other',
             note,
             image: qrJustifyContext.imageDataUrl,
             secret
@@ -21139,6 +21494,77 @@ Answer: C</pre>
       return attr ? parseInt(attr, 10) : EXAM_DURATION_SEC;
     }
 
+    // The actual RESET work for a Mock Exam / Mock Board Exam card --
+    // split out of the RESET button's click handler so it only runs once
+    // the confirm dialog above is actually accepted, never on the tap
+    // that opens the dialog.
+    function performExamCardReset(card) {
+      const key = userScopedKey(TIMER_STORAGE_PREFIX + examKey(card));
+      localStorage.removeItem(key);
+      // Refresh every exam-card sharing this key right away (not just
+      // this one), not on the next 1s tick. Mock Board cards have
+      // their own key, so this never touches the Mock Exam lists.
+      tickAllExamTimers();
+      if (formPopupTimerKey === key) stopFormPopupTimer();
+
+      // RESET also wipes every answer/pin/graded state saved for this
+      // exam (and its Mock Board score), not just the timer — so the
+      // next time it's opened every question is blank again. For a
+      // Mock Board card specifically, the question/choice ORDER is kept
+      // exactly as it was (not reshuffled): only answers/pins/submitted
+      // are cleared, since the mixed paper itself isn't being
+      // regenerated here.
+      const m = /openInAppMockExam\('([^']+)'/.exec(card.getAttribute('onclick') || '');
+      if (m) {
+        const examId = m[1];
+        if (currentExamId === examId) {
+          // it's open right now — close it without re-saving, and
+          // bring back whichever view it had taken over.
+          hideScoreModal();
+          const openOverlay = document.getElementById('gform-overlay');
+          if (openOverlay) openOverlay.remove();
+          stopGformPopupTimer();
+          currentExamId = null;
+          const backView = document.getElementById(gformReturnViewId || 'view-mock-exam');
+          if (backView) backView.classList.add('visible');
+          gformReturnViewId = null;
+          gformIsBoard = false;
+        }
+        const isBoardCard = !!card.closest('#view-board');
+        if (isBoardCard) {
+          // Keep the same locked-in order/choiceOrder — only clear
+          // what the reviewee actually did with this attempt.
+          const progKey = examProgressKey(examId, true);
+          let saved = null;
+          try {
+            const raw = localStorage.getItem(progKey);
+            saved = raw ? JSON.parse(raw) : null;
+          } catch (err) {}
+          if (saved) {
+            try {
+              localStorage.setItem(progKey, JSON.stringify({
+                answers: {},
+                pinned: [],
+                submitted: false,
+                order: saved.order,
+                choiceOrder: saved.choiceOrder
+              }));
+            } catch (err) {}
+          }
+          // In-memory shuffle caches deliberately left untouched here —
+          // they already match the order just kept in localStorage.
+          clearBoardScore(examId);
+        } else {
+          try { localStorage.removeItem(examProgressKey(examId, false)); } catch (err) {}
+          // Also drop the in-memory shuffle caches for this exam, or the
+          // next open would reuse the same question/choice order even
+          // though the saved progress that backed it was just wiped.
+          delete examQuestionOrders[examId];
+          delete examChoiceOrders[examId];
+        }
+      }
+    }
+
     function initExamTimers() {
       // Quiz list cards reuse the .exam-card look but are NOT timed mock
       // exams — never give them a countdown / RESET / click-to-start-timer.
@@ -21158,70 +21584,24 @@ Answer: C</pre>
           e.preventDefault();
           e.stopPropagation();
           if (card.classList.contains('board-past')) return;
-          const key = userScopedKey(TIMER_STORAGE_PREFIX + examKey(card));
-          localStorage.removeItem(key);
-          // Refresh every exam-card sharing this key right away (not just
-          // this one), not on the next 1s tick. Mock Board cards have
-          // their own key, so this never touches the Mock Exam lists.
-          tickAllExamTimers();
-          if (formPopupTimerKey === key) stopFormPopupTimer();
-
-          // RESET also wipes every answer/pin/graded state saved for this
-          // exam (and its Mock Board score), not just the timer — so the
-          // next time it's opened every question is blank again. For a
-          // Mock Board card specifically, the question/choice ORDER is kept
-          // exactly as it was (not reshuffled): only answers/pins/submitted
-          // are cleared, since the mixed paper itself isn't being
-          // regenerated here.
-          const m = /openInAppMockExam\('([^']+)'/.exec(card.getAttribute('onclick') || '');
-          if (m) {
-            const examId = m[1];
-            if (currentExamId === examId) {
-              // it's open right now — close it without re-saving, and
-              // bring back whichever view it had taken over.
-              hideScoreModal();
-              const openOverlay = document.getElementById('gform-overlay');
-              if (openOverlay) openOverlay.remove();
-              stopGformPopupTimer();
-              currentExamId = null;
-              const backView = document.getElementById(gformReturnViewId || 'view-mock-exam');
-              if (backView) backView.classList.add('visible');
-              gformReturnViewId = null;
-              gformIsBoard = false;
-            }
-            const isBoardCard = !!card.closest('#view-board');
-            if (isBoardCard) {
-              // Keep the same locked-in order/choiceOrder — only clear
-              // what the reviewee actually did with this attempt.
-              const progKey = examProgressKey(examId, true);
-              let saved = null;
-              try {
-                const raw = localStorage.getItem(progKey);
-                saved = raw ? JSON.parse(raw) : null;
-              } catch (err) {}
-              if (saved) {
-                try {
-                  localStorage.setItem(progKey, JSON.stringify({
-                    answers: {},
-                    pinned: [],
-                    submitted: false,
-                    order: saved.order,
-                    choiceOrder: saved.choiceOrder
-                  }));
-                } catch (err) {}
-              }
-              // In-memory shuffle caches deliberately left untouched here —
-              // they already match the order just kept in localStorage.
-              clearBoardScore(examId);
-            } else {
-              try { localStorage.removeItem(examProgressKey(examId, false)); } catch (err) {}
-              // Also drop the in-memory shuffle caches for this exam, or the
-              // next open would reuse the same question/choice order even
-              // though the saved progress that backed it was just wiped.
-              delete examQuestionOrders[examId];
-              delete examChoiceOrders[examId];
-            }
-          }
+          // Nothing saved yet (timer never started, no answers/pins/score)
+          // -- the button is normally hidden in this state (see the
+          // .exam-timer-idle CSS rule), but the controller's SELECT
+          // shortcut (gcResetFocusedExamCard) calls .click() directly on
+          // whichever card is focused regardless of visibility, so this
+          // guard is what actually stops it from doing anything (and
+          // popping up a pointless confirmation) on an untouched exam.
+          if (card.classList.contains('exam-timer-idle')) return;
+          // Destructive (wipes the timer plus every saved answer/pin/score
+          // for this exam), so ask first -- same shared Cancel/Confirm
+          // dialog used everywhere else in the app (Retake Exam, Reset
+          // Board Set, etc.), styled and gamepad-navigated identically.
+          openConfirmDialog(
+            'Reset this mock exam? Its timer will restart and your current answers, pins, and score for it will be cleared.',
+            () => performExamCardReset(card),
+            'Reset',
+            'yellow'
+          );
         });
 
         // Admin-only "FINISH NOW" button on the Mock Board Exam page (see
@@ -23407,6 +23787,10 @@ Answer: C</pre>
       renderQuizExamList();
       document.getElementById('quiz-exam-list-panel').style.display = '';
       window.scrollTo(0, 0);
+      // Also reset the controller's highlight on this exam list to the
+      // top card, so a gamepad B-out-and-back-in always starts fresh
+      // here too (mirrors the window.scrollTo(0,0) above for mouse/touch).
+      if (window.__gcResetQuizExamListFocus) window.__gcResetQuizExamListFocus();
       refreshTopbarTabIcons();
     }
 
@@ -23509,6 +23893,24 @@ Answer: C</pre>
     function resetQuizProgressFromCard(e, subjectKey, id) {
       e.preventDefault();
       e.stopPropagation();
+      // The button only ever renders when there's saved progress to show
+      // (see renderQuizExamCardLi), but guard here too in case anything
+      // else ever calls this directly -- nothing saved means nothing to
+      // reset, so don't pop up a confirmation for it.
+      if (!loadQuizProgress(subjectKey, id)) return;
+      // Destructive (wipes this quiz's saved progress/score), so ask
+      // first -- same shared Cancel/Confirm dialog used everywhere else
+      // in the app (Retake Exam, Reset Board Set, the Mock Exam RESET
+      // button above), styled and gamepad-navigated identically.
+      openConfirmDialog(
+        'Reset this quiz? Your current answers and score for it will be cleared.',
+        () => performQuizProgressReset(subjectKey, id),
+        'Reset',
+        'yellow'
+      );
+    }
+
+    function performQuizProgressReset(subjectKey, id) {
       clearQuizProgress(subjectKey, id);
       if (currentQuizExamRef && currentQuizExamRef.subjectKey === subjectKey && currentQuizExamRef.setId === id) {
         currentQuizExamRef = null;
@@ -23795,6 +24197,21 @@ Answer: C</pre>
       openQuizModeExam(currentQuizExamRef.subjectKey, currentQuizExamRef.setId, true);
     }
 
+    // Retake wipes the current attempt's saved progress and score, so
+    // confirm first — same shared Cancel/Confirm dialog used elsewhere in
+    // the app, which already works identically by mouse/touch/keyboard
+    // and by controller (D-pad/stick left-right + A/B), so this one
+    // change covers both without any extra gamepad wiring.
+    function confirmRetakeQuizExam() {
+      if (!currentQuizExamRef) return;
+      openConfirmDialog(
+        'Retake this quiz? Your current progress and score for it will be cleared.',
+        () => retakeCurrentQuizExam(),
+        'Retake',
+        'yellow'
+      );
+    }
+
     function renderQuizQuestion() {
       const item = quizQuestions[quizIndex];
       const choices = quizItemChoices[quizIndex];
@@ -23933,6 +24350,10 @@ Answer: C</pre>
       document.getElementById('quiz-results-score').textContent = `${pct}%`;
       document.getElementById('quiz-results-sub').textContent = `${quizScore} out of ${total} correct`;
       document.getElementById('quiz-results-card').style.display = '';
+      // Also reset the controller's highlight on this screen to the
+      // first button (BACK), so a gamepad coming back to results after a
+      // fresh finish always starts there rather than wherever it was left.
+      if (window.__gcResetQuizResultsFocus) window.__gcResetQuizResultsFocus();
       saveQuizProgress(true);
     }
 
@@ -25271,6 +25692,21 @@ Answer: C</pre>
     // Remembers exactly where the user was scrolled on that return view, so
     // closing the exam restores that same spot instead of jumping to the top.
     let gformReturnScrollY = 0;
+    // Remembers, per exam id, how far down THAT exam itself was scrolled
+    // when it was last closed — so backing out (B / the header back
+    // chevron / SELECT-turned-report etc., anything that goes through
+    // closeInAppMockExam) and reopening the same exam picks up at the same
+    // question instead of jumping back to question 1. Cleared for an exam
+    // on retake (retakeInAppMockExam), since that's a deliberate fresh
+    // start.
+    let examInternalScrollY = {};
+    // Same idea, for the controller's yellow choice-box locator: which
+    // .gform-option index (window.__examChoiceFocus.index) it was sitting
+    // on when the exam was last closed, so reopening the same exam puts
+    // the D-pad/stick locator back on that same choice too, not just the
+    // page scroll — otherwise the page lands in the right place but the
+    // locator (and whatever A would select) is still back at question 1.
+    let examInternalFocusIndex = {};
     const EXAM_PROGRESS_PREFIX = 'examProgress_';
     // Whether the exam that's open right now was launched from the Mock
     // Board Exam page. Decided once, when the exam opens (from the card that
@@ -25299,10 +25735,23 @@ Answer: C</pre>
       return v === null ? true : v === '1';
     }
 
+    // Shared with the gamepad-polling code further down: which zone (the
+    // box chooser rows vs. the Cancel/Save row) currently carries the
+    // yellow gc-focused highlight in this popup. Reset fresh every time
+    // the popup opens so it never comes back highlighting wherever it
+    // was left last time. Same shape as Quiz Settings' own
+    // window.__qsPopupFocus below, just a separate object so the two
+    // popups' highlights never bleed into each other.
+    window.__mockSettingsPopupFocus = { zone: 'box', boxIndex: 0, vlatch: false, btnState: { index: 0, latch: false } };
+
     function openMockExamSettingsModal() {
       document.getElementById('mock-exam-setting-randomize-questions').checked = examRandomizeQuestionsOn();
       document.getElementById('mock-exam-setting-randomize-choices').checked = examRandomizeChoicesOn();
       document.getElementById('mock-exam-settings-overlay').classList.add('visible');
+      window.__mockSettingsPopupFocus.zone = 'box';
+      window.__mockSettingsPopupFocus.boxIndex = 0;
+      window.__mockSettingsPopupFocus.vlatch = false;
+      window.__mockSettingsPopupFocus.btnState = { index: 0, latch: false };
     }
 
     function closeMockExamSettingsModal() {
@@ -25522,6 +25971,30 @@ Answer: C</pre>
       target.scrollIntoView({ behavior: 'smooth', block: 'center' });
       target.classList.add('jump-flash');
       setTimeout(() => target.classList.remove('jump-flash'), 1600);
+      // Move the controller's yellow choice-box locator onto this
+      // question's first choice too, so jumping to a pinned question (the
+      // X button, or tapping Pins by hand) doesn't just scroll the page
+      // there — the D-pad/stick locator picks up right there, ready to
+      // answer, instead of being left wherever it was before the jump.
+      // Note: this function lives outside the Game Mode IIFE further down
+      // the page, so it can't call that closure's own examChoiceBoxes()/
+      // examChoiceClearFocus() helpers — it redoes the same plain-DOM
+      // lookups here instead. window.__examChoiceFocus is the one piece of
+      // that closure's state that IS exposed on window, so it's safe to
+      // read/write directly.
+      const firstBox = target.querySelector('.gform-option');
+      if (firstBox && window.__examChoiceFocus) {
+        const boxes = Array.from(document.querySelectorAll('#gform-questions .gform-option'));
+        const idx = boxes.indexOf(firstBox);
+        if (idx !== -1) {
+          window.__examChoiceFocus.index = idx;
+          window.__examChoiceFocus.holdDir = 0;
+          window.__examChoiceFocus.holdFrames = 0;
+          document.querySelectorAll('#gform-questions .gform-option.gc-focused')
+            .forEach(el => el.classList.remove('gc-focused'));
+          firstBox.classList.add('gc-focused');
+        }
+      }
     }
 
     // Sizes a question image in the exam: 20% of its own size, but never
@@ -25554,6 +26027,15 @@ Answer: C</pre>
       const overlay = document.getElementById('qimg-preview-overlay');
       if (overlay) overlay.remove();
     }
+
+    // Shared with the gamepad-polling code further down: which choice
+    // (flattened across every question's letter boxes, in on-screen order)
+    // currently carries the yellow gc-focused box-chooser highlight inside
+    // a Mock Exam / Mock Board Exam. Reset fresh every time an exam opens
+    // so it never comes back highlighting wherever a previous exam's
+    // choice list left off. Same shape as the settings popups' own
+    // window.__qsPopupFocus/__mockSettingsPopupFocus above.
+    window.__examChoiceFocus = { index: 0, holdDir: 0, holdFrames: 0 };
 
     function openInAppMockExam(examId, examCard) {
       // Mock Board exams on a finished day can't be opened any more — unless
@@ -25633,6 +26115,21 @@ Answer: C</pre>
 
       pinCycleIndex = -1;
       currentExamId = examId;
+      // Restore the controller locator to wherever it was left on this
+      // exam (see examInternalFocusIndex in closeInAppMockExam), clamped
+      // to however many choice boxes this build of the exam actually has
+      // — queried straight off `overlay` (not document) since it isn't
+      // attached to the page yet at this point. Falls back to the first
+      // choice for a brand-new exam, same as before.
+      {
+        const totalBoxes = overlay.querySelectorAll('.gform-option').length;
+        const savedFocusIdx = examInternalFocusIndex[examId];
+        window.__examChoiceFocus.index = (typeof savedFocusIdx === 'number' && totalBoxes > 0)
+          ? Math.max(0, Math.min(totalBoxes - 1, savedFocusIdx))
+          : 0;
+      }
+      window.__examChoiceFocus.holdDir = 0;
+      window.__examChoiceFocus.holdFrames = 0;
 
       // No longer a floating pop-up: hide whichever view is currently open
       // (Mock Exam subject list, Quiz list, a subject page, etc.) and drop
@@ -25686,6 +26183,27 @@ Answer: C</pre>
         if (timerEl) updateExamTimer(examCard, timerEl);
       }
       refreshMockExamTabIcon();
+
+      // Reopening an exam picks up wherever it was left scrolled last time
+      // (see examInternalScrollY in closeInAppMockExam) instead of always
+      // jumping back to question 1. Deferred to the next couple of
+      // animation frames rather than done synchronously above: right after
+      // appendChild the page hasn't actually been laid out to its full
+      // height yet (question images especially haven't loaded/sized
+      // themselves via sizeQuestionImage yet), so a scrollTo straight away
+      // would silently clamp back down near the top on a page that's about
+      // to grow taller. Giving layout a couple of frames to settle first
+      // (and going through 0 first, above, so there's no visible flash of
+      // the wrong question in between) makes the saved position actually
+      // reachable.
+      const savedScrollY = examInternalScrollY[examId];
+      if (savedScrollY) {
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          if (document.getElementById('gform-overlay') && currentExamId === examId) {
+            window.scrollTo(0, savedScrollY);
+          }
+        }));
+      }
     }
 
     function togglePinQuestion(i) {
@@ -25789,6 +26307,7 @@ Answer: C</pre>
     function closeQuestionReport() {
       const overlay = document.getElementById('qreport-overlay');
       if (overlay) overlay.remove();
+      closeQreportAnswerPopup();
       qreportContext = null;
     }
 
@@ -25828,13 +26347,15 @@ Answer: C</pre>
       if (reason === 'wrong-correct') {
         extra.innerHTML = `
           <p class="qreport-extra-label">Which one do you think is actually correct?</p>
+          <p class="qreport-extra-hint">(Please click the letter inside the circle to choose)</p>
           <div class="qreport-option-grid">
             ${(item.options || []).map((opt, idx) => {
               const isCurrentCorrect = opt === item.correct;
+              const letter = String.fromCharCode(65 + idx);
               return `
-              <button type="button" class="qreport-option-btn${isCurrentCorrect ? ' disabled' : ''}" data-value="${escapeHtml(opt)}" ${isCurrentCorrect ? 'disabled title="This is the current correct answer"' : 'onclick="selectReportOption(this)"'}>
-                <span class="qreport-option-letter">${String.fromCharCode(65 + idx)}</span>
-                <span>${renderMathText(opt)}</span>
+              <button type="button" class="qreport-option-btn${isCurrentCorrect ? ' correct-locked' : ''}" data-value="${escapeHtml(opt)}" onclick="openQreportAnswerPopup(this)">
+                <span class="qreport-option-letter${isCurrentCorrect ? ' locked' : ''}" ${isCurrentCorrect ? 'title="This is the current correct answer"' : 'onclick="event.stopPropagation(); selectReportOption(this.parentElement)"'}>${letter}</span>
+                <span class="qreport-option-text">${renderMathText(opt)}</span>
               </button>
             `;
             }).join('')}
@@ -25866,6 +26387,35 @@ Answer: C</pre>
       qreportContext.chosenOption = btn.dataset.value;
       const submitBtn = document.getElementById('qreport-submit-btn');
       if (submitBtn) submitBtn.disabled = false;
+    }
+
+    // Clicking an option's box (anywhere but its letter, which selects it —
+    // see the letter's own onclick) opens this popup with the option's full
+    // text, since .qreport-option-text is truncated to keep the box a fixed
+    // size. Closes only by clicking outside the popup (no close button).
+    function openQreportAnswerPopup(btn) {
+      closeQreportAnswerPopup();
+      const letter = btn.querySelector('.qreport-option-letter');
+      const text = btn.querySelector('.qreport-option-text');
+      if (!letter || !text) return;
+      const isActive = btn.classList.contains('active');
+      const overlay = document.createElement('div');
+      overlay.id = 'qreport-answer-popup-overlay';
+      overlay.className = 'qreport-answer-popup-overlay';
+      overlay.innerHTML = `
+        <div class="qreport-answer-popup">
+          <span class="qreport-answer-popup-letter${isActive ? ' active' : ''}">${letter.textContent}</span>
+          <div class="qreport-answer-popup-text">${text.innerHTML}</div>
+        </div>
+      `;
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) closeQreportAnswerPopup(); });
+      document.body.appendChild(overlay);
+      requestAnimationFrame(() => overlay.classList.add('visible'));
+    }
+
+    function closeQreportAnswerPopup() {
+      const overlay = document.getElementById('qreport-answer-popup-overlay');
+      if (overlay) overlay.remove();
     }
 
     function updateReportSubmitState() {
@@ -25929,8 +26479,15 @@ Answer: C</pre>
         try {
           ensureFirebaseApp();
           await nsRef('questionReports').push(report);
-          closeQuestionReport();
+          // Keep .qreport-overlay in the DOM until AFTER this "Thank you"
+          // alert is dismissed (rather than closing it first), so the
+          // pollGamepad bail-out (see #qreport-overlay check) and the
+          // mouse-usable CSS exceptions tied to .qreport-overlay's
+          // presence stay in effect for the confirmation alert too --
+          // the controller must stay hands-off and the mouse must keep
+          // working right up until this popup itself is closed.
           await adminAlert('Thank you! Your report has been submitted for review.');
+          closeQuestionReport();
         } catch (e) {
           console.error('Submit question report error:', e);
           if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit report'; }
@@ -25944,6 +26501,15 @@ Answer: C</pre>
       // whether it was already graded — so reopening this exam (even via
       // the X button) restores exactly where the reviewee left off.
       saveExamProgress(currentExamId);
+      // Also remember how far down the exam itself was scrolled (not the
+      // page behind it — that's gformReturnScrollY) and where the
+      // controller's choice-box locator was sitting, keyed by exam id, so
+      // reopening the same exam picks up at the same question — scroll
+      // AND locator — instead of resetting to the top.
+      if (currentExamId) {
+        examInternalScrollY[currentExamId] = window.scrollY;
+        if (window.__examChoiceFocus) examInternalFocusIndex[currentExamId] = window.__examChoiceFocus.index;
+      }
       hideScoreModal();
       closeQuestionImagePreview();
       const overlay = document.getElementById('gform-overlay');
@@ -25999,6 +26565,8 @@ Answer: C</pre>
       try { localStorage.removeItem(examProgressKey(examId)); } catch (e) {}
       delete examQuestionOrders[examId]; // draw a fresh shuffle for the retake
       delete examChoiceOrders[examId];
+      delete examInternalScrollY[examId]; // fresh start scrolls to question 1, not the old spot
+      delete examInternalFocusIndex[examId]; // ...and the locator starts back on question 1's first choice too
       if (gformIsBoard) clearBoardScore(examId); // only a Mock Board retake resets the board score
       const overlay = document.getElementById('gform-overlay');
       if (overlay) overlay.remove();
@@ -26063,6 +26631,33 @@ Answer: C</pre>
           firstMissing.scrollIntoView({ behavior: 'smooth', block: 'center' });
           firstMissing.classList.add('missing-flash');
           setTimeout(() => firstMissing.classList.remove('missing-flash'), 1600);
+
+          // Same controller-locator move as jumpToNextPinned above: put
+          // the yellow choice highlight on this question's first choice
+          // too, so the D-pad/stick locator lands right where mouse/touch
+          // just scrolled to instead of staying put. Controller-only.
+          // Note: same as jumpToNextPinned, this lives outside the Game
+          // Mode IIFE further down the page, so it can't call that
+          // closure's own examChoiceApplyFocus()/examNavTargets() helpers
+          // — it redoes the same plain-DOM lookup jumpToNextPinned uses.
+          // window.__examChoiceFocus is the one piece of that closure's
+          // state that IS exposed on window, so it's safe to read/write
+          // directly.
+          if (document.documentElement.classList.contains('gc-connected')) {
+            const firstBox = firstMissing.querySelector('.gform-option');
+            if (firstBox && window.__examChoiceFocus) {
+              const boxes = Array.from(document.querySelectorAll('#gform-questions .gform-option'));
+              const idx = boxes.indexOf(firstBox);
+              if (idx !== -1) {
+                window.__examChoiceFocus.index = idx;
+                window.__examChoiceFocus.holdDir = 0;
+                window.__examChoiceFocus.holdFrames = 0;
+                document.querySelectorAll('#gform-questions .gform-option.gc-focused')
+                  .forEach(el => el.classList.remove('gc-focused'));
+                firstBox.classList.add('gc-focused');
+              }
+            }
+          }
         }
         return;
       }
@@ -26195,7 +26790,7 @@ Answer: C</pre>
           <p class="gform-score-big">${percent}%</p>
           <div class="gform-score-actions">
             <button class="gform-score-retake-btn" onclick="hideScoreModal()">See Results</button>
-            <button class="gform-score-retake-btn" onclick="hideScoreModal(); retakeInAppMockExam('${examId}')">Retake Exam</button>
+            <button class="gform-score-retake-btn" onclick="confirmRetakeInAppMockExam('${examId}')">Retake Exam</button>
             <button class="gform-score-leave-btn" onclick="hideScoreModal(); closeInAppMockExam()">Close</button>
           </div>
         </div>
@@ -26207,6 +26802,19 @@ Answer: C</pre>
       const overlay = document.getElementById('gform-score-overlay');
       if (overlay) overlay.classList.remove('visible');
     }
+
+    // Retake Exam, from the Score popup, now asks for confirmation first
+    // (same as the quiz side's own confirmRetakeQuizExam) rather than
+    // clearing the current attempt the instant it's tapped.
+    function confirmRetakeInAppMockExam(examId) {
+      openConfirmDialog(
+        'Retake this exam? Your current answers and score for it will be cleared.',
+        () => { hideScoreModal(); retakeInAppMockExam(examId); },
+        'Retake',
+        'yellow'
+      );
+    }
+
 
     let currentBoardSet = {};
 
@@ -27884,6 +28492,10 @@ Answer: C</pre>
         setupEmptySubjectMockExams(key);
       }
       window.scrollTo(0, 0);
+      // Also reset the controller's highlight on this exam list to the
+      // top card, mirroring the window.scrollTo(0,0) above for a
+      // gamepad B-out-and-back-in.
+      if (window.__gcResetMockExamListFocus) window.__gcResetMockExamListFocus();
       updatePresenceSection('taking a mock exam');
       updateTopbarStoreNav(null);
       updateSidebarVisibility();
@@ -28811,22 +29423,54 @@ Answer: C</pre>
       let gpIndex = null;
       let lastPadName = '';
       let prevButtons = [];
-      let stickLatchX = false;
+      // Held-direction state for the quiz's BACK/NEXT stepping (D-pad
+      // left/right or the left stick), separate from gcHoldDir/gcHoldFrames
+      // above since those are for the list screens. Mirrors the same
+      // repeat-while-held pattern: holding the direction keeps stepping
+      // through questions on its own instead of needing repeated taps.
+      let quizHoldDir = 0;
+      let quizHoldFrames = 0;
       let gcFocusIndex = 0;
       let prevListCtx = null;
       let gcHoldDir = 0;
       let gcHoldFrames = 0;
-      // Remembers which card was highlighted on the subjects list and on
-      // a subject's exam list separately, so stepping A into a list and
-      // back out with B returns the yellow highlight (and, since
-      // gcApplyFocus's scrollIntoView follows it, the scroll position
-      // too) to exactly where it was left — instead of always snapping
-      // back to the first card. The exam-list slot is per-subject: it's
-      // cleared whenever a different subject's list is opened, since
-      // that's a different set of cards.
+      // Which of BACK / RETAKE / CHOOSE ANOTHER QUIZ on the quiz results
+      // screen currently carries the yellow gc-focused highlight — same
+      // shared left-right + A row navigation as the Game Mode popup's own
+      // Cancel/Connect row (gcNavigateButtonRow). Reset to the first
+      // button fresh every time results are (re)shown — see
+      // __gcResetQuizResultsFocus below, called from showQuizResults() —
+      // so it never comes back highlighting wherever it was left on a
+      // previous attempt.
+      let quizResultsFocus = { index: 0, latchDir: null, lastTop: 0 };
+      // Remembers which card was highlighted on the subjects list, so
+      // stepping A into the list and back out with B returns the yellow
+      // highlight (and, since gcApplyFocus's scrollIntoView follows it,
+      // the scroll position too) to exactly where it was left — instead
+      // of always snapping back to the first card.
+      //
+      // The exam-list slot (one level deeper, inside a subject) works
+      // the same way EXCEPT when the subject's exam list is freshly
+      // opened from the subjects list — openQuizSubject()/showSubject()
+      // explicitly zero it via __gcResetQuizExamListFocus/
+      // __gcResetMockExamListFocus below, so clicking into a subject
+      // always starts at its top card, even if it's the same subject as
+      // last time. Backing out of an exam mid-play (B/closing it) does
+      // NOT go through those functions, so that path still restores
+      // wherever the highlight and scroll were left before the exam
+      // opened.
       let gcSubjectsFocusIndex = 0;
       let gcExamListFocusIndex = 0;
       let gcExamListSubjectKey = null;
+      // Same idea, for Mock Exam's own subjects list / exam list (see
+      // gcContext's 'mock-subjects'/'mock-examlist'). gcMockExamListViewId
+      // is the exam-list equivalent of gcExamListSubjectKey — keyed off
+      // lastOpenSubjectViewId (view-aero/view-structures/view-powerplant/
+      // view-empty) since Mock Exam has no single subject-key variable of
+      // its own the way Quiz's currentQuizSubjectKey does.
+      let gcMockSubjectsFocusIndex = 0;
+      let gcMockExamListFocusIndex = 0;
+      let gcMockExamListViewId = null;
       // Which of the popup's CANCEL/DISCONNECT buttons currently carries
       // the yellow gc-focused highlight (0 = CANCEL, 1 = DISCONNECT).
       let gmPopupFocus = { index: 0, latch: false };
@@ -28836,16 +29480,69 @@ Answer: C</pre>
         if (cancelBtn) cancelBtn.classList.remove('gc-focused');
         if (discBtn) discBtn.classList.remove('gc-focused');
       }
-      // Quiz Settings popup: the box-chooser rows holding the two
-      // randomize toggles, and a helper to clear whichever one (row or
-      // Cancel/Save button) currently carries the highlight so switching
-      // zones never leaves a stale highlight behind.
-      function qsBoxRows() {
-        return Array.from(document.querySelectorAll('#quiz-settings-box-chooser .qs-box-chooser-row'));
+      // Quiz Settings / Mock Exam Settings popups: the box-chooser rows
+      // holding each popup's randomize toggles, and a helper to clear
+      // whichever one (row or Cancel/Save button) currently carries the
+      // highlight so switching zones never leaves a stale highlight
+      // behind. Both popups share this same shell, so these take the
+      // relevant container/card id rather than being hardcoded to Quiz's.
+      function qsBoxRows(boxChooserId) {
+        return Array.from(document.querySelectorAll('#' + boxChooserId + ' .qs-box-chooser-row'));
       }
-      function qsClearFocusHighlight() {
-        const card = document.getElementById('quiz-randomize-settings-overlay');
+      function qsClearFocusHighlight(cardId) {
+        const card = document.getElementById(cardId);
         if (card) card.querySelectorAll('.gc-focused').forEach(el => el.classList.remove('gc-focused'));
+      }
+      // Shared by both box-chooser popups (Quiz Settings and Mock Exam
+      // Settings): D-pad/stick up-down moves the yellow gc-focused
+      // highlight down through the box-chooser rows, toggling whichever
+      // row's checkbox with A, then on past the last row into the
+      // CANCEL/SAVE row (navigated left-right the same way as the Game
+      // Mode popup's own Cancel/Connect row). B closes the popup outright,
+      // same as clicking outside it.
+      function handleBoxChooserPopup(gp, justPressed, cardId, boxChooserId, cancelBtnId, saveBtnId, closeFn, focusState) {
+        if (justPressed(BTN.B)) {
+          qsClearFocusHighlight(cardId);
+          closeFn();
+          return;
+        }
+        if (!gpConnected) return;
+        const rows = qsBoxRows(boxChooserId);
+        const btns = [document.getElementById(cancelBtnId), document.getElementById(saveBtnId)];
+        const ay = gp.axes[1] || 0;
+        let vdir = 0;
+        if (justPressed(BTN.DDOWN)) vdir = 1;
+        else if (justPressed(BTN.DUP)) vdir = -1;
+        else if (!focusState.vlatch && ay > DEADZONE) { vdir = 1; focusState.vlatch = true; }
+        else if (!focusState.vlatch && ay < -DEADZONE) { vdir = -1; focusState.vlatch = true; }
+        if (Math.abs(ay) < DEADZONE * 0.5) focusState.vlatch = false;
+
+        if (focusState.zone === 'box' && rows.length) {
+          qsClearFocusHighlight(cardId);
+          if (vdir === 1) {
+            if (focusState.boxIndex < rows.length - 1) focusState.boxIndex++;
+            else focusState.zone = 'buttons';
+          } else if (vdir === -1) {
+            focusState.boxIndex = Math.max(0, focusState.boxIndex - 1);
+          }
+          if (focusState.zone === 'box') {
+            const row = rows[focusState.boxIndex];
+            row.classList.add('gc-focused');
+            row.scrollIntoView({ block: 'nearest' });
+            if (justPressed(BTN.A)) {
+              const cb = row.querySelector('input[type="checkbox"]');
+              if (cb) cb.checked = !cb.checked;
+            }
+          }
+        } else {
+          if (vdir === -1) {
+            qsClearFocusHighlight(cardId);
+            focusState.zone = 'box';
+          } else {
+            const activated = gcNavigateButtonRow(gp, justPressed, btns, focusState.btnState);
+            if (activated) activated.click();
+          }
+        }
       }
       // Same two-button, D-pad/stick + A navigation, generalized for the
       // app's shared Cancel/Confirm dialog (openConfirmDialog) — a fresh
@@ -28854,23 +29551,161 @@ Answer: C</pre>
       // reset the highlight to Cancel.
       let confirmDialogFocus = { index: 0, latch: false };
       let lastConfirmOverlayEl = null;
+      // Score popup (See Results / Retake Exam / Close), stacked in a
+      // column rather than a row -- see gcNavigateButtonColumn below and
+      // its use in pollGamepad. Reset to the top button (See Results)
+      // whenever the popup transitions from hidden to visible, same idea
+      // as lastConfirmOverlayEl above.
+      let gformScoreFocus = { index: 0, latch: false };
+      let scoreOverlayWasOpen = false;
       // Shared by both popups above: moves `state.index` between `els`
       // (filtered to whichever are actually on screen) from the D-pad or
       // the left stick's horizontal axis, paints the gc-focused
       // highlight, and returns the element A should activate this frame
       // (or null).
+      // How long (in animation frames, ~60/sec) a held D-pad direction or
+      // stick deflection waits before it starts auto-repeating, and how
+      // often it repeats after that — same feel and same numbers as the
+      // subject/exam list's own held-direction scrolling (see gcHoldDir/
+      // gcHoldFrames in pollGamepad below), just tracked per-popup in each
+      // popup's own state object instead of one shared pair of globals.
+      const GC_BTN_REPEAT_DELAY = 24, GC_BTN_REPEAT_INTERVAL = 8;
+      function gcButtonHeld(gp, i) {
+        const b = gp.buttons[i];
+        return !!(b && (b.pressed || b.value > 0.5));
+      }
+      // Held direction -> a step this frame, or 0. Moves once the instant
+      // the direction starts being held, then (if it's still held) waits
+      // GC_BTN_REPEAT_DELAY frames before repeating every
+      // GC_BTN_REPEAT_INTERVAL frames — so a tap moves one step and a
+      // held press keeps moving on its own, same as the card lists.
+      function gcHeldStep(state, heldDir) {
+        let dir = 0;
+        if (heldDir !== state.holdDir) {
+          state.holdDir = heldDir;
+          state.holdFrames = 0;
+          if (heldDir !== 0) dir = heldDir;
+        } else if (heldDir !== 0) {
+          state.holdFrames = (state.holdFrames || 0) + 1;
+          if (state.holdFrames === GC_BTN_REPEAT_DELAY ||
+              (state.holdFrames > GC_BTN_REPEAT_DELAY && (state.holdFrames - GC_BTN_REPEAT_DELAY) % GC_BTN_REPEAT_INTERVAL === 0)) {
+            dir = heldDir;
+          }
+        }
+        return dir;
+      }
       function gcNavigateButtonRow(gp, justPressed, els, state) {
         const visible = els.filter(isVisible);
         if (!visible.length) return null;
         if (state.index > visible.length - 1) state.index = visible.length - 1;
         const ax = gp.axes[0] || 0;
-        let dir = 0;
-        if (justPressed(BTN.DRIGHT)) dir = 1;
-        else if (justPressed(BTN.DLEFT)) dir = -1;
-        else if (!state.latch && ax > DEADZONE) { dir = 1; state.latch = true; }
-        else if (!state.latch && ax < -DEADZONE) { dir = -1; state.latch = true; }
-        if (Math.abs(ax) < DEADZONE * 0.5) state.latch = false;
+        let heldDir = 0;
+        if (gcButtonHeld(gp, BTN.DRIGHT) || ax > DEADZONE) heldDir = 1;
+        else if (gcButtonHeld(gp, BTN.DLEFT) || ax < -DEADZONE) heldDir = -1;
+        const dir = gcHeldStep(state, heldDir);
         if (dir !== 0) state.index = Math.max(0, Math.min(visible.length - 1, state.index + dir));
+        visible.forEach((b, i) => b.classList.toggle('gc-focused', i === state.index));
+        return justPressed(BTN.A) ? visible[state.index] : null;
+      }
+      // Vertical twin of gcNavigateButtonRow, for popups whose buttons are
+      // stacked in a column (e.g. the Score popup's See Results / Retake
+      // Exam / Close) instead of side by side: D-pad up/down or the left
+      // stick's vertical axis moves the highlight, A activates whichever
+      // button currently carries it.
+      function gcNavigateButtonColumn(gp, justPressed, els, state) {
+        const visible = els.filter(isVisible);
+        if (!visible.length) return null;
+        if (state.index > visible.length - 1) state.index = visible.length - 1;
+        const ay = gp.axes[1] || 0;
+        let heldDir = 0;
+        if (gcButtonHeld(gp, BTN.DDOWN) || ay > DEADZONE) heldDir = 1;
+        else if (gcButtonHeld(gp, BTN.DUP) || ay < -DEADZONE) heldDir = -1;
+        const dir = gcHeldStep(state, heldDir);
+        if (dir !== 0) state.index = Math.max(0, Math.min(visible.length - 1, state.index + dir));
+        visible.forEach((b, i) => b.classList.toggle('gc-focused', i === state.index));
+        return justPressed(BTN.A) ? visible[state.index] : null;
+      }
+      // Same idea as gcNavigateButtonRow, but for the quiz results screen
+      // specifically: BACK and RETAKE share a top row, then CHOOSE
+      // ANOTHER QUIZ wraps onto its own row below (see
+      // .quiz-results-actions' flex-wrap). Left/right move within the
+      // top row only (BACK <-> RETAKE); up/down cross between the top
+      // row and the wrapped row directly — landing back on the top row
+      // restores whichever of BACK/RETAKE was last focused (state.lastTop)
+      // rather than always snapping to RETAKE, so every button is
+      // reachable straight from every other one instead of RETAKE being
+      // a required stop in between.
+      function gcNavigateQuizResultsRow(gp, justPressed, els, state) {
+        const visible = els.filter(isVisible);
+        if (!visible.length) return null;
+        if (state.index > visible.length - 1) state.index = visible.length - 1;
+        if (state.lastTop === undefined) state.lastTop = 0;
+        const topCount = Math.min(2, visible.length); // BACK, RETAKE
+        const ax = gp.axes[0] || 0;
+        const ay = gp.axes[1] || 0;
+        let horiz = 0, vert = 0;
+        if (justPressed(BTN.DRIGHT)) horiz = 1;
+        else if (justPressed(BTN.DLEFT)) horiz = -1;
+        else if (justPressed(BTN.DDOWN)) vert = 1;
+        else if (justPressed(BTN.DUP)) vert = -1;
+        else {
+          // Analog stick: treated as a rotary dial rather than a plain
+          // clamped left/right-up/down latch. A clamped index gets
+          // stuck after the first lap — once the highlight is pinned at
+          // either end of the top row, a further push toward that same
+          // end has nowhere left to go, so continuing to circle just
+          // oscillates between the last two buttons reached instead of
+          // still advancing. Stepping around a wraparound cycle instead
+          // means every quadrant the stick crosses keeps moving the
+          // highlight one button further around BACK -> RETAKE ->
+          // CHOOSE ANOTHER QUIZ -> BACK -> ..., for as many rotations,
+          // clockwise or counterclockwise, as it keeps turning.
+          const QUAD_ORDER = ['R', 'D', 'L', 'U']; // clockwise order of quadrants
+          const mag = Math.max(Math.abs(ax), Math.abs(ay));
+          if (mag < DEADZONE * 0.5) {
+            state.latchDir = null;
+          } else if (mag > DEADZONE) {
+            const dirKey = Math.abs(ax) >= Math.abs(ay)
+              ? (ax > 0 ? 'R' : 'L')
+              : (ay > 0 ? 'D' : 'U');
+            if (dirKey !== state.latchDir) {
+              let step;
+              if (state.latchDir == null) {
+                // First push, nothing to compare against yet:
+                // right/down reads as "forward", left/up as "back".
+                step = (dirKey === 'R' || dirKey === 'D') ? 1 : -1;
+              } else {
+                const cur = QUAD_ORDER.indexOf(dirKey);
+                const prev = QUAD_ORDER.indexOf(state.latchDir);
+                const delta = (cur - prev + 4) % 4;
+                // 1 quadrant forward = clockwise step, 3 = counter-
+                // clockwise; a 2-quadrant jump (opposite side, e.g. a
+                // fast flick skipping a quadrant) just picks a side.
+                step = delta === 3 ? -1 : 1;
+              }
+              state.latchDir = dirKey;
+              state.index = ((state.index + step) % visible.length + visible.length) % visible.length;
+              if (state.index < topCount) state.lastTop = state.index;
+              visible.forEach((b, i) => b.classList.toggle('gc-focused', i === state.index));
+              return justPressed(BTN.A) ? visible[state.index] : null;
+            }
+          }
+        }
+
+        const onTopRow = state.index < topCount;
+        if (horiz !== 0 && onTopRow && topCount > 1) {
+          state.index = Math.max(0, Math.min(topCount - 1, state.index + horiz));
+          state.lastTop = state.index;
+        } else if (vert > 0 && onTopRow && visible.length > topCount) {
+          // Top row -> wrapped row: remember which top button we're
+          // leaving so an up-press later comes straight back to it.
+          state.lastTop = state.index;
+          state.index = topCount;
+        } else if (vert < 0 && !onTopRow) {
+          // Wrapped row -> top row: go back to whichever of BACK/RETAKE
+          // was last focused, not always the same one.
+          state.index = Math.max(0, Math.min(topCount - 1, state.lastTop));
+        }
         visible.forEach((b, i) => b.classList.toggle('gc-focused', i === state.index));
         return justPressed(BTN.A) ? visible[state.index] : null;
       }
@@ -28900,15 +29735,32 @@ Answer: C</pre>
           const subjectsPanel = document.getElementById('quiz-subjects-panel');
           if (subjectsPanel && subjectsPanel.style.display !== 'none') return 'quiz-subjects';
         }
+        // Mock Exam's own subjects list (#view-mock-exam) and, one level
+        // down, whichever subject's exam list is currently open
+        // (view-aero/view-structures/view-powerplant/view-empty — shared
+        // with Review, so lastOpenSubjectViewId/lastSubjectsOrigin only
+        // count it here when it was opened FROM Mock Exam).
+        const mockExamView = document.getElementById('view-mock-exam');
+        if (mockExamView && mockExamView.classList.contains('visible')) return 'mock-subjects';
+        if (lastSubjectsOrigin === 'view-mock-exam' && lastOpenSubjectViewId) {
+          const subjView = document.getElementById(lastOpenSubjectViewId);
+          if (subjView && subjView.classList.contains('visible')) return 'mock-examlist';
+        }
         return null;
       }
 
-      // ---- Quiz subject list / exam list: D-pad or stick moves a yellow
-      // "gc-focused" highlight between cards, A clicks whichever one
-      // currently carries it. ----
+      // ---- Quiz subject list / exam list, and Mock Exam's own subject
+      // list / exam list: D-pad or stick moves a yellow "gc-focused"
+      // highlight between cards, A clicks whichever one currently carries
+      // it. ----
       function gcListItems(ctx) {
         if (ctx === 'quiz-subjects') return Array.from(document.querySelectorAll('#quiz-subject-list .subject-card'));
         if (ctx === 'quiz-examlist') return Array.from(document.querySelectorAll('#quiz-exam-list .exam-card'));
+        if (ctx === 'mock-subjects') return Array.from(document.querySelectorAll('#subject-list .subject-card'));
+        if (ctx === 'mock-examlist') {
+          const subjView = lastOpenSubjectViewId && document.getElementById(lastOpenSubjectViewId);
+          return subjView ? Array.from(subjView.querySelectorAll('.exam-list .exam-card')) : [];
+        }
         return [];
       }
       function gcClearFocusHighlight() {
@@ -28963,13 +29815,15 @@ Answer: C</pre>
         const el = items[gcFocusIndex];
         if (el) el.click();
       }
-      // SELECT inside a subject's exam list resets whichever quiz card
-      // currently carries the yellow gc-focused highlight (only quiz
-      // cards with saved progress have a RESET button — no-op otherwise),
-      // rather than opening Quiz Settings (that's SELECT's job one level
-      // up, on the subjects list).
-      function gcResetFocusedQuizExam() {
-        const items = gcListItems('quiz-examlist');
+      // SELECT inside a subject's exam list resets whichever card
+      // currently carries the yellow gc-focused highlight (only cards
+      // with saved progress have a RESET button — no-op otherwise),
+      // rather than opening Quiz/Mock Exam Settings (that's SELECT's job
+      // one level up, on the subjects list). Shared by both Quiz's own
+      // exam list and Mock Exam's, since both use the same
+      // .exam-timer-reset button.
+      function gcResetFocusedExamCard(ctx) {
+        const items = gcListItems(ctx);
         const el = items[gcFocusIndex];
         if (!el) return;
         const resetBtn = el.querySelector('.exam-timer-reset');
@@ -28990,37 +29844,203 @@ Answer: C</pre>
       function quizGoNext() { clickIfVisible(document.getElementById('quiz-next-btn')); }
 
       // ---- Mock Exam / Mock Board Exam ----
-      // Every question sits stacked on one scrollable page, so A/B/X/Y act
-      // on whichever question card is currently nearest the middle of the
-      // screen rather than a single "current" question.
-      function getCurrentGformCard() {
-        const cards = Array.from(document.querySelectorAll('#gform-questions .gform-card'));
-        if (!cards.length) return null;
-        const mid = window.innerHeight / 2;
-        let best = null, bestDist = Infinity;
-        cards.forEach(c => {
-          const r = c.getBoundingClientRect();
-          const d = Math.abs((r.top + r.height / 2) - mid);
-          if (d < bestDist) { bestDist = d; best = c; }
-        });
-        return best;
+      // Every question sits stacked on one scrollable page. Rather than
+      // A/B/X/Y each mapping to a fixed choice index (which breaks down
+      // past 4 choices), a single yellow gc-focused "box chooser" highlight
+      // sits on one whole choice row at a time — flattened across every
+      // question's choices, in on-screen order, so stepping past a
+      // question's last choice moves into the next question's first one
+      // and vice versa. D-pad/stick up-down moves it (up = up, down =
+      // down, not inverted like a camera-style page scroll), A selects
+      // whichever choice currently carries it, and scrollIntoView follows
+      // the highlight so the page scrolls along with it automatically. A
+      // question can be left unanswered — moving the highlight past it, or
+      // into another question entirely, never requires picking a choice
+      // first.
+      function examChoiceBoxes() {
+        return Array.from(document.querySelectorAll('#gform-questions .gform-option'));
       }
-      function examPressLetter(idx) {
-        const card = getCurrentGformCard();
-        if (!card) return;
-        const input = document.getElementsByName(`gform-q-${card.dataset.qindex}`)[idx];
-        if (input && !input.disabled) input.click();
+      // The Submit button used to be reachable by pressing START from
+      // anywhere in the exam (see the old examPressStart, now removed —
+      // START opens Game Mode settings instead, same as every other
+      // controller-enabled screen). With that gone, it's folded into the
+      // very same D-pad/stick focus chain as one more stop past the last
+      // question's last choice, so it's still reachable and pressable
+      // (A) by controller. It stays unfilled (outlined, like every other
+      // "not yet selected" gc-focused target) until the highlight
+      // actually reaches it — see the html.gc-connected CSS rule for
+      // .gform-submit-btn — instead of sitting permanently yellow-filled,
+      // which would look already "selected" before it is.
+      function examSubmitBtn() {
+        const btn = document.querySelector('#gform-submit-area .gform-submit-btn');
+        return (btn && isVisible(btn)) ? btn : null;
       }
-      function examScroll(dir) { window.scrollBy(0, dir * SCROLL_SPEED); }
-      function examPressStart() {
-        const confirmOverlay = document.getElementById('confirm-dialog-overlay');
-        if (confirmOverlay) { clickIfVisible(document.getElementById('confirm-dialog-confirm-btn')); return; }
-        clickIfVisible(document.querySelector('#gform-submit-area .gform-submit-btn'));
+      function examNavTargets() {
+        const targets = examChoiceBoxes();
+        const submitBtn = examSubmitBtn();
+        if (submitBtn) targets.push(submitBtn);
+        return targets;
+      }
+      function examChoiceClearFocus() {
+        document.querySelectorAll('#gform-questions .gform-option.gc-focused')
+          .forEach(el => el.classList.remove('gc-focused'));
+        const submitBtn = examSubmitBtn();
+        if (submitBtn) submitBtn.classList.remove('gc-focused');
+      }
+      function examChoiceApplyFocus(dir) {
+        const boxes = examNavTargets();
+        if (!boxes.length) return;
+        const focus = window.__examChoiceFocus;
+        if (focus.index > boxes.length - 1) focus.index = boxes.length - 1;
+        if (focus.index < 0) focus.index = 0;
+        examChoiceClearFocus();
+        const box = boxes[focus.index];
+        box.classList.add('gc-focused');
+        // Same "2 steps ahead" scroll as the subject/exam lists' own
+        // gcApplyFocus: bring the item further along in the direction of
+        // travel into view (not the focused one itself), so the page only
+        // scrolls once the highlight gets within reach of the edge, and
+        // there are always a few more choices already visible past it.
+        // Scrolling up looks one further step ahead than scrolling down (3
+        // vs 2) — since each question is a tall block (text, then its
+        // choices), a "2 ahead" going up still only reached the previous
+        // question's trailing choices, not its own text above them; one
+        // more step reaches back far enough to land in that question
+        // reliably. Right at the top/bottom of the whole list there's no
+        // "further along" choice to target, so scroll all the way to the
+        // true edge instead. No direction (first entering the exam) just
+        // brings the focused choice itself into view.
+        //
+        // Only ever scroll the look-ahead CHOICE itself into view here —
+        // never its whole parent question card. Widening the target to the
+        // whole card (to reveal the next/previous question's text too) used
+        // to make the browser scroll however far it took to fit that whole
+        // card, however tall it was (long question text, an image, several
+        // choices) — easily far more than one step's worth, which could
+        // shove the actually-highlighted box halfway across the screen, or
+        // off it entirely, in one jump. That read as the locator "snapping
+        // back to center" instead of staying roughly where it was.
+        // Targeting just the one look-ahead choice keeps every scroll a
+        // small, steady nudge — one choice-row's worth — so the highlight
+        // stays close to its on-screen spot while still revealing a bit
+        // more of what's ahead as it nears the edge.
+        const ahead = dir > 0 ? 2 : 3;
+        if (dir > 0 && focus.index + ahead > boxes.length - 1) {
+          window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'auto' });
+        } else if (dir < 0 && focus.index - ahead < 0) {
+          window.scrollTo({ top: 0, behavior: 'auto' });
+        } else if (dir) {
+          const scrollTarget = boxes[focus.index + dir * ahead];
+          scrollTarget.scrollIntoView({ block: 'nearest' });
+        } else {
+          box.scrollIntoView({ block: 'nearest' });
+        }
+      }
+      function examChoiceNav(gp, justPressed) {
+        const boxes = examNavTargets();
+        if (!boxes.length) return;
+        const focus = window.__examChoiceFocus;
+        // Held direction (not just a fresh press) drives movement here too
+        // — same hold-to-repeat scheme as the subject/exam lists' own
+        // gcApplyFocus handling above: move once right away when a
+        // direction is first pressed, then after a short pause keep
+        // stepping automatically at a steady rate for as long as it's
+        // held, so a long press keeps moving through the choices on its
+        // own instead of needing to be tapped once per choice. It stops
+        // as soon as the direction is released (or reversed).
+        const ay = gp.axes[1] || 0;
+        let heldDir = 0;
+        if (gp.buttons[BTN.DDOWN] && (gp.buttons[BTN.DDOWN].pressed || gp.buttons[BTN.DDOWN].value > 0.5)) heldDir = 1;
+        else if (gp.buttons[BTN.DUP] && (gp.buttons[BTN.DUP].pressed || gp.buttons[BTN.DUP].value > 0.5)) heldDir = -1;
+        else if (ay > DEADZONE) heldDir = 1;
+        else if (ay < -DEADZONE) heldDir = -1;
+
+        let vdir = 0;
+        if (heldDir !== focus.holdDir) {
+          // Direction just changed (including release back to neutral):
+          // move once right away, then start the hold timer fresh.
+          focus.holdDir = heldDir;
+          focus.holdFrames = 0;
+          if (heldDir !== 0) vdir = heldDir;
+        } else if (heldDir !== 0) {
+          focus.holdFrames++;
+          const EXAM_REPEAT_DELAY = 24, EXAM_REPEAT_INTERVAL = 8;
+          if (focus.holdFrames === EXAM_REPEAT_DELAY ||
+              (focus.holdFrames > EXAM_REPEAT_DELAY && (focus.holdFrames - EXAM_REPEAT_DELAY) % EXAM_REPEAT_INTERVAL === 0)) {
+            vdir = heldDir;
+          }
+        }
+
+        const alreadyFocused = boxes.some(b => b.classList.contains('gc-focused'));
+        if (vdir !== 0) focus.index = Math.max(0, Math.min(boxes.length - 1, focus.index + vdir));
+        if (vdir !== 0 || !alreadyFocused) examChoiceApplyFocus(vdir);
+
+        if (justPressed(BTN.A)) {
+          const box = boxes[focus.index];
+          if (!box) return;
+          if (box.classList.contains('gform-option')) {
+            const input = box.querySelector('input[type="radio"]');
+            if (input && !input.disabled) {
+              if (input.checked) {
+                // Already the selected choice for this question: A again
+                // clears it, same as the old per-question "Clear
+                // selection" button -- now hidden while a controller is
+                // connected (see the html.gc-connected .gform-clear-btn
+                // CSS rule) since this replaces it.
+                const card = box.closest('.gform-card');
+                const qIndex = card ? parseInt(card.getAttribute('data-qindex'), 10) : NaN;
+                if (!isNaN(qIndex)) clearSelection(qIndex);
+              } else {
+                // A radio group, so clicking a new choice here already
+                // leaves only one selected per question -- same as
+                // tapping it by hand.
+                input.click();
+              }
+            }
+          } else {
+            // The Submit button, folded into the same nav chain as its
+            // last stop (see examNavTargets above).
+            box.click();
+          }
+        }
       }
       function examPressSelect() {
         const confirmOverlay = document.getElementById('confirm-dialog-overlay');
         if (confirmOverlay) { clickIfVisible(confirmOverlay.querySelector('.confirm-dialog-btn.cancel')); return; }
         if (typeof closeInAppMockExam === 'function') closeInAppMockExam();
+      }
+      // Which question the yellow gc-focused choice-box highlight is
+      // currently sitting inside of — shared by the Y (pin) and SELECT
+      // (report) mappings below, so both act on whichever question the
+      // controller is actually parked on rather than always question 1.
+      function examFocusedQuestionIndex() {
+        const boxes = examChoiceBoxes();
+        const focus = window.__examChoiceFocus;
+        const box = boxes[focus.index];
+        const card = box && box.closest('.gform-card');
+        if (!card) return null;
+        const idx = card.getAttribute('data-qindex');
+        return idx !== null ? parseInt(idx, 10) : null;
+      }
+      // Y pins/unpins whichever question currently carries the yellow
+      // choice highlight — same toggle as tapping that question's own
+      // "Pin" button (togglePinQuestion).
+      function examPressYPin() {
+        const idx = examFocusedQuestionIndex();
+        if (idx !== null) clickIfVisible(document.getElementById(`gform-pin-${idx}`));
+      }
+      // X cycles to the next pinned question, same as tapping the header's
+      // "Pins" button (jumpToNextPinned).
+      function examPressXLocatePins() {
+        clickIfVisible(document.getElementById('gform-pins-btn'));
+      }
+      // SELECT opens the Report popup for whichever question currently
+      // carries the yellow choice highlight — same as tapping that
+      // question's own report flag (openQuestionReport), which sits right
+      // next to its "Question n of N" heading.
+      function examPressReport() {
+        const idx = examFocusedQuestionIndex();
+        if (idx !== null) clickIfVisible(document.getElementById(`gform-report-${idx}`));
       }
 
       function pollGamepad() {
@@ -29035,6 +30055,18 @@ Answer: C</pre>
         const ctx = gcContext();
         const buttons = gp.buttons.map(b => b.pressed || b.value > 0.5);
         const justPressed = (i) => buttons[i] && !prevButtons[i];
+
+        // Report Question popup: unlike every other popup, it has no
+        // D-pad/A/B navigation of its own (it needs real text entry —
+        // see the .qreport-overlay pointer-events exception above), so
+        // rather than half-driving it and half-leaving it to the mouse,
+        // the controller is completely hands-off while it's open —
+        // including its own "Continue anyway?" spoiler confirm dialog,
+        // which is why this check comes before the generic confirm-dialog
+        // branch below rather than after it. Highlights are left exactly
+        // as they were so whatever was focused underneath is still there
+        // once the report popup closes.
+        if (document.getElementById('qreport-overlay')) { prevButtons = buttons; return; }
 
         // The app's shared Cancel/Confirm dialog (e.g. the "Disconnect
         // the controller?" prompt from the Game Mode popup below, or any
@@ -29057,6 +30089,29 @@ Answer: C</pre>
           return;
         }
         lastConfirmOverlayEl = null;
+
+        // The Score popup (See Results / Retake Exam / Close), shown after
+        // submitting an in-app Mock Exam. Its own Retake Exam button opens
+        // the shared confirm dialog above (already caught by the branch
+        // above, since that branch runs first), so this only ever handles
+        // the score popup's own three stacked buttons: D-pad/stick up-down
+        // moves the highlight, A activates, B closes it outright (same as
+        // clicking Close).
+        const scoreOverlay = document.getElementById('gform-score-overlay');
+        const scoreOverlayOpen = !!(scoreOverlay && scoreOverlay.classList.contains('visible'));
+        if (scoreOverlayOpen) {
+          if (!scoreOverlayWasOpen) gformScoreFocus = { index: 0, latch: false };
+          scoreOverlayWasOpen = true;
+          const closeBtn = scoreOverlay.querySelector('.gform-score-leave-btn');
+          if (justPressed(BTN.B)) { if (closeBtn) closeBtn.click(); prevButtons = buttons; return; }
+          const scoreBtns = Array.from(scoreOverlay.querySelectorAll('.gform-score-retake-btn'));
+          if (closeBtn) scoreBtns.push(closeBtn);
+          const activated = gcNavigateButtonColumn(gp, justPressed, scoreBtns, gformScoreFocus);
+          if (activated) activated.click();
+          prevButtons = buttons;
+          return;
+        }
+        scoreOverlayWasOpen = false;
 
         // The Game Mode instructions popup, the Quiz Settings (randomize)
         // popup, and the Quiz Timer Settings popup (opened from the
@@ -29084,58 +30139,19 @@ Answer: C</pre>
         }
         const qrPopup = document.getElementById('quiz-randomize-settings-overlay');
         if (qrPopup && qrPopup.classList.contains('visible')) {
-          if (justPressed(BTN.B)) {
-            qsClearFocusHighlight();
-            closeQuizRandomizeSettingsModal();
-            prevButtons = buttons;
-            return;
-          }
-          if (gpConnected) {
-            const qsState = window.__qsPopupFocus;
-            const rows = qsBoxRows();
-            const qsBtns = [
-              document.getElementById('quiz-settings-popup-cancel-btn'),
-              document.getElementById('quiz-settings-popup-save-btn')
-            ];
-            // Left stick's vertical axis, latched the same way the shared
-            // gcNavigateButtonRow latches its horizontal axis: one step
-            // per push past the deadzone, released once it drifts back
-            // toward center, so it doesn't repeat every single frame.
-            const ay = gp.axes[1] || 0;
-            let vdir = 0;
-            if (justPressed(BTN.DDOWN)) vdir = 1;
-            else if (justPressed(BTN.DUP)) vdir = -1;
-            else if (!qsState.vlatch && ay > DEADZONE) { vdir = 1; qsState.vlatch = true; }
-            else if (!qsState.vlatch && ay < -DEADZONE) { vdir = -1; qsState.vlatch = true; }
-            if (Math.abs(ay) < DEADZONE * 0.5) qsState.vlatch = false;
-
-            if (qsState.zone === 'box' && rows.length) {
-              qsClearFocusHighlight();
-              if (vdir === 1) {
-                if (qsState.boxIndex < rows.length - 1) qsState.boxIndex++;
-                else qsState.zone = 'buttons';
-              } else if (vdir === -1) {
-                qsState.boxIndex = Math.max(0, qsState.boxIndex - 1);
-              }
-              if (qsState.zone === 'box') {
-                const row = rows[qsState.boxIndex];
-                row.classList.add('gc-focused');
-                row.scrollIntoView({ block: 'nearest' });
-                if (justPressed(BTN.A)) {
-                  const cb = row.querySelector('input[type="checkbox"]');
-                  if (cb) cb.checked = !cb.checked;
-                }
-              }
-            } else {
-              if (vdir === -1) {
-                qsClearFocusHighlight();
-                qsState.zone = 'box';
-              } else {
-                const activated = gcNavigateButtonRow(gp, justPressed, qsBtns, qsState.btnState);
-                if (activated) activated.click();
-              }
-            }
-          }
+          handleBoxChooserPopup(gp, justPressed, 'quiz-randomize-settings-overlay', 'quiz-settings-box-chooser',
+            'quiz-settings-popup-cancel-btn', 'quiz-settings-popup-save-btn',
+            closeQuizRandomizeSettingsModal, window.__qsPopupFocus);
+          prevButtons = buttons;
+          return;
+        }
+        // Mock Exam Settings: same box-chooser shell as Quiz Settings
+        // above, navigated the same way.
+        const mockSettingsPopup = document.getElementById('mock-exam-settings-overlay');
+        if (mockSettingsPopup && mockSettingsPopup.classList.contains('visible')) {
+          handleBoxChooserPopup(gp, justPressed, 'mock-exam-settings-overlay', 'mock-exam-settings-box-chooser',
+            'mock-exam-settings-popup-cancel-btn', 'mock-exam-settings-popup-save-btn',
+            closeMockExamSettingsModal, window.__mockSettingsPopupFocus);
           prevButtons = buttons;
           return;
         }
@@ -29196,24 +30212,32 @@ Answer: C</pre>
         }
 
         // Header icon — controller (Game Mode popup) — works from any
-        // Quiz screen: subjects list, a subject's exam list, or
-        // mid-quiz/results.
-        if (ctx === 'quiz' || ctx === 'quiz-subjects' || ctx === 'quiz-examlist') {
+        // Quiz screen (subjects list, a subject's exam list, or
+        // mid-quiz/results) and from Mock Exam's own subjects list / exam
+        // list too.
+        if (ctx === 'quiz' || ctx === 'quiz-subjects' || ctx === 'quiz-examlist' ||
+            ctx === 'mock-subjects' || ctx === 'mock-examlist') {
           if (justPressed(BTN.START)) openGameModePopup();
         }
-        // SELECT is context-dependent: Quiz Settings (the randomize
-        // toggles) only opens from the top-level subjects list. One level
-        // down, inside a subject's exam list, SELECT instead resets the
-        // exam card that's currently highlighted (see
-        // gcResetFocusedQuizExam) — it no longer opens that modal there,
-        // which used to pop up over the exam list by mistake. Mid-quiz,
-        // SELECT opens the separate Quiz Timer Settings popup instead
-        // (handled above once it's open).
+        // SELECT is context-dependent: Quiz Settings / Mock Exam Settings
+        // (the randomize toggles) only opens from each one's top-level
+        // subjects list. One level down, inside either one's exam list,
+        // SELECT instead resets the exam card that's currently
+        // highlighted (see gcResetFocusedExamCard) — it no longer opens
+        // that modal there, which used to pop up over the exam list by
+        // mistake. Mid-quiz, SELECT now opens the Report popup for the
+        // current question instead (same mapping as Mock Exam's own
+        // SELECT -> examPressReport, handled below), and Y opens the
+        // Quiz Timer Settings popup that used to live on SELECT (handled
+        // above once it's open).
         if (justPressed(BTN.SELECT)) {
           if (ctx === 'quiz-subjects') openQuizRandomizeSettingsModal();
-          else if (ctx === 'quiz-examlist') gcResetFocusedQuizExam();
-          else if (ctx === 'quiz') openQuizSettings();
+          else if (ctx === 'quiz-examlist') gcResetFocusedExamCard('quiz-examlist');
+          else if (ctx === 'quiz') openQuizQuestionReport();
+          else if (ctx === 'mock-subjects') openMockExamSettingsModal();
+          else if (ctx === 'mock-examlist') gcResetFocusedExamCard('mock-examlist');
         }
+        if (justPressed(BTN.Y) && ctx === 'quiz') openQuizSettings();
 
         if (ctx === 'quiz') {
           // B mirrors the header's own back button (the "<" chevron the
@@ -29223,44 +30247,96 @@ Answer: C</pre>
           // way out one level: play area -> that subject's exam list ->
           // subjects list, same as tapping the header icon.
           if (justPressed(BTN.B)) handleQuizBackClick();
-          if (justPressed(BTN.L1)) quizPressLetter(0);
-          if (justPressed(BTN.R1)) quizPressLetter(1);
-          if (justPressed(BTN.L2)) quizPressLetter(2);
-          if (justPressed(BTN.R2)) quizPressLetter(3);
-          if (justPressed(BTN.DLEFT)) quizGoBack();
-          if (justPressed(BTN.DRIGHT)) quizGoNext();
-          const ax = gp.axes[0] || 0;
-          if (!stickLatchX && ax < -DEADZONE) { quizGoBack(); stickLatchX = true; }
-          else if (!stickLatchX && ax > DEADZONE) { quizGoNext(); stickLatchX = true; }
-          else if (Math.abs(ax) < DEADZONE * 0.5) { stickLatchX = false; }
-        } else if (ctx === 'exam') {
-          if (justPressed(BTN.A)) examPressLetter(0);
-          if (justPressed(BTN.B)) examPressLetter(1);
-          if (justPressed(BTN.X)) examPressLetter(2);
-          if (justPressed(BTN.Y)) examPressLetter(3);
-          if (justPressed(BTN.START)) examPressStart();
-          if (justPressed(BTN.SELECT)) examPressSelect();
+          const onResultsNow = document.getElementById('quiz-results-card').style.display !== 'none';
+          if (onResultsNow) {
+            // Score screen: BACK/RETAKE share the top row and CHOOSE
+            // ANOTHER QUIZ wraps onto its own row below, so both
+            // left-right AND up-down step through the same BACK -> RETAKE
+            // -> CHOOSE ANOTHER QUIZ order — whichever direction feels
+            // natural for reaching the wrapped row works. A activates
+            // whichever one currently carries the yellow highlight. None
+            // of the three carry that fill until the highlight actually
+            // reaches them (see the gc-connected CSS rule for
+            // #quiz-results-card .quiz-start-btn).
+            const resultsBtns = Array.from(document.querySelectorAll('#quiz-results-card .quiz-results-actions button'));
+            const activated = gcNavigateQuizResultsRow(gp, justPressed, resultsBtns, quizResultsFocus);
+            if (activated) activated.click();
+          } else {
+            if (justPressed(BTN.L1)) quizPressLetter(0);
+            if (justPressed(BTN.R1)) quizPressLetter(1);
+            if (justPressed(BTN.L2)) quizPressLetter(2);
+            if (justPressed(BTN.R2)) quizPressLetter(3);
+            // Held direction (D-pad left/right or the stick's horizontal
+            // axis) drives BACK/NEXT, same repeat-while-held feel as the
+            // subjects/exam-list scrolling above: one immediate step the
+            // moment a direction is pressed, then — after a short initial
+            // pause — repeated steps at a steady rate for as long as it's
+            // held, instead of needing repeated taps.
+            const ax = gp.axes[0] || 0;
+            let quizHeldDir = 0;
+            if (buttons[BTN.DRIGHT] || ax > DEADZONE) quizHeldDir = 1;
+            else if (buttons[BTN.DLEFT] || ax < -DEADZONE) quizHeldDir = -1;
 
-          let scrollDir = 0;
-          if (buttons[BTN.DDOWN]) scrollDir = -1;      // Down = scroll up
-          else if (buttons[BTN.DUP]) scrollDir = 1;    // Up = scroll down
-          const ay = gp.axes[1] || 0;
-          if (scrollDir === 0 && Math.abs(ay) > DEADZONE) scrollDir = ay > 0 ? -1 : 1;
-          if (scrollDir !== 0) examScroll(scrollDir);
-        } else if (ctx === 'quiz-subjects' || ctx === 'quiz-examlist') {
+            let quizMoveDir = 0;
+            if (quizHeldDir !== quizHoldDir) {
+              quizHoldDir = quizHeldDir;
+              quizHoldFrames = 0;
+              if (quizHeldDir !== 0) quizMoveDir = quizHeldDir;
+            } else if (quizHeldDir !== 0) {
+              quizHoldFrames++;
+              const QUIZ_REPEAT_DELAY = 24, QUIZ_REPEAT_INTERVAL = 8;
+              if (quizHoldFrames === QUIZ_REPEAT_DELAY ||
+                  (quizHoldFrames > QUIZ_REPEAT_DELAY && (quizHoldFrames - QUIZ_REPEAT_DELAY) % QUIZ_REPEAT_INTERVAL === 0)) {
+                quizMoveDir = quizHeldDir;
+              }
+            }
+            if (quizMoveDir < 0) quizGoBack();
+            else if (quizMoveDir > 0) quizGoNext();
+          }
+        } else if (ctx === 'exam') {
+          examChoiceNav(gp, justPressed);
+          // START opens the Game Mode popup here too, same as every other
+          // controller-enabled screen (see the ctx === 'quiz'/list-context
+          // START handling elsewhere) — it no longer submits the exam.
+          if (justPressed(BTN.START)) openGameModePopup();
+          // SELECT opens the Report popup for the question currently under
+          // the yellow choice highlight, instead of closing the exam.
+          if (justPressed(BTN.SELECT)) examPressReport();
+          // Y pins/unpins that same question; X cycles the Pins button to
+          // the next pinned question, wherever it is in the exam.
+          if (justPressed(BTN.Y)) examPressYPin();
+          if (justPressed(BTN.X)) examPressXLocatePins();
+          // B is the app-wide "back" button (see ctx === 'quiz' above) —
+          // still closes/backs out of the exam (through examPressSelect's
+          // own confirm-dialog check), since SELECT no longer does.
+          if (justPressed(BTN.B)) examPressSelect();
+        } else if (ctx === 'quiz-subjects' || ctx === 'quiz-examlist' || ctx === 'mock-subjects' || ctx === 'mock-examlist') {
           if (ctx === 'quiz-examlist' && gcExamListSubjectKey !== currentQuizSubjectKey) {
             // A different subject's exam list than last time — nothing
-            // to return to, so start fresh at the top.
+            // to return to, so start fresh at the top. (Re-opening the
+            // SAME subject fresh from the subjects list is handled
+            // separately — see __gcResetQuizExamListFocus, called from
+            // openQuizSubject() — so that case also starts at the top;
+            // this check alone only covers an actual subject switch.)
             gcExamListFocusIndex = 0;
             gcExamListSubjectKey = currentQuizSubjectKey;
           }
+          if (ctx === 'mock-examlist' && gcMockExamListViewId !== lastOpenSubjectViewId) {
+            gcMockExamListFocusIndex = 0;
+            gcMockExamListViewId = lastOpenSubjectViewId;
+          }
           if (prevListCtx !== ctx) {
-            // Moving between the two list contexts: stash the position
-            // being left behind, then pick up this context's own saved
-            // position (0 the first time, or wherever it was left).
+            // Moving between list contexts: stash the position being left
+            // behind, then pick up this context's own saved position (0
+            // the first time, or wherever it was left).
             if (prevListCtx === 'quiz-subjects') gcSubjectsFocusIndex = gcFocusIndex;
             else if (prevListCtx === 'quiz-examlist') gcExamListFocusIndex = gcFocusIndex;
-            gcFocusIndex = (ctx === 'quiz-subjects') ? gcSubjectsFocusIndex : gcExamListFocusIndex;
+            else if (prevListCtx === 'mock-subjects') gcMockSubjectsFocusIndex = gcFocusIndex;
+            else if (prevListCtx === 'mock-examlist') gcMockExamListFocusIndex = gcFocusIndex;
+            if (ctx === 'quiz-subjects') gcFocusIndex = gcSubjectsFocusIndex;
+            else if (ctx === 'quiz-examlist') gcFocusIndex = gcExamListFocusIndex;
+            else if (ctx === 'mock-subjects') gcFocusIndex = gcMockSubjectsFocusIndex;
+            else gcFocusIndex = gcMockExamListFocusIndex;
             prevListCtx = ctx;
             gcHoldDir = 0;
             gcHoldFrames = 0;
@@ -29312,16 +30388,20 @@ Answer: C</pre>
           // Same back button as in the quiz itself: from this subject's
           // exam list, B steps back up to the subjects list. (No-op on
           // the subjects list itself — there's no level above it.)
-          if (justPressed(BTN.B) && ctx === 'quiz-examlist') handleQuizBackClick();
+          if (justPressed(BTN.B)) {
+            if (ctx === 'quiz-examlist') handleQuizBackClick();
+            else if (ctx === 'mock-examlist') backToSubjects();
+          }
         }
 
-        if (ctx !== 'quiz-subjects' && ctx !== 'quiz-examlist' && prevListCtx) {
-          // Leaving both list contexts entirely (e.g. A opened an exam
-          // and the quiz itself is now on screen) — stash wherever the
-          // highlight was so it's still there if a later B brings this
-          // list back up.
+        if (ctx !== 'quiz-subjects' && ctx !== 'quiz-examlist' && ctx !== 'mock-subjects' && ctx !== 'mock-examlist' && prevListCtx) {
+          // Leaving every list context entirely (e.g. A opened an exam
+          // and it's now on screen) — stash wherever the highlight was so
+          // it's still there if a later B brings this list back up.
           if (prevListCtx === 'quiz-subjects') gcSubjectsFocusIndex = gcFocusIndex;
           else if (prevListCtx === 'quiz-examlist') gcExamListFocusIndex = gcFocusIndex;
+          else if (prevListCtx === 'mock-subjects') gcMockSubjectsFocusIndex = gcFocusIndex;
+          else if (prevListCtx === 'mock-examlist') gcMockExamListFocusIndex = gcFocusIndex;
           gcClearFocusHighlight();
           prevListCtx = null;
         }
@@ -29399,10 +30479,24 @@ Answer: C</pre>
       // becomes DISCONNECT and — unlike turning it on — asks for
       // confirmation first, so a stray tap doesn't silently drop the
       // controller mid-exam.
+      // Quiz (playing/settings/subjects/exam-list) and Mock Exam
+      // (in-exam/subjects/exam-list) map their controller buttons
+      // differently -- L1/R1/L2/R2 answer letters and no pinning in Quiz,
+      // vs. A-selects-a-highlighted-choice plus Y/X pinning in Mock Exam
+      // -- so the popup's legend needs to match whichever one is on
+      // screen right now rather than showing one fixed diagram for both.
       function openGameModePopup() {
         updateGameModeUI();
         gmPopupFocus = { index: 0, latch: false };
         clearGmPopupFocusHighlight();
+        const ctx = gcContext();
+        const group = (ctx === 'exam' || ctx === 'mock-subjects' || ctx === 'mock-examlist') ? 'mock' : 'quiz';
+        const heading = document.getElementById('game-mode-controls-heading');
+        const quizPanel = document.getElementById('game-mode-controls-quiz');
+        const mockPanel = document.getElementById('game-mode-controls-mock');
+        if (heading) heading.textContent = group === 'mock' ? 'MOCK EXAM CONTROLS' : 'QUIZ CONTROLS';
+        if (quizPanel) quizPanel.style.display = group === 'mock' ? 'none' : 'grid';
+        if (mockPanel) mockPanel.style.display = group === 'mock' ? 'grid' : 'none';
         const overlay = document.getElementById('game-mode-overlay');
         if (overlay) overlay.classList.add('visible');
       }
@@ -29426,6 +30520,19 @@ Answer: C</pre>
       window.openGameModePopup = openGameModePopup;
       window.closeGameModePopup = closeGameModePopup;
       window.handleGameModePopupButton = handleGameModePopupButton;
+      // Called by openQuizSubject()/showSubject() (the actual "open this
+      // subject from the subjects list" actions) so the controller's
+      // highlight — and the scroll that follows it — always starts at
+      // the top card there, even when re-opening the same subject.
+      // Deliberately NOT called when backing out of an exam back to its
+      // exam list (closeInAppMockExam/backToQuizExamList), so that path
+      // keeps restoring wherever the highlight/scroll was left.
+      window.__gcResetQuizExamListFocus = function() { gcExamListFocusIndex = 0; gcExamListSubjectKey = null; };
+      window.__gcResetMockExamListFocus = function() { gcMockExamListFocusIndex = 0; gcMockExamListViewId = null; };
+      // Called by showQuizResults() so the results screen's BACK/RETAKE/
+      // CHOOSE ANOTHER QUIZ highlight always starts on the first button
+      // (BACK) rather than wherever it was left on a previous attempt.
+      window.__gcResetQuizResultsFocus = function() { quizResultsFocus = { index: 0, latchDir: null, lastTop: 0 }; };
 
       window.addEventListener('gamepadconnected', (e) => { gpIndex = e.gamepad.index; gpConnected = true; updateGameModeUI(e.gamepad.id); });
       window.addEventListener('gamepaddisconnected', (e) => { if (gpIndex === e.gamepad.index) { gpConnected = false; gpIndex = null; updateGameModeUI(); gcClearAllGamepadHighlights(); } });
@@ -29492,13 +30599,75 @@ Answer: C</pre>
       line-height: 1.6;
       margin: 0 0 14px;
     }
-    .game-mode-diagram-wrap {
+    /* ---- Game Mode popup: button-function legend (replaces the old
+         controller-diagram SVG). Compact icon(badge) + label rows, grouped
+         into two panels -- #game-mode-controls-quiz and
+         #game-mode-controls-mock -- only one of which is shown at a time
+         (see openGameModePopup), since Quiz and Mock Exam map their
+         buttons differently. ---- */
+    .game-mode-controls-wrap {
       background: rgba(0,0,0,0.18);
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 10px;
+      padding: 12px 14px;
     }
-    .game-mode-diagram { display: block; width: 100%; height: auto; }
+    .gmc-heading {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: var(--rivet);
+      margin-bottom: 10px;
+    }
+    .gmc-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px 18px;
+    }
+    .gmc-row {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+    }
+    .gmc-badge-set { display: flex; gap: 4px; flex-shrink: 0; }
+    .gmc-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      height: 22px;
+      min-width: 22px;
+      padding: 0 6px;
+      border-radius: 5px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      color: var(--paper);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+    .gmc-badge-dir { font-size: 9px; }
+    .gmc-badge-round {
+      border-radius: 50%;
+      width: 22px;
+      min-width: 22px;
+      padding: 0;
+    }
+    .gmc-badge-y { color: #ffb100; border-color: rgba(255,177,0,0.5); background: rgba(255,177,0,0.1); }
+    .gmc-badge-x { color: #6fbfe8; border-color: rgba(111,191,232,0.5); background: rgba(111,191,232,0.1); }
+    .gmc-badge-b { color: #ff6b6b; border-color: rgba(255,107,107,0.5); background: rgba(255,107,107,0.1); }
+    .gmc-badge-a { color: #6fd88a; border-color: rgba(111,216,138,0.5); background: rgba(111,216,138,0.1); }
+    .gmc-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--paper);
+      line-height: 1.35;
+    }
+    @media (max-width: 480px) {
+      .gmc-grid { grid-template-columns: 1fr; }
+    }
     .game-mode-status-row {
       font-family: 'IBM Plex Mono', monospace;
       font-size: 12px;
@@ -30457,6 +31626,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
       '.profile-card-overlay', '.shop-pay-overlay', '.store-popup-overlay',
       '.taxi-out-overlay', '.wings-store-overlay', '.wings-thankyou-overlay',
       '.confirm-dialog-overlay', '.gform-score-overlay', '.qreport-overlay',
+      '.qreport-answer-popup-overlay',
       '.stall-overlay',
       '#mig-viewer-overlay', '#qimg-preview-overlay'
     ].join(', ');
