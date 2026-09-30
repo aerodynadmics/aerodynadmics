@@ -17274,6 +17274,30 @@ Answer: C</pre>
       } catch (err) { console.error('Progress sync (refresh) error:', err); }
     }
 
+    // child_added fires in ARRIVAL order, not time order. A message you just
+    // wrote is delivered from your own local cache before older messages
+    // finish loading from the server (e.g. a joiner's "a wild ... appeared!"
+    // lands before the creator's), so the list ended up reversed for that
+    // viewer. After a row is appended, slide it back above any rows that
+    // carry a newer timestamp so every viewer sees the same order.
+    function placeChatRowByTimestamp(key) {
+      try {
+        const messagesEl = document.getElementById('chat-messages');
+        const row = messagesEl && key ? messagesEl.querySelector('[data-msg-key="' + CSS.escape(key) + '"]') : null;
+        const ts = messageCache[key] && messageCache[key].ts;
+        if (!row || typeof ts !== 'number') return;
+        let anchor = null;
+        let prev = row.previousElementSibling;
+        while (prev) {
+          const pk = prev.dataset && prev.dataset.msgKey;
+          const pts = pk && messageCache[pk] && messageCache[pk].ts;
+          if (typeof pts === 'number' && pts > ts) { anchor = prev; prev = prev.previousElementSibling; }
+          else break;
+        }
+        if (anchor) messagesEl.insertBefore(row, anchor);
+      } catch (err) { console.error('Chat order error:', err); }
+    }
+
     function initChat() {
       if (chatInitialized) return;
       const statusEl = document.getElementById('chat-panel-status');
@@ -17298,6 +17322,7 @@ Answer: C</pre>
         chatDbRef.on('child_added', (snapshot) => {
           const msg = snapshot.val();
           renderChatMessage(msg, snapshot.key);
+          placeChatRowByTimestamp(snapshot.key);
 
           const isPanelOpen = document.getElementById('chat-panel').classList.contains('visible');
           const isOwnMessage = currentChatUser && msg && msg.nickname === currentChatUser.nickname;
