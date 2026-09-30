@@ -2536,9 +2536,10 @@
   .flight-settings-btn:focus-visible { outline: none; }
   @media (hover: hover) { .flight-settings-btn:hover { background: rgba(255,255,255,0.10); } }
   .flight-tile.has-image { background-size: cover; background-position: center; background-repeat: no-repeat; }
-  #flight-settings-overlay, #flight-invite-overlay, #flight-image-edit-overlay, #flight-image-preview-overlay { z-index: 2000; background: none; }
+  #flight-settings-overlay, #flight-invite-overlay, #flight-members-overlay, #flight-image-edit-overlay, #flight-image-preview-overlay { z-index: 2000; background: none; }
   #flight-image-preview-overlay .mockadmin-card,
   #flight-invite-overlay .mockadmin-card,
+  #flight-members-overlay .mockadmin-card,
   #flight-image-edit-overlay .mockadmin-card,
   #flight-settings-overlay .mockadmin-card { box-shadow: 0 16px 40px rgba(0,0,0,0.55), 0 4px 14px rgba(0,0,0,0.4); }
   .flight-settings-opt {
@@ -2552,7 +2553,21 @@
     .flight-settings-opt:hover small { opacity: 0.8; }
   }
   .flight-settings-opt:disabled { opacity: 0.5; cursor: wait; }
-  #flight-invite-overlay { z-index: 1999; }
+  .flight-settings-opt.danger { color: #ff8f8f; border-color: rgba(255,107,107,0.45); }
+  @media (hover: hover) {
+    .flight-settings-opt.danger:hover { background: #ff6b6b; border-color: #ff6b6b; color: #3a0000; }
+  }
+  #flight-invite-overlay, #flight-members-overlay { z-index: 1999; }
+  /* "Souls on board" popup rows: avatar + border + callsign animation */
+  #flight-members-list .flight-member-info { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+  #flight-members-list .avatar-circle { position: relative; width: 30px; height: 30px; font-size: 16px; box-shadow: none; background: transparent; flex-shrink: 0; }
+  #flight-members-list .flight-member-name {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 500; font-size: 13px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; padding: 0 8px; margin: 0 -8px;
+  }
+  #flight-members-list .flight-member-name.nick-nabladepth { font-family: 'Nabla', 'Space Grotesk', sans-serif; }
+  #flight-members-list .flight-member-name.nick-breathe { font-family: 'NickBreatheFont', 'Space Grotesk', sans-serif; }
+
   #flight-settings-invite-reset:disabled, #flight-invite-copy-btn:disabled { opacity: 0.4; cursor: not-allowed; }
   @media (hover: hover) { #flight-settings-invite-reset:disabled:hover { background: rgba(255,255,255,0.05); border-color: var(--line); color: var(--paper); } }
   @media (hover: hover) { .flights-toggle-btn:hover { background: rgba(255,255,255,0.10); } }
@@ -12696,8 +12711,20 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
       <button type="button" class="flight-settings-opt" id="flight-settings-image" onclick="openFlightImageEdit()">Edit flight image<small>Shown on the flight icon in the sidebar</small></button>
       <input type="file" id="flight-image-input" accept="image/*" style="display:none;" onchange="handleFlightImageUpload(event)">
       <button type="button" class="flight-settings-opt" id="flight-settings-invite" onclick="openFlightInvite()">Invite link<small>Share this private flight with others</small></button>
+      <button type="button" class="flight-settings-opt" id="flight-settings-members" onclick="openFlightMembers()">Remove souls<small>See who is aboard and remove them from this flight</small></button>
+      <button type="button" class="flight-settings-opt danger" id="flight-settings-delete" onclick="deleteFlightFromSettings()">Delete flight<small>Permanently removes this flight and its Black Box</small></button>
       <div class="mockadmin-editor-actions" style="margin-top:18px;">
         <button type="button" class="mockadmin-save-btn" onclick="closeFlightSettings()" style="cursor:pointer;">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="banned-list-overlay" id="flight-members-overlay" onclick="closeFlightMembers()">
+    <div class="mockadmin-card" style="max-width:380px;" onclick="event.stopPropagation();">
+      <p style="margin:0; font-size:15px; font-weight:700; color:#fff;">Souls on board</p>
+      <div class="banned-list-items" id="flight-members-list" style="margin:12px 0 0; max-height:50vh; overflow-y:auto;"></div>
+      <div class="mockadmin-editor-actions" style="margin-top:18px;">
+        <button type="button" class="mockadmin-save-btn" onclick="closeFlightMembers(); openFlightSettings();" style="cursor:pointer;">CANCEL</button>
       </div>
     </div>
   </div>
@@ -17492,6 +17519,8 @@ Answer: C</pre>
         renderFlightsRail();
         updateSidebarFlightHeader();
         if (privateFlightActive()) renderNicknameListFromCache();
+        const _fm = document.getElementById('flight-members-overlay');
+        if (_fm && _fm.classList.contains('visible')) renderFlightMembersList();
         processPendingFlightJoin();
       }, (err) => console.error('Flight list error:', err));
     }
@@ -17585,6 +17614,7 @@ Answer: C</pre>
           createdAt: firebase.database.ServerValue.TIMESTAMP
         });
         showWingsToast('\u2708\uFE0F Private flight "' + name + '" created (-' + costLabel + ')');
+        announceFlightArrival(ref.key, nickname);
         switchFlight(ref.key);
       } catch (err) {
         console.error('Create flight error:', err);
@@ -17651,10 +17681,45 @@ Answer: C</pre>
       }
       showWingsToast('\uD83D\uDD17 Invite link copied');
     }
+    function openFlightMembers() {
+      const f = privateFlightActive() ? flightsCache[currentFlightId] : null;
+      if (!canEditFlight(f)) return;
+      closeFlightSettings();
+      renderFlightMembersList();
+      document.getElementById('flight-members-overlay').classList.add('visible');
+    }
+    function closeFlightMembers() {
+      document.getElementById('flight-members-overlay').classList.remove('visible');
+    }
+    // Live list of souls aboard the open private flight (owner excluded).
+    function renderFlightMembersList() {
+      const listEl = document.getElementById('flight-members-list');
+      if (!listEl) return;
+      const nicks = privateFlightMemberNicks();
+      if (!nicks.length) {
+        listEl.innerHTML = '<div class="nick-modal-status" style="padding:14px 4px;">No souls aboard yet besides you.</div>';
+        return;
+      }
+      listEl.innerHTML = nicks.map((n) => {
+        // Same avatar / equipped border / callsign animation the sidebar roster shows.
+        const avatar = getLiveAvatar(n) || '\u2708\ufe0f';
+        const borderClass = rowBorderClassFor(n);
+        const animClass = rowAnimClassFor(n);
+        return `
+        <div class="banned-list-item flight-member-row">
+          <div class="banned-list-item-info flight-member-info">
+            <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}</span>
+            <span class="flight-member-name ${animClass}" data-text="${escapeHtml(n)}">${escapeHtml(n)}</span>
+          </div>
+          <button type="button" class="banned-list-item-unban" data-nickname="${escapeHtml(n)}" onclick="removeFlightMember(this.dataset.nickname)">REMOVE</button>
+        </div>`;
+      }).join('');
+    }
     function openFlightSettings() {
       const f = privateFlightActive() ? flightsCache[currentFlightId] : null;
       if (!canEditFlight(f)) return;
       closeFlightInvite();
+      closeFlightMembers();
       closeFlightImageEdit();
       document.getElementById('flight-settings-overlay').classList.add('visible');
     }
@@ -17808,6 +17873,7 @@ Answer: C</pre>
         clearPendingFlightJoin();
         if (!ok) return;
         await nsRef('flightList/' + pending.id + '/members/' + me).set(true);
+        announceFlightArrival(pending.id, me);
         showWingsToast('\u2708\uFE0F You joined \"' + f.name + '\"');
         if (flightsCache[pending.id]) {
           flightsCache[pending.id].members = Object.assign({}, flightsCache[pending.id].members, { [me]: true });
@@ -17962,18 +18028,34 @@ Answer: C</pre>
 
     async function deleteFlight(id) {
       const f = flightsCache[id];
-      if (!f || !canDeleteFlight(f)) return;
+      if (!f || !canDeleteFlight(f)) return false;
       const ok = await adminConfirm('Delete the flight "' + f.name + '" and its Black Box? This cannot be undone.');
-      if (!ok) return;
+      if (!ok) return false;
       try {
         ensureFirebaseApp();
         if (currentFlightId === id) switchFlight(null);
         await nsRef('flightMessages/' + id).remove();
         await nsRef('flightList/' + id).remove();
+        // the invite link dies with the flight (best effort)
+        try { await nsRef('flightInvites/' + id).remove(); } catch (e2) {}
+        showWingsToast('\u2708\uFE0F Flight "' + f.name + '" was deleted');
+        return true;
       } catch (err) {
         console.error('Delete flight error:', err);
         adminAlert('Could not delete the flight. Please try again.');
+        return false;
       }
+    }
+
+    // "Delete flight" in the flight settings popup. The popup is closed first
+    // so the confirm dialog isn't hidden behind it; cancelling reopens it.
+    async function deleteFlightFromSettings() {
+      const id = currentFlightId;
+      const f = id && flightsCache[id];
+      if (!canEditFlight(f)) return;
+      closeFlightSettings();
+      const deleted = await deleteFlight(id);
+      if (!deleted && currentFlightId === id && flightsCache[id]) openFlightSettings();
     }
 
     // ---- presence (online/offline green dot) ----
@@ -21362,10 +21444,14 @@ Answer: C</pre>
       `;
       };
 
-      const pilotNick = privOwner || myNickname;
-      const pilotHtml = pilotNick
-        ? `<li class="nick-list-divider">PILOT</li>${pilotRowHtml(pilotNick)}`
-        : '';
+      // Private flight: the creator is the FLIGHT ENGINEER. "Pilot" is
+      // always the viewer (self), listed separately from the engineer.
+      // Only when the viewer IS the creator does Pilot collapse into the
+      // Flight Engineer row so nobody is ever listed twice.
+      const pilotNick = privOwner ? null : myNickname;
+      const pilotHtml = privOwner
+        ? `<li class="nick-list-divider">FLIGHT ENGINEER</li>${pilotRowHtml(privOwner)}`
+        : (pilotNick ? `<li class="nick-list-divider">PILOT</li>${pilotRowHtml(pilotNick)}` : '');
 
       const copilotNickname = (myCopilotKey && !privOwner)
         ? ((latestPresenceData[myCopilotKey] && latestPresenceData[myCopilotKey].nickname) || myCopilotKey)
@@ -21377,6 +21463,63 @@ Answer: C</pre>
       const copilotHtml = copilotNickname
         ? `<li class="nick-list-divider">CO-PILOT</li>${pilotRowHtml(copilotNickname)}`
         : '';
+
+      // ---- Private flight hierarchy (below FLIGHT ENGINEER):
+      // PILOT (self) > CO-PILOT > CREWMATES > FLIGHT PASSENGERS.
+      // Co-Pilot / Crewmates only appear if they're ALSO aboard this
+      // private flight. The creator is pinned as Flight Engineer, so is
+      // skipped everywhere else (and self is skipped when self is the
+      // creator). Each group keeps the member remove button for the creator.
+      if (privOwner) {
+        const buildPrivRow = (nick) => {
+          const avatar = getLiveAvatar(nick) || '\u2708\ufe0f';
+          const isOnline = nick === myNickname ? true : onlineNicknames.has(nick);
+          const borderClass = rowBorderClassFor(nick);
+          const animClass = rowAnimClassFor(nick);
+          ensureListProfileListener(nick);
+          const rowProfile = (currentChatUser && currentChatUser.nickname === nick)
+            ? (myProfileLoaded ? myProfile : null)
+            : profileCache[nick];
+          const cover = rowProfile ? resolveProfileCover(rowProfile.background) : null;
+          const coverImgHtml = cover && cover.type === 'image'
+            ? `<img class="list-item-cover-img" src="${escapeHtml(cover.value)}" alt="" aria-hidden="true">`
+            : '';
+          const coverOverlayHtml = cover ? '<div class="list-item-cover-overlay"></div>' : '';
+          const liInlineStyle = cover && cover.type === 'gradient'
+            ? ` style="background-image:${cover.value};background-size:cover;background-position:center;"`
+            : (cover && cover.type === 'color' ? ` style="background-color:${cover.value};"` : '');
+          const rowClasses = [isOnline ? 'is-online' : '', cover ? 'has-cover' : ''].filter(Boolean).join(' ');
+          const classAttr = rowClasses ? ` class="${rowClasses}"` : '';
+          return `
+        <li${classAttr} data-nickname="${escapeHtml(nick)}" onclick="openUserProfile(this.dataset.nickname, true)"${liInlineStyle}>
+          ${coverImgHtml}
+          ${coverOverlayHtml}
+          <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span></span>
+          <span class="${animClass}" data-text="${escapeHtml(nick)}" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; padding:0 8px; margin:0 -8px;">${escapeHtml(nick)}</span>
+        </li>
+      `;
+        };
+        const byName = (a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' });
+        const others = privateFlightMemberNicks().filter((n) => n !== privOwner);
+        const selfAboard = (myNickname && myNickname !== privOwner && others.indexOf(myNickname) !== -1) ? myNickname : null;
+        const copilotAboard = (myCopilotKey && others.find((n) => n !== selfAboard && presenceKey(n) === myCopilotKey)) || null;
+        const crewAboard = others
+          .filter((n) => n !== selfAboard && n !== copilotAboard && getCrewmateStatus(n) === 'crewmates')
+          .sort(byName);
+        const passengers = others
+          .filter((n) => n !== selfAboard && n !== copilotAboard && crewAboard.indexOf(n) === -1)
+          .sort(byName);
+        const section = (label, nicks) => nicks.length
+          ? `<li class="nick-list-divider">${label}</li>${nicks.map(buildPrivRow).join('')}`
+          : '';
+        body.innerHTML = `<ul class="nick-list">${pilotHtml}`
+          + section('PILOT', selfAboard ? [selfAboard] : [])
+          + section('CO-PILOT', copilotAboard ? [copilotAboard] : [])
+          + section('CREWMATES', crewAboard)
+          + section('FLIGHT PASSENGERS', passengers)
+          + `</ul>`;
+        return;
+      }
 
       const sorted = (privOwner ? privateFlightMemberNicks() : [...lastNicknameListData])
         // Self and the current Co-Pilot already have their own pinned
@@ -21461,7 +21604,6 @@ Answer: C</pre>
           ${coverOverlayHtml}
           <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span></span>
           <span class="${animClass}" data-text="${escapeHtml(nick)}" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; padding:0 8px; margin:0 -8px;">${escapeHtml(nick)}</span>
-          ${privOwner && canEditFlight(flightsCache[currentFlightId]) ? `<button type="button" class="member-remove-btn" data-nickname="${escapeHtml(nick)}" title="Remove from flight" aria-label="Remove ${escapeHtml(nick)} from flight" onclick="event.stopPropagation(); removeFlightMember(this.dataset.nickname);">&times;</button>` : ''}
         </li>
       `;
       }).join('');
@@ -23209,6 +23351,23 @@ Answer: C</pre>
           console.error('Signup counter sync error:', err);
         }
       });
+    }
+
+    // Same "a wild '<callsign>' appeared!" system message, but posted to a
+    // private flight's own Black Box (flightMessages/<flight id>) when its
+    // creator makes the flight or a soul joins it.
+    function announceFlightArrival(flightId, nickname) {
+      if (!flightId || !nickname || !chatConfigIsFilledIn()) return;
+      try {
+        ensureFirebaseApp();
+        nsRef('flightMessages/' + flightId).push({
+          system: true,
+          text: `a wild '${nickname}' appeared!`,
+          ts: firebase.database.ServerValue.TIMESTAMP
+        }).catch(err => console.error('Flight arrival announcement denied:', err));
+      } catch (err) {
+        console.error('Flight arrival announcement error:', err);
+      }
     }
 
     function announceNewReviewee(nickname) {
