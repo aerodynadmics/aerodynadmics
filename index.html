@@ -22138,12 +22138,12 @@ Answer: C</pre>
       // always the viewer (self), listed separately from the engineer.
       // Only when the viewer IS the creator does Pilot collapse into the
       // Flight Engineer row so nobody is ever listed twice.
+      const activeRosterNicks = privOwner ? null : new Set(publicFlightRoster(activeFlightServerId).map(rosterItemNick));
       const pilotNick = (privOwner || (activeRosterNicks && !activeRosterNicks.has(myNickname))) ? null : myNickname;
       const pilotHtml = privOwner
         ? `<li class="nick-list-divider">FLIGHT ENGINEER</li>${pilotRowHtml(privOwner)}`
         : (pilotNick ? `<li class="nick-list-divider">PILOT</li>${pilotRowHtml(pilotNick)}` : '');
 
-      const activeRosterNicks = privOwner ? null : new Set(publicFlightRoster(activeFlightServerId).map(rosterItemNick));
       let copilotNickname = (myCopilotKey && !privOwner)
         ? ((latestPresenceData[myCopilotKey] && latestPresenceData[myCopilotKey].nickname) || myCopilotKey)
         : null;
