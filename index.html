@@ -750,6 +750,15 @@
     text-align: left;
     margin: 0 0 8px;
   }
+  #nickname-step .mainflight-hint { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--rivet); line-height: 1.5; text-align: left; margin: -2px 0 10px; }
+  #nickname-step .mainflight-row { display: flex; gap: 8px; margin: 0 0 6px; }
+  #nickname-step .mainflight-btn {
+    flex: 1; padding: 9px 0; border-radius: 999px; cursor: pointer;
+    background: transparent; color: var(--paper); border: 1px solid var(--line);
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600;
+  }
+  #nickname-step .mainflight-btn.selected { background: var(--accent); border-color: var(--accent); color: #0b1a26; }
+  @media (hover: hover) { #nickname-step .mainflight-btn:not(.selected):hover { border-color: var(--accent); color: var(--accent); } }
   #nickname-step .profile-preview {
     display: flex;
     justify-content: center;
@@ -2462,6 +2471,136 @@
   .flight-tile.add-tile { margin-top: auto; border-radius: 11px; background: rgba(255,255,255,0.07); color: #cfd3da; }
   .flight-tile.add-tile svg { width: 20px; height: 20px; }
   @media (hover: hover) { .flight-tile.add-tile:hover { background: rgba(255,255,255,0.15); color: #fff; } }
+  /* Radar tile: sits just above the "+" tile. It takes over the bottom-pinning
+     (margin-top:auto) so the pair stays together at the foot of the rail. */
+  .flight-tile.radar-tile { margin-top: auto; border-radius: 11px; background: rgba(255,255,255,0.07); color: #cfd3da; }
+  .flight-tile.radar-tile svg { width: 20px; height: 20px; }
+  .flight-tile.radar-tile + .flight-tile.add-tile { margin-top: 0; }
+  @media (hover: hover) { .flight-tile.radar-tile:hover { background: rgba(255,255,255,0.15); color: #fff; } }
+
+  /* ---- Radar popup (the airspace: every public + private flight) ---- */
+  #flight-radar-overlay { z-index: 2000; background: rgba(4, 20, 36, 0.35); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+  #flight-radar-overlay .mockadmin-card { scrollbar-width: none; max-width: 900px; box-shadow: 0 16px 40px rgba(0,0,0,0.55), 0 4px 14px rgba(0,0,0,0.4); }
+  #flight-radar-overlay .mockadmin-card::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  .radar-sub { margin: 3px 0 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--rivet); letter-spacing: 0.04em; }
+  .radar-body { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 28px; margin-top: 18px; align-items: start; }
+  .radar-left { min-width: 0; }
+  /* the list column is exactly as tall as the scope column; the list scrolls inside it */
+  .radar-right {
+    position: relative;
+    min-width: 0;
+    align-self: stretch;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(4, 20, 36, 0.45);
+  }
+  .radar-scope {
+    position: relative;
+    width: 100%;
+    max-width: min(480px, calc(88vh - 250px));
+    aspect-ratio: 1 / 1;
+    margin: 0 auto;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: radial-gradient(circle, rgba(63,109,146,0.20) 0%, rgba(4,20,36,0.78) 100%);
+  }
+  .radar-clip { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; pointer-events: none; }
+  .radar-ring { position: absolute; border: 1px solid rgba(63,109,146,0.45); border-radius: 50%; pointer-events: none; }
+  .radar-ring.r1 { inset: 33.333%; }
+  .radar-ring.r2 { inset: 16.667%; }
+  .radar-cross-h, .radar-cross-v { position: absolute; background: rgba(63,109,146,0.35); pointer-events: none; }
+  .radar-cross-h { left: 0; right: 0; top: 50%; height: 1px; }
+  .radar-cross-v { top: 0; bottom: 0; left: 50%; width: 1px; }
+  .radar-sweep {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, rgba(120,190,255,0) 0deg, rgba(120,190,255,0) 280deg, rgba(120,190,255,0.32) 360deg);
+    animation: radarSweep 4s linear infinite;
+  }
+  .radar-sweep::after { content: ''; position: absolute; left: 50%; top: 0; width: 1px; height: 50%; background: rgba(160,210,255,0.85); }
+  @keyframes radarSweep { to { transform: rotate(360deg); } }
+  .radar-blip {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    color: #fff;
+    cursor: default;
+    background: linear-gradient(145deg, #1f4f8f, #123259);
+    border: 1px solid #6fb1ff;
+    box-shadow: 0 0 10px rgba(111,177,255,0.45);
+  }
+  .radar-blip.fresh { animation: radarBlipIn 0.6s ease-out; }
+  @keyframes radarBlipIn { from { opacity: 0; } }
+  @keyframes radarPing {
+    0%   { transform: scale(1);   opacity: 0.85; }
+    100% { transform: scale(2.6); opacity: 0; }
+  }
+  .radar-blip::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 50%;
+    border: 1px solid #8cc6ff;
+    pointer-events: none;
+    animation: radarPing 3.2s ease-out infinite;
+    will-change: transform, opacity;
+  }
+  .radar-blip.private::after { border-color: #c4a8f0; }
+  .radar-blip.has-image, .radar-blip.private.has-image { image-rendering: -webkit-optimize-contrast; background-size: cover; background-position: center; background-repeat: no-repeat; background-color: #1b1f2a; font-size: 0; }
+  .radar-blip.empty::after { display: none; }
+  /* a swept blip: circle disappears, its ring finishes growing on its own */
+  .radar-blip.gone { background: none !important; border-color: transparent !important; box-shadow: none !important; color: transparent; pointer-events: none; animation: none; opacity: 1; }
+  .radar-blip.gone::before, .radar-blip.gone::after { display: none; }
+  .radar-blip.private { background: linear-gradient(145deg, #5b3a8f, #341f59); border-color: #a27be0; box-shadow: 0 0 10px rgba(162,123,224,0.45); }
+  .radar-blip.empty { opacity: 0.45; box-shadow: none; }
+  .radar-blip.live::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    border: 1px solid #6fb1ff;
+    opacity: 0.6;
+  }
+  .radar-blip.private.live::before { border-color: #a27be0; }
+  @media (prefers-reduced-motion: reduce) {
+    .radar-sweep { animation: none; }
+    .radar-blip, .radar-blip::after { animation: none; }
+  }
+  .radar-legend { display: flex; justify-content: center; gap: 18px; margin-top: 14px; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--rivet); }
+  .radar-legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; background: #1f4f8f; border: 1px solid #6fb1ff; }
+  .radar-legend i.private { background: #5b3a8f; border-color: #a27be0; }
+  #flight-radar-list {
+    position: absolute;
+    inset: 10px 2px 10px 10px; /* right edge hugs the card so the scrollbar has no dead space beside it */
+    margin: 0;
+    overflow-y: auto;
+    padding-right: 16px; /* gutter: the scrollbar sits in here, never over the rows */
+    scrollbar-gutter: stable;
+    align-content: start;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+  }
+  #flight-radar-list::-webkit-scrollbar { width: 6px; }
+  #flight-radar-list::-webkit-scrollbar-track { background: transparent; }
+  #flight-radar-list::-webkit-scrollbar-thumb { background-color: var(--line); border-radius: 6px; }
+  @media (max-width: 600px) {
+    .radar-body { grid-template-columns: 1fr; }
+    .radar-right { align-self: auto; }
+    .radar-right { padding: 10px; }
+    #flight-radar-list { position: static; max-height: 40vh; }
+  }
+  #flight-radar-list .banned-list-item-nick { display: flex; align-items: center; gap: 8px; }
+  .radar-tag { flex: none; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 500; letter-spacing: 0.06em; padding: 2px 6px; border-radius: 999px; border: 1px solid #6fb1ff; color: #9ccaff; }
+  .radar-tag.private { border-color: #a27be0; color: #c4a8f0; }
+  .radar-count { flex: none; text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--rivet); line-height: 1.5; }
+  .radar-count b { color: var(--paper); font-weight: 600; }
   /* private flights created by souls */
   .flight-tile.private { background: linear-gradient(145deg, #5b3a8f, #341f59); }
   .flight-tile.private.locked { cursor: not-allowed; filter: none; }
@@ -10379,6 +10518,17 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
         </div>
         <div class="nick-error" id="flightcode-error"></div>
 
+        <p class="field-label">Your Flight</p>
+        <p class="mainflight-hint">Pick the year you graduated, will graduate, or think you will. This becomes your main flight.</p>
+        <div class="mainflight-row" id="mainflight-row" role="radiogroup" aria-label="Your Flight (graduation year)">
+          <button type="button" class="mainflight-btn" data-flight="flight-2026" role="radio" aria-checked="false" onclick="selectMainFlight('flight-2026')">26</button>
+          <button type="button" class="mainflight-btn" data-flight="flight-2027" role="radio" aria-checked="false" onclick="selectMainFlight('flight-2027')">27</button>
+          <button type="button" class="mainflight-btn" data-flight="flight-2028" role="radio" aria-checked="false" onclick="selectMainFlight('flight-2028')">28</button>
+          <button type="button" class="mainflight-btn" data-flight="flight-2029" role="radio" aria-checked="false" onclick="selectMainFlight('flight-2029')">29</button>
+          <button type="button" class="mainflight-btn" data-flight="flight-2030" role="radio" aria-checked="false" onclick="selectMainFlight('flight-2030')">30</button>
+        </div>
+        <div class="nick-error" id="mainflight-error"></div>
+
         <p class="legal-agree-note">Before creating your account, please read and accept both of these:</p>
         <div class="legal-checklist" role="group" aria-label="Terms and Conditions and Privacy Policy">
           <button type="button" class="legal-check-row" id="legal-check-terms" role="checkbox" aria-checked="false" aria-haspopup="dialog" onclick="openTermsAndConditions(this)">
@@ -12729,6 +12879,32 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
     </div>
   </div>
 
+  <div class="banned-list-overlay" id="flight-radar-overlay">
+    <div class="mockadmin-card" onclick="event.stopPropagation();">
+      <p style="margin:0; font-size:15px; font-weight:700; color:#fff;">Radar</p>
+      <p class="radar-sub" id="flight-radar-sub">Airspace</p>
+      <div class="radar-body">
+        <div class="radar-left">
+          <div class="radar-scope" id="flight-radar-scope" role="img" aria-label="Radar showing every public and private flight">
+            <div class="radar-clip"><div class="radar-sweep"></div></div>
+            <div class="radar-ring r1"></div>
+            <div class="radar-ring r2"></div>
+            <div class="radar-cross-h"></div>
+            <div class="radar-cross-v"></div>
+            <div id="flight-radar-blips"></div>
+          </div>
+          <div class="radar-legend"><span><i></i>Public</span><span><i class="private"></i>Private</span></div>
+        </div>
+        <div class="radar-right">
+          <div class="banned-list-items" id="flight-radar-list"></div>
+        </div>
+      </div>
+      <div class="mockadmin-editor-actions" style="margin-top:18px;">
+        <button type="button" class="mockadmin-save-btn" onclick="closeFlightRadar()" style="cursor:pointer;">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
   <div class="banned-list-overlay" id="flight-invite-overlay" onclick="closeFlightInvite()">
     <div class="mockadmin-card" style="max-width:380px;" onclick="event.stopPropagation();">
       <p style="margin:0; font-size:15px; font-weight:700; color:#fff;">Invite link</p>
@@ -13298,6 +13474,7 @@ Answer: C</pre>
 
     let pendingLookupRetry = null;
     let selectedAvatar = null;
+    let mainFlightApplied = false;   // true once the signed-in soul has been landed on their main flight this session
     const NICKNAME_PATTERN = /^[a-z]+$/;
     const NICKNAME_MIN_LENGTH = 3;
     const NICKNAME_MAX_LENGTH = 11;
@@ -13991,6 +14168,7 @@ Answer: C</pre>
       // Terms + Privacy must be re-accepted (from inside their pop-ups) each time
       if (window.AeroLegalAccept) window.AeroLegalAccept.reset();
       clearTermsCheckboxError();
+      resetMainFlightPicker();
       document.getElementById('nickname-submit').disabled = true;
       document.getElementById('nickname-step').classList.add('visible');
       document.getElementById('nickname-input').focus();
@@ -14398,6 +14576,38 @@ Answer: C</pre>
       // the button toggling live in the "Legal" script at the end of the page.
     });
 
+    // ---- main flight picker (signup) ----
+    let selectedMainFlight = null;
+    function selectMainFlight(id) {
+      selectedMainFlight = id;
+      document.querySelectorAll('#mainflight-row .mainflight-btn').forEach((b) => {
+        const on = b.getAttribute('data-flight') === id;
+        b.classList.toggle('selected', on);
+        b.setAttribute('aria-checked', on ? 'true' : 'false');
+      });
+      clearMainFlightError();
+    }
+    function resetMainFlightPicker() {
+      selectedMainFlight = null;
+      document.querySelectorAll('#mainflight-row .mainflight-btn').forEach((b) => {
+        b.classList.remove('selected');
+        b.setAttribute('aria-checked', 'false');
+      });
+      clearMainFlightError();
+    }
+    function showMainFlightError(msg) {
+      const el = document.getElementById('mainflight-error');
+      if (!el) return;
+      el.textContent = msg;
+      el.classList.add('visible');
+    }
+    function clearMainFlightError() {
+      const el = document.getElementById('mainflight-error');
+      if (!el) return;
+      el.textContent = '';
+      el.classList.remove('visible');
+    }
+
     function submitNickname() {
       const input = document.getElementById('nickname-input');
       const btn = document.getElementById('nickname-submit');
@@ -14426,6 +14636,12 @@ Answer: C</pre>
 
       if (!selectedAvatar) {
         showNicknameError('Please choose an avatar.');
+        return;
+      }
+
+      clearMainFlightError();
+      if (!selectedMainFlight) {
+        showMainFlightError('Please choose your Flight (26, 27, 28, 29 or 30).');
         return;
       }
 
@@ -14459,7 +14675,7 @@ Answer: C</pre>
         // only its hash travels to the server and lives in `user` from
         // here on.
         const flightCodeHash = await sha256Hex(flightCode);
-        const user = { ...pendingUser, nickname, avatar: selectedAvatar, flightCodeHash };
+        const user = { ...pendingUser, nickname, avatar: selectedAvatar, flightCodeHash, mainFlight: selectedMainFlight };
         registerNicknameWithConfirmation(user, 0, btn, checking);
       });
     }
@@ -14543,7 +14759,10 @@ Answer: C</pre>
       // immediately, with no refresh needed.
       if (isNewSignup) {
         syncSignupCounterFromNicknameList();
-        announceNewReviewee(user.nickname);
+        // "a wild '<callsign>' appeared!" goes into the Black Box of the
+        // flight they picked (Flight 2026's is the original chat/messages).
+        if (user.mainFlight && user.mainFlight !== MAIN_FLIGHT_SERVER_ID) announceFlightArrival(user.mainFlight, user.nickname);
+        else announceNewReviewee(user.nickname);
       }
     }
 
@@ -14701,6 +14920,15 @@ Answer: C</pre>
       updateBoardAdminToggleLabels();
       setNeedsFlightCode(user.needsFlightCode);
       setChatPanelAvailable(true);
+      mainFlightApplied = false;
+      if (user.mainFlight && isRailFlightId(user.mainFlight)) {
+        mainFlightApplied = true;
+        activeFlightServerId = user.mainFlight;
+        currentFlightId = user.mainFlight === MAIN_FLIGHT_SERVER_ID ? null : user.mainFlight;
+        renderFlightsRail();
+        updateSidebarFlightHeader();
+        updateChatTitle();
+      }
       initChat();
       initPresence(user);
       watchForLiveBan(user);
@@ -16147,6 +16375,7 @@ Answer: C</pre>
       chatHistoryLoadTimestamp = 0;
       currentFlightId = null;
       activeFlightServerId = MAIN_FLIGHT_SERVER_ID;
+      mainFlightApplied = false;
       renderFlightsRail();
       updateSidebarFlightHeader();
       updateChatTitle();
@@ -17359,10 +17588,10 @@ Answer: C</pre>
     // so existing and new souls are all aboard Flight 2026 automatically. ----
     const FLIGHT_SERVERS = [
       { id: 'flight-2026', name: 'Flight 2026', icon: '26', isPublic: true },
-      { id: 'flight-2027', name: 'Flight 2027', icon: '27', isPublic: true, empty: true },
-      { id: 'flight-2028', name: 'Flight 2028', icon: '28', isPublic: true, empty: true },
-      { id: 'flight-2029', name: 'Flight 2029', icon: '29', isPublic: true, empty: true },
-      { id: 'flight-2030', name: 'Flight 2030', icon: '30', isPublic: true, empty: true }
+      { id: 'flight-2027', name: 'Flight 2027', icon: '27', isPublic: true },
+      { id: 'flight-2028', name: 'Flight 2028', icon: '28', isPublic: true },
+      { id: 'flight-2029', name: 'Flight 2029', icon: '29', isPublic: true },
+      { id: 'flight-2030', name: 'Flight 2030', icon: '30', isPublic: true }
     ];
     // Flight 2026 owns the original Black Box (chat/messages, currentFlightId
     // === null). Every other rail flight has its own Black Box at
@@ -17433,6 +17662,16 @@ Answer: C</pre>
         else b.setAttribute('aria-disabled', 'true');
         rail.appendChild(b);
       });
+      // Radar tile: opens the airspace popup (every public + private flight).
+      // Sits directly above the "+" tile.
+      const radar = document.createElement('button');
+      radar.type = 'button';
+      radar.className = 'flight-tile radar-tile';
+      radar.title = 'Radar';
+      radar.setAttribute('aria-label', 'Radar');
+      radar.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12L18.4 5.6"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg>';
+      radar.addEventListener('click', openFlightRadar);
+      rail.appendChild(radar);
       // "+" tile: create a private flight
       const add = document.createElement('button');
       add.type = 'button';
@@ -17443,11 +17682,364 @@ Answer: C</pre>
       add.addEventListener('click', createFlight);
       rail.appendChild(add);
     }
+    // ---- Radar: the airspace popup. Shows every public flight (rail) and every
+    // private flight as a blip, plus a list with souls aboard / online counts. ----
+    function radarFlights() {
+      const list = [];
+      const rosterNicks = (lastNicknameListData || []).map((it) => (typeof it === 'string' ? it : it && it.nickname)).filter(Boolean);
+      FLIGHT_SERVERS.forEach((f) => {
+        // Public flights hold the souls whose main flight they are.
+        const fNicks = publicFlightRoster(f.id).map(rosterItemNick).filter(Boolean);
+        const souls = fNicks.length;
+        const online = fNicks.filter((n) => onlineNicknames.has(n) || (currentChatUser && n === currentChatUser.nickname)).length;
+        list.push({ key: f.id, label: f.icon, name: f.name, isPrivate: false, souls: souls, online: online });
+      });
+      visiblePrivateFlightIds().forEach((id) => {
+        const f = flightsCache[id];
+        const nicks = new Set(Object.keys(f.members || {}).filter((n) => f.members[n]));
+        if (f.owner) nicks.add(f.owner);
+        let online = 0;
+        nicks.forEach((n) => { if (onlineNicknames.has(n)) online++; });
+        list.push({ key: id, label: String(f.name).trim().charAt(0).toUpperCase() || '?', image: f.image || null, name: f.name, isPrivate: true, souls: nicks.size, online: online });
+      });
+      return list;
+    }
+    // The radar only detects a random handful of the flights in the airspace:
+    // 3, 5, 7 or 11 of them (never more than actually exist), and which flights
+    // get picked is random too. The count is rolled when the popup opens and
+    // stays put, so the scope always shows exactly 3, 5, 7 or 11 blips. Each
+    // blip is tied to the sweep beam: the moment the beam passes over a blip it
+    // vanishes. Right after that, the radar may pick up ONE new flight in the
+    // area the beam just swept (just behind the beam), or may detect nothing at
+    // all, and the beam can also detect new flights at points where there was
+    // no blip to sweep. So the number of blips on the scope varies, but never goes above the
+    // count rolled when the popup opened (re-rolled every full sweep). The flight list on the right is never
+    // affected by any of this: it always shows every flight.
+    const RADAR_DETECT_COUNTS = [3, 5, 7, 11];
+    const RADAR_SWEEP_MS = 4000;   // keep equal to the .radar-sweep animation duration in the CSS
+    const RADAR_MIN_GAP = 13;      // min distance between blip centres, in % of the scope diameter
+    const RADAR_MIN_AHEAD = 135;   // a re-detected blip lands at least this many degrees ahead of the beam
+    const RADAR_SPAWN_BEHIND = [0, 6];  // a new blip appears this many degrees behind the beam line
+    const RADAR_DETECT_RATE = 1.6;      // detections per full sweep when the scope is empty, as a multiple of radarMax
+    const RADAR_DRIFT = [0.02, 0.05]; // blip drift speed, in fractions of the scope radius per second
+    let radarLastT = 0;
+    let radarMax = 0;              // most blips the scope may show at once (rolled when the popup opens)
+    let radarSlots = [];           // [{ key, phi, r }]  phi = degrees clockwise from 12 o'clock, r = 0..1 of the radius
+    let radarRaf = 0;
+    let radarLastAngle = 0;
+    let radarOpenedAt = 0;
+
+    function radarPickCount(total) {
+      const fits = RADAR_DETECT_COUNTS.filter((n) => n <= total);
+      return fits.length ? fits[Math.floor(Math.random() * fits.length)] : total;
+    }
+    // Gives a blip a slow random heading so it drifts across the scope.
+    function radarGiveVelocity(slot) {
+      const ang = Math.random() * Math.PI * 2;
+      const sp = RADAR_DRIFT[0] + Math.random() * (RADAR_DRIFT[1] - RADAR_DRIFT[0]);
+      slot.vx = Math.cos(ang) * sp;
+      slot.vy = Math.sin(ang) * sp;
+    }
+    // Moves every blip a little (called every frame) and nudges the DOM, no re-render needed.
+    function radarDrift(dt) {
+      if (!(dt > 0)) return;
+      radarSlots.forEach((sl) => {
+        if (sl.vx === undefined) radarGiveVelocity(sl);
+        // gentle wander: the heading turns a tiny bit, so the path curves smoothly
+        const turn = (Math.random() - 0.5) * 0.9 * dt;
+        const c = Math.cos(turn), sn = Math.sin(turn);
+        const nvx = sl.vx * c - sl.vy * sn;
+        sl.vy = sl.vx * sn + sl.vy * c;
+        sl.vx = nvx;
+        let dx = Math.sin(sl.phi * Math.PI / 180) * sl.r + sl.vx * dt;
+        let dy = Math.cos(sl.phi * Math.PI / 180) * sl.r + sl.vy * dt;
+        let r = Math.hypot(dx, dy) || 1e-6;
+        // Near the edge / centre, bounce ONLY if still heading that way. (Flipping
+        // the heading every frame while outside the limit is what made it vibrate.)
+        const radial = (dx * sl.vx + dy * sl.vy) / r;   // > 0: heading outward
+        if ((r > 0.88 && radial > 0) || (r < 0.14 && radial < 0)) {
+          sl.vx -= 2 * radial * (dx / r);
+          sl.vy -= 2 * radial * (dy / r);
+        }
+        if (r > 0.92 || r < 0.1) {
+          const k = Math.min(0.92, Math.max(0.1, r)) / r;
+          dx *= k; dy *= k; r = Math.hypot(dx, dy);
+        }
+        sl.r = r;
+        sl.phi = (Math.atan2(dx, dy) * 180 / Math.PI + 360) % 360;
+      });
+      const el = document.getElementById('flight-radar-blips');
+      if (!el) return;
+      const byKey = {};
+      radarSlots.forEach((sl) => { byKey[sl.key] = sl; });
+      Array.prototype.forEach.call(el.children, (node) => {
+        if (node.classList.contains('gone')) return;
+        const sl = byKey[node.getAttribute('data-rk')];
+        if (!sl) return;
+        const pt = radarSpotXY(sl.phi, sl.r);
+        node.style.left = pt.x.toFixed(2) + '%';
+        node.style.top = pt.y.toFixed(2) + '%';
+      });
+    }
+    function radarSpotXY(phi, r) {
+      const rad = phi * Math.PI / 180;
+      return { x: 50 + Math.sin(rad) * r * 50, y: 50 - Math.cos(rad) * r * 50 };
+    }
+    // A random scope position that doesn't sit on top of another blip.
+    function radarRandomSpot(others, beamPhi, minAhead) {
+      let best = null, bestGap = -1;
+      for (let i = 0; i < 40; i++) {
+        const phi = (beamPhi + minAhead + Math.random() * (360 - minAhead)) % 360;
+        const r = 0.14 + Math.random() * 0.74;
+        const pt = radarSpotXY(phi, r);
+        let gap = Infinity;
+        others.forEach((o) => {
+          const q = radarSpotXY(o.phi, o.r);
+          gap = Math.min(gap, Math.hypot(pt.x - q.x, pt.y - q.y));
+        });
+        if (gap >= RADAR_MIN_GAP) return { phi: phi, r: r };
+        if (gap > bestGap) { bestGap = gap; best = { phi: phi, r: r }; }
+      }
+      return best;
+    }
+    // A spot just behind the beam (in the area it swept a moment ago), at a random distance from the centre.
+    function radarSpotBehindBeam(others, beamPhi) {
+      let best = null, bestGap = -1;
+      for (let i = 0; i < 40; i++) {
+        const back = RADAR_SPAWN_BEHIND[0] + Math.random() * (RADAR_SPAWN_BEHIND[1] - RADAR_SPAWN_BEHIND[0]);
+        const phi = (beamPhi - back + 360) % 360;
+        const r = 0.14 + Math.random() * 0.74;
+        const pt = radarSpotXY(phi, r);
+        let gap = Infinity;
+        others.forEach((o) => {
+          const q = radarSpotXY(o.phi, o.r);
+          gap = Math.min(gap, Math.hypot(pt.x - q.x, pt.y - q.y));
+        });
+        if (gap >= RADAR_MIN_GAP) return { phi: phi, r: r };
+        if (gap > bestGap) { bestGap = gap; best = { phi: phi, r: r }; }
+      }
+      return bestGap >= RADAR_MIN_GAP * 0.6 ? best : null;
+    }
+    // A random flight that isn't already on the scope (falls back to any flight).
+    function radarPickFlight(excludeKeys) {
+      const keys = radarFlights().map((f) => f.key);
+      const free = keys.filter((k) => excludeKeys.indexOf(k) === -1);
+      const pool = free.length ? free : keys;
+      return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
+    }
+    function radarStartDetection() {
+      radarSlots = [];
+      const n = radarPickCount(radarFlights().length);
+      radarMax = n;
+      for (let i = 0; i < n; i++) {
+        const key = radarPickFlight(radarSlots.map((x) => x.key));
+        if (key === null) break;
+        const spot = radarRandomSpot(radarSlots, 0, 45);
+        { const ns = { key: key, phi: spot.phi, r: spot.r }; radarGiveVelocity(ns); radarSlots.push(ns); }
+      }
+    }
+    // The beam just passed over this blip: it is swept away.
+    function radarBeamCrossed(slot) {
+      const at = radarSlots.indexOf(slot);
+      if (at !== -1) radarSlots.splice(at, 1);
+    }
+    // The beam is a detector: wherever its line passes (whether or not a blip
+    // was there) it may pick up a new flight at that very point, or nothing.
+    // The emptier the scope, the likelier a detection; never above radarMax.
+    function radarBeamDetect(fromPhi, deltaDeg) {
+      let added = false;
+      const steps = Math.max(1, Math.ceil(deltaDeg / 3));
+      const stepDeg = deltaDeg / steps;
+      for (let i = 1; i <= steps; i++) {
+        if (radarSlots.length >= radarMax) break;
+        const deficit = (radarMax - radarSlots.length) / Math.max(1, radarMax);
+        const p = (0.25 + 0.75 * deficit) * RADAR_DETECT_RATE * radarMax * (stepDeg / 360);
+        if (Math.random() >= p) continue;
+        const phi = (fromPhi + i * stepDeg) % 360;
+        // a detection can be a single flight or a small cluster along the beam line
+        const burst = 1 + (Math.random() < 0.5 ? 1 : 0) + (Math.random() < 0.25 ? 1 : 0);
+        for (let k = 0; k < burst && radarSlots.length < radarMax; k++) {
+          const key = radarPickFlight(radarSlots.map((x) => x.key));
+          const spot = radarSpotBehindBeam(radarSlots, phi);
+          if (key !== null && spot) { const ns = { key: key, phi: spot.phi, r: spot.r, fresh: true }; radarGiveVelocity(ns); radarSlots.push(ns); added = true; }
+        }
+      }
+      return added;
+    }
+    function radarBeamAngle() {
+      const sweep = document.querySelector('#flight-radar-overlay .radar-sweep');
+      try {
+        const anim = sweep && sweep.getAnimations && sweep.getAnimations()[0];
+        const t = anim ? Number(anim.currentTime) : NaN;
+        if (isFinite(t)) return ((t % RADAR_SWEEP_MS) / RADAR_SWEEP_MS) * 360;
+      } catch (err) {}
+      // no CSS animation running (e.g. reduced motion): follow an equivalent clock
+      return (((performance.now() - radarOpenedAt) % RADAR_SWEEP_MS) / RADAR_SWEEP_MS) * 360;
+    }
+    function radarTick() {
+      if (!radarIsOpen()) { radarRaf = 0; return; }
+      const cur = radarBeamAngle();
+      const nowT = performance.now();
+      const dt = radarLastT ? Math.min(0.1, (nowT - radarLastT) / 1000) : 0;
+      radarLastT = nowT;
+      if (radarLastAngle === null) {           // first frame after opening: just lock onto the beam
+        radarLastAngle = cur;
+        radarRaf = requestAnimationFrame(radarTick);
+        return;
+      }
+      const prev = radarLastAngle;
+      const delta = (cur - prev + 360) % 360;
+      if (delta > 0) {
+        let changed = false;
+        const crossed = delta >= 180
+          ? radarSlots.slice()                                          // long pause (tab was hidden): refresh everything
+          : radarSlots.filter((x) => { const d = (x.phi - prev + 360) % 360; return d > 0 && d <= delta; });
+        if (cur < prev) radarMax = radarPickCount(radarFlights().length);   // beam wrapped past 12 o'clock: re-roll how many the scope may hold
+        crossed.forEach((x) => { radarBeamCrossed(x); changed = true; });
+        if (radarBeamDetect(prev, delta)) changed = true;
+        radarLastAngle = cur;
+        if (changed) renderFlightRadar();
+      }
+      radarRaf = requestAnimationFrame(radarTick);
+    }
+    const radarEls = {};   // flight key -> its live blip element
+    function radarRetireBlip(el) {
+      // Remove a swept blip immediately. Letting its ring linger ("finish growing")
+      // left orphan growing circles on the scope, and because the ghost kept the
+      // same data-rk as a re-detected flight, radarDrift() could even drag it
+      // onto the new blip's position.
+      el.setAttribute('data-rk', '');
+      el.classList.add('gone');
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }
+    function radarClearBlips() {
+      Object.keys(radarEls).forEach((k) => delete radarEls[k]);
+      const el = document.getElementById('flight-radar-blips');
+      if (el) el.innerHTML = '';
+    }
+    function renderFlightRadar() {
+      const blipsEl = document.getElementById('flight-radar-blips');
+      const listEl = document.getElementById('flight-radar-list');
+      if (!blipsEl || !listEl) return;
+      // `all` = every flight in the airspace (drives the list, always complete);
+      // `shown` = the blips the radar currently has on the scope.
+      const all = radarFlights();
+      const byKey = {};
+      all.forEach((f) => { byKey[f.key] = f; });
+      const shown = radarSlots.filter((x) => byKey[x.key]).map((x) => ({ f: byKey[x.key], slot: x }));
+      const subEl = document.getElementById('flight-radar-sub');
+      if (subEl) subEl.textContent = 'AIRSPACE \u00b7 ' + all.filter((f) => !f.isPrivate).length + ' PUBLIC \u00b7 ' + all.filter((f) => f.isPrivate).length + ' PRIVATE \u00b7 ' + shown.length + ' DETECTED';
+
+      // Blips sit on whole pixels (instead of fractional % positions), which
+      // keeps their images from being resampled and looking blurry.
+      const scopeEl = document.getElementById('flight-radar-scope');
+      const scopeW = scopeEl ? scopeEl.clientWidth : 0;
+      // Blips are kept as real elements and updated in place (never rebuilt), so
+      // each blip's growing ring runs on its own clock and is never restarted.
+      const seen = {};
+      shown.forEach((it) => {
+        const f = it.f;
+        const key = it.slot.key;
+        seen[key] = true;
+        const p = radarSpotXY(it.slot.phi, it.slot.r);
+        const size = f.isPrivate ? 30 : 38;
+        let el = radarEls[key];
+        if (!el) {
+          el = document.createElement('div');
+          el.className = 'radar-blip fresh';
+          el.setAttribute('data-rk', key);
+          el._sig = '';
+          blipsEl.appendChild(el);
+          radarEls[key] = el;
+        }
+        const sig = size + '|' + (f.image || '') + '|' + f.label;
+        if (el._sig !== sig) {
+          el._sig = sig;
+          el.style.width = size + 'px';
+          el.style.height = size + 'px';
+          if (f.image) {
+            el.style.backgroundSize = 'cover';
+            el.style.backgroundPosition = 'center';
+            el.style.backgroundRepeat = 'no-repeat';
+            el.style.backgroundImage = 'url("' + String(f.image).replace(/"/g, '%22') + '")';
+            el.textContent = '';
+          } else {
+            el.style.backgroundImage = '';
+            el.textContent = f.label;
+          }
+        }
+        el.classList.toggle('has-image', !!f.image);
+        el.classList.toggle('private', !!f.isPrivate);
+        el.classList.toggle('empty', f.souls === 0);
+        el.classList.toggle('live', f.online > 0);
+        el.style.left = scopeW > 0 ? Math.round(p.x / 100 * scopeW) + 'px' : p.x.toFixed(2) + '%';
+        el.style.top = scopeW > 0 ? Math.round(p.y / 100 * scopeW) + 'px' : p.y.toFixed(2) + '%';
+        el.title = f.name + ' \u00b7 ' + (f.isPrivate ? 'Private' : 'Public') + ' \u00b7 ' + f.souls + ' aboard';
+      });
+      // Blips the beam swept away: the circle vanishes at once, but its ring
+      // keeps growing and is only removed when that growth has finished.
+      Object.keys(radarEls).forEach((k) => {
+        if (seen[k]) return;
+        radarRetireBlip(radarEls[k]);
+        delete radarEls[k];
+      });
+      shown.forEach((it) => { it.slot.fresh = false; });
+
+      // The list always shows EVERY flight (public + private), independent of the
+      // radar's detection. Only redrawn when its content actually changed.
+      const listHtml = !all.length
+        ? '<div class="nick-modal-status" style="padding:14px 4px;">No flights in the airspace.</div>'
+        : all.map((f) => {
+            const tag = '<span class="radar-tag' + (f.isPrivate ? ' private' : '') + '">' + (f.isPrivate ? 'PRIVATE' : 'PUBLIC') + '</span>';
+            return '<div class="banned-list-item">' +
+              '<div class="banned-list-item-info"><div class="banned-list-item-nick">' + escapeHtml(f.name) + tag + '</div></div>' +
+              '<div class="radar-count"><b>' + f.souls + '</b> aboard<br><b>' + f.online + '</b> online</div>' +
+              '</div>';
+          }).join('');
+      if (listEl._radarHtml !== listHtml) {
+        const prevScroll = listEl.scrollTop;
+        listEl.innerHTML = listHtml;
+        listEl.scrollTop = prevScroll;
+        listEl._radarHtml = listHtml;
+      }
+    }
+    function radarIsOpen() {
+      const el = document.getElementById('flight-radar-overlay');
+      return !!(el && el.classList.contains('visible'));
+    }
+    function openFlightRadar() {
+      radarClearBlips();
+      radarStartDetection();
+      renderFlightRadar();
+      document.getElementById('flight-radar-overlay').classList.add('visible');
+      renderFlightRadar();   // re-render now that the scope has a real size (pixel-snapped positions)
+      // the sweep animation restarts from 12 o'clock each time the popup is shown
+      radarOpenedAt = performance.now();
+      radarLastAngle = null;
+      radarLastT = 0;
+      if (radarRaf) cancelAnimationFrame(radarRaf);
+      radarRaf = requestAnimationFrame(radarTick);
+    }
+    window.addEventListener('resize', () => { if (radarIsOpen()) renderFlightRadar(); });
+    function closeFlightRadar() {
+      radarClearBlips();
+      document.getElementById('flight-radar-overlay').classList.remove('visible');
+      if (radarRaf) { cancelAnimationFrame(radarRaf); radarRaf = 0; }
+    }
+
     // Flights flagged empty (2027-2030) have nobody aboard yet, so the
     // sidebar roster shows an empty state while one of them is active.
+    // A public flight's roster is every soul whose main flight it is. Souls
+    // without a stored main flight (accounts from before the picker) sit in
+    // Flight 2026, as before.
+    function rosterItemNick(it) { return typeof it === 'string' ? it : (it && it.nickname); }
+    function rosterItemFlight(it) { return (it && typeof it === 'object' && it.mainFlight) || MAIN_FLIGHT_SERVER_ID; }
+    function publicFlightRoster(flightId) {
+      return (lastNicknameListData || []).filter((it) => rosterItemFlight(it) === flightId);
+    }
     function activeFlightIsEmpty() {
-      const f = FLIGHT_SERVERS.find((x) => x.id === activeFlightServerId);
-      return !!(f && f.empty);
+      if (!lastNicknameListData) return false;
+      return publicFlightRoster(activeFlightServerId).length === 0;
     }
     function isRailFlightId(id) {
       return FLIGHT_SERVERS.some((x) => x.id === id);
@@ -17544,6 +18136,7 @@ Answer: C</pre>
         renderFlightsRail();
         updateSidebarFlightHeader();
         if (privateFlightActive()) renderNicknameListFromCache();
+        if (radarIsOpen()) renderFlightRadar();
         const _fm = document.getElementById('flight-members-overlay');
         if (_fm && _fm.classList.contains('visible')) renderFlightMembersList();
         processPendingFlightJoin();
@@ -18167,6 +18760,7 @@ Answer: C</pre>
       if (lastNicknameListData) {
         updateNicknameListLiveState();
       }
+      if (radarIsOpen()) renderFlightRadar();
     }
 
     // Patches the existing reviewees <li> rows in place instead of
@@ -18240,10 +18834,9 @@ Answer: C</pre>
           // refreshNicknameListFromBackend below) up to date every time this
           // account connects — this is what lets the sidebar list read
           // straight from Firebase instead of Apps Script.
-          nsRef('nicknames/' + presenceKey(user.nickname)).update({
-            nickname: user.nickname,
-            avatar: user.avatar || '✈️'
-          });
+          const rosterUpdate = { nickname: user.nickname, avatar: user.avatar || '✈️' };
+          if (user.mainFlight && isRailFlightId(user.mainFlight)) rosterUpdate.mainFlight = user.mainFlight;
+          nsRef('nicknames/' + presenceKey(user.nickname)).update(rosterUpdate);
 
           myPresenceRef.set({
             nickname: user.nickname,
@@ -21372,7 +21965,16 @@ Answer: C</pre>
         nicknamesRosterRef = nsRef('nicknames');
         nicknamesRosterRef.on('value', (snap) => {
           lastNicknameListData = Object.values(snap.val() || {});
+          if (!mainFlightApplied && currentChatUser && currentChatUser.nickname) {
+            mainFlightApplied = true;
+            const me = lastNicknameListData.find((it) => rosterItemNick(it) === currentChatUser.nickname);
+            const mf = me && typeof me === 'object' && me.mainFlight;
+            if (mf && isRailFlightId(mf) && mf !== activeFlightServerId && !privateFlightActive()) {
+              switchFlight(mf === MAIN_FLIGHT_SERVER_ID ? null : mf);
+            }
+          }
           renderNicknameListFromCache();
+          if (radarIsOpen()) renderFlightRadar();
         }, (err) => {
           console.error('Nickname roster error:', err);
         });
@@ -21473,14 +22075,16 @@ Answer: C</pre>
       // always the viewer (self), listed separately from the engineer.
       // Only when the viewer IS the creator does Pilot collapse into the
       // Flight Engineer row so nobody is ever listed twice.
-      const pilotNick = privOwner ? null : myNickname;
+      const pilotNick = (privOwner || (activeRosterNicks && !activeRosterNicks.has(myNickname))) ? null : myNickname;
       const pilotHtml = privOwner
         ? `<li class="nick-list-divider">FLIGHT ENGINEER</li>${pilotRowHtml(privOwner)}`
         : (pilotNick ? `<li class="nick-list-divider">PILOT</li>${pilotRowHtml(pilotNick)}` : '');
 
-      const copilotNickname = (myCopilotKey && !privOwner)
+      const activeRosterNicks = privOwner ? null : new Set(publicFlightRoster(activeFlightServerId).map(rosterItemNick));
+      let copilotNickname = (myCopilotKey && !privOwner)
         ? ((latestPresenceData[myCopilotKey] && latestPresenceData[myCopilotKey].nickname) || myCopilotKey)
         : null;
+      if (copilotNickname && activeRosterNicks && !activeRosterNicks.has(copilotNickname)) copilotNickname = null;
       // Only shown once an actual Co-Pilot is set — no placeholder row
       // when the slot is empty. Unlike Crewmates below, "FLIGHT
       // PASSENGERS" always shows for the remaining group as long as it's
@@ -21546,7 +22150,7 @@ Answer: C</pre>
         return;
       }
 
-      const sorted = (privOwner ? privateFlightMemberNicks() : [...lastNicknameListData])
+      const sorted = (privOwner ? privateFlightMemberNicks() : publicFlightRoster(activeFlightServerId))
         // Self and the current Co-Pilot already have their own pinned
         // rows above, so drop them from the Crewmates/everyone-else list.
         // (On a private flight the pinned PILOT is the owner, so members,
