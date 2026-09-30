@@ -1,4 +1,43 @@
 <!DOCTYPE html>
+<!--
+  ============================================================================
+  INSTRUCTIONS FOR ANY FUTURE EDIT (AI or human): REUSE THE EXISTING BUTTON STYLE
+  ============================================================================
+  Every popup/modal in this app uses the SAME two button styles. When you add or
+  change ANY popup, dialog or action row, COPY them exactly as the existing UI
+  does. Do NOT invent new button styles, and do NOT add extra hover effects.
+
+  1) SECONDARY button (CANCEL / CLOSE / BACK / "SAVE AS DRAFT")
+       class="mockadmin-save-btn"
+       - outlined pill, transparent background, NO fill
+       - on hover ONLY the text turns yellow (var(--accent)). Never fill it,
+         never change its border, never make it text-only/borderless.
+
+  2) PRIMARY button (SAVE / OK / APPLY / SUBMIT / SEND / CONNECT / UPLOAD / COPY)
+       class="mockadmin-publish-btn"
+       - solid yellow pill (var(--accent)) with dark text
+       - on hover it only gets slightly brighter (filter: brightness(1.08)).
+
+  3) Put them together in a row like every other popup:
+       <div class="mockadmin-editor-actions">
+         <button type="button" class="mockadmin-save-btn">CANCEL</button>
+         <button type="button" class="mockadmin-publish-btn">SAVE</button>
+       </div>
+     Secondary (CANCEL) on the left, primary (yellow) on the right. A popup with
+     only one button uses .mockadmin-save-btn (e.g. CLOSE).
+
+  RULES
+  - Always look at an existing popup first (e.g. Quiz settings, Game mode,
+    Copyright concerns, the admin confirm dialog) and copy its buttons.
+  - Do NOT write per-popup hover rules such as
+      #some-overlay .mockadmin-save-btn:hover { background: var(--accent); }
+    The shared .mockadmin-save-btn / .mockadmin-publish-btn rules already
+    handle hover. Only add CSS for buttons that do not exist yet.
+  - Cancel-type buttons never turn yellow-filled on hover.
+  - A big list-style option button (e.g. "Rename flight") is a different
+    component (.flight-settings-opt); do not use it for CANCEL/SAVE/CLOSE.
+  ============================================================================
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -171,6 +210,8 @@
   html.gc-connected body { pointer-events: none; }
   html.gc-connected .top-bar,
   html.gc-connected .top-bar *,
+  html.gc-connected .flights-rail,
+  html.gc-connected .flights-rail *,
   html.gc-connected .reviewees-sidebar,
   html.gc-connected .reviewees-sidebar *,
   html.gc-connected .chat-panel,
@@ -2047,7 +2088,7 @@
     position: fixed;
     top: 0;
     bottom: 0;
-    left: 282px;
+    left: 326px;
     right: 76px;
     z-index: 1499;
     display: none;
@@ -2224,6 +2265,12 @@
     position: relative;
     z-index: 2;
   }
+  .nick-list li .member-remove-btn {
+    margin-left: auto; flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%;
+    border: none; background: transparent; color: var(--rivet, #9aa3b2);
+    font-size: 18px; line-height: 1; cursor: pointer; padding: 0;
+  }
+  @media (hover: hover) { .nick-list li .member-remove-btn:hover { background: rgba(255,107,107,0.18); color: #ff6b6b; } }
   /* Each reviewee's own equipped background, rendered as a real <img> —
      same approach and same resolveProfileCover() as the compact sidebar
      "me" card, just applied per-row so every visitor's card in this
@@ -2370,19 +2417,153 @@
   }
 
   /* ---- persistent reviewees sidebar (always visible, Discord-style) ---- */
-  .reviewees-sidebar {
+  /* ---- Flights rail: thin server-style bar left of "Souls on Board" ---- */
+  .flights-rail {
     position: fixed;
     top: 16px;
     left: 16px;
+    bottom: 16px;
+    width: 44px;
+    z-index: 90;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0;
+    background: linear-gradient(rgba(0,0,0,0.28), rgba(0,0,0,0.28)), var(--blueprint-dark);
+    border-radius: 14px 0 0 14px;
+    box-shadow: -4px 0 20px rgba(0,0,0,0.3);
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .flights-rail::-webkit-scrollbar { display: none; }
+  .flight-tile {
+    position: relative;
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    border: 0;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1;
+    color: #fff;
+    background: linear-gradient(145deg, #1f4f8f, #123259);
+    cursor: pointer;
+    transition: border-radius 150ms ease, filter 150ms ease;
+  }
+  .flight-tile.active { border-radius: 11px; }
+  .flight-tile:focus-visible { outline: none; }
+  /* "+" tile under the flights: create a private flight */
+  .flight-tile.add-tile { margin-top: auto; border-radius: 11px; background: rgba(255,255,255,0.07); color: #cfd3da; }
+  .flight-tile.add-tile svg { width: 20px; height: 20px; }
+  @media (hover: hover) { .flight-tile.add-tile:hover { background: rgba(255,255,255,0.15); color: #fff; } }
+  /* private flights created by souls */
+  .flight-tile.private { background: linear-gradient(145deg, #5b3a8f, #341f59); }
+  .flight-tile.private.locked { cursor: not-allowed; filter: none; }
+  @media (hover: hover) { .flight-tile.private.locked:hover { border-radius: 50%; filter: none; } }
+  .flight-tile.private::after { content: '\1F512'; position: absolute; right: -3px; bottom: -3px; font-size: 10px; line-height: 1; }
+  @media (hover: hover) { .flight-tile:hover { border-radius: 11px; filter: brightness(1.15); } }
+  /* flights now live in the rail, so the old chip bar inside the Black Box is hidden */
+  .flight-bar { display: none !important; }
+  .reviewees-sidebar {
+    position: fixed;
+    top: 16px;
+    left: 60px;
     bottom: 16px;
     width: 250px;
     z-index: 90;
     display: flex;
     flex-direction: column;
     background: var(--blueprint-dark);
-    border-radius: 14px;
+    border-radius: 0 14px 14px 0;
     overflow: hidden;
     box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+  }
+  /* soft divider between the flights bar and the list: inset from the top and
+     bottom corners instead of a hard full-height line */
+  .reviewees-sidebar::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 14px;
+    bottom: 14px;
+    width: 1px;
+    background: none;
+    display: none;
+    pointer-events: none;
+    z-index: 3;
+  }
+  /* ---- hide / show the flights bar (button in the Souls on Board header) ---- */
+  .reviewees-sidebar-head { justify-content: flex-start; gap: 4px; }
+  .flights-toggle-btn {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .flights-toggle-btn svg { width: 18px; height: 18px; }
+  .reviewees-sidebar-head .flights-toggle-btn { margin-left: -8px; }
+  .flights-toggle-btn:focus-visible { outline: none; }
+  /* gear in the sidebar header: settings for a private flight (creator only) */
+  .flight-settings-btn {
+    flex: 0 0 auto;
+    margin-left: auto;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #fff;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .flight-settings-btn svg { width: 18px; height: 18px; }
+  .flight-settings-btn:focus-visible { outline: none; }
+  @media (hover: hover) { .flight-settings-btn:hover { background: rgba(255,255,255,0.10); } }
+  .flight-tile.has-image { background-size: cover; background-position: center; background-repeat: no-repeat; }
+  #flight-settings-overlay, #flight-invite-overlay, #flight-image-edit-overlay, #flight-image-preview-overlay { z-index: 2000; background: none; }
+  #flight-image-preview-overlay .mockadmin-card,
+  #flight-invite-overlay .mockadmin-card,
+  #flight-image-edit-overlay .mockadmin-card,
+  #flight-settings-overlay .mockadmin-card { box-shadow: 0 16px 40px rgba(0,0,0,0.55), 0 4px 14px rgba(0,0,0,0.4); }
+  .flight-settings-opt {
+    display: block; width: 100%; text-align: left; margin-top: 10px; padding: 12px 14px;
+    border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,0.05);
+    color: var(--paper); font: inherit; font-size: 13.5px; cursor: pointer;
+  }
+  .flight-settings-opt small { display: block; margin-top: 3px; font-size: 11.5px; opacity: 0.7; }
+  @media (hover: hover) {
+    .flight-settings-opt:hover { background: var(--accent); border-color: var(--accent); color: #1a1200; }
+    .flight-settings-opt:hover small { opacity: 0.8; }
+  }
+  .flight-settings-opt:disabled { opacity: 0.5; cursor: wait; }
+  #flight-invite-overlay { z-index: 1999; }
+  #flight-settings-invite-reset:disabled, #flight-invite-copy-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  @media (hover: hover) { #flight-settings-invite-reset:disabled:hover { background: rgba(255,255,255,0.05); border-color: var(--line); color: var(--paper); } }
+  @media (hover: hover) { .flights-toggle-btn:hover { background: rgba(255,255,255,0.10); } }
+  body.flights-hidden .flights-rail { display: none; }
+  body.flights-hidden .reviewees-sidebar { left: 16px; border-radius: 14px; }
+  body.flights-hidden .reviewees-sidebar::before { display: none; }
+  @media (min-width: 901px) {
+    body.flights-hidden .store-popup-overlay,
+    body.flights-hidden #mockadmin-overlay { left: 282px; }
+    body.flights-hidden.sidebar-active { padding-left: 282px; }
+    body.flights-hidden.sidebar-active .top-bar { left: 282px; }
   }
   .reviewees-sidebar-head {
     padding: 14px 16px;
@@ -2390,8 +2571,8 @@
     flex-shrink: 0;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    justify-content: flex-start;
+    gap: 4px;
   }
   .reviewees-sidebar-head h3 {
     margin: 0;
@@ -2523,7 +2704,7 @@
     text-shadow: 0 1px 3px rgba(0,0,0,0.85);
   }
   @media (min-width: 901px) {
-    body.sidebar-active { padding-left: 282px; padding-right: 282px; }
+    body.sidebar-active { padding-left: 326px; padding-right: 282px; }
   }
 
   /* ALL PAGES (desktop): widen the page content so it fills the free
@@ -2554,7 +2735,7 @@
     body.sidebar-active .top-bar {
       position: fixed;
       top: 16px;
-      left: 282px;
+      left: 326px;
       right: 76px;
       z-index: 80;
       min-height: 54px;
@@ -5058,6 +5239,12 @@
     transform: translateX(calc(100% + 40px));
     transition: transform var(--chat-slide) cubic-bezier(0.22, 0.61, 0.36, 1);
   }
+  /* With the flights rail showing, the sidebar starts 44px further right
+     (rail 44px), so the open panel gives up that same 44px. Hiding the
+     rail (body.flights-hidden) falls back to the 298px width above. */
+  @media (min-width: 901px) {
+    body:not(.flights-hidden) .chat-panel { width: calc(100vw - 342px); }
+  }
   .chat-panel.available { display: flex; }
   .chat-panel.visible {
     transform: translateX(0);
@@ -5163,6 +5350,14 @@
     border-bottom: 1px solid var(--line);
     flex-shrink: 0;
   }
+  /* ---- flights: each flight is its own Black Box ---- */
+  .flight-bar { display: flex; gap: 6px; padding: 8px 14px; overflow-x: auto; border-bottom: 1px solid var(--line); flex-shrink: 0; scrollbar-width: none; -ms-overflow-style: none; }
+  .flight-bar::-webkit-scrollbar { display: none; }
+  .flight-chip { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--paper); font-family: 'Space Grotesk', sans-serif; font-size: 12px; cursor: pointer; white-space: nowrap; }
+  .flight-chip.active { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); font-weight: 600; }
+  .flight-chip.add { border-style: dashed; color: var(--rivet); }
+  .flight-chip-x { font-size: 14px; line-height: 1; opacity: 0.7; padding: 0 0 0 2px; }
+  @media (hover: hover) { .flight-chip:not(.active):hover { border-color: var(--accent); color: var(--accent); } .flight-chip-x:hover { opacity: 1; } }
   .chat-panel-close {
     background: none;
     border: none;
@@ -5207,6 +5402,26 @@
     align-items: center;
     height: 22px;
     line-height: normal;
+  }
+  /* "Black Box" stays on the left; only the flight name (e.g. Flight 2027)
+     sits dead-center of the header. Guidelines link stays right. */
+  .chat-panel-head { position: relative; }
+  .chat-panel-head-text > #chat-panel-flight {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  #chat-panel-flight:empty { display: none !important; }
+  /* very narrow phones: not enough room to center without overlapping the link */
+  @media (max-width: 400px) {
+    .chat-panel-head-text > #chat-panel-flight {
+      position: static;
+      transform: none;
+      pointer-events: auto;
+    }
   }
   .chat-panel-head .chat-guidelines-link {
     margin-left: auto;
@@ -5423,7 +5638,7 @@
      only, so the smaller confirm/move modals that reuse .mockadmin-card
      elsewhere are untouched. */
   #mockadmin-overlay {
-    left: 282px;
+    left: 326px;
     right: 76px;
     /* Same reasoning as .store-popup-overlay above: sit one level below
        the chat panel (z-index 1500) so opening chat while this is open
@@ -5769,6 +5984,12 @@
     border-radius: 999px;
     cursor: pointer;
   }
+  /* >>> THE APP'S STANDARD BUTTONS. Reuse these classes for EVERY popup; do not
+     restyle them per popup and do not add fill-on-hover overrides.
+     .mockadmin-save-btn    = outlined secondary (CANCEL / CLOSE): hover turns the TEXT yellow only
+     .mockadmin-publish-btn = solid yellow primary (SAVE / OK / APPLY / UPLOAD): hover brightens only
+     Use them together inside <div class="mockadmin-editor-actions">. See the
+     instructions at the very top of this file. */
   .mockadmin-publish-btn { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
   @media (hover: hover) { .mockadmin-save-btn:hover { color: var(--accent); } }
   @media (hover: hover) { .mockadmin-publish-btn:hover { filter: brightness(1.08); } }
@@ -9889,7 +10110,18 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
        2x2 grid, so each choice gets the full width on phones. */
     .quiz-choices-grid { grid-template-columns: 1fr; }
 
-    /* sidebar: off-canvas drawer on the left */
+    /* flights rail + sidebar: off-canvas drawer on the left */
+    .flights-rail {
+      z-index: 1500;
+      transform: translateX(calc(-100% - 40px));
+      visibility: hidden;
+      transition: transform 300ms cubic-bezier(0.22, 0.61, 0.36, 1), visibility 0s linear 300ms;
+    }
+    body.side-left-open .flights-rail {
+      transform: translateX(0);
+      visibility: visible;
+      transition-delay: 0s, 0s;
+    }
     .reviewees-sidebar {
       width: min(84vw, 300px);
       z-index: 1500;
@@ -9933,7 +10165,7 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
     .store-popup-head h3 { font-size: 15px; }
   }
   @media (max-width: 900px) and (prefers-reduced-motion: reduce) {
-    .reviewees-sidebar, .mobile-drawer-backdrop { transition-duration: 1ms; }
+    .flights-rail, .reviewees-sidebar, .mobile-drawer-backdrop { transition-duration: 1ms; }
   }
 
   /* Touch screens: a tap leaves the browser "hovering"/focusing the button
@@ -10933,9 +11165,13 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
 
   <div class="mobile-drawer-backdrop" id="mobile-drawer-backdrop"></div>
 
+  <div class="flights-rail" id="flights-rail" role="navigation" aria-label="Flights"></div>
+
   <div class="reviewees-sidebar" id="reviewees-sidebar">
     <div class="reviewees-sidebar-head">
-      <h3>SOULS ON BOARD</h3>
+      <button type="button" class="flights-toggle-btn" id="flights-toggle-btn" onclick="toggleFlightsRail()" aria-label="Hide or show flights" title="Hide / show flights"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></button>
+      <h3>FLIGHT 2026 SOB</h3>
+      <button type="button" class="flight-settings-btn" id="flight-settings-btn" onclick="openFlightSettings()" aria-label="Flight settings" title="Flight settings" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
     </div>
     <div class="reviewees-sidebar-body" id="nick-modal-body">
       <div class="nick-modal-status">Loading&hellip;</div>
@@ -11233,11 +11469,13 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
   <div class="chat-panel" id="chat-panel">
     <div class="chat-panel-head">
       <div class="chat-panel-head-text">
-        <span>💬 Black Box</span>
+        <span id="chat-panel-title">💬 Black Box</span>
+        <span id="chat-panel-flight">Flight 2026</span>
         <span class="chat-guidelines-link" onclick="openChatGuidelines()">Black Box Guidelines</span>
       </div>
       <button class="chat-panel-close" onclick="toggleChatPanel()" title="Collapse black box" aria-label="Collapse black box"><span class="chat-panel-close-glyph">&raquo;</span></button>
     </div>
+    <div class="flight-bar" id="flight-bar" aria-label="Flights"></div>
     <!-- The "Connected" pill was removed from view. This hidden element stays
          only because the chat code writes its status text into it. -->
     <div id="chat-panel-status" hidden></div>
@@ -12447,6 +12685,60 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
       <div class="mockadmin-editor-actions" style="margin-top:18px;">
         <button type="button" class="mockadmin-save-btn" id="admin-modal-cancel-btn" onclick="adminModalCancel()">CANCEL</button>
         <button type="button" class="mockadmin-publish-btn" id="admin-modal-ok-btn" onclick="adminModalOk()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="banned-list-overlay" id="flight-settings-overlay" onclick="closeFlightSettings()">
+    <div class="mockadmin-card" style="max-width:380px;" onclick="event.stopPropagation();">
+      <p id="flight-settings-title" style="margin:0; font-size:15px; font-weight:700; color:#fff;">Flight settings</p>
+      <button type="button" class="flight-settings-opt" id="flight-settings-rename" onclick="renameFlight()">Rename flight<small>Costs 200 &#129725;</small></button>
+      <button type="button" class="flight-settings-opt" id="flight-settings-image" onclick="openFlightImageEdit()">Edit flight image<small>Shown on the flight icon in the sidebar</small></button>
+      <input type="file" id="flight-image-input" accept="image/*" style="display:none;" onchange="handleFlightImageUpload(event)">
+      <button type="button" class="flight-settings-opt" id="flight-settings-invite" onclick="openFlightInvite()">Invite link<small>Share this private flight with others</small></button>
+      <div class="mockadmin-editor-actions" style="margin-top:18px;">
+        <button type="button" class="mockadmin-save-btn" onclick="closeFlightSettings()" style="cursor:pointer;">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="banned-list-overlay" id="flight-invite-overlay" onclick="closeFlightInvite()">
+    <div class="mockadmin-card" style="max-width:380px;" onclick="event.stopPropagation();">
+      <p style="margin:0; font-size:15px; font-weight:700; color:#fff;">Invite link</p>
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <input type="text" id="flight-invite-link-input" readonly placeholder="No active link. Generate one below." onclick="this.select()"
+          style="flex:1; min-width:0; padding:11px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,0.05); color:var(--paper); font:inherit; font-size:12.5px; text-overflow:ellipsis;">
+        <button type="button" class="mockadmin-publish-btn" id="flight-invite-copy-btn" onclick="copyShownInviteLink()" style="cursor:pointer; flex:none; padding:0 16px;">COPY</button>
+      </div>
+      <button type="button" class="flight-settings-opt" id="flight-settings-invite-copy" onclick="generateFlightInviteLink()">Generate new link<small>Creates a fresh link. Any older link stops working.</small></button>
+      <button type="button" class="flight-settings-opt" id="flight-settings-invite-reset" onclick="resetFlightInviteLink()">Reset current link<small>Turns off the current link so nobody can join with it. Souls already aboard stay.</small></button>
+      <div class="mockadmin-editor-actions" style="margin-top:18px;">
+        <button type="button" class="mockadmin-save-btn" onclick="cancelFlightInvite()" style="cursor:pointer;">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="banned-list-overlay" id="flight-image-edit-overlay" onclick="closeFlightImageEdit()">
+    <div class="mockadmin-card" style="max-width:380px;" onclick="event.stopPropagation();">
+      <p style="margin:0; font-size:15px; font-weight:700; color:#fff;">Edit flight image</p>
+      <p style="margin:6px 0 0; font-size:11.5px; opacity:0.7; color:var(--paper);">Shown on the flight icon in the sidebar</p>
+      <div style="display:flex; justify-content:center; margin-top:16px;">
+        <img id="flight-image-edit-img" alt="" style="width:128px; height:128px; object-fit:cover; border-radius:14px; display:none;">
+        <div id="flight-image-edit-empty" style="width:128px; height:128px; border-radius:14px; border:1px dashed var(--line); display:flex; align-items:center; justify-content:center; font-size:12px; opacity:0.7; color:var(--paper);">No image yet</div>
+      </div>
+      <div class="mockadmin-editor-actions" style="margin-top:20px;">
+        <button type="button" class="mockadmin-save-btn" onclick="cancelFlightImageEdit()" style="cursor:pointer;">CANCEL</button>
+        <button type="button" class="mockadmin-publish-btn" onclick="document.getElementById('flight-image-input').click()" style="cursor:pointer;">UPLOAD IMAGE</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="banned-list-overlay" id="flight-image-preview-overlay" onclick="cancelFlightImagePreview()">
+    <div class="mockadmin-card" style="max-width:340px; text-align:center;" onclick="event.stopPropagation();">
+      <img id="flight-image-preview-img" alt="" style="width:128px; height:128px; object-fit:cover; border-radius:14px; display:block; margin:0 auto;">
+      <div class="mockadmin-editor-actions" style="margin-top:20px;">
+        <button type="button" class="mockadmin-save-btn" onclick="cancelFlightImagePreview()" style="cursor:pointer;">CANCEL</button>
+        <button type="button" class="mockadmin-publish-btn" onclick="saveFlightImagePreview()" style="cursor:pointer;">SAVE</button>
       </div>
     </div>
   </div>
@@ -15826,6 +16118,12 @@ Answer: C</pre>
       chatDbRef = null;
       chatInitialized = false;
       chatHistoryLoadTimestamp = 0;
+      currentFlightId = null;
+      activeFlightServerId = MAIN_FLIGHT_SERVER_ID;
+      renderFlightsRail();
+      updateSidebarFlightHeader();
+      updateChatTitle();
+      renderFlightBar();
       Object.keys(messageCache).forEach((k) => delete messageCache[k]);
       const messagesEl = document.getElementById('chat-messages');
       if (messagesEl) messagesEl.innerHTML = '';
@@ -16960,7 +17258,8 @@ Answer: C</pre>
 
       try {
         ensureFirebaseApp();
-        chatDbRef = nsRef('chat/messages').limitToLast(100);
+        chatDbRef = nsRef(chatMessagesPath()).limitToLast(100);
+        initFlightList();
         chatInitialized = true;
         statusEl.textContent = 'Connected';
 
@@ -17001,6 +17300,679 @@ Answer: C</pre>
       } catch (err) {
         statusEl.textContent = 'Could not connect to chat.';
         console.error('Chat init error:', err);
+      }
+    }
+
+    // ---- Flights rail (server-style bar). Public flights include every soul,
+    // so existing and new souls are all aboard Flight 2026 automatically. ----
+    const FLIGHT_SERVERS = [
+      { id: 'flight-2026', name: 'Flight 2026', icon: '26', isPublic: true },
+      { id: 'flight-2027', name: 'Flight 2027', icon: '27', isPublic: true, empty: true },
+      { id: 'flight-2028', name: 'Flight 2028', icon: '28', isPublic: true, empty: true },
+      { id: 'flight-2029', name: 'Flight 2029', icon: '29', isPublic: true, empty: true },
+      { id: 'flight-2030', name: 'Flight 2030', icon: '30', isPublic: true, empty: true }
+    ];
+    // Flight 2026 owns the original Black Box (chat/messages, currentFlightId
+    // === null). Every other rail flight has its own Black Box at
+    // flightMessages/<flight id>.
+    const MAIN_FLIGHT_SERVER_ID = 'flight-2026';
+    let activeFlightServerId = MAIN_FLIGHT_SERVER_ID;
+
+    function privateFlightActive() {
+      return !!(currentFlightId && !isRailFlightId(currentFlightId));
+    }
+    // Every soul sees every flight in the rail, but a private flight can only
+    // be entered by its owner (admins too, for moderation).
+    function visiblePrivateFlightIds() {
+      return Object.keys(flightsCache)
+        .filter((id) => flightsCache[id] && flightsCache[id].name)
+        .sort((a, b) => (flightsCache[a].createdAt || 0) - (flightsCache[b].createdAt || 0));
+    }
+    // Nickname of the soul aboard the currently open private flight (its owner).
+    function privateFlightRosterOwner() {
+      if (!privateFlightActive()) return null;
+      const f = flightsCache[currentFlightId];
+      return (f && f.owner) || null;
+    }
+    function canEnterFlight(f) {
+      if (!f || !f.private) return true;
+      return !!(currentChatUser && (f.owner === currentChatUser.nickname || isAdminUser(currentChatUser) || (f.members && f.members[currentChatUser.nickname])));
+    }
+    // Souls who joined the open private flight through its invite link
+    // (the owner is listed separately as PILOT).
+    function privateFlightMemberNicks() {
+      if (!privateFlightActive()) return [];
+      const f = flightsCache[currentFlightId];
+      if (!f || !f.members) return [];
+      return Object.keys(f.members)
+        .filter((n) => f.members[n] && n !== f.owner)
+        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    }
+    function renderFlightsRail() {
+      const rail = document.getElementById('flights-rail');
+      if (!rail) return;
+      rail.innerHTML = '';
+      const onPrivate = privateFlightActive();
+      FLIGHT_SERVERS.forEach((f) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'flight-tile' + (!onPrivate && f.id === activeFlightServerId ? ' active' : '');
+        b.textContent = f.icon;
+        b.title = f.name + (f.isPublic ? ' \u00b7 Public Flight' : '');
+        b.setAttribute('aria-label', b.title);
+        b.addEventListener('click', () => switchFlight(f.id === MAIN_FLIGHT_SERVER_ID ? null : f.id));
+        rail.appendChild(b);
+      });
+      visiblePrivateFlightIds().forEach((id) => {
+        const f = flightsCache[id];
+        const b = document.createElement('button');
+        b.type = 'button';
+        const canEnter = canEnterFlight(f);
+        b.className = 'flight-tile private' + (currentFlightId === id ? ' active' : '') + (canEnter ? '' : ' locked');
+        if (f.image) {
+          b.classList.add('has-image');
+          b.style.backgroundImage = 'url("' + String(f.image).replace(/"/g, '%22') + '")';
+        } else {
+          b.textContent = String(f.name).trim().charAt(0).toUpperCase() || '?';
+        }
+        b.title = f.name + (f.private ? ' \u00b7 Private Flight' + (canEnter ? '' : ' (locked)') : '');
+        b.setAttribute('aria-label', b.title);
+        if (canEnter) b.addEventListener('click', () => switchFlight(id));
+        else b.setAttribute('aria-disabled', 'true');
+        rail.appendChild(b);
+      });
+      // "+" tile: create a private flight
+      const add = document.createElement('button');
+      add.type = 'button';
+      add.className = 'flight-tile add-tile';
+      add.title = 'Create a private flight';
+      add.setAttribute('aria-label', 'Create a private flight');
+      add.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>';
+      add.addEventListener('click', createFlight);
+      rail.appendChild(add);
+    }
+    // Flights flagged empty (2027-2030) have nobody aboard yet, so the
+    // sidebar roster shows an empty state while one of them is active.
+    function activeFlightIsEmpty() {
+      const f = FLIGHT_SERVERS.find((x) => x.id === activeFlightServerId);
+      return !!(f && f.empty);
+    }
+    function isRailFlightId(id) {
+      return FLIGHT_SERVERS.some((x) => x.id === id);
+    }
+    function updateSidebarFlightHeader() {
+      const f = privateFlightActive() ? flightsCache[currentFlightId] : FLIGHT_SERVERS.find((x) => x.id === activeFlightServerId);
+      const h = document.querySelector('.reviewees-sidebar-head h3');
+      if (f && h) h.textContent = f.name.toUpperCase() + ' SOB';
+      const gear = document.getElementById('flight-settings-btn');
+      if (gear) gear.style.display = canEditFlight(privateFlightActive() ? f : null) ? 'flex' : 'none';
+    }
+    function toggleFlightsRail(force) {
+      const hide = (typeof force === 'boolean') ? force : !document.body.classList.contains('flights-hidden');
+      document.body.classList.toggle('flights-hidden', hide);
+      try { localStorage.setItem('flightsRailHidden', hide ? '1' : '0'); } catch (err) {}
+    }
+    try { if (localStorage.getItem('flightsRailHidden') === '1') document.body.classList.add('flights-hidden'); } catch (err) {}
+
+    // ---- flights: user-created servers, each with its own Black Box ----
+    // Meta lives at flightList/{id}; messages at flightMessages/{id}.
+    // currentFlightId === null means the original main Black Box.
+    let currentFlightId = null;
+    let flightsCache = {};
+    let flightListRef = null;
+    const MAX_FLIGHTS_PER_USER = 3;
+    const PRIVATE_FLIGHT_COST = 1111; // wings
+    renderFlightsRail();
+
+    function chatMessagesPath() {
+      return currentFlightId ? 'flightMessages/' + currentFlightId : 'chat/messages';
+    }
+
+    function updateChatTitle() {
+      const el = document.getElementById('chat-panel-title');
+      if (!el) return;
+      const fl = document.getElementById('chat-panel-flight');
+      const rf = currentFlightId && FLIGHT_SERVERS.find((x) => x.id === currentFlightId);
+      if (rf) { el.textContent = '💬 Black Box'; if (fl) fl.textContent = rf.name; return; }
+      const f = currentFlightId && flightsCache[currentFlightId];
+      if (f) { el.textContent = '💬 Black Box'; if (fl) fl.textContent = f.name; return; }
+      // main Black Box = Flight 2026
+      el.textContent = '💬 Black Box';
+      if (fl) fl.textContent = currentFlightId ? '' : 'Flight 2026';
+    }
+
+    function canDeleteFlight(f) {
+      return !!(currentChatUser && f && (f.owner === currentChatUser.nickname || isAdminUser(currentChatUser)));
+    }
+
+    function renderFlightBar() {
+      const bar = document.getElementById('flight-bar');
+      if (!bar) return;
+      bar.innerHTML = '';
+      function chip(label, active, onClick, extraClass) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'flight-chip' + (active ? ' active' : '') + (extraClass ? ' ' + extraClass : '');
+        b.textContent = label;
+        b.addEventListener('click', onClick);
+        return b;
+      }
+      bar.appendChild(chip('🌐 Main', !currentFlightId, () => switchFlight(null)));
+      Object.keys(flightsCache)
+        .sort((a, b) => (flightsCache[a].createdAt || 0) - (flightsCache[b].createdAt || 0))
+        .forEach((id) => {
+          const f = flightsCache[id];
+          if (!f || !f.name) return;
+          const active = currentFlightId === id;
+          const b = chip('✈️ ' + f.name, active, () => switchFlight(id));
+          if (active && canDeleteFlight(f)) {
+            const x = document.createElement('span');
+            x.className = 'flight-chip-x';
+            x.textContent = '×';
+            x.title = 'Delete this flight';
+            x.addEventListener('click', (e) => { e.stopPropagation(); deleteFlight(id); });
+            b.appendChild(x);
+          }
+          bar.appendChild(b);
+        });
+      bar.appendChild(chip('＋ Flight', false, createFlight, 'add'));
+    }
+
+    function initFlightList() {
+      if (flightListRef) return;
+      flightListRef = nsRef('flightList');
+      flightListRef.on('value', (snap) => {
+        flightsCache = snap.val() || {};
+        if (currentFlightId && !isRailFlightId(currentFlightId) && (!flightsCache[currentFlightId] || !canEnterFlight(flightsCache[currentFlightId]))) {
+          switchFlight(null);
+          return;
+        }
+        updateChatTitle();
+        renderFlightBar();
+        renderFlightsRail();
+        updateSidebarFlightHeader();
+        if (privateFlightActive()) renderNicknameListFromCache();
+        processPendingFlightJoin();
+      }, (err) => console.error('Flight list error:', err));
+    }
+
+    function switchFlight(id) {
+      id = id || null;
+      if (id && !isRailFlightId(id) && !canEnterFlight(flightsCache[id])) return;
+      const railId = id || MAIN_FLIGHT_SERVER_ID;
+      if (isRailFlightId(railId)) {
+        activeFlightServerId = railId;
+        renderFlightsRail();
+        updateSidebarFlightHeader();
+        if (activeFlightIsEmpty() || lastNicknameListData) renderNicknameListFromCache(); else showNicknameList();
+      }
+      if (id === currentFlightId && chatInitialized) return;
+      if (chatDbRef) { try { chatDbRef.off(); } catch (err) {} }
+      chatDbRef = null;
+      chatInitialized = false;
+      currentFlightId = id;
+      if (!isRailFlightId(railId)) {
+        // private flight: highlight its tile, retitle the sidebar, show its roster
+        renderFlightsRail();
+        updateSidebarFlightHeader();
+        renderNicknameListFromCache();
+      }
+      Object.keys(messageCache).forEach((k) => delete messageCache[k]);
+      cancelReply();
+      unreadChatCount = 0;
+      hasUnreadMention = false;
+      updateUnreadBadge();
+      updateChatTitle();
+      renderFlightBar();
+      initChat();
+    }
+
+    async function createFlight() {
+      if (!currentChatUser) { adminAlert('Sign in to create a private flight.'); return; }
+      const cost = PRIVATE_FLIGHT_COST;
+      const costLabel = cost.toLocaleString() + ' \uD83E\uDEBD';
+      if (!walletLoaded) { adminAlert('Your wings balance is still loading. Try again in a moment.'); return; }
+      if (userWallet.wings < cost) {
+        adminAlert('Creating a private flight costs ' + costLabel + ' \u2014 you have ' + userWallet.wings.toLocaleString() + ' \uD83E\uDEBD.');
+        return;
+      }
+      const raw = await adminPrompt('Name your new private flight (3-11 characters). It costs ' + costLabel + ' and gets its own Black Box.', '');
+      if (raw === null || raw === undefined) return;
+      const name = String(raw).replace(/\s+/g, ' ').trim();
+      if (name.length < 3 || name.length > 11) { adminAlert('A flight name must be 3-11 characters.'); return; }
+      const lower = name.toLowerCase();
+      const taken = Object.values(flightsCache).some((f) => f && String(f.name).toLowerCase() === lower) ||
+        FLIGHT_SERVERS.some((f) => f.name.toLowerCase() === lower);
+      if (taken) { adminAlert('A flight with that name already exists.'); return; }
+      const ok = await adminConfirm('Create the private flight "' + name + '" for ' + costLabel + '?');
+      if (!ok) return;
+
+      const nickname = currentChatUser.nickname;
+      let newBalance = null;
+      try {
+        ensureFirebaseApp();
+        suppressAutoWingsToast = true;
+        // charge the wings atomically; aborts if the balance dropped below the cost
+        const charge = await walletRef(nickname).child('wings').transaction((cur) => {
+          const bal = typeof cur === 'number' ? cur : 0;
+          if (bal < cost) return;
+          return bal - cost;
+        });
+        if (!charge || !charge.committed) {
+          suppressAutoWingsToast = false;
+          adminAlert('Not enough wings. A private flight costs ' + costLabel + '.');
+          return;
+        }
+        newBalance = charge.snapshot ? charge.snapshot.val() : null;
+        if (newBalance != null) { userWallet.wings = newBalance; walletLoaded = true; }
+        syncWingsToSheet(nickname, newBalance, { privateFlightCost: cost });
+        logWingsTransaction(nickname, 'Created private flight "' + name + '"', -cost);
+        updateShopWingsBalanceDisplay();
+      } catch (err) {
+        suppressAutoWingsToast = false;
+        console.error('Private flight charge error:', err);
+        adminAlert('Could not charge your wings. Please try again.');
+        return;
+      }
+
+      try {
+        const ref = nsRef('flightList').push();
+        await ref.set({
+          name: name,
+          owner: nickname,
+          ownerAvatar: currentChatUser.avatar || '\u2708\uFE0F',
+          private: true,
+          createdAt: firebase.database.ServerValue.TIMESTAMP
+        });
+        showWingsToast('\u2708\uFE0F Private flight "' + name + '" created (-' + costLabel + ')');
+        switchFlight(ref.key);
+      } catch (err) {
+        console.error('Create flight error:', err);
+        // creation failed after charging: give the wings back
+        try {
+          const refund = await walletRef(nickname).child('wings').transaction((cur) => (typeof cur === 'number' ? cur : 0) + cost);
+          const bal = refund && refund.snapshot ? refund.snapshot.val() : null;
+          if (bal != null) userWallet.wings = bal;
+          syncWingsToSheet(nickname, bal, { privateFlightRefund: cost });
+          logWingsTransaction(nickname, 'Refund: private flight "' + name + '" could not be created', cost);
+          updateShopWingsBalanceDisplay();
+        } catch (e2) { console.error('Private flight refund error:', e2); }
+        adminAlert('Could not create the flight, so your ' + costLabel + ' were refunded. Please try again.');
+      }
+    }
+
+    // ---- flight settings: only the creator of a private flight can open these ----
+    const FLIGHT_RENAME_COST = 200; // wings
+    const FLIGHT_IMAGE_SIZE = 256; // px, square
+    function canEditFlight(f) {
+      return !!(f && f.private && currentChatUser && f.owner === currentChatUser.nickname);
+    }
+    function openFlightInvite() {
+      const f = privateFlightActive() ? flightsCache[currentFlightId] : null;
+      if (!canEditFlight(f)) return;
+      closeFlightSettings();
+      const input = document.getElementById('flight-invite-link-input');
+      input.value = '';
+      syncInviteButtons();
+      document.getElementById('flight-invite-overlay').classList.add('visible');
+      // show the flight's current link, if it has one
+      const id = currentFlightId;
+      try {
+        ensureFirebaseApp();
+        nsRef('flightInvites/' + id).once('value').then((snap) => {
+          const code = snap.val();
+          if (currentFlightId === id && typeof code === 'string' && code) { input.value = flightInviteUrl(id, code); syncInviteButtons(); }
+        }).catch((err) => console.error('Invite load error:', err));
+      } catch (err) { console.error('Invite load error:', err); }
+    }
+    function cancelFlightInvite() {
+      closeFlightInvite();
+      openFlightSettings();
+    }
+    function syncInviteButtons() {
+      const has = !!document.getElementById('flight-invite-link-input').value;
+      document.getElementById('flight-settings-invite-reset').disabled = !has;
+      document.getElementById('flight-invite-copy-btn').disabled = !has;
+    }
+    function closeFlightInvite() {
+      document.getElementById('flight-invite-overlay').classList.remove('visible');
+      const input = document.getElementById('flight-invite-link-input');
+      if (input) { input.value = ''; syncInviteButtons(); }
+    }
+    async function copyShownInviteLink() {
+      const input = document.getElementById('flight-invite-link-input');
+      const link = input ? input.value : '';
+      if (!link) { showWingsToast('Generate a link first'); return; }
+      try {
+        await navigator.clipboard.writeText(link);
+      } catch (err) {
+        input.select();
+        try { document.execCommand('copy'); } catch (e2) {}
+      }
+      showWingsToast('\uD83D\uDD17 Invite link copied');
+    }
+    function openFlightSettings() {
+      const f = privateFlightActive() ? flightsCache[currentFlightId] : null;
+      if (!canEditFlight(f)) return;
+      closeFlightInvite();
+      closeFlightImageEdit();
+      document.getElementById('flight-settings-overlay').classList.add('visible');
+    }
+    function closeFlightSettings() {
+      document.getElementById('flight-settings-overlay').classList.remove('visible');
+      closeFlightInvite();
+    }
+
+    // Creator removes a soul from their private flight. They are also marked
+    // removed so their old invite link cannot bring them back; resetting the
+    // link does not clear this.
+    async function removeFlightMember(nick) {
+      const id = currentFlightId;
+      const f = id && flightsCache[id];
+      if (!canEditFlight(f) || !nick || nick === f.owner) return;
+      const ok = await adminConfirm('Remove ' + nick + ' from \"' + f.name + '\"? They will lose access to its Black Box and can\'t rejoin with the invite link.');
+      if (!ok) return;
+      try {
+        ensureFirebaseApp();
+        const upd = {};
+        upd['members/' + nick] = null;
+        upd['removed/' + nick] = true;
+        await nsRef('flightList/' + id).update(upd);
+        showWingsToast('\u2708\uFE0F ' + nick + ' was removed from \"' + f.name + '\"');
+      } catch (err) {
+        console.error('Remove member error:', err);
+        adminAlert('Could not remove that soul. Please try again.');
+      }
+    }
+
+    // ---- invite links: the creator shares a link, anyone who opens it joins ----
+    // flightInvites/<flightId> holds the current secret code; the link is
+    // <site>?join=<flightId>.<code>. Joining writes flightList/<id>/members/<nick>.
+    function makeInviteCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+      const arr = new Uint32Array(20);
+      (window.crypto || window.msCrypto).getRandomValues(arr);
+      let out = '';
+      for (let i = 0; i < arr.length; i++) out += chars[arr[i] % chars.length];
+      return out;
+    }
+    function flightInviteUrl(id, code) {
+      const base = /^https?:$/.test(location.protocol) ? (location.origin + location.pathname) : 'https://aerodynadmics.com/';
+      return base + '?join=' + encodeURIComponent(id + '.' + code);
+    }
+    async function copyInviteText(link, message) {
+      try {
+        await navigator.clipboard.writeText(link);
+        showWingsToast(message || '\uD83D\uDD17 Invite link copied');
+      } catch (err) {
+        await adminPrompt('Copy your invite link:', link);
+      }
+    }
+    async function generateFlightInviteLink() {
+      const id = currentFlightId;
+      const f = id && flightsCache[id];
+      if (!canEditFlight(f)) return;
+      try {
+        ensureFirebaseApp();
+        const code = makeInviteCode();
+        await nsRef('flightInvites/' + id).set(code);
+        document.getElementById('flight-invite-link-input').value = flightInviteUrl(id, code);
+        syncInviteButtons();
+        showWingsToast('\uD83D\uDD17 New invite link generated');
+      } catch (err) {
+        console.error('Invite generate error:', err);
+        adminAlert('Could not generate a new invite link. Please try again.');
+      }
+    }
+    async function resetFlightInviteLink() {
+      const id = currentFlightId;
+      const f = id && flightsCache[id];
+      if (!canEditFlight(f)) return;
+      if (!document.getElementById('flight-invite-link-input').value) { showWingsToast('No active link to reset'); return; }
+      const ok = await adminConfirm('Reset the current invite link for \"' + f.name + '\"? It will stop working until you generate a new one. Souls already aboard stay.');
+      if (!ok) return;
+      try {
+        ensureFirebaseApp();
+        await nsRef('flightInvites/' + id).remove();
+        document.getElementById('flight-invite-link-input').value = '';
+        syncInviteButtons();
+        showWingsToast('\uD83D\uDD17 Invite link reset. The old link no longer works');
+      } catch (err) {
+        console.error('Invite reset error:', err);
+        adminAlert('Could not reset the invite link. Please try again.');
+      }
+    }
+
+    // Opening a link like ?join=<id>.<code> stashes it (so it survives the
+    // sign-in screen or a reload), then it's handled once the user is signed in
+    // and the flight list has loaded.
+    (function captureFlightInviteFromUrl() {
+      try {
+        const v = new URLSearchParams(location.search).get('join');
+        if (!v) return;
+        localStorage.setItem('pendingFlightJoin', v);
+        const u = new URL(location.href);
+        u.searchParams.delete('join');
+        history.replaceState(null, '', u.pathname + u.search + u.hash);
+      } catch (err) {}
+    })();
+    function readPendingFlightJoin() {
+      try {
+        const raw = localStorage.getItem('pendingFlightJoin');
+        if (!raw) return null;
+        const i = raw.indexOf('.');
+        const id = raw.slice(0, i), code = raw.slice(i + 1);
+        if (i < 1 || !/^[-\w]{10,40}$/.test(id) || !/^[A-Za-z0-9]{10,40}$/.test(code)) return null;
+        return { id: id, code: code };
+      } catch (err) { return null; }
+    }
+    function clearPendingFlightJoin() {
+      try { localStorage.removeItem('pendingFlightJoin'); } catch (err) {}
+    }
+    let flightJoinBusy = false;
+    async function processPendingFlightJoin() {
+      if (flightJoinBusy || !currentChatUser || !flightListRef) return;
+      let raw = null;
+      try { raw = localStorage.getItem('pendingFlightJoin'); } catch (err) {}
+      if (!raw) return;
+      const pending = readPendingFlightJoin();
+      if (!pending) { clearPendingFlightJoin(); return; }
+      if (!flightsCache || !Object.keys(flightsCache).length) return; // list not loaded yet; retried when it is
+      flightJoinBusy = true;
+      try {
+        const f = flightsCache[pending.id];
+        if (!f || !f.name) {
+          clearPendingFlightJoin();
+          adminAlert('This invite link is no longer valid. The flight may have been deleted.');
+          return;
+        }
+        const me = currentChatUser.nickname;
+        if (f.removed && f.removed[me] && !isAdminUser(currentChatUser)) {
+          clearPendingFlightJoin();
+          adminAlert('You were removed from this flight, so this invite link can\'t be used.');
+          return;
+        }
+        if (canEnterFlight(f)) {
+          clearPendingFlightJoin();
+          switchFlight(pending.id);
+          return;
+        }
+        ensureFirebaseApp();
+        const snap = await nsRef('flightInvites/' + pending.id).once('value');
+        if (snap.val() !== pending.code) {
+          clearPendingFlightJoin();
+          adminAlert('This invite link has expired or was reset by the flight\'s creator. Ask for a new one.');
+          return;
+        }
+        const ok = await adminConfirm('Join the private flight \"' + f.name + '\"' + (f.owner ? ' by ' + f.owner : '') + '?');
+        clearPendingFlightJoin();
+        if (!ok) return;
+        await nsRef('flightList/' + pending.id + '/members/' + me).set(true);
+        showWingsToast('\u2708\uFE0F You joined \"' + f.name + '\"');
+        if (flightsCache[pending.id]) {
+          flightsCache[pending.id].members = Object.assign({}, flightsCache[pending.id].members, { [me]: true });
+        }
+        switchFlight(pending.id);
+      } catch (err) {
+        console.error('Join flight error:', err);
+        adminAlert('Could not join the flight. Please try again.');
+      } finally {
+        flightJoinBusy = false;
+      }
+    }
+
+    async function renameFlight() {
+      const id = currentFlightId;
+      const f = id && flightsCache[id];
+      if (!canEditFlight(f)) return;
+      const cost = FLIGHT_RENAME_COST;
+      const costLabel = cost.toLocaleString() + ' \uD83E\uDEBD';
+      closeFlightSettings();
+      if (!walletLoaded) { adminAlert('Your wings balance is still loading. Try again in a moment.'); return; }
+      if (userWallet.wings < cost) {
+        adminAlert('Renaming a flight costs ' + costLabel + ' \u2014 you have ' + userWallet.wings.toLocaleString() + ' \uD83E\uDEBD.');
+        return;
+      }
+      const raw = await adminPrompt('New name for \"' + f.name + '\" (3-11 characters). Renaming costs ' + costLabel + '.', f.name);
+      if (raw === null || raw === undefined) { openFlightSettings(); return; }
+      const name = String(raw).replace(/\s+/g, ' ').trim();
+      if (name.length < 3 || name.length > 11) { adminAlert('A flight name must be 3-11 characters.'); return; }
+      if (name === f.name) { openFlightSettings(); return; }
+      const lower = name.toLowerCase();
+      const taken = Object.keys(flightsCache).some((k) => k !== id && flightsCache[k] && String(flightsCache[k].name).toLowerCase() === lower) ||
+        FLIGHT_SERVERS.some((x) => x.name.toLowerCase() === lower);
+      if (taken) { adminAlert('A flight with that name already exists.'); return; }
+      const ok = await adminConfirm('Rename \"' + f.name + '\" to \"' + name + '\" for ' + costLabel + '?');
+      if (!ok) { openFlightSettings(); return; }
+
+      const nickname = currentChatUser.nickname;
+      const oldName = f.name;
+      try {
+        ensureFirebaseApp();
+        suppressAutoWingsToast = true;
+        const charge = await walletRef(nickname).child('wings').transaction((cur) => {
+          const bal = typeof cur === 'number' ? cur : 0;
+          if (bal < cost) return;
+          return bal - cost;
+        });
+        if (!charge || !charge.committed) {
+          suppressAutoWingsToast = false;
+          adminAlert('Not enough wings. Renaming a flight costs ' + costLabel + '.');
+          return;
+        }
+        const newBalance = charge.snapshot ? charge.snapshot.val() : null;
+        if (newBalance != null) { userWallet.wings = newBalance; walletLoaded = true; }
+        syncWingsToSheet(nickname, newBalance, { flightRenameCost: cost });
+        logWingsTransaction(nickname, 'Renamed flight \"' + oldName + '\" to \"' + name + '\"', -cost);
+        updateShopWingsBalanceDisplay();
+      } catch (err) {
+        suppressAutoWingsToast = false;
+        console.error('Flight rename charge error:', err);
+        adminAlert('Could not charge your wings. Please try again.');
+        return;
+      }
+
+      try {
+        await nsRef('flightList/' + id + '/name').set(name);
+        showWingsToast('\u2708\uFE0F Flight renamed to \"' + name + '\" (-' + costLabel + ')');
+      } catch (err) {
+        console.error('Flight rename error:', err);
+        try {
+          const refund = await walletRef(nickname).child('wings').transaction((cur) => (typeof cur === 'number' ? cur : 0) + cost);
+          const bal = refund && refund.snapshot ? refund.snapshot.val() : null;
+          if (bal != null) userWallet.wings = bal;
+          syncWingsToSheet(nickname, bal, { flightRenameRefund: cost });
+          logWingsTransaction(nickname, 'Refund: flight \"' + oldName + '\" could not be renamed', cost);
+          updateShopWingsBalanceDisplay();
+        } catch (e2) { console.error('Flight rename refund error:', e2); }
+        adminAlert('Could not rename the flight, so your ' + costLabel + ' were refunded. Please try again.');
+      }
+    }
+
+    let pendingFlightImage = null;
+    function openFlightImageEdit() {
+      const f = privateFlightActive() ? flightsCache[currentFlightId] : null;
+      if (!canEditFlight(f)) return;
+      closeFlightSettings();
+      const img = document.getElementById('flight-image-edit-img');
+      const empty = document.getElementById('flight-image-edit-empty');
+      if (f.image) { img.src = f.image; img.style.display = 'block'; empty.style.display = 'none'; }
+      else { img.removeAttribute('src'); img.style.display = 'none'; empty.style.display = 'flex'; }
+      document.getElementById('flight-image-edit-overlay').classList.add('visible');
+    }
+    function closeFlightImageEdit() {
+      document.getElementById('flight-image-edit-overlay').classList.remove('visible');
+    }
+    function cancelFlightImageEdit() {
+      closeFlightImageEdit();
+      openFlightSettings();
+    }
+    function cancelFlightImagePreview(reopenSettings) {
+      pendingFlightImage = null;
+      document.getElementById('flight-image-preview-overlay').classList.remove('visible');
+      if (reopenSettings !== false) openFlightImageEdit();
+    }
+    async function saveFlightImagePreview() {
+      const pending = pendingFlightImage;
+      const f = pending && flightsCache[pending.id];
+      cancelFlightImagePreview(false);
+      if (!pending || !canEditFlight(f)) return;
+      try {
+        ensureFirebaseApp();
+        await nsRef('flightList/' + pending.id + '/image').set(pending.dataUrl);
+      } catch (err) {
+        console.error('Flight image error:', err);
+        adminAlert('Could not update the flight image. Please try again.');
+      }
+    }
+    function handleFlightImageUpload(event) {
+      const input = event.target;
+      const file = input.files && input.files[0];
+      input.value = '';
+      const id = currentFlightId;
+      const f = id && flightsCache[id];
+      if (!file || !canEditFlight(f)) return;
+      if (!file.type.startsWith('image/')) { adminAlert('Please choose an image file.'); return; }
+      closeFlightImageEdit();
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          // centered square crop, downscaled small enough to store on the flight itself
+          const side = Math.min(img.width, img.height);
+          const sx = (img.width - side) / 2;
+          const sy = (img.height - side) / 2;
+          const canvas = document.createElement('canvas');
+          canvas.width = FLIGHT_IMAGE_SIZE;
+          canvas.height = FLIGHT_IMAGE_SIZE;
+          const cctx = canvas.getContext('2d');
+          cctx.imageSmoothingEnabled = true;
+          cctx.imageSmoothingQuality = 'high';
+          cctx.drawImage(img, sx, sy, side, side, 0, 0, FLIGHT_IMAGE_SIZE, FLIGHT_IMAGE_SIZE);
+          pendingFlightImage = { id: id, dataUrl: canvas.toDataURL('image/jpeg', 0.92) };
+          document.getElementById('flight-image-preview-img').src = pendingFlightImage.dataUrl;
+          document.getElementById('flight-image-preview-overlay').classList.add('visible');
+        };
+        img.onerror = () => adminAlert('Could not read that image. Try a different file.');
+        img.src = reader.result;
+      };
+      reader.onerror = () => adminAlert('Could not read that file. Try again.');
+      reader.readAsDataURL(file);
+    }
+
+    async function deleteFlight(id) {
+      const f = flightsCache[id];
+      if (!f || !canDeleteFlight(f)) return;
+      const ok = await adminConfirm('Delete the flight "' + f.name + '" and its Black Box? This cannot be undone.');
+      if (!ok) return;
+      try {
+        ensureFirebaseApp();
+        if (currentFlightId === id) switchFlight(null);
+        await nsRef('flightMessages/' + id).remove();
+        await nsRef('flightList/' + id).remove();
+      } catch (err) {
+        console.error('Delete flight error:', err);
+        adminAlert('Could not delete the flight. Please try again.');
       }
     }
 
@@ -17098,9 +18070,11 @@ Answer: C</pre>
     // row's classes when something about it actually changed.
     function updateNicknameListLiveState() {
       const body = document.getElementById('nick-modal-body');
-      if (!body || !lastNicknameListData) return;
+      if (!body || (!lastNicknameListData && !privateFlightRosterOwner())) return;
+      if (activeFlightIsEmpty()) return;
       const lis = body.querySelectorAll('li[data-nickname]');
-      if (!lis.length || lis.length !== lastNicknameListData.length) {
+      const expectedRows = privateFlightRosterOwner() ? 1 + privateFlightMemberNicks().length : lastNicknameListData.length;
+      if (!lis.length || lis.length !== expectedRows) {
         // Roster hasn't been rendered yet, or its size changed (someone
         // new joined) — fall back to a full rebuild just this once.
         renderNicknameListFromCache();
@@ -19883,7 +20857,7 @@ Answer: C</pre>
         noteAdminSecretSuccess();
 
         ensureFirebaseApp();
-        nsRef('chat/messages/' + key).remove()
+        nsRef(chatMessagesPath() + '/' + key).remove()
           .catch((err) => {
             console.error('Delete message error:', err);
             adminAlert('Could not delete the message. Please try again.');
@@ -20081,7 +21055,7 @@ Answer: C</pre>
       if (mentions.length) payload.mentions = mentions;
       if (replyingTo) payload.replyTo = { key: replyingTo.key, nickname: replyingTo.nickname, text: replyingTo.text, avatar: replyingTo.avatar || '✈️' };
 
-      nsRef('chat/messages').push(payload);
+      nsRef(chatMessagesPath()).push(payload);
 
       input.value = '';
       cancelReply();
@@ -20332,9 +21306,18 @@ Answer: C</pre>
 
     function renderNicknameListFromCache() {
       const body = document.getElementById('nick-modal-body');
-      if (!lastNicknameListData) return;
+      const privOwner = privateFlightRosterOwner();
+      if (privateFlightActive() && !privOwner) {
+        body.innerHTML = '<div class="nick-modal-status">Loading flight&hellip;</div>';
+        return;
+      }
+      if (activeFlightIsEmpty()) {
+        body.innerHTML = '<div class="nick-modal-status">No souls aboard this flight yet.</div>';
+        return;
+      }
+      if (!lastNicknameListData && !privOwner) return;
 
-      if (lastNicknameListData.length === 0) {
+      if (!privOwner && lastNicknameListData.length === 0) {
         body.innerHTML = '<div class="nick-modal-status">No nicknames claimed yet.</div>';
         return;
       }
@@ -20379,11 +21362,12 @@ Answer: C</pre>
       `;
       };
 
-      const pilotHtml = myNickname
-        ? `<li class="nick-list-divider">PILOT</li>${pilotRowHtml(myNickname)}`
+      const pilotNick = privOwner || myNickname;
+      const pilotHtml = pilotNick
+        ? `<li class="nick-list-divider">PILOT</li>${pilotRowHtml(pilotNick)}`
         : '';
 
-      const copilotNickname = myCopilotKey
+      const copilotNickname = (myCopilotKey && !privOwner)
         ? ((latestPresenceData[myCopilotKey] && latestPresenceData[myCopilotKey].nickname) || myCopilotKey)
         : null;
       // Only shown once an actual Co-Pilot is set — no placeholder row
@@ -20394,10 +21378,13 @@ Answer: C</pre>
         ? `<li class="nick-list-divider">CO-PILOT</li>${pilotRowHtml(copilotNickname)}`
         : '';
 
-      const sorted = [...lastNicknameListData]
+      const sorted = (privOwner ? privateFlightMemberNicks() : [...lastNicknameListData])
         // Self and the current Co-Pilot already have their own pinned
         // rows above, so drop them from the Crewmates/everyone-else list.
+        // (On a private flight the pinned PILOT is the owner, so members,
+        // including you, all stay in the list.)
         .filter((item) => {
+          if (privOwner) return true;
           const nick = typeof item === 'string' ? item : item.nickname;
           return nick !== myNickname && nick !== copilotNickname;
         })
@@ -20412,7 +21399,7 @@ Answer: C</pre>
           return nickA.localeCompare(nickB, undefined, { sensitivity: 'base' });
         });
 
-      const crewmateCount = sorted.filter((item) => {
+      const crewmateCount = privOwner ? 0 : sorted.filter((item) => {
         const nick = typeof item === 'string' ? item : item.nickname;
         return getCrewmateStatus(nick) === 'crewmates';
       }).length;
@@ -20474,6 +21461,7 @@ Answer: C</pre>
           ${coverOverlayHtml}
           <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span></span>
           <span class="${animClass}" data-text="${escapeHtml(nick)}" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; padding:0 8px; margin:0 -8px;">${escapeHtml(nick)}</span>
+          ${privOwner && canEditFlight(flightsCache[currentFlightId]) ? `<button type="button" class="member-remove-btn" data-nickname="${escapeHtml(nick)}" title="Remove from flight" aria-label="Remove ${escapeHtml(nick)} from flight" onclick="event.stopPropagation(); removeFlightMember(this.dataset.nickname);">&times;</button>` : ''}
         </li>
       `;
       }).join('');
@@ -33306,7 +34294,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
         var cs = window.getComputedStyle(el);
         if ((cs.overflowX === 'auto' || cs.overflowX === 'scroll') && el.scrollWidth > el.clientWidth + 1) return true;
         if (cs.position === 'fixed' &&
-            el.id !== 'reviewees-sidebar' && el.id !== 'chat-panel' && el.id !== 'mobile-drawer-backdrop') return true;
+            el.id !== 'reviewees-sidebar' && el.id !== 'flights-rail' && el.id !== 'chat-panel' && el.id !== 'mobile-drawer-backdrop') return true;
       }
       return false;
     }
