@@ -750,15 +750,36 @@
     text-align: left;
     margin: 0 0 8px;
   }
-  #nickname-step .mainflight-hint { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--rivet); line-height: 1.5; text-align: left; margin: -2px 0 10px; }
-  #nickname-step .mainflight-row { display: flex; gap: 8px; margin: 0 0 6px; }
-  #nickname-step .mainflight-btn {
-    flex: 1; padding: 9px 0; border-radius: 999px; cursor: pointer;
-    background: transparent; color: var(--paper); border: 1px solid var(--line);
-    font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600;
+  /* Create-account step: no logo/subtitle header above the form */
+  .signin-card:has(#nickname-step.visible) #signin-card-title,
+  .signin-card:has(#nickname-step.visible) #signin-card-subtitle { display: none !important; }
+  #mainflight-picker-overlay .mainflight-hint { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--rivet); line-height: 1.5; text-align: left; margin: 0; padding: 12px 16px 10px; }
+  #nickname-step .mainflight-trigger {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 10px 16px; margin: 0 0 6px; border-radius: 999px; cursor: pointer;
+    background: transparent; border: 1px solid var(--line); color: var(--rivet);
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 400; text-align: left;
   }
-  #nickname-step .mainflight-btn.selected { background: var(--accent); border-color: var(--accent); color: #0b1a26; }
-  @media (hover: hover) { #nickname-step .mainflight-btn:not(.selected):hover { border-color: var(--accent); color: var(--accent); } }
+  #nickname-step .mainflight-trigger.has-value { background: var(--accent); color: #0b1a26; border-color: var(--accent); }
+  #nickname-step .mainflight-trigger .mf-chev { font-size: 16px; line-height: 1; opacity: 0.8; }
+  @media (hover: hover) { #nickname-step .mainflight-trigger:hover { background: var(--accent); border-color: var(--accent); color: #0b1a26; font-weight: 400; } }
+  #mainflight-picker-overlay .mf-list { display: flex; flex-direction: column; gap: 8px; padding: 0 16px 6px; max-height: 60vh; overflow-y: auto; }
+  #mainflight-picker-overlay .mf-item {
+    display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 14px;
+    border-radius: 12px; cursor: pointer; background: rgba(255,255,255,0.04);
+    border: 1px solid var(--line); color: var(--paper); text-align: left;
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px;
+  }
+  #mainflight-picker-overlay .mf-item .mf-icon {
+    flex: none; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.08); font-weight: 600;
+  }
+  #mainflight-picker-overlay .mf-item.selected { background: var(--accent); border-color: var(--accent); color: #0b1a26; }
+  #mainflight-picker-overlay .mf-item.selected .mf-icon { background: #123259; color: #fff; }
+  @media (hover: hover) {
+    #mainflight-picker-overlay .mf-item:hover { background: var(--accent); border-color: var(--accent); color: #0b1a26; }
+    #mainflight-picker-overlay .mf-item:hover .mf-icon { background: #123259; color: #fff; }
+  }
   #nickname-step .profile-preview {
     display: flex;
     justify-content: center;
@@ -10519,14 +10540,9 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
         <div class="nick-error" id="flightcode-error"></div>
 
         <p class="field-label">Your Flight</p>
-        <p class="mainflight-hint">Pick the year you graduated, will graduate, or think you will. This becomes your main flight.</p>
-        <div class="mainflight-row" id="mainflight-row" role="radiogroup" aria-label="Your Flight (graduation year)">
-          <button type="button" class="mainflight-btn" data-flight="flight-2026" role="radio" aria-checked="false" onclick="selectMainFlight('flight-2026')">26</button>
-          <button type="button" class="mainflight-btn" data-flight="flight-2027" role="radio" aria-checked="false" onclick="selectMainFlight('flight-2027')">27</button>
-          <button type="button" class="mainflight-btn" data-flight="flight-2028" role="radio" aria-checked="false" onclick="selectMainFlight('flight-2028')">28</button>
-          <button type="button" class="mainflight-btn" data-flight="flight-2029" role="radio" aria-checked="false" onclick="selectMainFlight('flight-2029')">29</button>
-          <button type="button" class="mainflight-btn" data-flight="flight-2030" role="radio" aria-checked="false" onclick="selectMainFlight('flight-2030')">30</button>
-        </div>
+        <button type="button" class="mainflight-trigger" id="mainflight-trigger" aria-haspopup="dialog" onclick="openMainFlightPicker()">
+          <span id="mainflight-trigger-label">Choose your flight</span><span class="mf-chev" aria-hidden="true">&rsaquo;</span>
+        </button>
         <div class="nick-error" id="mainflight-error"></div>
 
         <p class="legal-agree-note">Before creating your account, please read and accept both of these:</p>
@@ -11393,6 +11409,19 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
           <button type="button" class="flight-alert-btn decline" onclick="cancelDeleteWingsAlert()">Cancel</button>
           <button type="button" class="flight-alert-btn confirm-delete" onclick="confirmDeleteWingsAlert()">Delete</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nick-modal-overlay" id="mainflight-picker-overlay" style="z-index: 1800;">
+    <div class="nick-modal">
+      <div class="nick-modal-head">
+        <h3>Choose Your Flight</h3>
+        <button class="nick-modal-back" onclick="closeMainFlightPicker()" aria-label="Back">&lsaquo;</button>
+      </div>
+      <div class="nick-modal-body">
+        <p class="mainflight-hint">Pick the year you graduated, will graduate, or think you will. This becomes your main flight.</p>
+        <div class="mf-list" id="mainflight-list" role="radiogroup" aria-label="Your Flight"></div>
       </div>
     </div>
   </div>
@@ -13478,7 +13507,7 @@ Answer: C</pre>
     const NICKNAME_PATTERN = /^[a-z]+$/;
     const NICKNAME_MIN_LENGTH = 3;
     const NICKNAME_MAX_LENGTH = 11;
-    const FLIGHTCODE_MIN_LENGTH = 6;
+    const FLIGHTCODE_MIN_LENGTH = 7;
     const FLIGHTCODE_MAX_LENGTH = 20;
     // At least one uppercase letter, one lowercase letter, one number, and
     // one special (non-alphanumeric) character.
@@ -14578,21 +14607,55 @@ Answer: C</pre>
 
     // ---- main flight picker (signup) ----
     let selectedMainFlight = null;
+    function mainFlightName(id) {
+      const f = FLIGHT_SERVERS.find((x) => x.id === id);
+      return f ? f.name : '';
+    }
+    function updateMainFlightTrigger() {
+      const btn = document.getElementById('mainflight-trigger');
+      const lbl = document.getElementById('mainflight-trigger-label');
+      if (!btn || !lbl) return;
+      const name = selectedMainFlight ? mainFlightName(selectedMainFlight) : '';
+      lbl.textContent = name || 'Choose your flight';
+      btn.classList.toggle('has-value', !!name);
+    }
+    // The popup lists every public flight in FLIGHT_SERVERS, so adding a flight
+    // there is all it takes; the signup card itself never grows.
+    function openMainFlightPicker() {
+      const list = document.getElementById('mainflight-list');
+      if (!list) return;
+      list.innerHTML = '';
+      FLIGHT_SERVERS.filter((f) => f.isPublic).forEach((f) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'mf-item' + (f.id === selectedMainFlight ? ' selected' : '');
+        b.setAttribute('role', 'radio');
+        b.setAttribute('aria-checked', f.id === selectedMainFlight ? 'true' : 'false');
+        const icon = document.createElement('span');
+        icon.className = 'mf-icon';
+        icon.textContent = f.icon;
+        const name = document.createElement('span');
+        name.textContent = f.name;
+        b.appendChild(icon);
+        b.appendChild(name);
+        b.addEventListener('click', () => { selectMainFlight(f.id); closeMainFlightPicker(); });
+        list.appendChild(b);
+      });
+      document.getElementById('mainflight-picker-overlay').classList.add('visible');
+    }
+    function closeMainFlightPicker() {
+      const o = document.getElementById('mainflight-picker-overlay');
+      if (o) o.classList.remove('visible');
+    }
     function selectMainFlight(id) {
       selectedMainFlight = id;
-      document.querySelectorAll('#mainflight-row .mainflight-btn').forEach((b) => {
-        const on = b.getAttribute('data-flight') === id;
-        b.classList.toggle('selected', on);
-        b.setAttribute('aria-checked', on ? 'true' : 'false');
-      });
+      updateMainFlightTrigger();
       clearMainFlightError();
     }
     function resetMainFlightPicker() {
       selectedMainFlight = null;
-      document.querySelectorAll('#mainflight-row .mainflight-btn').forEach((b) => {
-        b.classList.remove('selected');
-        b.setAttribute('aria-checked', 'false');
-      });
+      updateMainFlightTrigger();
+      closeMainFlightPicker();
       clearMainFlightError();
     }
     function showMainFlightError(msg) {
@@ -14641,7 +14704,7 @@ Answer: C</pre>
 
       clearMainFlightError();
       if (!selectedMainFlight) {
-        showMainFlightError('Please choose your Flight (26, 27, 28, 29 or 30).');
+        showMainFlightError('Please choose your flight.');
         return;
       }
 
@@ -33339,6 +33402,7 @@ Answer: C</pre>
         ['flight-alerts-overlay', () => closeFlightAlerts()],
         ['avatar-change-overlay', null],
         ['avatar-picker-overlay', () => closeAvatarPicker()],
+        ['mainflight-picker-overlay', () => closeMainFlightPicker()],
         ['wings-history-overlay', null],
         ['daily-rewards-overlay', null],
         ['wings-store-overlay', null],
