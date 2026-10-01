@@ -5693,6 +5693,9 @@
   .chat-crew-row .chat-crew-name { max-width: 100%; }
   .chat-crew-row .chat-crew-preview { max-width: 100%; font-size: 12.5px; font-weight: 400; color: var(--rivet); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .chat-crew-row .chat-crew-preview:empty { display: none; }
+  /* Unread chat: brighter, bolder preview + accent dot next to the lock */
+  .chat-crew-row.unread .chat-crew-preview { color: #fff; font-weight: 700; }
+  .chat-crew-row.unread .chat-crew-name { font-weight: 700; }
   /* DM opened from the Crewmates tab: sits exactly on top of the Black Box panel */
   #dm-overlay.in-box { inset: auto; padding: 0; background: transparent; align-items: stretch; justify-content: stretch; }
   #dm-overlay.in-box .dm-modal { max-width: none; max-height: none; width: 100%; height: 100%; border-radius: 14px; box-shadow: -4px 0 20px rgba(0,0,0,0.3); }
@@ -11540,8 +11543,8 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
           <button type="button" class="dm-head-btn" id="dm-lock-btn" onclick="dmTogglePop('dm-secure')" aria-label="Encryption info" title="End-to-end encrypted">&#128274;</button>
           <button type="button" class="dm-head-btn" id="dm-key-btn" onclick="dmTogglePop('dm-recover')" aria-label="Recovery key" title="Recovery key" style="display:none;">&#128273;</button>
         </div>
-        <button class="nick-modal-close" onclick="closeDm()" aria-label="Close messages">&times;</button>
-        <button type="button" class="dm-back-btn" onclick="closeDm()" aria-label="Back" title="Back"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <button class="nick-modal-close" onclick="dmHeadClose()" aria-label="Close messages">&times;</button>
+        <button type="button" class="dm-back-btn" onclick="dmHeadClose()" aria-label="Back" title="Back"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
         <div class="dm-pop dm-secure" id="dm-secure"><span>&#128274; End-to-end encrypted</span><span class="dm-code" id="dm-code" title="Compare this safety code with your crewmate to confirm no one is intercepting"></span></div>
         <div class="dm-pop dm-recover" id="dm-recover"><span id="dm-recover-text">Get a recovery key so you can restore your messages if you forget your PIN. One key covers all your chats.</span><button type="button" class="dm-linkbtn" id="dm-recover-btn" onclick="dmRecoverClick()">Get recovery key</button></div>
       </div>
@@ -13091,6 +13094,7 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
        adminPrompt() below. -->
   <div class="banned-list-overlay" id="admin-modal-overlay" style="z-index:2100;">
     <div class="mockadmin-card" style="max-width:420px;" onclick="event.stopPropagation();">
+      <div class="nick-modal-head flight-sub-head" id="admin-modal-head" style="display:none;"><h3 class="flight-sub-title" id="admin-modal-title"></h3><button type="button" class="flight-sub-back" onclick="adminModalCancel()" aria-label="Back" title="Back"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button></div>
       <p id="admin-modal-message" style="margin:0 0 14px; font-size:13.5px; line-height:1.55; color:var(--paper); white-space:pre-wrap;"></p>
       <input type="text" id="admin-modal-input" class="mockadmin-input" style="display:none;"
         autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false"
@@ -13119,11 +13123,8 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
 
   <div class="banned-list-overlay" id="flight-members-overlay" onclick="closeFlightMembers()">
     <div class="mockadmin-card" style="max-width:380px;" onclick="event.stopPropagation();">
-      <p style="margin:0; font-size:15px; font-weight:700; color:#fff;">Souls on board</p>
-      <div class="banned-list-items" id="flight-members-list" style="margin:12px 0 0; max-height:50vh; overflow-y:auto;"></div>
-      <div class="mockadmin-editor-actions" style="margin-top:18px;">
-        <button type="button" class="mockadmin-save-btn" onclick="closeFlightMembers(); openFlightSettings();" style="cursor:pointer;">CANCEL</button>
-      </div>
+      <div class="nick-modal-head flight-sub-head"><h3 class="flight-sub-title">Souls on board</h3><button type="button" class="flight-sub-back" onclick="closeFlightMembers(); openFlightSettings();" aria-label="Back" title="Back"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button></div>
+      <div class="banned-list-items" id="flight-members-list" style="margin:0; max-height:50vh; overflow-y:auto;"></div>
     </div>
   </div>
 
@@ -13155,30 +13156,26 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
 
   <div class="banned-list-overlay" id="flight-invite-overlay" onclick="closeFlightInvite()">
     <div class="mockadmin-card" style="max-width:380px;" onclick="event.stopPropagation();">
-      <p style="margin:0; font-size:15px; font-weight:700; color:#fff;">Invite link</p>
-      <div style="display:flex; gap:8px; margin-top:12px;">
+      <div class="nick-modal-head flight-sub-head"><h3 class="flight-sub-title">Invite link</h3><button type="button" class="flight-sub-back" onclick="cancelFlightInvite()" aria-label="Back" title="Back"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button></div>
+      <div style="display:flex; gap:8px; margin-top:0;">
         <input type="text" id="flight-invite-link-input" readonly placeholder="No active link. Generate one below." onclick="this.select()"
           style="flex:1; min-width:0; padding:11px 12px; border:1px solid var(--line); border-radius:8px; background:rgba(255,255,255,0.05); color:var(--paper); font:inherit; font-size:12.5px; text-overflow:ellipsis;">
         <button type="button" class="mockadmin-publish-btn" id="flight-invite-copy-btn" onclick="copyShownInviteLink()" style="cursor:pointer; flex:none; padding:0 16px;">COPY</button>
       </div>
       <button type="button" class="flight-settings-opt" id="flight-settings-invite-copy" onclick="generateFlightInviteLink()">Generate new link<small>Creates a fresh link. Any older link stops working.</small></button>
       <button type="button" class="flight-settings-opt" id="flight-settings-invite-reset" onclick="resetFlightInviteLink()">Reset current link<small>Turns off the current link so nobody can join with it. Souls already aboard stay.</small></button>
-      <div class="mockadmin-editor-actions" style="margin-top:18px;">
-        <button type="button" class="mockadmin-save-btn" onclick="cancelFlightInvite()" style="cursor:pointer;">CANCEL</button>
-      </div>
     </div>
   </div>
 
   <div class="banned-list-overlay" id="flight-image-edit-overlay" onclick="closeFlightImageEdit()">
     <div class="mockadmin-card" style="max-width:380px;" onclick="event.stopPropagation();">
-      <p style="margin:0; font-size:15px; font-weight:700; color:#fff;">Edit flight image</p>
-      <p style="margin:6px 0 0; font-size:11.5px; opacity:0.7; color:var(--paper);">Shown on the flight icon in the sidebar</p>
+      <div class="nick-modal-head flight-sub-head"><h3 class="flight-sub-title">Edit flight image</h3><button type="button" class="flight-sub-back" onclick="cancelFlightImageEdit()" aria-label="Back" title="Back"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button></div>
+      <p style="margin:0; font-size:11.5px; opacity:0.7; color:var(--paper);">Shown on the flight icon in the sidebar</p>
       <div style="display:flex; justify-content:center; margin-top:16px;">
         <img id="flight-image-edit-img" alt="" style="width:128px; height:128px; object-fit:cover; border-radius:14px; display:none;">
         <div id="flight-image-edit-empty" style="width:128px; height:128px; border-radius:14px; border:1px dashed var(--line); display:flex; align-items:center; justify-content:center; font-size:12px; opacity:0.7; color:var(--paper);">No image yet</div>
       </div>
       <div class="mockadmin-editor-actions" style="margin-top:20px;">
-        <button type="button" class="mockadmin-save-btn" onclick="cancelFlightImageEdit()" style="cursor:pointer;">CANCEL</button>
         <button type="button" class="mockadmin-publish-btn" onclick="document.getElementById('flight-image-input').click()" style="cursor:pointer;">UPLOAD IMAGE</button>
       </div>
     </div>
@@ -13186,9 +13183,9 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
 
   <div class="banned-list-overlay" id="flight-image-preview-overlay" onclick="cancelFlightImagePreview()">
     <div class="mockadmin-card" style="max-width:340px; text-align:center;" onclick="event.stopPropagation();">
+      <div class="nick-modal-head flight-sub-head"><h3 class="flight-sub-title">New flight image</h3><button type="button" class="flight-sub-back" onclick="cancelFlightImagePreview()" aria-label="Back" title="Back"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button></div>
       <img id="flight-image-preview-img" alt="" style="width:128px; height:128px; object-fit:cover; border-radius:14px; display:block; margin:0 auto;">
       <div class="mockadmin-editor-actions" style="margin-top:20px;">
-        <button type="button" class="mockadmin-save-btn" onclick="cancelFlightImagePreview()" style="cursor:pointer;">CANCEL</button>
         <button type="button" class="mockadmin-publish-btn" onclick="saveFlightImagePreview()" style="cursor:pointer;">SAVE</button>
       </div>
     </div>
@@ -16824,7 +16821,10 @@ Answer: C</pre>
           input.style.display = 'none';
           input.value = '';
         }
-        cancelBtn.style.display = type === 'alert' ? 'none' : '';
+        const backMode = !!opts.back;
+        document.getElementById('admin-modal-head').style.display = backMode ? '' : 'none';
+        document.getElementById('admin-modal-title').textContent = opts.title || '';
+        cancelBtn.style.display = (type === 'alert' || backMode) ? 'none' : '';
         okBtn.textContent = opts.okLabel || 'OK';
         cancelBtn.textContent = opts.cancelLabel || 'CANCEL';
         overlay.classList.add('visible');
@@ -16851,7 +16851,7 @@ Answer: C</pre>
 
     function adminAlert(message) { return openAdminModal('alert', message); }
     function adminConfirm(message) { return openAdminModal('confirm', message); }
-    function adminPrompt(message, defaultValue) { return openAdminModal('prompt', message, { defaultValue }); }
+    function adminPrompt(message, defaultValue, opts) { return openAdminModal('prompt', message, Object.assign({ defaultValue }, opts || {})); }
 
     // ---- "About the Creator" popup + admin editor ----
     // Stored once at nsRef('creatorProfile') in Firebase (namespaced like
@@ -19497,7 +19497,7 @@ Answer: C</pre>
         adminAlert('Renaming a flight costs ' + costLabel + ' \u2014 you have ' + userWallet.wings.toLocaleString() + ' \uD83E\uDEBD.');
         return;
       }
-      const raw = await adminPrompt('New name for \"' + f.name + '\" (3-11 characters). Renaming costs ' + costLabel + '.', f.name);
+      const raw = await adminPrompt('New name for \"' + f.name + '\" (3-11 characters). Renaming costs ' + costLabel + '.', f.name, { title: 'Rename flight', back: true });
       if (raw === null || raw === undefined) { openFlightSettings(); return; }
       const name = String(raw).replace(/\s+/g, ' ').trim();
       if (name.length < 3 || name.length > 11) { adminAlert('A flight name must be 3-11 characters.'); return; }
@@ -23005,21 +23005,134 @@ Answer: C</pre>
         const av = getLiveAvatar(n) || '\u2708\uFE0F';
         const border = getLiveBorderClass(n) || '';
         const nickAttr = escapeHtml(n).replace(/'/g, "\\'");
-        return '<button type="button" class="chat-crew-row" onclick="openDm(\'' + nickAttr + '\')">' +
+        return '<button type="button" class="chat-crew-row' + (DM.unread && DM.unread[dmUid(n)] ? ' unread' : '') + '" onclick="openDm(\'' + nickAttr + '\')">' +
           '<span class="pf-av chat-msg-avatar' + (border ? ' ' + border : '') + '" data-nickname="' + escapeHtml(n) + '"' + avatarStyleAttr(av) + '>' + escapeHtml(avatarGlyph(av)) + '</span>' +
           '<span class="chat-crew-info"><span data-nickname-anim="' + escapeHtml(n) + '" data-text="' + escapeHtml(n) + '" class="chat-crew-name ' + (getLiveNicknameAnimClass(n) || '') + '">' + escapeHtml(n) + '</span>' +
-          '<span class="chat-crew-preview" data-peer="' + escapeHtml(n) + '"></span></span><span class="chat-crew-lock">&#128274;</span></button>';
+          '<span class="chat-crew-preview" data-peer="' + escapeHtml(n) + '"></span></span><span class="chat-crew-lock"></span></button>';
       }).join('');
       if (window.lockBreatheWidths) window.lockBreatheWidths(el);
       const tok = (renderChatCrewList._tok = (renderChatCrewList._tok || 0) + 1);
       names.forEach((n) => {
         dmPreviewFor(n).then((pv) => {
           if (tok !== renderChatCrewList._tok) return;
-          const node = [...el.querySelectorAll('.chat-crew-preview')].find((x) => x.getAttribute('data-peer') === n);
-          if (!node || !pv) return;
-          node.textContent = pv.locked ? '\uD83D\uDD12 Encrypted message' : (pv.mine ? 'You: ' : '') + pv.text;
+          dmApplyCrewPreview(n, pv);
         }).catch(() => {});
       });
+    }
+    // Crew list preview state. Unread chats hide the message text and show
+    // "N new message(s)"; read chats show the last message.
+    const dmCrewPv = {};   // nickname -> last-message preview
+    const dmCrewCnt = {};  // peer uid -> unread count
+    function dmReadKey(peerKey) { return 'dmRead:' + dmMe() + ':' + peerKey; }
+    // Remember the newest peer message timestamp this device has displayed.
+    function dmMarkRead(peerKey, ts) {
+      if (typeof ts !== 'number') return;
+      try {
+        const k = dmReadKey(peerKey);
+        const cur = Number(localStorage.getItem(k)) || 0;
+        if (ts > cur) localStorage.setItem(k, String(ts));
+      } catch (e) {}
+    }
+    // Unread = messages from them that are newer than both the last message
+    // this device displayed from them AND the last message I sent (replying
+    // means I've seen everything before it). Works even with no saved read
+    // position, so existing unread chats still get a real count.
+    async function dmUnreadCountFor(name) {
+      const me = dmMe(), peerKey = dmUid(name);
+      let readTs = 0; try { readTs = Number(localStorage.getItem(dmReadKey(peerKey))) || 0; } catch (e) {}
+      const snap = await nsRef('dm/' + [me, peerKey].sort().join('__')).limitToLast(100).once('value');
+      const msgs = [];
+      snap.forEach((c) => { const v = c.val(); if (v && !v.unsent && v.ct && typeof v.ts === 'number') { msgs.push(v); } });
+      let myLast = 0;
+      msgs.forEach((v) => { if (v.from === me && v.ts > myLast) myLast = v.ts; });
+      const cutoff = Math.max(readTs, myLast);
+      let count = 0;
+      msgs.forEach((v) => { if (v.from !== me && v.ts > cutoff) count++; });
+      return count;
+    }
+    // While a chat is unread, watch its thread so a message deleted before it
+    // was seen lowers the count (or clears the unread state) right away.
+    const dmCrewWatch = {};  // peer uid -> firebase ref
+    function dmWatchCrewThread(peerKey, n) {
+      if (dmCrewWatch[peerKey]) return;
+      try {
+        const ref = nsRef('dm/' + [dmMe(), peerKey].sort().join('__')).limitToLast(100);
+        dmCrewWatch[peerKey] = ref;
+        ref.on('child_removed', () => { dmRefreshCrewPreviewByUid(peerKey); });
+      } catch (e) {}
+    }
+    function dmUnwatchCrewThread(peerKey) {
+      const ref = dmCrewWatch[peerKey]; if (!ref) return;
+      try { ref.off('child_removed'); } catch (e) {}
+      delete dmCrewWatch[peerKey];
+    }
+    function dmStopCrewWatches() { Object.keys(dmCrewWatch).forEach(dmUnwatchCrewThread); }
+    function dmPaintCrewRow(n) {
+      const el = document.getElementById('chat-crew-list');
+      if (!el) return;
+      const node = [...el.querySelectorAll('.chat-crew-preview')].find((x) => x.getAttribute('data-peer') === n);
+      if (!node) return;
+      const row = node.closest('.chat-crew-row');
+      const peerKey = dmUid(n);
+      const marker = !!(DM.unread && DM.unread[peerKey]);
+      let unread = marker;
+      if (marker) {
+        dmWatchCrewThread(peerKey, n);
+        const c = dmCrewCnt[peerKey];
+        if (c === undefined) {
+          dmUnreadCountFor(n).then((cnt) => { dmCrewCnt[peerKey] = cnt; dmPaintCrewRow(n); }).catch(() => {});
+        } else if (c === 0) {
+          // Everything unread was deleted before being seen: treat as read
+          // and clear the stale marker (also clears the toast / profile dot).
+          unread = false;
+          nsRef('dmUnread/' + dmMe() + '/' + peerKey).remove().catch(() => {});
+        } else {
+          node.textContent = c + ' new message' + (c === 1 ? '' : 's');
+        }
+        if (c === undefined) { /* count loading: leave text as is */ }
+      } else {
+        delete dmCrewCnt[peerKey];
+        dmUnwatchCrewThread(peerKey);
+      }
+      if (row) row.classList.toggle('unread', unread);
+      if (!unread) {
+        const pv = dmCrewPv[n];
+        node.textContent = !pv ? '' : (pv.locked ? '\uD83D\uDD12 Encrypted message' : (pv.mine ? 'You: ' : '') + pv.text);
+      }
+    }
+    // Toggle the unread look on each row from the live DM.unread markers.
+    function dmSyncCrewUnread() {
+      const el = document.getElementById('chat-crew-list');
+      if (!el) return;
+      el.querySelectorAll('.chat-crew-row').forEach((row) => {
+        const pv = row.querySelector('.chat-crew-preview');
+        const n = pv && pv.getAttribute('data-peer');
+        if (n) dmPaintCrewRow(n);
+      });
+    }
+    function dmApplyCrewPreview(n, pv) {
+      if (!pv) return;
+      dmCrewPv[n] = pv;
+      dmPaintCrewRow(n);
+    }
+    // Live-refresh one row's preview the moment a new message lands, without
+    // re-rendering the whole list. peerKey is the sender's uid (dmUid(name)).
+    function dmRefreshCrewPreviewByUid(peerKey) {
+      const el = document.getElementById('chat-crew-list');
+      if (!el) return;
+      const row = [...el.querySelectorAll('.chat-crew-preview')].find((x) => dmUid(x.getAttribute('data-peer')) === peerKey);
+      if (!row) {
+        // New chat partner not in the list yet: rebuild it if the list is showing.
+        const cp = document.getElementById('chat-panel');
+        if (cp && cp.classList.contains('crew-mode')) renderChatCrewList();
+        return;
+      }
+      const n = row.getAttribute('data-peer');
+      Promise.all([dmPreviewFor(n), dmUnreadCountFor(n)]).then(([pv, cnt]) => {
+        dmCrewCnt[peerKey] = cnt;
+        if (pv) dmCrewPv[n] = pv; else delete dmCrewPv[n];
+        dmPaintCrewRow(n);
+      }).catch(() => {});
     }
     // Last message of a chat, decrypted on this device, for the Crewmates list.
     // Needs the unlocked key; if it isn't available here we just say it's encrypted.
@@ -24354,8 +24467,34 @@ Answer: C</pre>
       return out.join(' ');
     }
 
+    // Sub-screens of the Messages popup that were opened from another screen of it
+    // (recovery-key restore, Google/Authenticator reset). Their X is a back arrow that
+    // returns to the screen they came from instead of closing all of Messages.
+    function dmStepParent() {
+      const m = DM.mode;
+      if (m === 'userec') return 'unlock';
+      if (m === 'wait' && DM.resetFlow) return DM.resetFlow;
+      if (m === 'totp' || m === 'enroll') return (DM.reset && DM.reset.purpose === 'newkey') ? 'thread' : 'unlock';
+      return null;
+    }
+    function dmSyncBackLook() {
+      const ov = dmEl('dm-overlay'); if (!ov) return;
+      const child = !!dmStepParent();
+      ov.classList.toggle('dm-step-child', child);
+      ov.classList.toggle('popup-child', child || ov.classList.contains('popup-child-open'));
+      const x = ov.querySelector('.nick-modal-head > .nick-modal-close');
+      if (x) { x.setAttribute('aria-label', child ? 'Back' : 'Close messages'); x.setAttribute('title', child ? 'Back' : 'Close'); }
+    }
+    function dmHeadClose() {
+      const parent = dmStepParent();
+      if (!parent) { closeDm(); return; }
+      ['dm-reckey', 'dm-totp', 'dm-pin', 'dm-pin2'].forEach((id) => { const el = dmEl(id); if (el) el.value = ''; });
+      DM.reset = null; DM.resetTok = (DM.resetTok || 0) + 1; DM.resetFlow = null;
+      if (parent === 'thread') { dmOpenThread(); } else { dmShow(parent); }
+    }
     function dmShow(mode) { // 'setup' | 'unlock' | 'thread' | 'wait'
       DM.mode = mode;
+      if (mode !== 'wait') DM.resetFlow = null;
       const thread = mode === 'thread';
       dmClosePops();
       dmEl('dm-key-btn').style.display = thread ? '' : 'none';
@@ -24390,6 +24529,7 @@ Answer: C</pre>
       else if (mode === 'reckey') t.textContent = 'Save this recovery key somewhere safe (a password manager or written down). If you forget your PIN, it restores all your messages. Anyone with this key and your account can read them, and we can\u2019t show it again or recover it for you.';
       else if (mode === 'userec') t.textContent = 'Enter your recovery key and choose a new Messages PIN. Your old messages will be restored.';
       else if (mode === 'wait') t.textContent = DM.peer + ' hasn\u2019t turned on encrypted messages yet. Once they open Messages for the first time, tap check again.';
+      dmSyncBackLook();
     }
 
     async function openDm(nickname) {
@@ -24546,6 +24686,8 @@ Answer: C</pre>
       const nick = currentChatUser && currentChatUser.nickname;
       const mine = String((currentChatUser && currentChatUser.email) || '').toLowerCase();
       const textEl = dmEl('dm-setup-text'), prevMode = DM.mode;
+      const tok = (DM.resetTok = (DM.resetTok || 0) + 1);   // going back mid-way cancels this run
+      DM.resetFlow = prevMode === 'wait' ? 'unlock' : prevMode;
       // While waiting for the server / Google, show only the message: no PIN box and no UNLOCK button,
       // so nothing can be typed before the next screen (the 6-digit code) is ready.
       const note = (msg) => {
@@ -24563,6 +24705,7 @@ Answer: C</pre>
       if (!mine || !nick) { fail('No Google account is linked to this Callsign.'); return; }
       note('Setting up\u2026');
       const st = await dmTotpCall({ action: 'totpStatus', nickname: nick });
+      if (tok !== DM.resetTok) return;
       if (!st || !st.ok) { fail('Couldn\u2019t reach the server. Please try again.'); return; }
       if (st.enrolled) {
         DM.reset = { nick, purpose }; dmShow('totp');
@@ -24571,10 +24714,12 @@ Answer: C</pre>
       }
       note('Waiting for Google\u2026');
       const g = await dmGoogleAuth();
+      if (tok !== DM.resetTok) return;
       if (!g) { fail('Google verification didn\u2019t complete. Please try again.'); return; }
       if (g.email !== mine) { fail('That Google account isn\u2019t the one linked to this Callsign.'); return; }
       note('Setting up\u2026');
       const b = await dmTotpCall({ action: 'totpBegin', nickname: nick, gToken: g.token });
+      if (tok !== DM.resetTok) return;
       if (!b || !b.ok || !b.secret) { fail(b ? (b.error || 'Couldn\u2019t start setup. Please try again.') : 'Couldn\u2019t reach the server. Please try again.'); return; }
       DM.reset = { nick, token: g.token, purpose };
       dmShow('enroll');
@@ -24662,6 +24807,7 @@ Answer: C</pre>
     async function dmRenderMsg(key, m, me) {
       if (!m || DM.seen.has(key)) return;
       DM.seen.add(key);
+      if (m.from !== me && DM.peer) dmMarkRead(dmUid(DM.peer), m.ts);
       const box = dmEl('dm-messages'); if (!box) return;
       if (m.unsent) return; // leftover stub from the old unsend; never shown
       let text, bad = false;
@@ -24752,6 +24898,7 @@ Answer: C</pre>
         const stamp = firebase.database.ServerValue.TIMESTAMP;
         await nsRef('dm/' + [me, peerKey].sort().join('__')).push({ from: me, ts: stamp, iv: dmB64(iv), ct: dmB64(ct) });
         nsRef('dmUnread/' + peerKey + '/' + me).set(stamp).catch(() => {});
+        try { dmRefreshCrewPreviewByUid(peerKey); } catch (e) {}
         input.value = '';
         dmCloseEmoji();
       } catch (err) {
@@ -24762,6 +24909,7 @@ Answer: C</pre>
     function closeDm() {
       dmCloseEmoji();
       const wasGate = DM.gate; DM.gate = false;
+      DM.resetTok = (DM.resetTok || 0) + 1; DM.resetFlow = null;
       if (DM.ref) { try { DM.ref.off(); } catch (e) {} DM.ref = null; }
       DM.aes = null; DM.olds = null; DM.peer = null; DM.keep = null; DM.recKeyShown = null; DM.reset = null; dmClosePops();
       const ov = dmEl('dm-overlay'); if (ov) { ov.classList.remove('visible', 'in-box', 'dm-gate'); ov.style.left = ov.style.top = ov.style.width = ov.style.height = ''; }
@@ -24784,10 +24932,12 @@ Answer: C</pre>
           const v = snap.val() || {};
           const open = dmEl('dm-overlay') && dmEl('dm-overlay').classList.contains('visible');
           Object.keys(v).forEach((k) => {
+            if (v[k] !== DM.unread[k]) { try { dmRefreshCrewPreviewByUid(k); } catch (e) {} }
             if (open && DM.peer && dmUid(DM.peer) === k) { nsRef('dmUnread/' + myUid + '/' + k).remove().catch(() => {}); return; }
             if (DM.unreadReady && v[k] !== DM.unread[k]) { const pk = Object.keys(latestPresenceData || {}).find((x) => latestPresenceData[x] && latestPresenceData[x].nickname && dmUid(latestPresenceData[x].nickname) === k); showWingsToast('\uD83D\uDCAC New message from ' + (pk ? latestPresenceData[pk].nickname : k)); }
           });
           DM.unread = v; DM.unreadReady = true;
+          try { dmSyncCrewUnread(); } catch (e) {}
           if (profileCardOpenFor) renderProfileCard(profileCardOpenFor, profileCache[profileCardOpenFor] || { bio: '', background: null });
         }, (err) => console.error('Messages unread error:', err));
         });
@@ -24795,6 +24945,7 @@ Answer: C</pre>
     }
     function dmStop() {
       if (DM.unreadRef) { try { DM.unreadRef.off('value'); } catch (e) {} DM.unreadRef = null; }
+      try { dmStopCrewWatches(); } catch (e) {}
       closeDm();
       DM.priv = null; DM.pubJwk = null; DM.rec = null; DM.unread = {}; DM.unreadReady = false;
     }
@@ -38452,5 +38603,104 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   window.addEventListener('load', function () { scanTree(document.body); });
 })();
 </script>
+
+<style>
+  /* ---- child popups: the X becomes a back arrow (goes back to the parent popup) ---- */
+  .popup-child .nick-modal-close::after,
+  .popup-child .ai-note-modal-close::after,
+  .popup-child .form-popup-close::after,
+  .popup-child .shop-pay-x::after,
+  .popup-child .chat-guidelines-close::after,
+  .popup-child .banned-list-close::after,
+  .popup-child .gift-wings-close::after,
+  .popup-child:not(:has(.profile-card-back)) .profile-card-close::after,
+  .popup-child .pfc-close::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0.62em;
+    height: 0.62em;
+    transform: translate(-50%, -50%);
+    background-color: currentColor;
+    pointer-events: none;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M6.8 1.2L3 5l3.8 3.8' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M6.8 1.2L3 5l3.8 3.8' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+  .popup-child .pfc-close { -webkit-text-fill-color: transparent; }
+</style>
+<script>
+/* Child popups. When a popup opens while another popup is already open
+   (i.e. it was opened from a button inside the parent), it is a child:
+   its X turns into a back arrow, and going back closes ONLY the child and
+   leaves the parent open. Escape on a child also just goes back one level.
+   (Sub-screens inside the Messages popup do the same via dmHeadClose().) */
+(function () {
+  var SEL = '.nick-modal-overlay, .banned-list-overlay, .ai-note-overlay, .shop-pay-overlay, .wings-store-overlay, .wings-thankyou-overlay, .gift-wings-overlay, .chat-guidelines-overlay, .form-popup-overlay, .hours-info-overlay, .profile-card-overlay, .daily-rewards-overlay, .store-popup-overlay, .pfc-overlay';
+  var CLOSE = '.nick-modal-close, .ai-note-modal-close, .form-popup-close, .shop-pay-x, .chat-guidelines-close, .banned-list-close, .gift-wings-close, .profile-card-close, .pfc-close';
+  var stack = [];
+  function prune() { stack = stack.filter(function (el) { return document.contains(el) && el.classList.contains('visible'); }); }
+  function setChild(el, isChild) {
+    el.classList.toggle('popup-child-open', isChild);
+    el.classList.toggle('popup-child', isChild || el.classList.contains('dm-step-child'));
+    el.querySelectorAll(CLOSE).forEach(function (b) {
+      if (isChild) { b.setAttribute('aria-label', 'Back'); b.setAttribute('title', 'Back'); }
+    });
+  }
+  function sync(el) {
+    prune();
+    var open = el.classList.contains('visible') && document.contains(el), at = stack.indexOf(el);
+    if (open && at === -1) { var isChild = stack.length > 0; stack.push(el); setChild(el, isChild); }
+    else if (!open) { if (at !== -1) stack.splice(at, 1); setChild(el, false); }
+  }
+  function watch(el) {
+    if (el._popupWatched) return; el._popupWatched = true;
+    new MutationObserver(function () { sync(el); }).observe(el, { attributes: true, attributeFilter: ['class'] });
+    sync(el);
+  }
+  function init() {
+    document.querySelectorAll(SEL).forEach(watch);
+    new MutationObserver(function (muts) {
+      muts.forEach(function (m) {
+        m.addedNodes.forEach(function (n) {
+          if (n.nodeType !== 1) return;
+          if (n.matches && n.matches(SEL)) watch(n);
+          if (n.querySelectorAll) n.querySelectorAll(SEL).forEach(watch);
+        });
+        if (m.removedNodes.length) prune();
+      });
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+  // A back click only goes back one level: nothing else sees it as an "outside" click.
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest(CLOSE);
+    if (b && b.closest('.popup-child')) e.stopPropagation();
+  });
+  // Escape on a child = back to the parent, never closes the parent too.
+  window.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    prune();
+    if (!stack.length) return;
+    var top = stack[stack.length - 1];
+    if (!top.classList.contains('popup-child')) return;
+    var b = top.querySelector(CLOSE);
+    if (!b) return;
+    e.stopImmediatePropagation(); e.preventDefault();
+    b.click();
+  }, true);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+</script>
+<style>
+  /* header bar for the flight-settings sub popups: the same .nick-modal-head bar the other
+     popups use (title left, back arrow right where the X sits), stretched edge to edge
+     over the card's padding */
+  .flight-sub-head { margin: -30px -26px 16px; text-align: left; }
+  /* .mockadmin-card h3 (17px + 16px bottom margin) was inflating the title; use the normal header title */
+  .flight-sub-head .flight-sub-title { margin: 0; font-size: 14px; letter-spacing: 0.02em; color: #fff; line-height: normal; }
+  .flight-sub-back svg { width: 18px; height: 18px; display: block; }
+  .flight-sub-back { display: flex; align-items: center; justify-content: center; flex: none; background: none; border: none; color: var(--rivet); cursor: pointer; padding: 0 4px; margin: 0; }
+  @media (hover: hover) { .flight-sub-back:hover { color: var(--accent); } }
+</style>
 </body>
 </html>
