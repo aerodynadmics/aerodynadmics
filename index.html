@@ -3956,7 +3956,8 @@
   .dm-setup p { margin: 0; line-height: 1.5; }
   .dm-setup input, .dm-input-row input { background: rgba(255,255,255,0.05); border: 1px solid var(--line); border-radius: 8px; color: #fff; padding: 13px 16px; font-size: 15px; font-family: inherit; outline: none; }
   .dm-setup input:focus, .dm-input-row input:focus { border-color: var(--line); box-shadow: none; }
-  .dm-err { color: #ff6b6b; font-size: 12px; min-height: 14px; }
+  /* Fixed slot: a message appearing/disappearing (or wrapping) never pushes the rows around it. */
+  .dm-err { color: #ff6b6b; font-size: 12px; line-height: 14px; height: 14px; overflow: visible; position: relative; z-index: 1; pointer-events: none; }
   .dm-err.info { color: #fff; }
   .dm-linkbtn { background: none; border: none; color: var(--rivet); font-size: 11.5px; cursor: pointer; text-decoration: underline; align-self: flex-start; padding: 0; }
   .dm-thread { display: flex; flex-direction: column; flex: 1; min-height: 0; }
@@ -5695,6 +5696,9 @@
   /* DM opened from the Crewmates tab: sits exactly on top of the Black Box panel */
   #dm-overlay.in-box { inset: auto; padding: 0; background: transparent; align-items: stretch; justify-content: stretch; }
   #dm-overlay.in-box .dm-modal { max-width: none; max-height: none; width: 100%; height: 100%; border-radius: 14px; box-shadow: -4px 0 20px rgba(0,0,0,0.3); }
+  /* PIN gate: shown on its own, centered over the page, before the Crewmates list appears */
+  #dm-overlay.dm-gate .dm-modal { height: auto; max-height: 90vh; max-width: 460px; }
+  #dm-overlay.dm-gate .dm-back-btn { display: none; }
   .dm-back-btn { display: none; align-items: center; justify-content: center; background: none; border: none; color: #fff; cursor: pointer; padding: 4px 6px; border-radius: 8px; opacity: 0.9; }
   @media (hover: hover) { .dm-back-btn:hover { background: rgba(255,255,255,0.1); opacity: 1; } }
   #dm-overlay.in-box .dm-back-btn { display: flex; }
@@ -22928,11 +22932,51 @@ Answer: C</pre>
       panel.classList.toggle('crew-mode', crew);
       document.getElementById('chat-tab-blackbox').classList.toggle('active', !crew);
       document.getElementById('chat-tab-crew').classList.toggle('active', crew);
-      if (crew) renderChatCrewList();
+      if (crew) {
+        if (DM.priv) renderChatCrewList();
+        else { const cl = document.getElementById('chat-crew-list'); if (cl) cl.innerHTML = ''; dmGateOpen(); }
+      }
+    }
+    // The Messages PIN prompt comes first, in its own centered popup, and the Crewmates
+    // list only shows once messages are unlocked on this device.
+    async function dmGateOpen() {
+      if (!currentChatUser) return;
+      try {
+        ensureFirebaseApp();
+        if (!(await waitForFirebaseUidMatching(currentChatUser.nickname, 6000))) throw new Error('not signed in to Firebase');
+        const panel = document.getElementById('chat-panel');
+        if (!panel || !panel.classList.contains('crew-mode')) return;
+        if (!DM.priv) {
+          const state = await dmInitKeys();
+          if (state !== 'ready') {
+            DM.gate = true; DM.peer = null;
+            dmEl('dm-title').textContent = 'Messages';
+            dmEl('dm-warn').style.display = 'none';
+            dmEl('dm-pin').value = ''; dmEl('dm-pin2').value = '';
+            const ov = dmEl('dm-overlay');
+            ov.classList.remove('in-box'); ov.style.left = ov.style.top = ov.style.width = ov.style.height = '';
+            ov.classList.add('dm-gate', 'visible');
+            dmShow(state);
+            return;
+          }
+        }
+        dmGateDone();
+      } catch (err) {
+        console.error('Messages init error:', err);
+        showWingsToast('Couldn\u2019t start encrypted messages. Please try again.');
+        setChatMode('blackbox');
+      }
+    }
+    function dmGateDone() {
+      DM.gate = false;
+      const ov = dmEl('dm-overlay'); if (ov) ov.classList.remove('visible', 'dm-gate');
+      const cp = document.getElementById('chat-panel');
+      if (cp && cp.classList.contains('crew-mode')) renderChatCrewList();
     }
     function dmPlaceInBox() {
       const ov = document.getElementById('dm-overlay'), panel = document.getElementById('chat-panel');
       if (!ov || !panel) return;
+      if (DM.gate) { ov.classList.remove('in-box'); return; }
       const inBox = panel.classList.contains('visible') && panel.classList.contains('crew-mode');
       ov.classList.toggle('in-box', inBox);
       if (inBox) {
@@ -22994,10 +23038,10 @@ Answer: C</pre>
         if (!aes || aes.priv !== DM.priv) {
           const peer = await dmDerivePeer(peerKey);
           if (!peer) return { locked: true };
-          aes = dmPreviewAes[peerKey] = { priv: DM.priv, key: peer.aes };
+          aes = dmPreviewAes[peerKey] = { priv: DM.priv, key: peer.aes, olds: peer.olds || [] };
         }
-        const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: dmUnB64(last.iv) }, aes.key, dmUnB64(last.ct));
-        return { text: dmDec.decode(pt).replace(/\s+/g, ' ').trim(), mine: last.from === me };
+        const plain = await dmDecryptMsg(last, aes.key, aes.olds);
+        return { text: plain.replace(/\s+/g, ' ').trim(), mine: last.from === me };
       } catch (e) { return { locked: true }; }
     }
     function toggleChatPanel() {
@@ -24118,7 +24162,7 @@ Answer: C</pre>
     // same AES-GCM key from (my private, their public) and each message is
     // encrypted with a fresh random IV before it is written to dm/<pair>/.
     // Firebase only ever sees ciphertext + who/when.
-    const DM = { priv: null, pubJwk: null, rec: null, peer: null, aes: null, ref: null, seen: new Set(), unread: {}, unreadRef: null, unreadReady: false, mode: '' };
+    const DM = { priv: null, pubJwk: null, rec: null, peer: null, aes: null, ref: null, seen: new Set(), unread: {}, unreadRef: null, unreadReady: false, mode: '', gate: false };
     const dmEnc = new TextEncoder(), dmDec = new TextDecoder();
     const DM_ECDH = { name: 'ECDH', namedCurve: 'P-256' };
     function dmB64(buf) { const a = new Uint8Array(buf); let s = ''; for (let i = 0; i < a.length; i++) s += String.fromCharCode(a[i]); return btoa(s); }
@@ -24167,9 +24211,33 @@ Answer: C</pre>
       const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
       const wrap = await dmPinKey(pin, salt);
       const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, wrap, dmEnc.encode(JSON.stringify(privJwk)));
-      const node = { pub: JSON.stringify(pubJwk), backup: { salt: dmB64(salt), iv: dmB64(iv), data: dmB64(data) } };
+      // Keep the OLD public key(s) published next to the new one (inside the same `pub` value, which
+      // crewmates can already read). Public keys are not secret. This lets the other person keep
+      // reading their history after you reset, while you (whose old private key is gone) lose yours.
+      let hist = [];
+      try {
+        const curStr = (await nsRef('dmKeys/' + dmMe() + '/pub').once('value')).val();
+        if (curStr) {
+          const o = JSON.parse(curStr);
+          hist = Array.isArray(o.h) ? o.h.filter((k) => k && k.x && k.y) : [];
+          if (o.x && o.y && (o.x !== pubJwk.x || o.y !== pubJwk.y)) hist.push({ kty: o.kty, crv: o.crv, x: o.x, y: o.y });
+        }
+      } catch (e) { console.error('Key history read error:', e); }
+      hist = hist.filter((k, i) => !(k.x === pubJwk.x && k.y === pubJwk.y) && hist.findIndex((q) => q.x === k.x && q.y === k.y) === i).slice(-20);
+      const node = { backup: { salt: dmB64(salt), iv: dmB64(iv), data: dmB64(data) } };
       if (DM.keep && DM.keep.recovery) node.recovery = DM.keep.recovery;
-      await nsRef('dmKeys/' + dmMe()).set(node);
+      const writeNode = async (h) => {
+        node.pub = JSON.stringify(h.length ? Object.assign({}, pubJwk, { h }) : pubJwk);
+        await nsRef('dmKeys/' + dmMe()).set(node);
+      };
+      try { await writeNode(hist); }
+      catch (e1) {
+        // If the database rules still cap the `pub` value (400 chars) a long history is refused:
+        // fall back to the newest old key only, then to none, so a reset never fails because of this.
+        if (!hist.length) throw e1;
+        console.error('Key history too large for the rules, trimming:', e1);
+        try { await writeNode(hist.slice(-1)); } catch (e2) { await writeNode([]); }
+      }
       DM.rec = node; DM.keep = null;
       try { localStorage.setItem('dmPriv:' + dmMe(), JSON.stringify(privJwk)); } catch (e) {}
       await dmUsePriv(privJwk, pubJwk);
@@ -24253,13 +24321,30 @@ Answer: C</pre>
       try { localStorage.setItem('dmPriv:' + dmMe(), JSON.stringify(privJwk)); } catch (e) {}
       await dmUsePriv(privJwk, JSON.parse(DM.rec.pub));
     }
+    async function dmDecryptMsg(m, aes, olds) {
+      const iv = dmUnB64(m.iv), ct = dmUnB64(m.ct);
+      const tries = [aes].concat(olds || []);
+      for (const k of tries) {
+        try { return dmDec.decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, k, ct)); } catch (e) {}
+      }
+      throw new Error('cannot decrypt');
+    }
     async function dmDerivePeer(peerKey) {
       const snap = await nsRef('dmKeys/' + peerKey + '/pub').once('value');
       if (!snap.val()) return null;
       const pubJwk = JSON.parse(snap.val());
-      const pub = await crypto.subtle.importKey('jwk', pubJwk, DM_ECDH, true, []);
+      const { h: oldPubs, ...curJwk } = pubJwk;
+      const pub = await crypto.subtle.importKey('jwk', curJwk, DM_ECDH, true, []);
       const aes = await crypto.subtle.deriveKey({ name: 'ECDH', public: pub }, DM.priv, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
-      return { aes, pubJwk };
+      // Keys from before the peer's resets: only usable by someone who still holds their own private key.
+      const olds = [];
+      for (const k of (Array.isArray(oldPubs) ? oldPubs : [])) {
+        try {
+          const op = await crypto.subtle.importKey('jwk', { kty: k.kty, crv: k.crv, x: k.x, y: k.y }, DM_ECDH, true, []);
+          olds.push(await crypto.subtle.deriveKey({ name: 'ECDH', public: op }, DM.priv, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']));
+        } catch (e) {}
+      }
+      return { aes, pubJwk: curJwk, olds };
     }
     async function dmSafetyCode(a, b) {
       const joined = [a.x + a.y, b.x + b.y].sort().join('|');
@@ -24309,7 +24394,7 @@ Answer: C</pre>
 
     async function openDm(nickname) {
       if (!currentChatUser || !dmCanMessage(nickname)) return;
-      DM.peer = nickname;
+      DM.peer = nickname; DM.gate = false; dmEl('dm-overlay').classList.remove('dm-gate');
       { const av = getLiveAvatar(nickname) || '\u2708\uFE0F', border = getLiveBorderClass(nickname) || '';
         dmEl('dm-title').innerHTML = '<span class="pf-av chat-msg-avatar' + (border ? ' ' + border : '') + '" data-nickname="' + escapeHtml(nickname) + '"' + avatarStyleAttr(av) + '>' + escapeHtml(avatarGlyph(av)) + '</span><span data-nickname-anim="' + escapeHtml(nickname) + '" data-text="' + escapeHtml(nickname) + '" class="' + (getLiveNicknameAnimClass(nickname) || '') + '">' + escapeHtml(nickname) + '</span>'; if (window.lockBreatheWidths) window.lockBreatheWidths(dmEl('dm-title')); }
       dmEl('dm-warn').style.display = 'none';
@@ -24405,7 +24490,23 @@ Answer: C</pre>
         } catch (e) { resolve(null); }
       });
     }
-    function dmTotpCall(params) { return new Promise((resolve) => jsonpRequest(params, resolve, { timeoutMs: 20000 })); }
+    // The backend (Apps Script) sometimes drops a request or is slow to wake up, so a single
+    // try fails every now and then. Retry a few times with a longer wait each time.
+    // Status/begin can safely be repeated. Verify/confirm are only repeated when the request failed
+    // right away (it never reached the server); after a long timeout we don't resend a one-time code.
+    async function dmTotpCall(params) {
+      const repeatable = params.action === 'totpStatus' || params.action === 'totpBegin';
+      const attempts = 3;
+      for (let i = 0; i < attempts; i++) {
+        const t0 = Date.now();
+        const res = await new Promise((resolve) => jsonpRequest(params, resolve, { timeoutMs: 15000 + i * 5000 }));
+        if (res) return res;
+        const failedFast = Date.now() - t0 < 5000;
+        if (i === attempts - 1 || !(repeatable || failedFast)) return null;
+        await new Promise((r) => setTimeout(r, 800 * (i + 1)));
+      }
+      return null;
+    }
     function dmDrawQr(uri) {
       const box = dmEl('dm-qr'); box.innerHTML = '';
       const noTip = () => { box.removeAttribute('title'); box.querySelectorAll('[title]').forEach((n) => n.removeAttribute('title')); };
@@ -24424,7 +24525,7 @@ Answer: C</pre>
       const nick = currentChatUser && currentChatUser.nickname;
       const mine = String((currentChatUser && currentChatUser.email) || '').toLowerCase();
       if (!mine || !nick) { dmEl('dm-setup-err').textContent = 'No Google account is linked to this Callsign.'; return; }
-      const ok = await adminConfirm('Reset without your recovery key? You\u2019ll verify with Google Authenticator and get new encryption keys. Your old messages will become unreadable, and your crewmates will see a new safety code. If you have your recovery key, cancel and use it instead to keep your messages.');
+      const ok = await adminConfirm('Reset without your recovery key? You\u2019ll verify with Google Authenticator and get new encryption keys. Your old messages will become unreadable for you (your crewmates keep theirs), and they will see a new safety code. If you have your recovery key, cancel and use it instead to keep your messages.');
       if (!ok) return;
       await dmStartTotp('reset');
     }
@@ -24444,9 +24545,21 @@ Answer: C</pre>
       const err = dmEl('dm-setup-err');
       const nick = currentChatUser && currentChatUser.nickname;
       const mine = String((currentChatUser && currentChatUser.email) || '').toLowerCase();
-      const textEl = dmEl('dm-setup-text'), prevText = textEl.textContent;
-      const note = (msg) => { err.classList.remove('info'); err.textContent = ''; textEl.textContent = msg; };
-      const fail = (msg) => { err.classList.remove('info'); textEl.textContent = prevText; if (purpose === 'newkey') { err.textContent = ''; showWingsToast(msg); dmOpenThread(); } else err.textContent = msg; };
+      const textEl = dmEl('dm-setup-text'), prevMode = DM.mode;
+      // While waiting for the server / Google, show only the message: no PIN box and no UNLOCK button,
+      // so nothing can be typed before the next screen (the 6-digit code) is ready.
+      const note = (msg) => {
+        err.classList.remove('info');
+        if (DM.mode !== 'wait') dmShow('wait');
+        ['dm-pin', 'dm-pin2'].forEach((id) => { dmEl(id).style.display = 'none'; });
+        ['dm-setup-btn', 'dm-reset-btn', 'dm-userec-btn'].forEach((id) => { dmEl(id).style.display = 'none'; });
+        err.textContent = ''; textEl.textContent = msg;
+      };
+      const fail = (msg) => {
+        err.classList.remove('info');
+        if (purpose === 'newkey') { err.textContent = ''; showWingsToast(msg); dmOpenThread(); }
+        else { dmShow(prevMode === 'wait' ? 'unlock' : prevMode); err.textContent = msg; }
+      };
       if (!mine || !nick) { fail('No Google account is linked to this Callsign.'); return; }
       note('Setting up\u2026');
       const st = await dmTotpCall({ action: 'totpStatus', nickname: nick });
@@ -24462,7 +24575,7 @@ Answer: C</pre>
       if (g.email !== mine) { fail('That Google account isn\u2019t the one linked to this Callsign.'); return; }
       note('Setting up\u2026');
       const b = await dmTotpCall({ action: 'totpBegin', nickname: nick, gToken: g.token });
-      if (!b || !b.ok || !b.secret) { fail((b && b.error) || 'Couldn\u2019t start setup. Please try again.'); return; }
+      if (!b || !b.ok || !b.secret) { fail(b ? (b.error || 'Couldn\u2019t start setup. Please try again.') : 'Couldn\u2019t reach the server. Please try again.'); return; }
       DM.reset = { nick, token: g.token, purpose };
       dmShow('enroll');
       const uri = 'otpauth://totp/' + encodeURIComponent('Aerodynadmics:' + nick) + '?secret=' + b.secret + '&issuer=Aerodynadmics';
@@ -24481,7 +24594,8 @@ Answer: C</pre>
         : await dmTotpCall({ action: 'totpVerify', nickname: r.nick, code });
       btn.disabled = false;
       err.classList.remove('info');
-      if (!res || !res.ok) { err.textContent = (res && res.error) || 'That code didn\u2019t work. Try again.'; return; }
+      if (!res) { err.textContent = 'Couldn\u2019t reach the server. Please try again in a moment.'; return; }
+      if (!res.ok) { err.textContent = res.error || 'That code didn\u2019t work. Try again.'; return; }
       err.textContent = '';
       if (r.purpose === 'newkey') { // verified: just replace the recovery key, keep the keys and messages
         DM.reset = null; dmEl('dm-totp').value = '';
@@ -24495,10 +24609,11 @@ Answer: C</pre>
       dmEl('dm-setup-text').textContent = 'Verified. Choose a new Messages PIN. It protects the backup of your new key. We can\u2019t recover it if you forget it again.';
     }
     async function dmOpenThread() {
+      if (DM.gate) { dmGateDone(); return; }
       const me = dmMe(), peerKey = dmUid(DM.peer);
       const peer = await dmDerivePeer(peerKey);
       if (!peer) { dmShow('wait'); dmEl('dm-setup-btn').style.display = ''; return; }
-      DM.aes = peer.aes;
+      DM.aes = peer.aes; DM.olds = peer.olds || [];
       dmShow('thread');
       const code = await dmSafetyCode(DM.pubJwk, peer.pubJwk);
       dmEl('dm-code').textContent = 'Safety code ' + code;
@@ -24551,8 +24666,7 @@ Answer: C</pre>
       if (m.unsent) return; // leftover stub from the old unsend; never shown
       let text, bad = false;
       try {
-        const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: dmUnB64(m.iv) }, DM.aes, dmUnB64(m.ct));
-        text = dmDec.decode(pt);
+        text = await dmDecryptMsg(m, DM.aes, DM.olds);
       } catch (e) { text = '\uD83D\uDD12 Can\u2019t decrypt this message (keys changed)'; bad = true; }
       const empty = dmEl('dm-empty'); if (empty) empty.remove();
       const div = document.createElement('div');
@@ -24647,10 +24761,12 @@ Answer: C</pre>
     }
     function closeDm() {
       dmCloseEmoji();
+      const wasGate = DM.gate; DM.gate = false;
       if (DM.ref) { try { DM.ref.off(); } catch (e) {} DM.ref = null; }
-      DM.aes = null; DM.peer = null; DM.keep = null; DM.recKeyShown = null; DM.reset = null; dmClosePops();
-      const ov = dmEl('dm-overlay'); if (ov) { ov.classList.remove('visible', 'in-box'); ov.style.left = ov.style.top = ov.style.width = ov.style.height = ''; }
-      { const cp = document.getElementById('chat-panel'); if (cp && cp.classList.contains('crew-mode')) renderChatCrewList(); }
+      DM.aes = null; DM.olds = null; DM.peer = null; DM.keep = null; DM.recKeyShown = null; DM.reset = null; dmClosePops();
+      const ov = dmEl('dm-overlay'); if (ov) { ov.classList.remove('visible', 'in-box', 'dm-gate'); ov.style.left = ov.style.top = ov.style.width = ov.style.height = ''; }
+      if (wasGate && !DM.priv) setChatMode('blackbox');
+      else { const cp = document.getElementById('chat-panel'); if (cp && cp.classList.contains('crew-mode')) renderChatCrewList(); }
     }
     // Live unread markers: dmUnread/<me>/<sender> = last send time. Toasts on
     // new messages and shows a red dot on the profile card's Message button.
