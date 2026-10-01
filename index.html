@@ -17909,6 +17909,8 @@ Answer: C</pre>
         const o = JSON.parse(_e2eeDec.decode(pt));
         const m = Object.assign({}, raw, { text: String(o.t == null ? '' : o.t) });
         if (o.r && typeof o.r === 'object') m.replyTo = o.r;
+        // Sealed system line ("a wild '<callsign>' appeared/disappeared!") in a private flight.
+        if (o.s === 1) m.system = true;
         return m;
       } catch (e) {
         return fail('\uD83D\uDD12 Could not decrypt this message');
@@ -19328,6 +19330,7 @@ Answer: C</pre>
         upd['members/' + nick] = null;
         upd['removed/' + nick] = true;
         await nsRef('flightList/' + id).update(upd);
+        announceFlightDeparture(id, nick);
         showWingsToast('\u2708\uFE0F ' + nick + ' was removed from \"' + f.name + '\"');
       } catch (err) {
         console.error('Remove member error:', err);
@@ -26083,16 +26086,41 @@ Answer: C</pre>
     // private flight's own Black Box (flightMessages/<flight id>) when its
     // creator makes the flight or a soul joins it.
     function announceFlightArrival(flightId, nickname) {
-      if (!flightId || !nickname || !chatConfigIsFilledIn()) return;
+      postFlightSystemLine(flightId, `a wild '${nickname}' appeared!`);
+    }
+    function announceFlightDeparture(flightId, nickname) {
+      postFlightSystemLine(flightId, `a wild '${nickname}' disappeared!`);
+    }
+
+    // Private flights' Black Boxes are end-to-end encrypted and only writable
+    // with the real Firebase sign-in, so a plain, nickname-less system push is
+    // rejected by the database rules (and the old code never waited for the
+    // sign-in either). Seal the line like a normal message instead and flag it
+    // as a system line inside the sealed payload; the reader turns it back into
+    // a centered system row after decrypting.
+    async function postFlightSystemLine(flightId, text) {
+      if (!flightId || !text || !chatConfigIsFilledIn()) return;
+      // Public rail flights keep the plain system message.
+      if (isRailFlightId(flightId)) { postBlackBoxSystemMessage(flightId, text); return; }
       try {
+        if (!currentChatUser) return;
         ensureFirebaseApp();
-        nsRef('flightMessages/' + flightId).push({
-          system: true,
-          text: `a wild '${nickname}' appeared!`,
+        const me = currentChatUser.nickname;
+        await waitForFirebaseUidMatching(me, 10000);
+        if (!FLIGHT_KEYS[flightId]) {
+          const raw = e2eeGetRaw(flightId);
+          if (raw) FLIGHT_KEYS[flightId] = await e2eeImportRaw(raw);
+        }
+        if (!FLIGHT_KEYS[flightId]) throw new Error('no flight key');
+        const sealed = await e2eeEncryptMessage(flightId, me, { t: text, s: 1 });
+        await nsRef('flightMessages/' + flightId).push({
+          nickname: me,
+          avatar: currentChatUser.avatar || '\u2708\uFE0F',
+          text: sealed,
           ts: firebase.database.ServerValue.TIMESTAMP
-        }).catch(err => console.error('Flight arrival announcement denied:', err));
+        });
       } catch (err) {
-        console.error('Flight arrival announcement error:', err);
+        console.error('Flight system announcement error:', err);
       }
     }
 
