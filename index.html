@@ -3953,6 +3953,12 @@
   .dm-head-btn.attn::after { content: ''; position: absolute; top: 2px; right: 3px; width: 8px; height: 8px; border-radius: 50%; background: #ff4d4d; }
   .dm-pop.dm-secure, .dm-pop.dm-recover { display: none; position: absolute; top: calc(100% + 6px); left: 12px; right: 12px; z-index: 6; background: var(--blueprint-dark); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 8px 22px rgba(0,0,0,0.5); }
   .dm-pop.open { display: flex; }
+  /* Floating recovery-key button (Crewmates list, bottom right) and its popup */
+  .crew-key-fab { display: none; position: absolute; right: 16px; bottom: 16px; z-index: 7; width: 46px; height: 46px; padding: 0; align-items: center; justify-content: center; border-radius: 50%; background: var(--blueprint-dark); border: 1px solid var(--line); box-shadow: 0 6px 18px rgba(0,0,0,0.5); font-size: 20px; line-height: 1; cursor: pointer; }
+  .chat-panel.crew-mode .crew-key-fab.ready { display: flex; }
+  @media (hover: hover) { .crew-key-fab:hover { background: var(--accent); border-color: var(--accent); color: transparent; text-shadow: 0 0 0 var(--blueprint-dark); } }
+  .crew-key-fab.attn::after { content: ''; position: absolute; top: 3px; right: 3px; width: 10px; height: 10px; border-radius: 50%; background: #ff4d4d; }
+  .chat-panel > .dm-pop.dm-recover { top: auto; left: auto; right: 16px; bottom: 74px; width: min(300px, calc(100% - 32px)); box-sizing: border-box; border-radius: 10px; }
   .dm-warn { padding: 7px 16px; font-size: 11.5px; color: #ff6b6b; background: rgba(255,107,107,0.1); }
   .dm-setup { padding: 18px 16px; display: flex; flex-direction: column; gap: 10px; font-size: 12.5px; color: var(--paper); overflow-y: auto; }
   .dm-setup p { margin: 0; line-height: 1.5; }
@@ -3969,6 +3975,8 @@
   .dm-msg { position: relative; max-width: 72%; padding: 10px 15px; border-radius: 18px; font-size: 16px; line-height: 1.45; word-break: break-word; white-space: pre-wrap; background: rgba(255,255,255,0.08); color: #fff; align-self: flex-start; border-bottom-left-radius: 4px; }
   .dm-msg.mine { align-self: flex-end; background: var(--accent); color: var(--blueprint-dark); border-bottom-left-radius: 14px; border-bottom-right-radius: 4px; }
   .dm-msg.bad { font-style: italic; opacity: 0.7; }
+  /* "Seen" marker: shown only under MY latest message, once the crewmate has opened the chat after it. */
+  .dm-seen { align-self: flex-end; margin: -5px 4px 0 0; font-size: 11px; color: var(--rivet); line-height: 1; }
   .dm-msg time { display: block; font-size: 11px; opacity: 0.6; margin-top: 3px; text-align: right; }
   .dm-msg-foot { display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
   .dm-msg-foot time { margin-top: 3px; }
@@ -5676,8 +5684,216 @@
   /* Black Box / Crewmates switcher */
   .chat-mode-tabs { display: flex; gap: 8px; padding: 10px 18px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
   .chat-mode-tab { flex: 1; background: rgba(255,255,255,0.07); border: 1px solid var(--line); border-radius: 10px; color: #fff; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 10px; cursor: pointer; }
-  @media (hover: hover) { .chat-mode-tab:not(.active):hover { background: rgba(255,255,255,0.15); } }
+  @media (hover: hover) { .chat-mode-tab:not(.active):hover { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); } }
   .chat-mode-tab.active { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
+
+  /* ==========================================================================
+     VIDEO CALL TAB (Discord-style)  --  see VIDEOCALL HANDOFF block in the JS
+     Only shown inside PRIVATE flights. Scoped to #chat-video-view / .vc-*.
+     ========================================================================== */
+  .chat-mode-tab#chat-tab-video { display: none; }
+  .chat-mode-tab#chat-tab-video.show { display: block; }
+  /* 3 tabs share one row: tighten padding so labels still fit */
+  .chat-mode-tabs.has-video .chat-mode-tab { padding-left: 6px; padding-right: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chat-panel.video-mode .chat-messages,
+  .chat-panel.video-mode .chat-locked-note,
+  .chat-panel.video-mode .chat-reply-preview,
+  .chat-panel.video-mode .chat-mention-suggest,
+  .chat-panel.video-mode .chat-emoji-picker,
+  .chat-panel.video-mode .chat-input-row { display: none !important; }
+
+  #chat-video-view {
+    --vc-bg: #020c18; --vc-tile: #0c2440; --vc-tile-hi: #12365a;
+    --vc-green: #23a55a; --vc-red: #f23f43; --vc-text: #eef3f6; --vc-muted: #9fbbd3;
+    display: none; flex: 1; min-height: 0; flex-direction: column;
+    background: radial-gradient(ellipse at 50% 50%, rgb(8, 45, 82), rgb(2, 12, 24) 70%) fixed; border: 1px solid rgba(63,109,146,0.55); margin: 0 12px 12px; border-radius: 10px; overflow: hidden;
+    font-family: 'Space Grotesk', sans-serif; color: var(--vc-text);
+  }
+  .chat-panel.video-mode #chat-video-view { display: flex; }
+
+  /* ---- lobby (before joining) ---- */
+  .vc-lobby { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; text-align: center; }
+  #chat-video-view.in-call .vc-lobby { display: none; }
+  .vc-lobby-icon { width: 64px; height: 64px; border-radius: 50%; background: var(--vc-tile); display: flex; align-items: center; justify-content: center; color: var(--vc-muted); }
+  .vc-lobby-title { font-size: 20px; font-weight: 700; }
+  .vc-lobby-sub { font-size: 13.5px; color: var(--vc-muted); line-height: 1.45; max-width: 300px; }
+  .vc-lobby-avatars { display: flex; justify-content: center; flex-wrap: wrap; gap: 26px 28px; min-height: 0; padding: 14px 10px 18px; margin: 6px 0; }
+  .vc-lobby-avatars:empty { display: none; }
+  .vc-lobby-avatars .pf-av.chat-msg-avatar { width: 32px; height: 32px; min-width: 32px; max-width: 32px; font-size: 18px; margin: 0; top: 0; }
+  .vc-lobby-avatars { flex: none; }
+  .vc-lobby-avatars .chat-msg-avatar { top: 0; width: 32px; height: 32px; min-width: 32px; max-width: 32px; flex: none; aspect-ratio: 1 / 1; font-size: 18px; margin: 0; }
+  .vc-lobby-more { width: 32px; height: 32px; min-width: 32px; flex: none; border-radius: 50%; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: var(--vc-tile); color: var(--vc-muted); font-size: 12px; font-weight: 700; line-height: 1; box-shadow: 0 0 0 2px var(--line); }
+  .vc-lobby .mockadmin-publish-btn { flex: none; align-self: center; width: auto; min-width: 160px; height: auto; padding: 12px 28px; margin-top: 10px; font-size: 13px; letter-spacing: .06em; line-height: 1.2; }
+  .vc-lobby-icon { flex: none; }
+  .vc-lobby-title { margin-top: 4px; }
+
+  /* ---- stage (in call) ---- */
+  .vc-stage { display: none; flex: 1; min-height: 0; flex-direction: column; }
+  #chat-video-view.in-call .vc-stage { display: flex; }
+  .vc-grid { flex: 1; min-height: 0; display: grid; gap: 8px; padding: 8px; align-content: center; overflow-y: auto; scrollbar-width: none; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+  .vc-grid::-webkit-scrollbar { display: none; }
+  .vc-tile { position: relative; background: var(--vc-tile); border-radius: 8px; aspect-ratio: 16 / 9; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 0 var(--vc-green); transition: box-shadow 0.12s; }
+  /* solo in the call: the one tile fills the whole stage instead of collapsing into a thin strip */
+  .vc-grid[data-n="1"] { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); align-content: stretch; overflow: hidden; }
+  /* camera off: let the page gradient show through and make the avatar big (.pf-av rule later in the file was shrinking it to 24px) */
+  .vc-grid[data-n="1"] .vc-tile { background: transparent; }
+  /* avatar size scales with how many people are in the call: fewer people = bigger avatar */
+  .vc-av .pf-av.chat-msg-avatar { top: 0; margin: 0; flex: none; aspect-ratio: 1 / 1; width: 60px; height: 60px; font-size: 32px; }
+  .vc-grid[data-n="1"] .vc-av .pf-av.chat-msg-avatar { width: 124px; height: 124px; font-size: 66px; box-shadow: 0 0 0 4px var(--line); }
+  .vc-grid[data-n="2"] .vc-av .pf-av.chat-msg-avatar { width: 96px; height: 96px; font-size: 52px; }
+  .vc-grid[data-n="3"] .vc-av .pf-av.chat-msg-avatar,
+  .vc-grid[data-n="4"] .vc-av .pf-av.chat-msg-avatar { width: 76px; height: 76px; font-size: 40px; }
+  .vc-grid[data-n="5"] .vc-av .pf-av.chat-msg-avatar,
+  .vc-grid[data-n="6"] .vc-av .pf-av.chat-msg-avatar { width: 60px; height: 60px; font-size: 32px; }
+  .vc-grid.has-focus .vc-tile.focused .vc-av .pf-av.chat-msg-avatar { width: 140px; height: 140px; font-size: 74px; }
+  .vc-grid.has-focus .vc-tile:not(.focused) .vc-av .pf-av.chat-msg-avatar { width: 72px; height: 72px; font-size: 38px; }
+  .vc-grid[data-n="1"] { padding: 0; gap: 0; }
+  .vc-grid[data-n="1"] .vc-tile { aspect-ratio: auto; height: 100%; width: 100%; min-height: 160px; border-radius: 0; }
+  /* solo: control bar floats over the video (over a soft shade) so the video fills the whole panel */
+  .vc-stage { position: relative; }
+  .vc-grid[data-n="1"] + .vc-bar { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding-top: 28px; background: linear-gradient(to top, rgba(0,0,0,0.55), rgba(0,0,0,0)); pointer-events: none; }
+  .vc-grid[data-n="1"] + .vc-bar .vc-btn { pointer-events: auto; background: rgba(2,12,24,0.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .vc-grid[data-n="1"] + .vc-bar .vc-btn.off { background: #f2f3f5; }
+  .vc-grid[data-n="1"] + .vc-bar .vc-btn.on { background: var(--vc-green); }
+  .vc-grid[data-n="1"] + .vc-bar .vc-btn.leave { background: var(--vc-red); }
+  .vc-grid[data-n="1"] .vc-name { left: 12px; bottom: 12px; max-width: calc(50% - 140px); }
+  @media (max-width: 480px) { .vc-grid[data-n="1"] .vc-name { bottom: 76px; max-width: calc(100% - 24px); } }
+  /* even spacing: same gap on top, sides and bottom of the video panel */
+  .chat-panel.video-mode #chat-video-view { margin: 12px; }
+  /* Discord: a green ring around whoever is speaking */
+  .vc-tile.speaking { box-shadow: 0 0 0 2px var(--vc-green); }
+  .vc-tile video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; display: none; }
+  .vc-tile.has-video video { display: block; }
+  .vc-tile.has-video .vc-av { display: none; }
+  .vc-tile.mirror video { transform: scaleX(-1); }
+  .vc-tile.screen video { object-fit: contain; }
+  /* per-tile full screen button: only on a tile that is sharing its screen */
+  .vc-tile-fs { display: none; position: absolute; top: 8px; right: 8px; z-index: 3; width: 32px; height: 32px; padding: 0; border: none; border-radius: 8px; background: rgba(2,12,24,0.72); color: #fff; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  .vc-tile-fs svg { width: 20px; height: 20px; fill: currentColor; pointer-events: none; }
+  .vc-tile-fs .vc-tfs-out { display: none; }
+  .vc-tile.tile-fs .vc-tile-fs .vc-tfs-in { display: none; }
+  .vc-tile.tile-fs .vc-tile-fs .vc-tfs-out { display: block; }
+  .vc-tile.screen .vc-tile-fs { display: flex; }
+  @media (hover: hover) { .vc-tile-fs:hover { background: rgba(18,54,90,0.95); } }
+  .vc-tile.screen.reconnecting::before { right: 48px; }
+  .vc-grid.has-focus .vc-tile:not(.focused) .vc-tile-fs { top: 4px; right: 4px; width: 24px; height: 24px; border-radius: 6px; }
+  .vc-grid.has-focus .vc-tile:not(.focused) .vc-tile-fs svg { width: 16px; height: 16px; }
+  .vc-tile:fullscreen, .vc-tile:-webkit-full-screen, .vc-tile.vc-tile-pseudo-fs { width: 100% !important; height: 100% !important; aspect-ratio: auto !important; border-radius: 0 !important; background: #000 !important; }
+  .vc-tile.vc-tile-pseudo-fs { position: fixed !important; inset: 0; z-index: 2147483001; grid-column: auto !important; grid-row: auto !important; }
+  .vc-tile.tile-fs .vc-tile-fs { top: 14px; right: 14px; width: 40px; height: 40px; }
+  .vc-tile.tile-fs .vc-name { left: 14px; bottom: 14px; }
+  .vc-tile { user-select: none; -webkit-user-select: none; }
+  .vc-grid:not([data-n="1"]) .vc-tile { cursor: pointer; }
+  /* red LIVE pill on a tile that is sharing its screen */
+  .vc-tile.screen::after { content: 'LIVE'; position: absolute; top: 8px; left: 8px; z-index: 1; background: var(--vc-red); color: #fff; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; line-height: 1; padding: 3px 6px; border-radius: 4px; pointer-events: none; }
+  /* click a tile to focus it: big tile on top, everyone else in a strip below (click again to go back) */
+  .vc-grid.has-focus { grid-template-columns: minmax(0, 1fr) minmax(0, 26%); grid-template-rows: none; grid-auto-rows: var(--vc-rh, 120px); align-content: start; overflow-x: hidden; overflow-y: auto; scrollbar-width: none; }
+  /* native thin scrollbar, with clear space: cards are narrowed (padding-right) and the list starts/ends exactly at the card edges (no top/bottom padding, margin instead) so the bar never touches anything */
+  /* focus view, nothing to scroll: no extra right-side space (same 8px inset as the left), no scrollbar */
+  .vc-grid.has-focus { padding: 0 8px 0 8px; margin: 8px 0 8px 0; }
+  /* ONE shared rule for the scrollbar position: focus view AND the tile grid use the exact same box, so the bar can never differ. The tile grid only gets the right-side spacing + scrollbar once it holds more than 12 tiles (4x3); in full screen only above 30 (6x5). Focus view: only when more than 3 side tiles (4 in full screen) */
+  .vc-grid.has-focus:has(> .vc-tile:nth-child(n+5)), .vc-grid:not(.has-focus):not([data-n="1"]):has(> .vc-tile:nth-child(n+13)) { padding: 0 12px 0 8px; margin: 8px 2px 8px 0; scrollbar-width: auto; overflow-y: auto; }
+  @supports (-moz-appearance: none) { .vc-grid.has-focus:has(> .vc-tile:nth-child(n+5)), .vc-grid:not(.has-focus):not([data-n="1"]):has(> .vc-tile:nth-child(n+13)) { scrollbar-width: thin; scrollbar-color: rgba(159,187,211,0.35) transparent; } }
+  .vc-grid.has-focus:has(> .vc-tile:nth-child(n+5))::-webkit-scrollbar, .vc-grid:not(.has-focus):not([data-n="1"]):has(> .vc-tile:nth-child(n+13))::-webkit-scrollbar { display: block; width: 3px; }
+  .vc-grid.has-focus:has(> .vc-tile:nth-child(n+5))::-webkit-scrollbar-track, .vc-grid:not(.has-focus):not([data-n="1"]):has(> .vc-tile:nth-child(n+13))::-webkit-scrollbar-track { background: transparent; }
+  .vc-grid.has-focus:has(> .vc-tile:nth-child(n+5))::-webkit-scrollbar-thumb, .vc-grid:not(.has-focus):not([data-n="1"]):has(> .vc-tile:nth-child(n+13))::-webkit-scrollbar-thumb { background: rgba(159,187,211,0.4); border-radius: 3px; }
+  .vc-grid.has-focus .vc-tile { aspect-ratio: auto; height: 100%; min-height: 0; }
+  .vc-grid.has-focus .vc-tile.focused { grid-column: 1; grid-row: 1 / span var(--vc-span, 3); position: sticky; top: 0; align-self: start; height: calc(var(--vc-rh, 120px) * var(--vc-r, 3) + 8px * (var(--vc-r, 3) - 1)); }
+  .vc-grid.has-focus .vc-tile:not(.focused) { grid-column: 2; grid-row: auto; }
+  .vc-grid.has-focus .vc-tile:not(.focused) .vc-av .chat-msg-avatar { width: 72px; height: 72px; font-size: 38px; }
+  .vc-grid.has-focus .vc-tile:not(.focused) .vc-name { left: 4px; bottom: 4px; padding: 2px 6px; font-size: 11px; }
+  .vc-grid.has-focus .vc-tile:not(.focused).screen::after { top: 4px; left: 4px; font-size: 9px; padding: 2px 4px; }
+  .vc-av { display: flex; align-items: center; justify-content: center; }
+  .vc-av .chat-msg-avatar { top: 0; width: 76px; height: 76px; font-size: 40px; margin: 0; }
+  .vc-grid:not([data-n="1"]) .vc-av .chat-msg-avatar { width: 56px; height: 56px; font-size: 30px; }
+  /* TILE SIZE: tiles keep one fixed size no matter how many people are in the call.
+     Normal view fits 4 columns x 3 rows (12 tiles); full screen fits 6 columns x 5 rows (30 tiles).
+     Fewer people = same size tiles, an incomplete row is left-aligned. More than fit = the grid scrolls. */
+  @media (min-width: 701px) {
+    .vc-grid:not(.has-focus):not([data-n="1"]) { display: flex; flex-wrap: wrap; justify-content: flex-start; align-content: flex-start; align-content: safe center; align-items: flex-start; }
+    .vc-grid:not(.has-focus):not([data-n="1"]) .vc-tile { flex: 0 0 calc((100% - 24px) / 4); width: calc((100% - 24px) / 4); min-width: 0; }
+    #chat-video-view.vc-pseudo-fs .vc-grid:not(.has-focus):not([data-n="1"]) .vc-tile { flex-basis: calc((100% - 40px) / 6); width: calc((100% - 40px) / 6); }
+  }
+  @media (min-width: 701px) {
+    #chat-video-view:fullscreen .vc-grid:not(.has-focus):not([data-n="1"]) .vc-tile { flex-basis: calc((100% - 40px) / 6); width: calc((100% - 40px) / 6); }
+  }
+  @media (min-width: 701px) {
+    #chat-video-view:-webkit-full-screen .vc-grid:not(.has-focus):not([data-n="1"]) .vc-tile { flex-basis: calc((100% - 40px) / 6); width: calc((100% - 40px) / 6); }
+  }
+  /* full screen: 13-30 tiles still fit 6x5, so no spacing / scrollbar until 31+ */
+  #chat-video-view:fullscreen .vc-grid:not(.has-focus):not([data-n="1"]):not(:has(> .vc-tile:nth-child(n+31))) { padding: 8px; margin: 0; scrollbar-width: none; }
+  #chat-video-view:fullscreen .vc-grid:not(.has-focus):not([data-n="1"]):not(:has(> .vc-tile:nth-child(n+31)))::-webkit-scrollbar { display: none; width: 0; }
+  #chat-video-view:-webkit-full-screen .vc-grid:not(.has-focus):not([data-n="1"]):not(:has(> .vc-tile:nth-child(n+31))) { padding: 8px; margin: 0; scrollbar-width: none; }
+  #chat-video-view:-webkit-full-screen .vc-grid:not(.has-focus):not([data-n="1"]):not(:has(> .vc-tile:nth-child(n+31)))::-webkit-scrollbar { display: none; width: 0; }
+  #chat-video-view.vc-pseudo-fs .vc-grid:not(.has-focus):not([data-n="1"]):not(:has(> .vc-tile:nth-child(n+31))) { padding: 8px; margin: 0; scrollbar-width: none; }
+  #chat-video-view.vc-pseudo-fs .vc-grid:not(.has-focus):not([data-n="1"]):not(:has(> .vc-tile:nth-child(n+31)))::-webkit-scrollbar { display: none; width: 0; }
+  /* full screen focus view: the side list fits 4 tiles, so no spacing / scrollbar until 5+ side tiles */
+  #chat-video-view:fullscreen .vc-grid.has-focus:not(:has(> .vc-tile:nth-child(n+6))) { padding: 0 8px 0 8px; margin: 8px 0 8px 0; scrollbar-width: none; }
+  #chat-video-view:fullscreen .vc-grid.has-focus:not(:has(> .vc-tile:nth-child(n+6)))::-webkit-scrollbar { display: none; width: 0; }
+  #chat-video-view:-webkit-full-screen .vc-grid.has-focus:not(:has(> .vc-tile:nth-child(n+6))) { padding: 0 8px 0 8px; margin: 8px 0 8px 0; scrollbar-width: none; }
+  #chat-video-view:-webkit-full-screen .vc-grid.has-focus:not(:has(> .vc-tile:nth-child(n+6)))::-webkit-scrollbar { display: none; width: 0; }
+  #chat-video-view.vc-pseudo-fs .vc-grid.has-focus:not(:has(> .vc-tile:nth-child(n+6))) { padding: 0 8px 0 8px; margin: 8px 0 8px 0; scrollbar-width: none; }
+  #chat-video-view.vc-pseudo-fs .vc-grid.has-focus:not(:has(> .vc-tile:nth-child(n+6)))::-webkit-scrollbar { display: none; width: 0; }
+  /* name pill bottom-left, like Discord */
+  .vc-name { position: absolute; left: 8px; bottom: 8px; max-width: calc(100% - 16px); display: flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 4px; background: rgba(0,0,0,0.6); font-size: 13px; font-weight: 600; line-height: 1.3; }
+  .vc-name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .vc-name .vc-mic { position: relative; flex: none; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; color: var(--vc-muted); }
+  .vc-name .vc-mic svg { position: relative; z-index: 1; width: 14px; height: 14px; display: block; color: inherit; }
+  .vc-name .vc-mic .vc-mic-slash { display: none; }
+  .vc-name .vc-mic::before, .vc-name .vc-mic::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--vc-green); opacity: 0; pointer-events: none; }
+  /* muted: red mic with a slash */
+  .vc-tile.muted .vc-name .vc-mic { color: var(--vc-red); }
+  .vc-tile.muted .vc-name .vc-mic .vc-mic-slash { display: block; }
+  /* speaking: green mic with two soft pulsing rings + a little bounce */
+  .vc-tile.speaking:not(.muted) .vc-name .vc-mic { color: var(--vc-green); }
+  .vc-tile.speaking:not(.muted) .vc-name .vc-mic svg { animation: vcMicBeat .7s ease-in-out infinite; }
+  .vc-tile.speaking:not(.muted) .vc-name .vc-mic::before { animation: vcMicRing 1.3s ease-out infinite; }
+  .vc-tile.speaking:not(.muted) .vc-name .vc-mic::after { animation: vcMicRing 1.3s ease-out .65s infinite; }
+  @keyframes vcMicRing { 0% { transform: scale(.7); opacity: .55; } 100% { transform: scale(2.1); opacity: 0; } }
+  @keyframes vcMicBeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+  /* screen-share tiles have no voice, so no mic */
+  .vc-tile.screen .vc-name .vc-mic { display: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .vc-tile.speaking:not(.muted) .vc-name .vc-mic svg, .vc-tile.speaking:not(.muted) .vc-name .vc-mic::before, .vc-tile.speaking:not(.muted) .vc-name .vc-mic::after { animation: none; }
+    .vc-tile.speaking:not(.muted) .vc-name .vc-mic::before { opacity: .35; transform: scale(1.5); }
+  }
+
+  /* STEP 5: connection to this person is being re-established */
+  .vc-tile.reconnecting video { opacity: 0.4; }
+  .vc-tile.reconnecting::before { content: 'Reconnecting\2026'; position: absolute; top: 8px; right: 8px; z-index: 1; background: rgba(0,0,0,0.65); color: #fff; font-size: 11px; font-weight: 600; line-height: 1; padding: 4px 7px; border-radius: 4px; }
+  .vc-tile, .vc-btn { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  .vc-grid { overscroll-behavior: contain; }
+
+  /* ---- control bar ---- */
+  .vc-bar { flex: none; display: flex; justify-content: center; align-items: center; gap: 10px; padding: 10px 12px 14px; }
+  .vc-btn { width: 48px; height: 48px; border-radius: 50%; border: none; background: var(--vc-tile); color: var(--vc-text); display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; position: relative; }
+  .vc-btn svg { width: 24px; height: 24px; fill: currentColor; }
+  .vc-btn .vc-slash { display: none; position: absolute; left: 12px; top: 23px; width: 24px; height: 2.5px; background: currentColor; border-radius: 2px; transform: rotate(-45deg); box-shadow: 0 0 0 1.5px var(--vc-tile); }
+  @media (hover: hover) { .vc-btn:hover { background: var(--vc-tile-hi); } }
+  /* "off" = muted mic / camera off: white button with dark icon + slash, like Discord */
+  .vc-btn.off { background: #f2f3f5; color: #082744; }
+  .vc-btn.off .vc-slash { display: block; box-shadow: 0 0 0 1.5px #f2f3f5; }
+  .vc-btn.on { background: var(--vc-green); color: #fff; }
+  .vc-btn.leave { width: 56px; border-radius: 24px; background: var(--vc-red); color: #fff; }
+  /* full screen toggle */
+  .vc-btn .vc-fs-out { display: none; }
+  .vc-btn#vc-btn-fs.on .vc-fs-in { display: none; }
+  .vc-btn#vc-btn-fs.on .vc-fs-out { display: block; }
+  .vc-btn#vc-btn-fs.on { background: var(--vc-tile); color: var(--vc-text); }
+  .vc-grid[data-n="1"] + .vc-bar .vc-btn#vc-btn-fs.on { background: rgba(2,12,24,0.72); }
+  #chat-video-view:fullscreen, #chat-video-view:-webkit-full-screen, #chat-video-view.vc-pseudo-fs { margin: 0 !important; border: none; border-radius: 0; width: 100%; height: 100%; }
+  #chat-video-view.vc-pseudo-fs { position: fixed; inset: 0; z-index: 2147483000; }
+
+  /* phones: keep the bar clear of the home indicator and let the buttons shrink a little */
+  @media (max-width: 480px) {
+    .vc-bar { gap: 8px; padding-bottom: max(14px, env(safe-area-inset-bottom, 0px)); }
+    .vc-btn { width: 44px; height: 44px; }
+    .vc-btn .vc-slash { left: 10px; top: 21px; }
+    .vc-btn.leave { width: 52px; }
+    .vc-lobby { padding: 16px; }
+  }
+  @media (hover: hover) { .vc-btn.leave:hover { filter: brightness(1.1); background: var(--vc-red); } }
+
   .chat-crew-list { display: none; flex: 1; min-height: 0; overflow-y: auto; padding: 8px 12px; scrollbar-width: none; -ms-overflow-style: none; }
   .chat-crew-list::-webkit-scrollbar { display: none; width: 0; height: 0; }
   .chat-panel.crew-mode .chat-crew-list { display: block; }
@@ -5702,12 +5918,15 @@
   #dm-overlay.in-box { inset: auto; padding: 0; background: transparent; align-items: stretch; justify-content: stretch; }
   #dm-overlay.in-box .dm-modal { max-width: none; max-height: none; width: 100%; height: 100%; border-radius: 14px; box-shadow: -4px 0 20px rgba(0,0,0,0.3); }
   /* PIN gate: shown on its own, centered over the page, before the Crewmates list appears */
-  #dm-overlay.dm-gate .dm-modal { height: auto; max-height: 90vh; max-width: 460px; }
-  #dm-overlay.dm-gate .dm-back-btn { display: none; }
+  #dm-overlay.dm-gate .dm-modal, #dm-overlay.dm-popup .dm-modal { height: auto; max-height: 90vh; max-width: 460px; }
+  #dm-overlay.dm-gate .dm-back-btn, #dm-overlay.dm-popup .dm-back-btn { display: none; }
   .dm-back-btn { display: none; align-items: center; justify-content: center; background: none; border: none; color: #fff; cursor: pointer; padding: 4px 6px; border-radius: 8px; opacity: 0.9; }
   @media (hover: hover) { .dm-back-btn:hover { background: rgba(255,255,255,0.1); opacity: 1; } }
   #dm-overlay.in-box .dm-back-btn { display: flex; }
   #dm-overlay.in-box .nick-modal-head > .nick-modal-close { display: none; }
+  /* While a progress message is showing (Setting up…, Waiting for Google…, Verifying…), hide the X / back arrow */
+  #dm-overlay.dm-progress .nick-modal-head > .nick-modal-close,
+  #dm-overlay.dm-progress .dm-back-btn { visibility: hidden; pointer-events: none; }
   #dm-overlay.in-box .nick-modal-head { box-sizing: border-box; height: var(--panel-head-h); padding: 0 18px; }
   .chat-crew-empty { color: var(--rivet); font-size: 12.5px; text-align: center; padding: 28px 16px; line-height: 1.5; }
   /* very narrow phones: not enough room to center without overlapping the link */
@@ -7400,6 +7619,39 @@
   #topbar-game-btn { order: 9; }
   #topbar-icon-nav { order: 10; }
   #topbar-depart-btn { order: 11; }
+  /* Wings balance: a flexible slot that takes up ALL the free space between
+     the left icons (Flight Store / Hangar / admin) and the nav icons, with
+     the balance centered inside it. Because the slot simply fills whatever
+     room is left, the balance stays centered between the icons on its own
+     when icons are added or removed. */
+  .topbar-wings-balance {
+    order: 9;
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .topbar-wings-balance-inner {
+    pointer-events: auto;
+    cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--paper);
+    white-space: nowrap;
+    padding: 6px 10px;
+    border-radius: 999px;
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+  @media (hover: hover) { .topbar-wings-balance-inner:hover { color: var(--accent); background: rgba(255,255,255,0.07); } }
+  .topbar-wings-balance-inner:focus-visible { outline: none; background: rgba(255,255,255,0.07); }
+  /* hidden while the Flight Store page is open (it shows the balance itself) */
+  .wrap:has(#view-shop.visible) .topbar-wings-balance { display: none !important; }
+  /* phones: the top bar is a tight bottom bar, no room for it */
+  @media (max-width: 900px) { .topbar-wings-balance { display: none !important; } }
   /* SVG line icons for the top-bar Wings / Flight Store / Hangar / Admin
      buttons (replacing emoji) -- same stroke style as .topbar-icon-btn. */
   .topbar-more-menu .topbar-icon-btn.tab-game { transform: none; }
@@ -11543,12 +11795,10 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         <h3 id="dm-title">Messages</h3>
         <div class="dm-head-actions dm-head-center">
           <button type="button" class="dm-head-btn" id="dm-lock-btn" onclick="dmTogglePop('dm-secure')" aria-label="Encryption info" title="End-to-end encrypted">&#128274;</button>
-          <button type="button" class="dm-head-btn" id="dm-key-btn" onclick="dmTogglePop('dm-recover')" aria-label="Recovery key" title="Recovery key" style="display:none;">&#128273;</button>
         </div>
         <button class="nick-modal-close" onclick="dmHeadClose()" aria-label="Close messages">&times;</button>
         <button type="button" class="dm-back-btn" onclick="dmHeadClose()" aria-label="Back" title="Back"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
         <div class="dm-pop dm-secure" id="dm-secure"><span>&#128274; End-to-end encrypted</span><span class="dm-code" id="dm-code" title="Compare this safety code with your crewmate to confirm no one is intercepting"></span></div>
-        <div class="dm-pop dm-recover" id="dm-recover"><span id="dm-recover-text">Get a recovery key so you can restore your messages if you forget your PIN. One key covers all your chats.</span><button type="button" class="dm-linkbtn" id="dm-recover-btn" onclick="dmRecoverClick()">Get recovery key</button></div>
       </div>
       <div class="dm-warn" id="dm-warn" style="display:none;"></div>
       <div class="dm-setup" id="dm-setup" style="display:none;">
@@ -11885,10 +12135,34 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
     </div>
     <div class="chat-mode-tabs" id="chat-mode-tabs">
       <button type="button" class="chat-mode-tab active" id="chat-tab-blackbox" onclick="setChatMode('blackbox')">&#128172; Flight 2026</button>
+      <button type="button" class="chat-mode-tab" id="chat-tab-video" onclick="setChatMode('video')">&#127909; Flight Briefing</button>
       <button type="button" class="chat-mode-tab" id="chat-tab-crew" onclick="setChatMode('crew')">&#128274; Crewmates</button>
     </div>
     <div class="flight-bar" id="flight-bar" aria-label="Flights"></div>
     <div class="chat-crew-list" id="chat-crew-list"></div>
+    <!-- ===== VIDEO CALL TAB (private flights only). Logic: search "VIDEOCALL HANDOFF" in the JS. ===== -->
+    <div id="chat-video-view">
+      <div class="vc-lobby" id="vc-lobby">
+        <div class="vc-lobby-icon"><svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg></div>
+        <div class="vc-lobby-title" id="vc-lobby-title">Flight Briefing</div>
+        <div class="vc-lobby-sub" id="vc-lobby-sub">No one's in the briefing right now. Join to start a briefing with this flight.</div>
+        <div class="vc-lobby-avatars" id="vc-lobby-avatars"></div>
+        <button type="button" class="mockadmin-publish-btn" id="vc-join-btn" onclick="vcJoin()">JOIN BRIEFING</button>
+      </div>
+      <div class="vc-stage" id="vc-stage">
+        <div class="vc-grid" id="vc-grid" data-n="1"></div>
+        <div class="vc-bar" id="vc-bar">
+          <button type="button" class="vc-btn" id="vc-btn-mic" onclick="vcToggleMic()" title="Mute" aria-label="Mute"><svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg><i class="vc-slash"></i></button>
+          <button type="button" class="vc-btn off" id="vc-btn-cam" onclick="vcToggleCam()" title="Turn on camera" aria-label="Turn on camera"><svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg><i class="vc-slash"></i></button>
+          <button type="button" class="vc-btn" id="vc-btn-screen" onclick="vcToggleScreen()" title="Share your screen" aria-label="Share your screen"><svg viewBox="0 0 24 24"><path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.11-.9-2-2-2H4c-1.11 0-2 .89-2 2v10c0 1.1.89 2 2 2H0v2h24v-2h-4zm-7-3.53v-2.19c-2.78 0-4.61.85-6 2.72.56-2.67 2.11-5.33 6-5.87V7l4 3.73-4 3.74z"/></svg></button>
+          <button type="button" class="vc-btn" id="vc-btn-fs" onclick="vcToggleFullscreen()" title="Full screen" aria-label="Full screen"><svg class="vc-fs-in" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg><svg class="vc-fs-out" viewBox="0 0 24 24"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg></button>
+          <button type="button" class="vc-btn leave" id="vc-btn-leave" onclick="vcLeave()" title="Leave briefing" aria-label="Leave briefing"><svg viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.11-.7-.28-.79-.73-1.68-1.36-2.66-1.85-.33-.16-.56-.51-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg></button>
+        </div>
+      </div>
+    </div>
+    <!-- Floating recovery-key button: bottom right of the Crewmates list -->
+    <button type="button" class="crew-key-fab" id="crew-key-fab" onclick="dmKeyFabClick()" aria-label="Recovery key" title="Recovery key">&#128273;</button>
+    <div class="dm-pop dm-recover" id="dm-recover"><span id="dm-recover-text">Get a recovery key so you can restore your messages if you forget your PIN. One key covers all your chats.</span><button type="button" class="dm-linkbtn" id="dm-recover-btn" onclick="dmRecoverClick()">Get recovery key</button></div>
     <!-- The "Connected" pill was removed from view. This hidden element stays
          only because the chat code writes its status text into it. -->
     <div id="chat-panel-status" hidden></div>
@@ -11967,6 +12241,9 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 5h9a5.5 5.5 0 0 1 5.4 4.6l.9 5.4a3.4 3.4 0 0 1-5.9 2.8L15 15.5H9l-1.9 2.3A3.4 3.4 0 0 1 1.2 15l.9-5.4A5.5 5.5 0 0 1 7.5 5z"/><path d="M8 9v4M6 11h4"/><path d="M15.5 10h.01M17.8 12.2h.01" style="stroke-width:2.4"/></svg>
           </button>
           <button class="signout-btn signout-icon-btn" id="topbar-depart-btn" title="Depart" onclick="signOutUser()">🛫<span class="topbar-more-menu-label">Depart</span></button>
+        </div>
+        <div class="topbar-wings-balance" id="topbar-wings-balance" style="display:none;">
+          <span class="topbar-wings-balance-inner" id="topbar-wings-balance-btn" role="button" tabindex="0" title="Wings" aria-label="Wings balance" onclick="openBuyWingsModal()">— 🪽</span>
         </div>
         <div class="topbar-icon-nav" id="topbar-icon-nav">
           <button type="button" class="topbar-icon-btn tab-home" title="Homepage" aria-label="Homepage" onclick="goHomeFromHeader()">
@@ -16677,6 +16954,7 @@ Answer: C</pre>
     }
 
     function performActualSignOut() {
+      try { if (typeof VC !== 'undefined' && VC.inCall) vcLeave(); } catch (e) {}   // STEP 5
       localStorage.removeItem(AUTH_STORAGE_KEY);
       document.getElementById('account-badge').style.display = 'none';
       document.getElementById('reviewees-sidebar-me').style.display = 'none';
@@ -16729,6 +17007,7 @@ Answer: C</pre>
     // account that just signed out, until a manual page refresh forced
     // initChat() to run fresh.
     function resetChatForAccountSwitch() {
+      chatTeardownExtras();
       if (chatDbRef) {
         try { chatDbRef.off(); } catch (err) {}
       }
@@ -17413,6 +17692,84 @@ Answer: C</pre>
     Object.defineProperty(window, 'currentChatUser', { get: function () { return currentChatUser; }, configurable: true });
     let chatInitialized = false;
     let chatDbRef = null;
+    // Black Box history paging: newest 20 on open, 20 more each time you scroll to the top, never more than 1111 loaded.
+    const CHAT_PAGE_SIZE = 20;
+    const CHAT_MAX_LOADED = 1111;
+    let chatToken = 0;               // bumps whenever the chat is re-initialised / torn down, so stale async work stops
+    let chatOldestKey = null;        // key of the oldest message currently loaded
+    let chatAtStart = false;         // true once there is nothing older to load
+    let chatOlderBusy = false;
+    let chatScrollWired = false;
+    const chatSeenKeys = new Set();
+    const chatExtraRefs = [];        // removal watchers for history pages
+    function chatIsEncrypted(raw) {
+      return !!(raw && !raw.system && typeof raw.text === 'string' && raw.text.indexOf(E2EE_PREFIX) === 0);
+    }
+    function chatDetachExtras() {
+      chatExtraRefs.splice(0).forEach((r) => { try { r.off(); } catch (err) {} });
+    }
+    function chatTeardownExtras() { chatToken++; chatDetachExtras(); }
+    // Keeps deletions in sync for a page of already-loaded history (fixed key range, so nothing slides in or out).
+    function chatWatchRemovals(firstKey, lastKey) {
+      try {
+        const r = nsRef(chatMessagesPath()).orderByKey().startAt(firstKey).endAt(lastKey);
+        r.on('child_removed', (snapshot) => { chatSeenKeys.delete(snapshot.key); removeChatMessageFromDom(snapshot.key); });
+        chatExtraRefs.push(r);
+      } catch (err) { console.error('Chat watch error:', err); }
+    }
+    function chatLoadedCount() {
+      const el = document.getElementById('chat-messages');
+      return el ? el.querySelectorAll('[data-msg-key]').length : 0;
+    }
+    async function chatLoadOlder() {
+      if (chatOlderBusy || chatAtStart || !chatInitialized || !chatOldestKey) return;
+      const el = document.getElementById('chat-messages'); if (!el) return;
+      const room = CHAT_MAX_LOADED - chatLoadedCount();
+      if (room <= 0) return;
+      const n = Math.min(CHAT_PAGE_SIZE, room);
+      const tok = chatToken, fid = currentFlightId, path = chatMessagesPath();
+      chatOlderBusy = true;
+      try {
+        // endAt is inclusive, so ask for one extra and drop the message we already have.
+        const snap = await nsRef(path).orderByKey().endAt(chatOldestKey).limitToLast(n + 1).once('value');
+        if (tok !== chatToken) return;
+        const items = [];
+        snap.forEach((c) => { if (c.key !== chatOldestKey) items.push([c.key, c.val()]); });
+        if (items.length < n) chatAtStart = true;
+        if (!items.length) return;
+        // Decrypt first, then insert everything in one go so the view never jumps.
+        const msgs = await Promise.all(items.map(([, raw]) => chatIsEncrypted(raw) ? e2eeDecryptMessage(fid, raw) : raw));
+        if (tok !== chatToken) return;
+        const prevH = el.scrollHeight, prevTop = el.scrollTop;
+        items.forEach(([k], i) => {
+          if (chatSeenKeys.has(k)) return;
+          chatSeenKeys.add(k);
+          renderChatMessage(msgs[i], k);
+          placeChatRowByTimestamp(k);
+        });
+        el.scrollTop = prevTop + (el.scrollHeight - prevH);   // stay on the same message
+        chatOldestKey = items[0][0];
+        chatWatchRemovals(items[0][0], items[items.length - 1][0]);
+      } catch (err) {
+        console.error('Load older messages error:', err);
+      } finally {
+        chatOlderBusy = false;
+      }
+      chatMaybeFill();
+    }
+    // If the loaded messages don't fill the box (nothing to scroll), keep loading until they do.
+    function chatMaybeFill() {
+      const el = document.getElementById('chat-messages');
+      if (!el || !el.clientHeight || chatOlderBusy || chatAtStart) return;
+      if (el.scrollHeight <= el.clientHeight + 24) chatLoadOlder();
+    }
+    function chatWireScrollLoading() {
+      if (chatScrollWired) return;
+      const el = document.getElementById('chat-messages'); if (!el) return;
+      chatScrollWired = true;
+      el.addEventListener('scroll', () => { if (el.scrollTop < 80) chatLoadOlder(); }, { passive: true });
+      try { new ResizeObserver(() => chatMaybeFill()).observe(el); } catch (err) {}
+    }
     let chatHistoryLoadTimestamp = 0;
     // JS-timed handle for the chat panel's animation states (see
     // toggleChatPanel below) — a plain setTimeout instead of relying on
@@ -18134,6 +18491,7 @@ Answer: C</pre>
 
       if (applyChatLockState()) {
         // Not this soul's flight: never subscribe to its messages.
+        chatTeardownExtras();
         if (chatDbRef) { try { chatDbRef.off(); } catch (err) {} chatDbRef = null; }
         const msgsEl = document.getElementById('chat-messages');
         if (msgsEl) msgsEl.innerHTML = '';
@@ -18178,13 +18536,19 @@ Answer: C</pre>
           }).catch((err) => { console.error('Flight key error:', err); statusEl.textContent = 'Could not set up encryption.'; });
           return;
         }
-        chatDbRef = nsRef(chatMessagesPath()).limitToLast(100);
+        chatTeardownExtras();
+        const _tok = ++chatToken;
+        chatSeenKeys.clear(); chatOldestKey = null; chatAtStart = false; chatOlderBusy = false;
+        const _basePath = chatMessagesPath();
+        const _fidAtSub = currentFlightId;
+        chatDbRef = nsRef(_basePath);   // placeholder until the history page below has loaded
         initFlightList();
         chatInitialized = true;
         statusEl.textContent = 'Connected';
 
         const messagesEl = document.getElementById('chat-messages');
         messagesEl.innerHTML = '';
+        chatWireScrollLoading();
 
         chatHistoryLoadTimestamp = Date.now();
 
@@ -18208,23 +18572,43 @@ Answer: C</pre>
             notifyMention(msg);
           }
         };
-        const _fidAtSub = currentFlightId;
-        const _refAtSub = chatDbRef;
-        chatDbRef.on('child_added', (snapshot) => {
-          const raw = snapshot.val();
-          const isEnc = !!(raw && !raw.system && typeof raw.text === 'string' && raw.text.indexOf(E2EE_PREFIX) === 0);
-          if (!isEnc) { _onMsg(snapshot, raw); return; }
+        // One message arriving from the database (history page or live): skip repeats, decrypt if needed.
+        const _ingest = (key, raw) => {
+          if (chatSeenKeys.has(key)) return;
+          chatSeenKeys.add(key);
+          if (!chatIsEncrypted(raw)) { _onMsg({ key }, raw); return; }
           e2eeDecryptMessage(_fidAtSub, raw).then((m) => {
-            if (chatDbRef !== _refAtSub) return;   // switched flights meanwhile
-            _onMsg(snapshot, m);
+            if (_tok !== chatToken) return;   // switched flights meanwhile
+            _onMsg({ key }, m);
           });
-        });
-
-        chatDbRef.on('child_removed', (snapshot) => {
-          removeChatMessageFromDom(snapshot.key);
-        });
-
-        chatDbRef.on('child_added', () => {}, (err) => {
+        };
+        // Live feed: everything from the newest loaded message onward (no size limit, so the
+        // window never slides and never drops rows that were loaded by scrolling up).
+        const _liveAttach = (startKey) => {
+          let ref = nsRef(_basePath).orderByKey();
+          if (startKey) ref = ref.startAt(startKey);
+          chatDbRef = ref;
+          ref.on('child_added', (snapshot) => _ingest(snapshot.key, snapshot.val()), (err) => {
+            statusEl.textContent = 'Could not connect to chat.';
+            console.error('Chat error:', err);
+          });
+          ref.on('child_removed', (snapshot) => { chatSeenKeys.delete(snapshot.key); removeChatMessageFromDom(snapshot.key); });
+        };
+        // First page: only the newest CHAT_PAGE_SIZE messages. Older ones load when scrolling up.
+        nsRef(_basePath).orderByKey().limitToLast(CHAT_PAGE_SIZE).once('value').then((snap) => {
+          if (_tok !== chatToken) return;
+          const items = [];
+          snap.forEach((c) => { items.push([c.key, c.val()]); });
+          items.forEach(([k, raw]) => _ingest(k, raw));
+          if (items.length < CHAT_PAGE_SIZE) chatAtStart = true;
+          if (items.length) {
+            chatOldestKey = items[0][0];
+            chatWatchRemovals(items[0][0], items[items.length - 1][0]);
+          }
+          _liveAttach(items.length ? items[items.length - 1][0] : null);
+          chatMaybeFill();
+        }).catch((err) => {
+          if (_tok !== chatToken) return;
           statusEl.textContent = 'Could not connect to chat.';
           console.error('Chat error:', err);
         });
@@ -18640,6 +19024,8 @@ Answer: C</pre>
     // count rolled when the popup opened (re-rolled every full sweep). The flight list on the right is never
     // affected by any of this: it always shows every flight.
     const RADAR_DETECT_COUNTS = [3, 5, 7, 11];
+    // Seven blip sizes in px (diameter). 38 is the biggest (the old public-flight size); the other six step down from it.
+    const RADAR_BLIP_SIZES = [38, 34, 30, 26, 22, 18, 14];
     const RADAR_SWEEP_MS = 4000;   // keep equal to the .radar-sweep animation duration in the CSS
     const RADAR_MIN_GAP = 13;      // min distance between blip centres, in % of the scope diameter
     const RADAR_MIN_AHEAD = 135;   // a re-detected blip lands at least this many degrees ahead of the beam
@@ -18656,6 +19042,16 @@ Answer: C</pre>
     function radarPickCount(total) {
       const fits = RADAR_DETECT_COUNTS.filter((n) => n <= total);
       return fits.length ? fits[Math.floor(Math.random() * fits.length)] : total;
+    }
+    // Picks a size for a newly detected blip, public or private alike: one of the seven
+    // sizes, preferring the sizes the scope is using least so the blips on screen differ.
+    function radarPickSize(slots) {
+      const used = {};
+      RADAR_BLIP_SIZES.forEach((z) => { used[z] = 0; });
+      slots.forEach((x) => { if (used[x.size] !== undefined) used[x.size]++; });
+      const least = Math.min.apply(null, RADAR_BLIP_SIZES.map((z) => used[z]));
+      const pool = RADAR_BLIP_SIZES.filter((z) => used[z] === least);
+      return pool[Math.floor(Math.random() * pool.length)];
     }
     // Gives a blip a slow random heading so it drifts across the scope.
     function radarGiveVelocity(slot) {
@@ -18759,7 +19155,7 @@ Answer: C</pre>
         const key = radarPickFlight(radarSlots.map((x) => x.key));
         if (key === null) break;
         const spot = radarRandomSpot(radarSlots, 0, 45);
-        { const ns = { key: key, phi: spot.phi, r: spot.r }; radarGiveVelocity(ns); radarSlots.push(ns); }
+        { const ns = { key: key, phi: spot.phi, r: spot.r, size: radarPickSize(radarSlots) }; radarGiveVelocity(ns); radarSlots.push(ns); }
       }
     }
     // The beam just passed over this blip: it is swept away.
@@ -18785,7 +19181,7 @@ Answer: C</pre>
         for (let k = 0; k < burst && radarSlots.length < radarMax; k++) {
           const key = radarPickFlight(radarSlots.map((x) => x.key));
           const spot = radarSpotBehindBeam(radarSlots, phi);
-          if (key !== null && spot) { const ns = { key: key, phi: spot.phi, r: spot.r, fresh: true }; radarGiveVelocity(ns); radarSlots.push(ns); added = true; }
+          if (key !== null && spot) { const ns = { key: key, phi: spot.phi, r: spot.r, fresh: true, size: radarPickSize(radarSlots) }; radarGiveVelocity(ns); radarSlots.push(ns); added = true; }
         }
       }
       return added;
@@ -18866,7 +19262,7 @@ Answer: C</pre>
         const key = it.slot.key;
         seen[key] = true;
         const p = radarSpotXY(it.slot.phi, it.slot.r);
-        const size = f.isPrivate ? 30 : 38;
+        const size = it.slot.size || RADAR_BLIP_SIZES[0];
         let el = radarEls[key];
         if (!el) {
           el = document.createElement('div');
@@ -18881,6 +19277,8 @@ Answer: C</pre>
           el._sig = sig;
           el.style.width = size + 'px';
           el.style.height = size + 'px';
+          // the number shrinks with the circle (14px at the biggest size, never below 8px)
+          el.style.fontSize = f.image ? '' : Math.max(8, Math.round(size * 14 / 38)) + 'px';
           if (f.image) {
             el.style.backgroundSize = 'cover';
             el.style.backgroundPosition = 'center';
@@ -19016,6 +19414,7 @@ Answer: C</pre>
       const fl = document.getElementById('chat-panel-flight');
       const rf = currentFlightId && FLIGHT_SERVERS.find((x) => x.id === currentFlightId);
       const tab = document.getElementById('chat-tab-blackbox');
+      try { vcSyncTab(); } catch (e) {}
       const setTab = (name) => { if (tab) tab.textContent = '\uD83D\uDCAC ' + (name || 'Black Box'); };
       if (rf) { el.textContent = '💬 Black Box'; if (fl) fl.textContent = rf.name; setTab(rf.name); return; }
       const f = currentFlightId && flightsCache[currentFlightId];
@@ -19157,6 +19556,7 @@ Answer: C</pre>
       // set, so leaving a private flight for a public one kept showing the
       // private flight's name and roster.)
       if (!sameFlight) {
+        chatTeardownExtras();
         if (chatDbRef) { try { chatDbRef.off(); } catch (err) {} }
         chatDbRef = null;
         chatInitialized = false;
@@ -19823,6 +20223,7 @@ Answer: C</pre>
           .map(p => p.nickname)
       );
       updateChatPresenceDots();
+      try { if (DM.peer) dmUpdateSeen(); } catch (e) {}
       if (lastNicknameListData) {
         updateNicknameListLiveState();
       }
@@ -21726,6 +22127,12 @@ Answer: C</pre>
         badge.setAttribute('aria-label', wingsTip);
         badge.style.display = currentChatUser ? '' : 'none';
       }
+      const topbarBalance = document.getElementById('topbar-wings-balance');
+      if (topbarBalance) {
+        topbarBalance.style.display = currentChatUser ? '' : 'none';
+        const topbarBalanceBtn = document.getElementById('topbar-wings-balance-btn');
+        if (topbarBalanceBtn) topbarBalanceBtn.textContent = `${walletLoaded ? userWallet.wings : '—'} 🪽`;
+      }
       const shopBalance = document.getElementById('shop-wings-balance');
       if (shopBalance) shopBalance.textContent = `${walletLoaded ? userWallet.wings : '—'} 🪽`;
       const wingsStoreBalance = document.getElementById('wings-store-balance');
@@ -22759,11 +23166,24 @@ Answer: C</pre>
       });
     }
 
+    // Only touch the DOM when something really changed. These refreshers run on every presence
+    // event (and a burst of them arrives when you come back to the tab), so rewriting classes /
+    // markup that are already correct made avatars and callsigns restart their animations and jump.
+    function classSetMatches(el, all, want) {
+      return all.every((c) => el.classList.contains(c) === (c === want));
+    }
+    function setHtmlIfChanged(el, html) {
+      if (el.__lastHtml === html && el.firstElementChild && el.firstElementChild === el.__lastFirst) return;
+      el.innerHTML = html;
+      el.__lastHtml = html;
+      el.__lastFirst = el.firstElementChild;
+    }
     function refreshAllChatAvatarsInDom() {
       document.querySelectorAll('.chat-msg-avatar[data-nickname]').forEach(el => {
         const nick = el.getAttribute('data-nickname');
         const avatar = getLiveAvatar(nick);
-        if (avatar) {
+        if (avatar && el.__liveAv !== avatar) {
+          el.__liveAv = avatar;
           // Image avatars (uploaded photos) must be applied as a CSS
           // background, never as text — dumping the raw Firebase Storage
           // URL into the DOM as a text node (the old behavior here) made
@@ -22785,17 +23205,25 @@ Answer: C</pre>
           }
         }
         const borderClass = getLiveBorderClass(nick);
-        BORDER_CLASSES.forEach(c => el.classList.remove(c));
-        if (borderClass) el.classList.add(borderClass);
+        if (!classSetMatches(el, BORDER_CLASSES, borderClass)) {
+          BORDER_CLASSES.forEach(c => el.classList.remove(c));
+          if (borderClass) el.classList.add(borderClass);
+        }
       });
       document.querySelectorAll('.chat-msg-reply-avatar[data-reply-nickname]').forEach(el => {
         const borderClass = getLiveBorderClass(el.getAttribute('data-reply-nickname'));
+        if (classSetMatches(el, BORDER_CLASSES, borderClass)) return;
         BORDER_CLASSES.forEach(c => el.classList.remove(c));
         if (borderClass) el.classList.add(borderClass);
       });
       document.querySelectorAll('.chat-msg-meta [data-nickname-anim], #dm-title [data-nickname-anim], .chat-crew-row [data-nickname-anim]').forEach(el => {
         const nick = el.getAttribute('data-nickname-anim');
         const animClass = getLiveNicknameAnimClass(nick);
+        if (classSetMatches(el, NICK_ANIM_CLASSES, animClass)) {
+          // already correct: leave it running; just make sure a Breathe name has its width locked once
+          if (animClass && !el.style.minWidth && window.lockBreatheWidths) window.lockBreatheWidths(el);
+          return;
+        }
         el.style.minWidth = '';
         NICK_ANIM_CLASSES.forEach(c => el.classList.remove(c));
         if (animClass) el.classList.add(animClass);
@@ -23013,14 +23441,926 @@ Answer: C</pre>
     function setChatMode(mode) {
       const panel = document.getElementById('chat-panel');
       const crew = mode === 'crew';
+      const video = mode === 'video';
       panel.classList.toggle('crew-mode', crew);
-      document.getElementById('chat-tab-blackbox').classList.toggle('active', !crew);
+      panel.classList.toggle('video-mode', video);
+      document.getElementById('chat-tab-blackbox').classList.toggle('active', !crew && !video);
       document.getElementById('chat-tab-crew').classList.toggle('active', crew);
+      const vt = document.getElementById('chat-tab-video');
+      if (vt) vt.classList.toggle('active', video);
+      if (video) { try { vcOnEnterTab(); } catch (e) { console.error('video tab error', e); } }
+      else { try { vcOnLeaveTab(); } catch (e) {} }
       if (crew) {
         if (DM.priv) renderChatCrewList();
         else { const cl = document.getElementById('chat-crew-list'); if (cl) cl.innerHTML = ''; dmGateOpen(); }
       }
     }
+
+    /* ==========================================================================
+       VIDEOCALL HANDOFF  (Discord-style video calling in the Black Box)
+       --------------------------------------------------------------------------
+       GOAL: a 3rd tab "Video Call" in the Black Box, ONLY inside PRIVATE flights
+       (flightsCache[currentFlightId]), that works like a Discord video call:
+       join/leave, tile grid, green ring on whoever speaks, mute / camera /
+       screen-share / leave buttons. Room id = currentFlightId.
+       Look & feel is already in the CSS (search "VIDEO CALL TAB"). Markup is in
+       #chat-video-view. Primary button reuses .mockadmin-publish-btn (see the
+       rules at the very top of this file).
+
+       BUILD STEPS (tick when done; do ONE step per turn, send file each time):
+         [x] STEP 1  Tab + lobby + stage/control-bar UI, UI-only (fake local
+                     tile, buttons just toggle classes). Tab only visible in
+                     private flights (vcSyncTab, called from updateChatTitle).
+         [x] STEP 2  Real local media: mic on join (getUserMedia audio), camera
+                     on demand (VC.stream gets/loses its video track), real
+                     mute (track.enabled), self tile <video> via vcAttachSelf(),
+                     all tracks stopped in vcLeave(). Denied/no mic = join
+                     muted + toast; clicking the mic button retries.
+         [x] STEP 3  Signaling + multi-user: WebRTC full mesh over Firebase RTDB.
+                     Peer key = avatarUploadKey(nickname) (= Firebase auth uid).
+                     DB: videoCalls/{flightId}/participants/{key} = {nick,sid,mic,cam,t}
+                         (onDisconnect().remove()) and
+                         videoCalls/{flightId}/signals/{toKey}/{pushId} = {from,sid,toSid,type,sdp|data}
+                         (inbox, receiver deletes each message after reading).
+                     Pair rule: the peer with the LARGER key sends the offer (no glare).
+                     Each pc has 2 pre-made sendrecv transceivers (audio+video), so
+                     mic/cam/screen changes are just sender.replaceTrack(), never a
+                     renegotiation: see vcSendTrackAll(kind). VC.peers[key] =
+                     {pc, stream, aSender, vSender, sid}. Remote tiles are synced from
+                     the participants list by vcSyncTiles(); lobby avatars by
+                     vcRenderLobby(). NEEDS Firebase RTDB rules for videoCalls (see handoff md).
+         [x] STEP 4  Speaking detection (AudioContext AnalyserNode -> toggle
+                     .speaking on the tile; do local + each VC.peers[k].stream),
+                     screen share (getDisplayMedia -> vcSendTrackAll-style
+                     replaceTrack on vSender, .screen class, publish a `screen`
+                     flag next to mic/cam in vcPushState), click tile to
+                     focus/enlarge. (Muted / camera-off state sync to peers was
+                     already done in STEP 3: participants/{key}.mic and .cam.)
+                     DONE: vcSpeakStart/Tick/Stop = one shared AudioContext + one
+                     AnalyserNode per audio track (VC.meters: 'self' + peer keys), polled
+                     every ~90 ms, hold 350 ms, no ring while muted. Screen share =
+                     getDisplayMedia, track kept OUT of VC.stream (VC.screenTrack /
+                     VC.screenStream); vcOutVideo() = screen first, else camera, and
+                     is what every vSender sends. participants/{key}.screen is the 3rd
+                     flag next to mic/cam. Focus layout = VC.focus ('self' or peer key),
+                     vcApplyFocus(); a remote screen share auto-focuses (VC.focusAuto).
+         [x] STEP 5  Polish. DONE: auto-leave on panel close (startChatPanelSlide),
+                     sign-out, page unload (pagehide), flight switch (vcSyncTab).
+                     Reconnect: vcOnPeerState -> vcReconnect: 'disconnected' waits 3 s,
+                     'failed' goes straight in; the OFFERER (larger key) does ICE restart
+                     (vcRestartIce, up to VC_MAX_RESTARTS) then vcRebuildPeer (new pc,
+                     offer.fresh = true so the receiver discards its old pc, up to
+                     VC_MAX_REBUILDS); the answerer sends {type:'restart'} to ask the
+                     offerer. Tiles get .reconnecting. 'online' + tab-visible kick retries.
+                     Signals are handled strictly in order (VC.sigQ). If MY Firebase
+                     connection drops and onDisconnect wipes my record, vcOnParticipants
+                     calls vcRepublish(). Same account in a 2nd tab: the older tab leaves
+                     quietly (vcLeave(true) keeps the new tab's records). Mic unplugged /
+                     revoked mid-call -> toast + muted (vcGetMic onended). TURN: fill
+                     VC_TURN (empty = STUN only). Also fixed: vcPushState() was swallowed
+                     by a // comment in vcSyncButtons, so mic/cam flags never synced.
+                     ALL STEPS DONE; only extras remain (camera flip on phones, screen audio).
+
+       STATE: VC (below). Grid tiles are .vc-tile elements inside #vc-grid;
+       #vc-grid[data-n] must equal the tile count (CSS uses data-n="1").
+       ========================================================================== */
+    const VC = { inCall: false, joining: false, mic: true, cam: false, screen: false, stream: null, camBusy: false, micBusy: false,
+                 flightId: null, key: null, sid: null, peers: {}, parts: {}, pushed: null,
+                 myRef: null, inboxRef: null, inboxCb: null, partRef: null, partCb: null, watchFlight: null,
+                 screenTrack: null, screenStream: null, screenBusy: false,
+                 ac: null, meters: {}, spkTimer: null, focus: null, focusAuto: false, sigQ: null, republishing: false };
+
+    function vcInPrivateFlight() {
+      try { return !!(currentFlightId && flightsCache[currentFlightId] && !FLIGHT_SERVERS.find((x) => x.id === currentFlightId)); }
+      catch (e) { return false; }
+    }
+    // Show / hide the tab depending on the current flight. Called from updateChatTitle().
+    function vcSyncTab() {
+      const show = vcInPrivateFlight();
+      const t = document.getElementById('chat-tab-video');
+      const bar = document.getElementById('chat-mode-tabs');
+      if (t) t.classList.toggle('show', show);
+      if (bar) bar.classList.toggle('has-video', show);
+      if (!show) {
+        const panel = document.getElementById('chat-panel');
+        if (panel && panel.classList.contains('video-mode')) setChatMode('blackbox');
+        if (VC.inCall) vcLeave();
+      }
+      if (VC.inCall && VC.flightId && VC.flightId !== currentFlightId) vcLeave();   // switched to another flight
+      if (show) {
+        const p2 = document.getElementById('chat-panel');
+        if (p2 && p2.classList.contains('video-mode')) vcWatch();
+      }
+    }
+    function vcOnEnterTab() {
+      vcWatch();
+      vcRenderLobby();
+    }
+    function vcOnLeaveTab() { if (!VC.inCall) vcUnwatch(); }
+    function vcRenderLobby() {
+      const sub = document.getElementById('vc-lobby-sub');
+      const avs = document.getElementById('vc-lobby-avatars');
+      const me = VC.key || vcMyKey();
+      const parts = VC.parts || {};
+      const others = Object.keys(parts).filter((k) => k !== me && parts[k] && parts[k].sid);
+      const names = others.map((k) => parts[k].nick || k);
+      if (sub) {
+        const n = names.length;
+        sub.textContent = n === 0 ? "No one's in the briefing right now. Join to start a briefing with this flight."
+          : n === 1 ? names[0] + ' is in the briefing. Join to talk with them.'
+          : n === 2 ? names[0] + ' and ' + names[1] + ' are in the briefing.'
+          : names[0] + ', ' + names[1] + ' and ' + (n - 2) + (n - 2 === 1 ? ' other are' : ' others are') + ' in the briefing.';
+      }
+      if (avs) {
+        avs.innerHTML = others.slice(0, 3).map((k) => {
+          const nick = parts[k].nick || k;
+          const av = getLiveAvatar(nick) || '\u2708\uFE0F';
+          const border = getLiveBorderClass(nick) || '';
+          return '<span class="pf-av chat-msg-avatar' + (border ? ' ' + border : '') + '" title="' + escapeHtml(nick) + '" data-nickname="' + escapeHtml(nick) + '"' + avatarStyleAttr(av) + '>' + escapeHtml(avatarGlyph(av)) + '</span>';
+        }).join('') + (others.length > 3
+          ? '<span class="vc-lobby-more" title="' + (others.length - 3) + (others.length - 3 === 1 ? ' other' : ' others') + '">+' + (others.length - 3) + '</span>'
+          : '');
+      }
+    }
+    // A tile that shows ONE person's shared screen (separate from their camera card).
+    // peerKey = null -> my own shared screen (local preview).
+    function vcScreenTileHtml(nick, peerKey) {
+      let h = vcTileHtml(nick, peerKey);
+      h = peerKey
+        ? h.replace('<div class="vc-tile" data-vc-peer="' + peerKey + '">', '<div class="vc-tile screen has-video" data-vc-peer="' + peerKey + '" data-vc-screen="1">')
+        : h.replace('<div class="vc-tile mirror" data-vc-self="1">', '<div class="vc-tile screen has-video" data-vc-selfscreen="1" data-vc-screen="1">');
+      return h.replace('<video autoplay playsinline></video>', '<video autoplay playsinline muted></video>');
+    }
+    function vcSelfTileHtml() { return vcTileHtml((currentChatUser && currentChatUser.nickname) || 'You', null); }
+    // peerKey = null -> the local (mirrored, muted) tile; otherwise a remote peer's tile
+    function vcTileHtml(nick, peerKey) {
+      const av = getLiveAvatar(nick) || '\u2708\uFE0F';
+      const border = getLiveBorderClass(nick) || '';
+      const muteSvg = '<i class="vc-mic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/><path class="vc-mic-slash" d="M3.3 4.7l1.4-1.4 16 16-1.4 1.4z"/></svg></i>';
+      return (peerKey ? '<div class="vc-tile" data-vc-peer="' + peerKey + '">' : '<div class="vc-tile mirror" data-vc-self="1">') +
+        (peerKey ? '<video autoplay playsinline></video>' : '<video autoplay playsinline muted></video>') +
+        '<div class="vc-av"><span class="pf-av chat-msg-avatar' + (border ? ' ' + border : '') + '" data-nickname="' + escapeHtml(nick) + '"' + avatarStyleAttr(av) + '>' + escapeHtml(avatarGlyph(av)) + '</span></div>' +
+        '<button type="button" class="vc-tile-fs" onclick="vcTileFullscreen(event, this)" title="Full screen" aria-label="Full screen"><svg class="vc-tfs-in" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg><svg class="vc-tfs-out" viewBox="0 0 24 24"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg></button>' +
+        '<div class="vc-name">' + muteSvg + '<span>' + escapeHtml(nick) + '</span></div></div>';
+    }
+    function vcRenderGrid() {
+      const g = document.getElementById('vc-grid'); if (!g) return;
+      // local tile first; vcSyncTiles() adds one tile per remote participant
+      g.innerHTML = vcSelfTileHtml();
+      g.onclick = vcGridClick;
+      g.setAttribute('data-n', String(g.children.length));
+      vcAttachSelf(true);
+      vcSyncTiles();
+    }
+    function vcSetBtn(id, cls, on, title) {
+      const b = document.getElementById(id); if (!b) return;
+      b.classList.remove('off', 'on'); if (cls) b.classList.add(cls);
+      if (title) { b.title = title; b.setAttribute('aria-label', title); }
+    }
+    // ---- full screen: the call view goes into real browser/PC full screen (like F11) ----
+    // The site blocks Element.requestFullscreen globally, so this uses the original function
+    // saved in window.__vcOrigReqFs and sets window.__vcFsAllowed so the block lets it stay.
+    function vcFsActive() {
+      const v = document.getElementById('chat-video-view');
+      return !!(v && (v.classList.contains('vc-pseudo-fs') || document.fullscreenElement === v || document.webkitFullscreenElement === v));
+    }
+    function vcSyncFsBtn() {
+      const b = document.getElementById('vc-btn-fs'); if (!b) return;
+      const on = vcFsActive();
+      b.classList.toggle('on', on);
+      const t = on ? 'Exit full screen' : 'Full screen';
+      b.title = t; b.setAttribute('aria-label', t);
+      vcApplyFocus();   // side list cap depends on full screen (3 normal / 4 full screen)
+    }
+    function vcExitFullscreen() {
+      const v = document.getElementById('chat-video-view');
+      if (v) v.classList.remove('vc-pseudo-fs');
+      try {
+        if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+        else if (document.webkitFullscreenElement && document.webkitExitFullscreen) document.webkitExitFullscreen();
+      } catch (e) {}
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) window.__vcFsAllowed = false;
+      vcSyncFsBtn();
+    }
+    function vcToggleFullscreen() {
+      const v = document.getElementById('chat-video-view'); if (!v) return;
+      if (vcFsActive()) { vcExitFullscreen(); return; }
+      const req = window.__vcOrigReqFs;
+      if (req) {
+        try {
+          window.__vcFsAllowed = true;
+          const r = req.call(v);
+          if (r && r.then) r.then(vcSyncFsBtn).catch(() => { window.__vcFsAllowed = false; v.classList.add('vc-pseudo-fs'); vcSyncFsBtn(); });
+          return;
+        } catch (e) { window.__vcFsAllowed = false; }
+      }
+      v.classList.add('vc-pseudo-fs');          // fallback: only fills the chat panel
+      vcSyncFsBtn();
+    }
+    function vcOnFsChange() {
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) window.__vcFsAllowed = false;
+      vcSyncFsBtn();
+      vcSyncTileFs();
+    }
+    // ---- full screen for ONE tile (the button on a tile that is sharing its screen) ----
+    function vcTileFsActive(t) {
+      return !!(t && (t.classList.contains('vc-tile-pseudo-fs') || document.fullscreenElement === t || document.webkitFullscreenElement === t));
+    }
+    function vcSyncTileFs() {
+      document.querySelectorAll('#vc-grid .vc-tile').forEach((t) => {
+        const on = vcTileFsActive(t);
+        t.classList.toggle('tile-fs', on);
+        const b = t.querySelector('.vc-tile-fs');
+        if (b) { const s = on ? 'Exit full screen' : 'Full screen'; b.title = s; b.setAttribute('aria-label', s); }
+      });
+    }
+    function vcTileExitFs(t) {
+      if (!t) return;
+      t.classList.remove('vc-tile-pseudo-fs');
+      try {
+        if (document.fullscreenElement === t && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+        else if (document.webkitFullscreenElement === t && document.webkitExitFullscreen) document.webkitExitFullscreen();
+      } catch (e) {}
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) window.__vcFsAllowed = false;
+      vcSyncTileFs();
+    }
+    function vcTileFullscreen(e, btn) {
+      if (e) { e.stopPropagation(); e.preventDefault(); }          // don't also focus/unfocus the tile
+      const t = btn && btn.closest ? btn.closest('.vc-tile') : null; if (!t) return;
+      if (vcTileFsActive(t)) { vcTileExitFs(t); return; }
+      const req = window.__vcOrigReqFs;
+      if (req) {
+        try {
+          window.__vcFsAllowed = true;
+          const r = req.call(t);
+          if (r && r.then) r.then(vcSyncTileFs).catch(() => {
+            window.__vcFsAllowed = !!(document.fullscreenElement || document.webkitFullscreenElement);
+            t.classList.add('vc-tile-pseudo-fs'); vcSyncTileFs();
+          });
+          return;
+        } catch (err) { window.__vcFsAllowed = !!(document.fullscreenElement || document.webkitFullscreenElement); }
+      }
+      t.classList.add('vc-tile-pseudo-fs');          // fallback (e.g. iPhone): fills the screen like an overlay
+      vcSyncTileFs();
+    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const t = document.querySelector('#vc-grid .vc-tile.vc-tile-pseudo-fs');
+      if (t) vcTileExitFs(t);
+    });
+    document.addEventListener('fullscreenchange', vcOnFsChange);
+    document.addEventListener('webkitfullscreenchange', vcOnFsChange);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.getElementById('chat-video-view').classList.contains('vc-pseudo-fs')) vcExitFullscreen();
+    });
+    function vcSyncButtons() {
+      vcSetBtn('vc-btn-mic', VC.mic ? '' : 'off', VC.mic, VC.mic ? 'Mute' : 'Unmute');
+      vcSetBtn('vc-btn-cam', VC.cam ? '' : 'off', VC.cam, VC.cam ? 'Turn off camera' : 'Turn on camera');
+      vcSetBtn('vc-btn-screen', VC.screen ? 'on' : '', VC.screen, VC.screen ? 'Stop sharing' : 'Share your screen');
+      const self = document.querySelector('#vc-grid .vc-tile[data-vc-self]');
+      if (self) self.classList.toggle('muted', !VC.mic);
+      const sb = document.getElementById('vc-btn-screen'); if (sb) sb.style.display = vcScreenOk() ? '' : 'none';   // phones can't share
+      vcPushState();
+    }
+    // ---- STEP 2: real local media ----
+    function vcToast(msg) { try { showWingsToast(msg); } catch (e) { console.warn(msg); } }
+    function vcMediaOk() { return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia); }
+    function vcLiveTracks(kind) {
+      if (!VC.stream) return [];
+      return (kind === 'video' ? VC.stream.getVideoTracks() : VC.stream.getAudioTracks()).filter((t) => t.readyState === 'live');
+    }
+    // Put the local stream into the self tile's <video>; show video only while a live camera track exists.
+    // Pass force=true after the track list changed so the <video> element re-reads the stream.
+    function vcAttachSelf(force) {
+      const t = document.querySelector('#vc-grid .vc-tile[data-vc-self]'); if (!t) return;
+      const v = t.querySelector('video');
+      const hasCam = vcLiveTracks('video').length > 0;   // my own card is ALWAYS the camera; a screen share gets its own tile
+      if (v) {
+        if (force || v.srcObject !== VC.stream) { v.srcObject = null; v.srcObject = VC.stream || null; }
+        if (hasCam) { const pr = v.play(); if (pr && pr.catch) pr.catch(() => {}); }
+      }
+      t.classList.toggle('has-video', hasCam);
+      t.classList.add('mirror');
+      vcSyncSelfScreen();
+    }
+    // My shared screen as its OWN tile (next to my camera card), shown only while I'm sharing.
+    function vcSyncSelfScreen() {
+      const g = document.getElementById('vc-grid'); if (!g) return;
+      const scr = vcScreenLive();
+      let st = g.querySelector('.vc-tile[data-vc-selfscreen]');
+      if (scr && !st) {
+        const d = document.createElement('div');
+        d.innerHTML = vcScreenTileHtml((currentChatUser && currentChatUser.nickname) || 'You', null);
+        st = d.firstChild;
+        const self = g.querySelector('.vc-tile[data-vc-self]');
+        g.insertBefore(st, self ? self.nextSibling : null);
+        if (!VC.focus) { VC.focus = 'self:screen'; VC.focusAuto = true; }
+      } else if (!scr && st) {
+        if (vcTileFsActive(st)) vcTileExitFs(st);
+        st.remove(); st = null;
+        if (VC.focus === 'self:screen') { VC.focus = null; VC.focusAuto = false; }
+      }
+      if (st) {
+        const v = st.querySelector('video');
+        if (v && v.srcObject !== VC.screenStream) v.srcObject = VC.screenStream;
+        if (v) { const pr = v.play(); if (pr && pr.catch) pr.catch(() => {}); }
+      }
+      g.setAttribute('data-n', String(g.children.length));
+      vcApplyFocus();
+    }
+    function vcStopTracks(kind) {
+      if (!VC.stream) return;
+      (kind === 'video' ? VC.stream.getVideoTracks() : kind === 'audio' ? VC.stream.getAudioTracks() : VC.stream.getTracks())
+        .forEach((t) => { try { t.onended = null; t.stop(); } catch (e) {} VC.stream.removeTrack(t); });
+    }
+    function vcMicErrorText(err) {
+      const n = err && err.name;
+      if (n === 'NotAllowedError' || n === 'SecurityError') return 'Microphone blocked. Allow it in your browser settings.';
+      if (n === 'NotFoundError') return 'No microphone found.';
+      return 'Couldn\u2019t start your microphone.';
+    }
+    async function vcGetMic() {
+      const s2 = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false });
+      const tr = s2.getAudioTracks()[0];
+      if (tr) tr.onended = () => {                       // STEP 5: unplugged / permission revoked mid-call
+        if (!VC.inCall || !VC.stream || VC.stream.getAudioTracks().indexOf(tr) === -1) return;
+        try { VC.stream.removeTrack(tr); } catch (e) {}
+        VC.mic = false; vcSendTrackAll('audio'); vcSyncButtons();
+        vcToast('Your microphone was disconnected. Tap the mic to try again.');
+      };
+      return tr;
+    }
+    async function vcJoin() {
+      if (VC.joining || VC.inCall) return;
+      if (typeof RTCPeerConnection === 'undefined') { vcToast('This browser can\u2019t do flight briefings.'); return; }
+      if (!vcInPrivateFlight() || !currentChatUser || !vcFirebaseReady() || !vcMyKey()) { vcToast('Couldn\u2019t start the call. Please try again.'); return; }
+      VC.joining = true;
+      vcPrimeAudio();   // create + resume the AudioContext NOW, while the click is still a user gesture
+      const btn = document.getElementById('vc-join-btn');
+      const resetBtn = () => { if (btn) { btn.disabled = false; btn.textContent = 'JOIN BRIEFING'; } };
+      if (btn) { btn.disabled = true; btn.textContent = 'JOINING\u2026'; }
+      const stream = new MediaStream();
+      let micOk = false;
+      if (vcMediaOk()) {
+        try { const tr = await vcGetMic(); if (tr) { stream.addTrack(tr); micOk = true; } }
+        catch (err) { console.warn('mic error', err); vcToast(vcMicErrorText(err) + ' You joined muted.'); }
+      } else {
+        vcToast('This browser can\u2019t use the microphone here (needs https). You joined muted.');
+      }
+      // user left the tab / switched to a public flight while the permission prompt was open
+      const panel = document.getElementById('chat-panel');
+      if (!vcInPrivateFlight() || !panel || !panel.classList.contains('video-mode')) {
+        stream.getTracks().forEach((t) => t.stop());
+        VC.joining = false; resetBtn(); vcDropPrimed();
+        return;
+      }
+      const fid = currentFlightId, me = vcMyKey();
+      const sid = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+      VC.stream = stream; VC.inCall = true; VC.mic = micOk; VC.cam = false; VC.screen = false;
+      VC.flightId = fid; VC.key = me; VC.sid = sid; VC.peers = {}; VC.pushed = null; VC.focus = null; VC.focusAuto = false; VC.sigQ = Promise.resolve(); VC.republishing = false;
+      document.getElementById('chat-video-view').classList.add('in-call');
+      vcWatch();
+      vcRenderGrid(); vcSyncButtons(); vcSpeakStart();
+      try {
+        const base = 'videoCalls/' + fid;
+        await nsRef(base + '/signals/' + me).remove();                 // drop stale messages from an earlier session
+        const myRef = nsRef(base + '/participants/' + me);
+        const inboxRef = nsRef(base + '/signals/' + me);
+        VC.myRef = myRef; VC.inboxRef = inboxRef;
+        await myRef.onDisconnect().remove();
+        await inboxRef.onDisconnect().remove();
+        await myRef.set({ nick: currentChatUser.nickname, sid: sid, mic: VC.mic, cam: VC.cam, screen: false, t: firebase.database.ServerValue.TIMESTAMP });
+        if (!VC.inCall || VC.sid !== sid) { try { myRef.remove(); } catch (e) {} return; }   // left while connecting
+        VC.pushed = { mic: VC.mic, cam: VC.cam, screen: false };
+        VC.inboxCb = inboxRef.on('child_added', vcOnSignal, (err) => console.warn('video inbox error', err));
+        vcSyncButtons();
+      } catch (err) {
+        console.warn('video join error', err);
+        if (VC.sid === sid) { vcLeave(); vcToast('Couldn\u2019t connect to the call. Please try again.'); }
+      } finally {
+        VC.joining = false; resetBtn();
+      }
+    }
+    function vcLeave(keepRemote) {        // keepRemote = true when another tab of mine took over the call (don't delete its records)
+      // Flip these FIRST: myRef.remove() below fires my own participants listener synchronously, and with
+      // inCall/pushed still set, vcOnParticipants() thought my record was lost and vcRepublish() re-added me.
+      VC.inCall = false; VC.pushed = null; VC.republishing = false;
+      vcSpeakStop(); vcScreenStop();
+      Object.keys(VC.peers || {}).forEach((k) => vcClosePeer(k, true));
+      try { if (VC.inboxRef) { if (VC.inboxCb) VC.inboxRef.off('child_added', VC.inboxCb); VC.inboxRef.onDisconnect().cancel(); if (!keepRemote) VC.inboxRef.remove(); } } catch (e) {}
+      try { if (VC.myRef) { VC.myRef.onDisconnect().cancel(); if (!keepRemote) VC.myRef.remove(); } } catch (e) {}
+      VC.inboxRef = null; VC.inboxCb = null; VC.myRef = null;
+      VC.peers = {}; VC.sid = null; VC.key = null; VC.flightId = null; VC.pushed = null;
+      vcStopTracks();
+      VC.stream = null; VC.inCall = false; VC.cam = false; VC.screen = false; VC.mic = true; VC.focus = null; VC.focusAuto = false; VC.sigQ = null; VC.republishing = false;
+      const v = document.getElementById('chat-video-view');
+      if (v) v.classList.remove('in-call');
+      vcExitFullscreen();
+      const g = document.getElementById('vc-grid'); if (g) g.innerHTML = '';
+      const panel = document.getElementById('chat-panel');
+      if (!panel || !panel.classList.contains('video-mode')) vcUnwatch();
+      vcRenderLobby();
+    }
+    async function vcToggleMic() {
+      if (!VC.inCall || VC.micBusy) return;
+      const live = vcLiveTracks('audio');
+      if (live.length) {                         // normal mute / unmute
+        VC.mic = !VC.mic;
+        live.forEach((t) => { t.enabled = VC.mic; });
+        vcSyncButtons();
+        return;
+      }
+      // no mic yet (it was denied at join): try again
+      if (!vcMediaOk()) { vcToast('This browser can\u2019t use the microphone here (needs https).'); return; }
+      VC.micBusy = true;
+      try {
+        const tr = await vcGetMic();
+        if (!VC.inCall) { tr.stop(); return; }
+        VC.stream.addTrack(tr); VC.mic = true;
+        vcSendTrackAll('audio');
+      } catch (err) { console.warn('mic error', err); vcToast(vcMicErrorText(err)); }
+      finally { VC.micBusy = false; }
+      vcSyncButtons();
+    }
+    function vcCamOff() {
+      vcStopTracks('video');
+      VC.cam = false;
+      vcSendTrackAll('video');
+      vcAttachSelf(true); vcSyncButtons();
+    }
+    async function vcToggleCam() {
+      if (!VC.inCall || VC.camBusy) return;
+      if (VC.cam) { vcCamOff(); return; }
+      if (!vcMediaOk()) { vcToast('This browser can\u2019t use the camera here (needs https).'); return; }
+      VC.camBusy = true;
+      try {
+        const cs = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }, audio: false });
+        const tr = cs.getVideoTracks()[0];
+        if (!VC.inCall) { cs.getTracks().forEach((t) => t.stop()); return; }
+        tr.onended = () => { if (VC.stream && VC.stream.getVideoTracks().indexOf(tr) !== -1) vcCamOff(); };  // unplugged / revoked
+        VC.stream.addTrack(tr); VC.cam = true;
+        vcSendTrackAll('video');
+        vcAttachSelf(true);
+      } catch (err) {
+        console.warn('camera error', err);
+        const n = err && err.name;
+        vcToast(n === 'NotAllowedError' || n === 'SecurityError' ? 'Camera blocked. Allow it in your browser settings.' : n === 'NotFoundError' ? 'No camera found.' : 'Couldn\u2019t start your camera.');
+      } finally { VC.camBusy = false; }
+      vcSyncButtons();
+    }
+    // ---- STEP 4: screen share ----
+    function vcScreenOk() { return !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia); }
+    function vcScreenLive() { return (VC.screenTrack && VC.screenTrack.readyState === 'live') ? VC.screenTrack : null; }
+    // The camera track peers should get on the camera sender. The screen share is sent separately on peer.sSender.
+    function vcOutVideo() { return vcLiveTracks('video')[0] || null; }   // camera only: a screen share has its OWN track/sender (vcScreenLive -> sSender)
+    function vcScreenStop() {            // stops capture only; callers re-send video (camera comes back automatically)
+      const t = VC.screenTrack;
+      VC.screenTrack = null; VC.screenStream = null; VC.screen = false;
+      if (t) { try { t.onended = null; t.stop(); } catch (e) {} }
+    }
+    function vcScreenStopped() { vcScreenStop(); vcSendTrackAll('screen'); vcAttachSelf(true); vcSyncButtons(); }
+    async function vcToggleScreen() {
+      if (!VC.inCall || VC.screenBusy) return;
+      if (VC.screen) { vcScreenStopped(); return; }
+      if (!vcScreenOk()) { vcToast('Screen sharing isn\u2019t supported on this device.'); return; }
+      VC.screenBusy = true;
+      try {
+        const ds = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 15, max: 30 } }, audio: false });
+        const tr = ds.getVideoTracks()[0];
+        if (!VC.inCall || !tr) { ds.getTracks().forEach((t) => t.stop()); return; }
+        try { tr.contentHint = 'detail'; } catch (e) {}
+        tr.onended = () => { if (VC.screenTrack === tr) vcScreenStopped(); };   // browser's own "Stop sharing" bar
+        VC.screenTrack = tr; VC.screenStream = new MediaStream([tr]); VC.screen = true;
+        vcSendTrackAll('screen'); vcAttachSelf(true);
+      } catch (err) {
+        console.warn('screen share error', err);
+        if (!(err && (err.name === 'NotAllowedError' || err.name === 'AbortError'))) vcToast('Couldn\u2019t start screen sharing.');   // picker cancelled = silent
+      } finally { VC.screenBusy = false; }
+      vcSyncButtons();
+    }
+    // ---- STEP 3: signaling + peers (WebRTC full mesh over Firebase RTDB) ----
+    // Free public STUN only. Strict NATs / some mobile networks may need a TURN server (add it here).
+    // STEP 5: TURN relay for strict NATs / mobile data. Fill this in with your provider's values (Metered, Cloudflare,
+    // Twilio, or your own coturn), e.g. { urls: ['turn:HOST:3478?transport=udp', 'turn:HOST:3478?transport=tcp', 'turns:HOST:443?transport=tcp'], username: '...', credential: '...' }
+    // NOTE: these values are visible to anyone who views the page source, so use short-lived / rate-limited credentials.
+    const VC_TURN = [];
+    const VC_ICE = { iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }].concat(VC_TURN) };
+    const VC_DISCONNECT_MS = 3000, VC_RETRY_MS = 8000, VC_MAX_RESTARTS = 3, VC_MAX_REBUILDS = 2;
+    function vcMyKey() { return avatarUploadKey((currentChatUser && currentChatUser.nickname) || ''); }
+    function vcFirebaseReady() { try { return !!(ensureFirebaseApp() && firebase.database); } catch (e) { return false; } }
+
+    // Live list of who is in this flight's call. Runs while the Video tab is open or while in a call.
+    function vcWatch() {
+      const fid = vcInPrivateFlight() ? currentFlightId : null;
+      if (VC.partRef && VC.watchFlight === fid) return;
+      vcUnwatch();
+      if (!fid || !vcFirebaseReady()) return;
+      VC.watchFlight = fid;
+      VC.partRef = nsRef('videoCalls/' + fid + '/participants');
+      VC.partCb = VC.partRef.on('value', (snap) => {
+        const raw = snap.val() || {}, clean = {};
+        Object.keys(raw).forEach((k) => { if (raw[k] && raw[k].sid) clean[k] = raw[k]; });   // ignore half-written records
+        try { vcOnParticipants(clean); } catch (e) { console.error('video participants error', e); }
+      }, (err) => console.warn('video watch error', err));
+    }
+    function vcUnwatch() {
+      if (VC.partRef && VC.partCb) { try { VC.partRef.off('value', VC.partCb); } catch (e) {} }
+      VC.partRef = null; VC.partCb = null; VC.watchFlight = null; VC.parts = {};
+      vcRenderLobby();
+    }
+    function vcOnParticipants(parts) {
+      VC.parts = parts;
+      vcRenderLobby();
+      if (!VC.inCall || !VC.key) return;
+      // STEP 5: same account joined from another tab -> that tab owns the call now, step aside quietly
+      if (VC.pushed && parts[VC.key] && parts[VC.key].sid !== VC.sid) { vcLeave(true); vcToast('You joined this call from another tab.'); return; }
+      // STEP 5: my record vanished (my own connection dropped and the server ran onDisconnect) -> publish it again
+      if (VC.pushed && !parts[VC.key]) vcRepublish();
+      // drop peers that left or rejoined (new sid)
+      Object.keys(VC.peers).forEach((k) => { if (!parts[k] || parts[k].sid !== VC.peers[k].sid) vcClosePeer(k, true); });
+      // the peer with the larger key sends the offer; the other one just waits for it
+      Object.keys(parts).forEach((k) => {
+        if (k === VC.key || VC.peers[k]) return;
+        if (VC.key > k) vcCallPeer(k, parts[k]);
+      });
+      vcSyncTiles();
+    }
+    // One tile per remote participant; keeps existing <video> elements so playback isn't interrupted.
+    function vcSyncTiles() {
+      const g = document.getElementById('vc-grid'); if (!g || !VC.inCall) return;
+      const parts = VC.parts || {};
+      const keys = Object.keys(parts).filter((k) => k !== VC.key).sort((a, b) => ((parts[a].t || 0) - (parts[b].t || 0)) || (a < b ? -1 : 1));
+      g.querySelectorAll('.vc-tile[data-vc-peer]').forEach((t) => {
+        if (keys.indexOf(t.getAttribute('data-vc-peer')) < 0) { if (vcTileFsActive(t)) vcTileExitFs(t); t.remove(); }
+      });
+      keys.forEach((k) => {
+        const p = parts[k];
+        let t = g.querySelector('.vc-tile[data-vc-peer="' + k + '"]:not([data-vc-screen])');
+        if (!t) {
+          const d = document.createElement('div');
+          d.innerHTML = vcTileHtml(p.nick || k, k);
+          t = d.firstChild; g.appendChild(t);
+        }
+        const peer = VC.peers[k], stream = peer ? peer.stream : null, v = t.querySelector('video');
+        if (v && v.srcObject !== stream) v.srcObject = stream;
+        const hasCam = !!(p.cam && stream && stream.getVideoTracks().length);   // camera card = camera only
+        if (v && stream) { const pr = v.play(); if (pr && pr.catch) pr.catch(() => {}); }
+        t.classList.toggle('has-video', hasCam);
+        t.classList.toggle('muted', p.mic === false);
+        // their shared screen = its OWN tile, right after their camera card
+        let st = g.querySelector('.vc-tile[data-vc-peer="' + k + '"][data-vc-screen]');
+        const sstream = peer ? peer.screenStream : null;
+        if (p.screen) {
+          if (!st) {
+            const d2 = document.createElement('div');
+            d2.innerHTML = vcScreenTileHtml(p.nick || k, k);
+            st = d2.firstChild; g.insertBefore(st, t.nextSibling);
+          }
+          const sv = st.querySelector('video');
+          if (sv && sv.srcObject !== sstream) sv.srcObject = sstream;
+          if (sv && sstream) { const pr2 = sv.play(); if (pr2 && pr2.catch) pr2.catch(() => {}); }
+          const sn = st.querySelector('.vc-name > span'); if (sn && sn.textContent !== (p.nick || k)) sn.textContent = p.nick || k;
+        } else if (st) {
+          if (vcTileFsActive(st)) vcTileExitFs(st);
+          st.remove(); st = null;
+        }
+        // someone starts sharing -> focus their SCREEN tile (unless I picked a tile myself); they stop -> go back
+        const wasSharing = t.getAttribute('data-vc-sharing') === '1', isSharing = !!p.screen;
+        if (wasSharing !== isSharing) {
+          t.setAttribute('data-vc-sharing', isSharing ? '1' : '0');
+          if (isSharing && !VC.focus) { VC.focus = k + ':screen'; VC.focusAuto = true; }
+          else if (!isSharing && VC.focus === k + ':screen' && VC.focusAuto) { VC.focus = null; VC.focusAuto = false; }
+        }
+        const nm = t.querySelector('.vc-name > span'); if (nm && nm.textContent !== (p.nick || k)) nm.textContent = p.nick || k;
+      });
+      g.setAttribute('data-n', String(g.children.length));
+      vcApplyFocus();
+    }
+    function vcRepublish() {
+      if (!VC.inCall || VC.republishing || !VC.myRef || !VC.inboxRef || !VC.sid) return;
+      VC.republishing = true;
+      const sid = VC.sid, ref = VC.myRef;
+      try {
+        VC.myRef.onDisconnect().remove(); VC.inboxRef.onDisconnect().remove();
+        VC.myRef.set({ nick: currentChatUser.nickname, sid: sid, mic: VC.mic, cam: VC.cam, screen: !!VC.screen, t: firebase.database.ServerValue.TIMESTAMP })
+          .then(() => {
+            if (!VC.inCall || VC.sid !== sid) { try { ref.remove(); } catch (e) {} return; }   // left meanwhile: don't leave a ghost record
+            VC.pushed = { mic: VC.mic, cam: VC.cam, screen: !!VC.screen };
+          })
+          .catch((e) => console.warn('video republish failed', e))
+          .then(() => { VC.republishing = false; });
+      } catch (e) { VC.republishing = false; }
+    }
+    // Publish my mic / camera state so other tiles show the muted icon and the video.
+    function vcPushState() {
+      if (!VC.myRef || !VC.pushed) return;
+      const scr = !!VC.screen;
+      if (VC.pushed.mic === VC.mic && VC.pushed.cam === VC.cam && VC.pushed.screen === scr) return;
+      VC.pushed = { mic: VC.mic, cam: VC.cam, screen: scr };
+      try { VC.myRef.update({ mic: VC.mic, cam: VC.cam, screen: scr }); } catch (e) {}
+    }
+    function vcSend(to, msg) {
+      if (!VC.flightId || !VC.key) return;
+      msg.from = VC.key; msg.sid = VC.sid;
+      try {
+        const r = nsRef('videoCalls/' + VC.flightId + '/signals/' + to).push(JSON.parse(JSON.stringify(msg)));
+        if (r && r.catch) r.catch((e) => console.warn('signal send failed', e));
+      } catch (e) { console.warn('signal send failed', e); }
+    }
+    function vcCreatePeer(k, sid, answerer) {
+      const pc = new RTCPeerConnection(VC_ICE);
+      const peer = { key: k, sid: sid, pc: pc, stream: new MediaStream(), screenStream: new MediaStream(), pending: [], remoteSet: false, aSender: null, vSender: null, sSender: null };
+      // Offerer: all three media lines exist from the start (audio, camera video, SCREEN video), so toggling
+      // mic/camera/screen later is only replaceTrack() (no renegotiation).
+      // Answerer: do NOT pre-create transceivers (they would never match the offer's m-lines); vcBindAnswerer() adopts the offer's.
+      if (!answerer) {
+        const at = pc.addTransceiver('audio', { direction: 'sendrecv' });
+        const vt = pc.addTransceiver('video', { direction: 'sendrecv' });
+        const sx = pc.addTransceiver('video', { direction: 'sendrecv' });   // 2nd video line = screen share
+        peer.aSender = at.sender; peer.vSender = vt.sender; peer.sSender = sx.sender;
+        const a = vcLiveTracks('audio')[0], v = vcOutVideo(), sc = vcScreenLive();
+        if (a) at.sender.replaceTrack(a).catch(() => {});
+        if (v) vt.sender.replaceTrack(v).catch(() => {});
+        if (sc) sx.sender.replaceTrack(sc).catch(() => {});
+      }
+      pc.onicecandidate = (e) => { if (e.candidate) vcSend(k, { type: 'ice', data: e.candidate.toJSON(), toSid: sid }); };
+      pc.ontrack = (e) => {
+        // the 1st video transceiver = camera, the 2nd = screen share (same order on both sides)
+        const vids = pc.getTransceivers().filter((x) => x.receiver && x.receiver.track && x.receiver.track.kind === 'video');
+        const isScreen = e.track.kind === 'video' && vids.indexOf(e.transceiver) === 1;
+        (isScreen ? peer.screenStream : peer.stream).addTrack(e.track);
+        vcSyncTiles();
+      };
+      pc.onconnectionstatechange = () => vcOnPeerState(peer);
+      VC.peers[k] = peer;
+      return peer;
+    }
+    // Answerer side: take the transceivers created by the remote offer, make them send+receive, and attach my tracks.
+    function vcBindAnswerer(peer) {
+      let nv = 0;
+      peer.pc.getTransceivers().forEach((tr) => {
+        const kind = tr.receiver && tr.receiver.track && tr.receiver.track.kind;
+        if (kind === 'audio' && !peer.aSender) peer.aSender = tr.sender;
+        else if (kind === 'video') {
+          nv++;
+          if (nv === 1 && !peer.vSender) peer.vSender = tr.sender;          // camera
+          else if (nv === 2 && !peer.sSender) peer.sSender = tr.sender;     // screen share
+          else return;
+        } else return;
+        try { tr.direction = 'sendrecv'; } catch (e) {}
+      });
+      const a = vcLiveTracks('audio')[0], v = vcOutVideo(), sc = vcScreenLive();
+      if (a && peer.aSender) peer.aSender.replaceTrack(a).catch(() => {});
+      if (v && peer.vSender) peer.vSender.replaceTrack(v).catch(() => {});
+      if (sc && peer.sSender) peer.sSender.replaceTrack(sc).catch(() => {});
+    }
+    async function vcCallPeer(k, p, rebuilds) {
+      const peer = vcCreatePeer(k, p.sid);
+      peer.rebuilds = rebuilds || 0;
+      try {
+        const o = await peer.pc.createOffer();
+        await peer.pc.setLocalDescription(o);
+        // fresh = brand-new connection: the receiver must throw away any old one it still has for me
+        vcSend(k, { type: 'offer', sdp: peer.pc.localDescription.sdp, toSid: p.sid, fresh: true });
+      } catch (err) { console.warn('offer error', err); }
+    }
+    // ---- STEP 5: reconnect (ICE restart, then a full rebuild as a last resort) ----
+    function vcMarkPeer(k, on) {
+      document.querySelectorAll('#vc-grid .vc-tile[data-vc-peer="' + k + '"]').forEach((t) => t.classList.toggle('reconnecting', !!on));
+    }
+    function vcOnPeerState(peer) {
+      const k = peer.key;
+      if (!VC.inCall || VC.peers[k] !== peer) return;
+      const st = peer.pc.connectionState;
+      clearTimeout(peer.rtTimer);
+      if (st === 'connected') { peer.tries = 0; vcMarkPeer(k, false); return; }
+      if (st === 'disconnected') { vcMarkPeer(k, true); peer.rtTimer = setTimeout(() => vcReconnect(peer), VC_DISCONNECT_MS); }   // often heals by itself
+      else if (st === 'failed') { vcMarkPeer(k, true); vcReconnect(peer); }
+    }
+    function vcReconnect(peer) {
+      const k = peer.key;
+      if (!VC.inCall || VC.peers[k] !== peer) return;
+      const st = peer.pc.connectionState;
+      if (st === 'connected' || st === 'closed') return;
+      clearTimeout(peer.rtTimer);
+      peer.tries = (peer.tries || 0) + 1;
+      if (VC.key > k) {                                   // I send the offers for this pair
+        if (peer.tries > VC_MAX_RESTARTS) { vcRebuildPeer(k); return; }
+        vcRestartIce(peer);
+      } else if (peer.tries <= VC_MAX_RESTARTS + 1) {      // the other side offers: ask it to restart
+        vcSend(k, { type: 'restart', toSid: peer.sid });
+      } else { return; }                                   // the other side will rebuild; stop nagging
+      peer.rtTimer = setTimeout(() => vcReconnect(peer), VC_RETRY_MS);
+    }
+    async function vcRestartIce(peer) {
+      const pc = peer.pc;
+      if (pc.signalingState !== 'stable') return;
+      try {
+        if (pc.restartIce) pc.restartIce();
+        const o = await pc.createOffer({ iceRestart: true });
+        await pc.setLocalDescription(o);
+        vcSend(peer.key, { type: 'offer', sdp: pc.localDescription.sdp, toSid: peer.sid });
+      } catch (err) { console.warn('ice restart error', err); }
+    }
+    function vcRebuildPeer(k) {
+      const old = VC.peers[k], p = VC.parts && VC.parts[k];
+      if (!old || !p || !p.sid) return;
+      const n = (old.rebuilds || 0) + 1;
+      if (n > VC_MAX_REBUILDS) { vcMarkPeer(k, true); vcToast('Couldn\u2019t reconnect to ' + (p.nick || 'a crewmate') + '. Leave and rejoin the briefing to try again.'); return; }
+      vcClosePeer(k, true);
+      vcCallPeer(k, p, n);
+      vcSyncTiles();
+    }
+    function vcKickReconnect() {            // network came back / tab became visible: retry anything not connected, right now
+      if (!VC.inCall) return;
+      if (VC.ac && VC.ac.state === 'suspended') { try { const pr = VC.ac.resume(); if (pr && pr.catch) pr.catch(() => {}); } catch (e) {} }
+      Object.keys(VC.peers).forEach((k) => {
+        const peer = VC.peers[k], st = peer.pc.connectionState;
+        if (st === 'disconnected' || st === 'failed') { peer.tries = 0; vcReconnect(peer); }
+      });
+    }
+    function vcClosePeer(k, skipSync) {
+      const peer = VC.peers[k]; if (!peer) return;
+      delete VC.peers[k];
+      clearTimeout(peer.rtTimer);
+      try { peer.pc.ontrack = null; peer.pc.onicecandidate = null; peer.pc.onconnectionstatechange = null; peer.pc.close(); } catch (e) {}
+      try { peer.stream.getTracks().forEach((t) => peer.stream.removeTrack(t)); } catch (e) {}
+      try { peer.screenStream.getTracks().forEach((t) => peer.screenStream.removeTrack(t)); } catch (e) {}
+      if (!skipSync) vcSyncTiles();
+    }
+    // Swap the live mic / camera track into every peer connection.
+    function vcSendTrackAll(kind) {      // kind: 'audio' | 'video' (camera) | 'screen'
+      const t = (kind === 'screen' ? vcScreenLive() : kind === 'video' ? vcOutVideo() : vcLiveTracks('audio')[0]) || null;
+      Object.keys(VC.peers).forEach((k) => {
+        const pr = VC.peers[k];
+        const s = kind === 'screen' ? pr.sSender : kind === 'video' ? pr.vSender : pr.aSender;
+        if (s) s.replaceTrack(t).catch((e) => console.warn('replaceTrack failed', e));
+      });
+    }
+    function vcOnSignal(snap) {
+      const m = snap.val();
+      try { snap.ref.remove(); } catch (e) {}
+      if (!m || !VC.inCall) return;
+      if (m.toSid && m.toSid !== VC.sid) return;     // meant for an earlier session of mine
+      // one at a time, in arrival order: an ICE candidate must never overtake the offer/answer before it
+      VC.sigQ = (VC.sigQ || Promise.resolve()).then(() => vcHandleSignal(m)).catch((err) => console.warn('signal error', err));
+    }
+    async function vcFlushIce(peer) {
+      const q = peer.pending; peer.pending = [];
+      for (const c of q) { try { await peer.pc.addIceCandidate(c); } catch (e) {} }
+    }
+    async function vcHandleSignal(m) {
+      const k = m.from;
+      if (!k || k === VC.key) return;
+      let peer = VC.peers[k];
+      if (m.type === 'offer') {
+        if (peer && (peer.sid !== m.sid || m.fresh)) { vcClosePeer(k, true); peer = null; }   // they rejoined / rebuilt
+        if (!peer) peer = vcCreatePeer(k, m.sid, true);
+        await peer.pc.setRemoteDescription({ type: 'offer', sdp: m.sdp });
+        if (!peer.aSender || !peer.vSender || !peer.sSender) vcBindAnswerer(peer);
+        peer.remoteSet = true; await vcFlushIce(peer);
+        const ans = await peer.pc.createAnswer();
+        await peer.pc.setLocalDescription(ans);
+        vcSend(k, { type: 'answer', sdp: peer.pc.localDescription.sdp, toSid: m.sid });
+        vcSyncTiles();
+        return;
+      }
+      if (!peer || peer.sid !== m.sid) return;
+      if (m.type === 'restart') { if (VC.key > k) vcRestartIce(peer); return; }
+      if (m.type === 'answer') {
+        await peer.pc.setRemoteDescription({ type: 'answer', sdp: m.sdp });
+        peer.remoteSet = true; await vcFlushIce(peer);
+      } else if (m.type === 'ice') {
+        if (peer.remoteSet) { try { await peer.pc.addIceCandidate(m.data); } catch (e) {} }
+        else peer.pending.push(m.data);
+      }
+    }
+
+    // ---- STEP 4: speaking detection + focus ----
+    // One shared AudioContext, one AnalyserNode per audio track. Meters are only analysed (never routed to the
+    // speakers), so there is no echo; remote audio is still played by the tile's <video>.
+    const VC_SPEAK_LEVEL = 0.012, VC_SPEAK_HOLD = 450;
+    function vcMakeMeter(track) {
+      if (!VC.ac) return null;
+      try {
+        const src = VC.ac.createMediaStreamSource(new MediaStream([track]));
+        const an = VC.ac.createAnalyser(); an.fftSize = 1024; an.smoothingTimeConstant = 0.3;
+        src.connect(an);
+        return { trackId: track.id, src: src, an: an, buf: new Uint8Array(an.fftSize), last: 0 };
+      } catch (e) { return null; }
+    }
+    function vcMeterFree(m) { if (!m) return; try { m.src.disconnect(); } catch (e) {} try { m.an.disconnect(); } catch (e) {} }
+    function vcMeterLevel(m) {
+      m.an.getByteTimeDomainData(m.buf);
+      let sum = 0;
+      for (let i = 0; i < m.buf.length; i++) { const x = (m.buf[i] - 128) / 128; sum += x * x; }
+      return Math.sqrt(sum / m.buf.length);
+    }
+    function vcSpeakStart() {
+      vcSpeakStop();
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;                                   // no WebAudio: calls still work, just no green ring
+      if (VC.acPre && VC.acPre.state !== 'closed') { VC.ac = VC.acPre; VC.acPre = null; }
+      else { try { VC.ac = new AC(); } catch (e) { VC.ac = null; return; } }
+      vcWakeAudio();
+      VC.meters = {};
+      VC.spkTimer = setInterval(vcSpeakTick, 90);
+      const vv = document.getElementById('chat-video-view');
+      if (vv) vv.onpointerdown = vcWakeAudio;
+      if (!VC.wakeBound) {
+        VC.wakeBound = true;
+        ['pointerdown', 'touchstart', 'keydown', 'click'].forEach((ev) => document.addEventListener(ev, vcWakeAudio, true));
+      }
+    }
+    function vcWakeAudio() {
+      const c = VC.ac;
+      if (c && c.state === 'suspended') { try { const pr = c.resume(); if (pr && pr.catch) pr.catch(() => {}); } catch (e) {} }
+    }
+    function vcPrimeAudio() {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC || (VC.acPre && VC.acPre.state !== 'closed')) return;
+      try { VC.acPre = new AC(); const pr = VC.acPre.resume(); if (pr && pr.catch) pr.catch(() => {}); } catch (e) { VC.acPre = null; }
+    }
+    function vcDropPrimed() {
+      if (VC.acPre) { try { const pr = VC.acPre.close(); if (pr && pr.catch) pr.catch(() => {}); } catch (e) {} VC.acPre = null; }
+    }
+    function vcSpeakStop() {
+      if (VC.spkTimer) { clearInterval(VC.spkTimer); VC.spkTimer = null; }
+      Object.keys(VC.meters || {}).forEach((k) => vcMeterFree(VC.meters[k]));
+      VC.meters = {};
+      if (VC.ac) { try { const pr = VC.ac.close(); if (pr && pr.catch) pr.catch(() => {}); } catch (e) {} VC.ac = null; }
+      document.querySelectorAll('#vc-grid .vc-tile.speaking').forEach((t) => t.classList.remove('speaking'));
+    }
+    function vcSpeakTick() {
+      if (!VC.inCall || !VC.ac) return;
+      if (VC.ac.state === 'suspended') { try { const pr = VC.ac.resume(); if (pr && pr.catch) pr.catch(() => {}); } catch (e) {} }
+      // which audio track should each meter be listening to right now?
+      const want = {};
+      const mine = vcLiveTracks('audio')[0]; if (mine) want.self = mine;
+      Object.keys(VC.peers).forEach((k) => {
+        const tr = VC.peers[k].stream.getAudioTracks().filter((x) => x.readyState === 'live')[0];
+        if (tr) want[k] = tr;
+      });
+      Object.keys(VC.meters).forEach((k) => { if (!want[k] || VC.meters[k].trackId !== want[k].id) { vcMeterFree(VC.meters[k]); delete VC.meters[k]; } });
+      Object.keys(want).forEach((k) => { if (!VC.meters[k]) { const m = vcMakeMeter(want[k]); if (m) VC.meters[k] = m; } });
+      const g = document.getElementById('vc-grid'); if (!g) return;
+      const now = Date.now();
+      g.querySelectorAll('.vc-tile').forEach((t) => {
+        if (t.hasAttribute('data-vc-screen')) { if (t.classList.contains('speaking')) t.classList.remove('speaking'); return; }   // screen tiles have no voice
+        const k = t.getAttribute('data-vc-peer') || 'self';
+        const m = VC.meters[k];
+        const muted = k === 'self' ? !VC.mic : !!(VC.parts[k] && VC.parts[k].mic === false);
+        if (m && !muted && vcMeterLevel(m) > VC_SPEAK_LEVEL) m.last = now;
+        const on = !!(m && !muted && (now - m.last) < VC_SPEAK_HOLD);
+        if (t.classList.contains('speaking') !== on) t.classList.toggle('speaking', on);
+      });
+    }
+    // Focus layout: VC.focus = 'self' | peer key | null.
+    function vcTileKey(t) {
+      const base = t.hasAttribute('data-vc-selfscreen') ? 'self' : (t.getAttribute('data-vc-peer') || 'self');
+      return t.hasAttribute('data-vc-screen') ? base + ':screen' : base;
+    }
+    function vcApplyFocus() {
+      const g = document.getElementById('vc-grid'); if (!g) return;
+      const tiles = Array.prototype.slice.call(g.querySelectorAll('.vc-tile'));
+      let ft = null;
+      if (VC.focus && tiles.length > 1) ft = tiles.filter((t) => vcTileKey(t) === VC.focus)[0] || null;
+      if (!ft) { VC.focus = null; VC.focusAuto = false; }
+      g.classList.toggle('has-focus', !!ft);
+      g.style.setProperty('--vc-o', String(Math.max(1, tiles.length - 1)));
+      // side list: every other tile stays in the list; it scrolls. Each row is sized so 3 tiles fit (4 in full screen).
+      const cap = vcFsActive() ? 4 : 3;
+      tiles.forEach((t) => t.classList.toggle('focused', t === ft));
+      const side = ft ? tiles.length - 1 : 0;
+      g.style.setProperty('--vc-r', String(cap));
+      g.style.setProperty('--vc-span', String(Math.max(cap, side)));
+      if (ft) {
+        const cs = getComputedStyle(g);
+        const padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+        const gap = parseFloat(cs.rowGap) || 8;
+        const h = (g.clientHeight - padY - gap * (cap - 1)) / cap;
+        if (h > 20) g.style.setProperty('--vc-rh', h + 'px');
+      }
+      if (!g._vcRO && window.ResizeObserver) { g._vcRO = new ResizeObserver(() => { if (g.classList.contains('has-focus')) vcApplyFocus(); }); g._vcRO.observe(g); }
+    }
+    function vcGridClick(e) {
+      const t = e.target && e.target.closest ? e.target.closest('.vc-tile') : null;
+      if (!t) return;
+      const g = document.getElementById('vc-grid');
+      if (!g || g.children.length < 2) return;
+      const k = vcTileKey(t);
+      VC.focus = VC.focus === k ? null : k;
+      VC.focusAuto = false;                              // my own pick: don't auto-undo it when a share ends
+      vcApplyFocus();
+    }
+    // ---- STEP 5: page lifecycle ----
+    // Leave when the page is closed / navigated away (the onDisconnect handlers are the backup if this never runs).
+    window.addEventListener('pagehide', () => { if (VC.inCall) { try { vcLeave(); } catch (e) {} } });
+    // Network back / tab visible again -> retry broken connections immediately instead of waiting for the timers.
+    window.addEventListener('online', vcKickReconnect);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') vcKickReconnect(); });
+    /* ===================== end VIDEOCALL block (STEPS 4-5) ===================== */
+
     // The Messages PIN prompt comes first, in its own centered popup, and the Crewmates
     // list only shows once messages are unlocked on this device.
     async function dmGateOpen() {
@@ -23057,10 +24397,31 @@ Answer: C</pre>
       const cp = document.getElementById('chat-panel');
       if (cp && cp.classList.contains('crew-mode')) renderChatCrewList();
     }
+    // Recovery-key steps (Authenticator code, the key itself) open as a centered popup, like the
+    // PIN prompt, instead of filling the whole chat panel. Going back restores the chat in place.
+    function dmPopupOn() {
+      if (DM.gate || DM.popup) return;
+      const ov = dmEl('dm-overlay'); if (!ov) return;
+      DM.popup = true;
+      // same plain "Messages" title the PIN prompts use (no crewmate avatar / Callsign)
+      const ttl = dmEl('dm-title');
+      if (ttl) { DM.popupTitle = ttl.innerHTML; ttl.textContent = 'Messages'; }
+      ov.classList.remove('in-box'); ov.style.left = ov.style.top = ov.style.width = ov.style.height = '';
+      ov.classList.add('dm-popup', 'visible');   // also opens from the Crewmates list, where Messages isn't showing yet
+    }
+    function dmPopupOff() {
+      if (!DM.popup) return;
+      DM.popup = false;
+      const ov = dmEl('dm-overlay'); if (ov) ov.classList.remove('dm-popup');
+      const ttl = dmEl('dm-title');
+      if (ttl && DM.popupTitle !== undefined && DM.popupTitle !== null) { ttl.innerHTML = DM.popupTitle; }
+      DM.popupTitle = null;
+      dmPlaceInBox();
+    }
     function dmPlaceInBox() {
       const ov = document.getElementById('dm-overlay'), panel = document.getElementById('chat-panel');
       if (!ov || !panel) return;
-      if (DM.gate) { ov.classList.remove('in-box'); return; }
+      if (DM.gate || DM.popup) { ov.classList.remove('in-box'); return; }
       const inBox = panel.classList.contains('visible') && panel.classList.contains('crew-mode');
       ov.classList.toggle('in-box', inBox);
       if (inBox) {
@@ -23072,20 +24433,69 @@ Answer: C</pre>
       }
     }
     window.addEventListener('resize', () => { const ov = document.getElementById('dm-overlay'); if (ov && ov.classList.contains('visible') && ov.classList.contains('in-box')) dmPlaceInBox(); });
+    // When each chat last had a message (timestamps only, no message text) -> Crewmates list order.
+    const dmCrewTs = {};
+    let dmCrewTsLoaded = null;
+    function dmTsLoad() {
+      let me = null; try { me = dmMe(); } catch (e) {}
+      if (!me || dmCrewTsLoaded === me) return;
+      dmCrewTsLoaded = me;
+      try { const o = JSON.parse(localStorage.getItem('dmTs:' + me) || '{}'); Object.keys(o).forEach((k) => { if (!(dmCrewTs[k] > o[k])) dmCrewTs[k] = o[k]; }); } catch (e) {}
+    }
+    function dmSetTs(n, ts) {
+      if (!n || typeof ts !== 'number' || !(ts > (dmCrewTs[n] || 0))) return false;
+      dmCrewTs[n] = ts;
+      try { localStorage.setItem('dmTs:' + dmMe(), JSON.stringify(dmCrewTs)); } catch (e) {}
+      return true;
+    }
+    // Most recent conversation on top; chats with no messages after them, A to Z.
+    function dmCrewCompare(a, b) { return (dmCrewTs[b] || 0) - (dmCrewTs[a] || 0) || a.localeCompare(b); }
+    function dmSortCrewRows() {
+      const el = document.getElementById('chat-crew-list'); if (!el) return;
+      const rows = [...el.children].filter((r) => r.classList && r.classList.contains('chat-crew-row'));
+      if (rows.length < 2) return;
+      const nameOf = (r) => { const pv = r.querySelector('.chat-crew-preview'); return (pv && pv.getAttribute('data-peer')) || ''; };
+      const sorted = rows.slice().sort((a, b) => dmCrewCompare(nameOf(a), nameOf(b)));
+      if (sorted.every((r, i) => r === rows[i])) return;
+      sorted.forEach((r) => el.appendChild(r));
+      el.__lastHtml = null;
+    }
+    // Who appears in the Crewmates list (crewmates + Co-Pilot you can message).
+    function dmCrewNames() {
+      dmTsLoad();
+      const keys = new Set(Object.keys(myCrewmates || {}));
+      if (myCopilotKey) keys.add(myCopilotKey);
+      return [...keys]
+        .map((k) => (latestPresenceData && latestPresenceData[k] && latestPresenceData[k].nickname) || k)
+        .filter((n) => dmCanMessage(n))
+        .sort(dmCrewCompare);
+    }
+    // Load every crewmate's last-message preview in the background as soon as you're signed in (and
+    // whenever your crewmates change), so the Crewmates list already has them when you open it
+    // instead of filling them in a few seconds later. Only unlocked, decrypted previews are kept.
+    let dmWarmTimer = null;
+    function dmWarmCrewPreviews() {
+      clearTimeout(dmWarmTimer);
+      dmWarmTimer = setTimeout(async () => {
+        try {
+          if (!currentChatUser) return;
+          if (!(await waitForFirebaseUidMatching(currentChatUser.nickname, 15000))) return;
+          if (!DM.priv) { try { await dmInitKeys(); } catch (e) {} }   // silent: only unlocks if this device already holds your key
+          if (!DM.priv) return;
+          await Promise.all(dmCrewNames().map((n) => dmWarmThread(n).catch(() => {})));
+        } catch (e) {}
+      }, 250);
+    }
     function renderChatCrewList() {
       const el = document.getElementById('chat-crew-list');
       if (!el) return;
-      const keys = new Set(Object.keys(myCrewmates || {}));
-      if (myCopilotKey) keys.add(myCopilotKey);
-      const names = [...keys]
-        .map((k) => (latestPresenceData && latestPresenceData[k] && latestPresenceData[k].nickname) || k)
-        .filter((n) => dmCanMessage(n))
-        .sort((a, b) => a.localeCompare(b));
+      dmSyncKeyFab();
+      const names = dmCrewNames();
       if (!names.length) {
         el.innerHTML = '<div class="chat-crew-empty">No crewmates to message yet.<br>Add crewmates and they will show up here.</div>';
         return;
       }
-      el.innerHTML = names.map((n) => {
+      const crewHtml = names.map((n) => {
         const av = getLiveAvatar(n) || '\u2708\uFE0F';
         const border = getLiveBorderClass(n) || '';
         const nickAttr = escapeHtml(n).replace(/'/g, "\\'");
@@ -23094,7 +24504,12 @@ Answer: C</pre>
           '<span class="chat-crew-info"><span data-nickname-anim="' + escapeHtml(n) + '" data-text="' + escapeHtml(n) + '" class="chat-crew-name ' + (getLiveNicknameAnimClass(n) || '') + '">' + escapeHtml(n) + '</span>' +
           '<span class="chat-crew-preview" data-peer="' + escapeHtml(n) + '"></span></span><span class="chat-crew-lock"></span></button>';
       }).join('');
-      if (window.lockBreatheWidths) window.lockBreatheWidths(el);
+      const crewSame = el.__lastHtml === crewHtml && el.firstElementChild && el.firstElementChild === el.__lastFirst;
+      setHtmlIfChanged(el, crewHtml);
+      if (!crewSame && window.lockBreatheWidths) window.lockBreatheWidths(el);
+      // A rebuild leaves every preview line empty (the row shrinks) until the fetch returns, which made the
+      // rows jump. Fill them straight from the cache first; the fetch below then only changes what differs.
+      if (!crewSame) names.forEach((n) => { try { dmPaintCrewRow(n); } catch (e) {} });
       const tok = (renderChatCrewList._tok = (renderChatCrewList._tok || 0) + 1);
       names.forEach((n) => {
         dmPreviewFor(n).then((pv) => {
@@ -23151,6 +24566,8 @@ Answer: C</pre>
       delete dmCrewWatch[peerKey];
     }
     function dmStopCrewWatches() { Object.keys(dmCrewWatch).forEach(dmUnwatchCrewThread); }
+    // Write text only when it differs, so unchanged previews aren't touched (no flicker / reflow).
+    function dmSetText(node, text) { if (node.textContent !== text) node.textContent = text; }
     function dmPaintCrewRow(n) {
       const el = document.getElementById('chat-crew-list');
       if (!el) return;
@@ -23171,7 +24588,7 @@ Answer: C</pre>
           unread = false;
           nsRef('dmUnread/' + dmMe() + '/' + peerKey).remove().catch(() => {});
         } else {
-          node.textContent = c + ' new message' + (c === 1 ? '' : 's');
+          dmSetText(node, c + ' new message' + (c === 1 ? '' : 's'));
         }
         if (c === undefined) { /* count loading: leave text as is */ }
       } else {
@@ -23181,7 +24598,7 @@ Answer: C</pre>
       if (row) row.classList.toggle('unread', unread);
       if (!unread) {
         const pv = dmCrewPv[n];
-        node.textContent = !pv ? '' : (pv.locked ? '\uD83D\uDD12 Encrypted message' : (pv.mine ? 'You: ' : '') + pv.text);
+        dmSetText(node, !pv ? '' : (pv.locked ? '\uD83D\uDD12 Encrypted message' : (pv.mine ? 'You: ' : '') + pv.text));
       }
     }
     // Toggle the unread look on each row from the live DM.unread markers.
@@ -23197,7 +24614,9 @@ Answer: C</pre>
     function dmApplyCrewPreview(n, pv) {
       if (!pv) return;
       dmCrewPv[n] = pv;
+      if (pv.ts) dmSetTs(n, pv.ts);
       dmPaintCrewRow(n);
+      dmSortCrewRows();
     }
     // Live-refresh one row's preview the moment a new message lands, without
     // re-rendering the whole list. peerKey is the sender's uid (dmUid(name)).
@@ -23212,15 +24631,50 @@ Answer: C</pre>
         return;
       }
       const n = row.getAttribute('data-peer');
+      dmWarmThread(n).catch(() => {});
       Promise.all([dmPreviewFor(n), dmUnreadCountFor(n)]).then(([pv, cnt]) => {
         dmCrewCnt[peerKey] = cnt;
         if (pv) dmCrewPv[n] = pv; else delete dmCrewPv[n];
+        if (pv && pv.ts) dmSetTs(n, pv.ts);
         dmPaintCrewRow(n);
+        dmSortCrewRows();
       }).catch(() => {});
     }
     // Last message of a chat, decrypted on this device, for the Crewmates list.
     // Needs the unlocked key; if it isn't available here we just say it's encrypted.
     const dmPreviewAes = {};
+    // In-memory only (never written to disk): derived peer keys and already-decrypted messages per chat, so
+    // opening a chat can paint instantly instead of waiting on the network and on decryption.
+    const dmPeerCache = {};     // peerKey -> { priv, peer }
+    const dmThreadCache = {};   // peerKey -> Map(messageKey -> { m, text, bad })
+    async function dmGetPeer(peerKey, force) {
+      const c = dmPeerCache[peerKey];
+      if (!force && c && c.priv === DM.priv) return c.peer;
+      const peer = await dmDerivePeer(peerKey);
+      if (peer) dmPeerCache[peerKey] = { priv: DM.priv, peer };
+      return peer;
+    }
+    // Fetch + decrypt the latest messages of one chat into the cache, and update its list preview.
+    async function dmWarmThread(n) {
+      const me = dmMe(), peerKey = dmUid(n);
+      const snap = await nsRef('dm/' + [me, peerKey].sort().join('__')).limitToLast(20).once('value');
+      const msgs = []; snap.forEach((c) => { const v = c.val(); if (v && !v.unsent && v.ct) msgs.push([c.key, v]); });
+      if (!msgs.length || !DM.priv) return;
+      const peer = await dmGetPeer(peerKey); if (!peer) return;
+      const map = new Map();
+      for (const [k, v] of msgs) {
+        let text, bad = false;
+        try { text = await dmDecryptMsg(v, peer.aes, peer.olds || []); } catch (e) { text = '\uD83D\uDD12 Can\u2019t decrypt this message (keys changed)'; bad = true; }
+        map.set(k, { m: v, text, bad });
+      }
+      const cur = dmThreadCache[peerKey];
+      if (cur) cur.forEach((val, k) => { if (!map.has(k)) map.set(k, val); });
+      dmThreadCache[peerKey] = map;
+      dmSetTs(n, msgs[msgs.length - 1][1].ts);
+      const [, lastM] = msgs[msgs.length - 1], lastIt = map.get(msgs[msgs.length - 1][0]);
+      if (lastIt && !lastIt.bad) { dmCrewPv[n] = { text: lastIt.text.replace(/\s+/g, ' ').trim(), mine: lastM.from === me }; dmPaintCrewRow(n); }
+      dmSortCrewRows();
+    }
     async function dmPreviewFor(name) {
       if (!currentChatUser) return null;
       const me = dmMe(), peerKey = dmUid(name);
@@ -23231,14 +24685,10 @@ Answer: C</pre>
       if (!DM.priv) { try { await dmInitKeys(); } catch (e) {} }
       if (!DM.priv) return { locked: true };
       try {
-        let aes = dmPreviewAes[peerKey];
-        if (!aes || aes.priv !== DM.priv) {
-          const peer = await dmDerivePeer(peerKey);
-          if (!peer) return { locked: true };
-          aes = dmPreviewAes[peerKey] = { priv: DM.priv, key: peer.aes, olds: peer.olds || [] };
-        }
-        const plain = await dmDecryptMsg(last, aes.key, aes.olds);
-        return { text: plain.replace(/\s+/g, ' ').trim(), mine: last.from === me };
+        const peer = await dmGetPeer(peerKey);
+        if (!peer) return { locked: true };
+        const plain = await dmDecryptMsg(last, peer.aes, peer.olds || []);
+        return { text: plain.replace(/\s+/g, ' ').trim(), mine: last.from === me, ts: last.ts };
       } catch (e) { return { locked: true }; }
     }
     function toggleChatPanel() {
@@ -23293,6 +24743,7 @@ Answer: C</pre>
         updateUnreadBadge();
       } else {
         panel.classList.remove('visible');
+        if (VC.inCall) { try { vcLeave(); } catch (e) { console.error('video leave error', e); } }   // STEP 5: closing the Black Box ends the call
       }
       // Read --chat-slide live rather than hardcoding 300 so this still
       // lines up correctly under prefers-reduced-motion (1ms).
@@ -23590,12 +25041,12 @@ Answer: C</pre>
         const section = (label, nicks) => nicks.length
           ? `<li class="nick-list-divider">${label}</li>${nicks.map(buildPrivRow).join('')}`
           : '';
-        body.innerHTML = `<ul class="nick-list">${pilotHtml}`
+        setHtmlIfChanged(body, `<ul class="nick-list">${pilotHtml}`
           + section('PILOT', selfAboard ? [selfAboard] : [])
           + section('CO-PILOT', copilotAboard ? [copilotAboard] : [])
           + section('CREWMATES', crewAboard)
           + section('FLIGHT PASSENGERS', passengers)
-          + `</ul>`;
+          + `</ul>`);
         return;
       }
 
@@ -23685,7 +25136,7 @@ Answer: C</pre>
         </li>
       `;
       }).join('');
-      body.innerHTML = `<ul class="nick-list">${pilotHtml}${copilotHtml}${items}</ul>`;
+      setHtmlIfChanged(body, `<ul class="nick-list">${pilotHtml}${copilotHtml}${items}</ul>`);
     }
 
     function closeNicknameList() {
@@ -23910,6 +25361,7 @@ Answer: C</pre>
         crewmatesRef(user.nickname).on('value', (snap) => {
           myCrewmates = snap.val() || {};
           crewmateDataLoaded = true;
+          try { dmWarmCrewPreviews(); } catch (e) {}
           if (profileCardOpenFor) renderProfileCard(profileCardOpenFor, profileCache[profileCardOpenFor] || { bio: '', background: null });
           if (crewListOpenFor === user.nickname) renderCrewListModal(user.nickname);
           renderNicknameListFromCache();
@@ -24468,6 +25920,8 @@ Answer: C</pre>
         const rec = { iv: dmB64(iv), data: dmB64(data) };
         await nsRef('dmKeys/' + me + '/recovery').set(rec);
         if (DM.rec) DM.rec.recovery = rec;
+        dmSyncKeyFab();
+        dmPopupOn();
         dmShow('reckey');
         dmEl('dm-reckey-show').textContent = key;
       } catch (err) {
@@ -24482,9 +25936,20 @@ Answer: C</pre>
         el.classList.toggle('open', x === id ? !el.classList.contains('open') : false);
       });
     }
+    // Floating key button on the Crewmates list: shown once messages are unlocked; red dot until a recovery key exists.
+    function dmSyncKeyFab() {
+      const fab = document.getElementById('crew-key-fab'); if (!fab) return;
+      const has = !!(DM.rec && DM.rec.recovery);
+      fab.classList.toggle('ready', !!DM.priv);
+      fab.classList.toggle('attn', !!DM.priv && !has);
+      const t = dmEl('dm-recover-text'), b = dmEl('dm-recover-btn');
+      if (t) t.textContent = has ? 'Recovery key is on. One key covers all your chats, so you don\u2019t need a new one for each crewmate.' : 'Get a recovery key so you can restore your messages if you forget your PIN. One key covers all your chats.';
+      if (b) b.textContent = has ? 'New recovery key' : 'Get recovery key';
+    }
+    function dmKeyFabClick() { dmSyncKeyFab(); dmTogglePop('dm-recover'); }
     function dmClosePops() { ['dm-secure', 'dm-recover'].forEach((x) => { const el = dmEl(x); if (el) el.classList.remove('open'); }); }
     document.addEventListener('click', (e) => {
-      if (e.target.closest && !e.target.closest('.dm-pop') && !e.target.closest('.dm-head-btn')) dmClosePops();
+      if (e.target.closest && !e.target.closest('.dm-pop') && !e.target.closest('.dm-head-btn') && !e.target.closest('.crew-key-fab')) dmClosePops();
     });
     function dmRecoverNote(msg) { const t = dmEl('dm-recover-text'); if (t) t.textContent = msg; const rb = dmEl('dm-recover'); if (rb) rb.classList.add('open'); try { showWingsToast(msg); } catch (e) {} }
     function dmCopyRecKey() {
@@ -24563,7 +26028,8 @@ Answer: C</pre>
     }
     function dmSyncBackLook() {
       const ov = dmEl('dm-overlay'); if (!ov) return;
-      const child = !!dmStepParent();
+      // The recovery-key popup looks like the PIN prompts (plain ×); the × still returns to the chat.
+      const child = !!dmStepParent() && !DM.popup;
       ov.classList.toggle('dm-step-child', child);
       ov.classList.toggle('popup-child', child || ov.classList.contains('popup-child-open'));
       const x = ov.querySelector('.nick-modal-head > .nick-modal-close');
@@ -24576,12 +26042,14 @@ Answer: C</pre>
       DM.reset = null; DM.resetTok = (DM.resetTok || 0) + 1; DM.resetFlow = null;
       if (parent === 'thread') { dmOpenThread(); } else { dmShow(parent); }
     }
+    // Progress text on screen -> no X / back button, so Messages can't be closed mid-step.
+    function dmProgress(on) { const ov = dmEl('dm-overlay'); if (ov) ov.classList.toggle('dm-progress', !!on); }
     function dmShow(mode) { // 'setup' | 'unlock' | 'thread' | 'wait'
       DM.mode = mode;
+      dmProgress(false);
       if (mode !== 'wait') DM.resetFlow = null;
       const thread = mode === 'thread';
       dmClosePops();
-      dmEl('dm-key-btn').style.display = thread ? '' : 'none';
       dmEl('dm-thread').style.display = thread ? 'flex' : 'none';
       dmEl('dm-setup').style.display = thread ? 'none' : 'flex';
       dmEl('dm-pin').style.display = (mode === 'setup' || mode === 'unlock' || mode === 'userec') ? '' : 'none';
@@ -24625,11 +26093,16 @@ Answer: C</pre>
       dmEl('dm-pin').value = ''; dmEl('dm-pin2').value = '';
       dmPlaceInBox();
       dmEl('dm-overlay').classList.add('visible');
-      dmShow('wait'); dmEl('dm-setup-text').textContent = 'Setting up secure connection\u2026';
-      dmEl('dm-pin').style.display = 'none'; dmEl('dm-pin2').style.display = 'none'; dmEl('dm-setup-btn').style.display = 'none'; dmEl('dm-reset-btn').style.display = 'none';
+      const _instant = !!(DM.priv && dmPeerCache[dmUid(nickname)] && dmPeerCache[dmUid(nickname)].priv === DM.priv);
+      if (!_instant) {
+        dmShow('wait'); dmEl('dm-setup-text').textContent = 'Setting up secure connection\u2026'; dmProgress(true);
+        dmEl('dm-pin').style.display = 'none'; dmEl('dm-pin2').style.display = 'none'; dmEl('dm-setup-btn').style.display = 'none'; dmEl('dm-reset-btn').style.display = 'none';
+      }
       try {
-        ensureFirebaseApp();
-        if (!(await waitForFirebaseUidMatching(currentChatUser.nickname, 6000))) throw new Error('not signed in to Firebase');
+        if (!_instant) {
+          ensureFirebaseApp();
+          if (!(await waitForFirebaseUidMatching(currentChatUser.nickname, 6000))) throw new Error('not signed in to Firebase');
+        }
         const state = DM.priv ? 'ready' : await dmInitKeys();
         if (state === 'ready') await dmOpenThread(); else dmShow(state);
       } catch (err) {
@@ -24759,9 +26232,10 @@ Answer: C</pre>
       if (!DM.priv) { showWingsToast('Unlock your messages first'); return; }
       const ok = await adminConfirm('Make a new recovery key? You\u2019ll verify with Google Authenticator first. Your old recovery key will stop working.');
       if (!ok) return;
+      dmPopupOn();
       dmShow('wait');
       dmEl('dm-setup-btn').style.display = 'none'; dmEl('dm-reset-btn').style.display = 'none'; dmEl('dm-userec-btn').style.display = 'none';
-      dmEl('dm-setup-text').textContent = 'Setting up\u2026';
+      dmEl('dm-setup-text').textContent = 'Setting up\u2026'; dmProgress(true);
       await dmStartTotp('newkey');
     }
     // Shared Authenticator flow. purpose: 'reset' (forgot PIN, new keys) | 'newkey' (replace recovery key).
@@ -24779,7 +26253,7 @@ Answer: C</pre>
         if (DM.mode !== 'wait') dmShow('wait');
         ['dm-pin', 'dm-pin2'].forEach((id) => { dmEl(id).style.display = 'none'; });
         ['dm-setup-btn', 'dm-reset-btn', 'dm-userec-btn'].forEach((id) => { dmEl(id).style.display = 'none'; });
-        err.textContent = ''; textEl.textContent = msg;
+        err.textContent = ''; textEl.textContent = msg; dmProgress(true);
       };
       const fail = (msg) => {
         err.classList.remove('info');
@@ -24817,11 +26291,11 @@ Answer: C</pre>
       const r = DM.reset;
       if (!r) { dmShow('unlock'); return; }
       if (!/^\d{6}$/.test(code)) { err.classList.remove('info'); err.textContent = 'Enter the 6-digit code.'; return; }
-      btn.disabled = true; err.classList.add('info'); err.textContent = 'Verifying\u2026';
+      btn.disabled = true; err.classList.add('info'); err.textContent = 'Verifying\u2026'; dmProgress(true);
       const res = DM.mode === 'enroll'
         ? await dmTotpCall({ action: 'totpConfirm', nickname: r.nick, gToken: r.token, code })
         : await dmTotpCall({ action: 'totpVerify', nickname: r.nick, code });
-      btn.disabled = false;
+      btn.disabled = false; dmProgress(false);
       err.classList.remove('info');
       if (!res) { err.textContent = 'Couldn\u2019t reach the server. Please try again in a moment.'; return; }
       if (!res.ok) { err.textContent = res.error || 'That code didn\u2019t work. Try again.'; return; }
@@ -24829,6 +26303,7 @@ Answer: C</pre>
       if (r.purpose === 'newkey') { // verified: just replace the recovery key, keep the keys and messages
         DM.reset = null; dmEl('dm-totp').value = '';
         await dmEnableRecovery();
+        if (DM.mode !== 'reckey') await dmOpenThread();
         return;
       }
       DM.keep = null; DM.rec = {}; DM.priv = null; DM.reset = null;
@@ -24839,36 +26314,212 @@ Answer: C</pre>
     }
     async function dmOpenThread() {
       if (DM.gate) { dmGateDone(); return; }
+      if (!DM.peer) { DM.popupTitle = null; closeDm(); return; }   // opened from the Crewmates list (no chat): just return to the list
+      dmPopupOff();
       const me = dmMe(), peerKey = dmUid(DM.peer);
-      const peer = await dmDerivePeer(peerKey);
+      // Instant path: peer key already derived + messages already decrypted -> paint with no waiting.
+      const hit = dmPeerCache[peerKey];
+      const cachedPeer = !!(hit && hit.priv === DM.priv);
+      const peer = cachedPeer ? hit.peer : await dmGetPeer(peerKey);
       if (!peer) { dmShow('wait'); dmEl('dm-setup-btn').style.display = ''; return; }
       DM.aes = peer.aes; DM.olds = peer.olds || [];
       dmShow('thread');
-      const code = await dmSafetyCode(DM.pubJwk, peer.pubJwk);
-      dmEl('dm-code').textContent = 'Safety code ' + code;
-      const fpKey = 'dmFp:' + me + ':' + peerKey;
-      let prev = null; try { prev = localStorage.getItem(fpKey); } catch (e) {}
-      const warn = dmEl('dm-warn');
-      warn.style.display = 'none';
-      try { localStorage.setItem(fpKey, code); } catch (e) {}
-      { const has = !!(DM.rec && DM.rec.recovery);
-        dmEl('dm-key-btn').style.display = ''; dmEl('dm-key-btn').classList.toggle('attn', !has);
-        dmEl('dm-recover-text').textContent = has ? 'Recovery key is on. One key covers all your chats, so you don\u2019t need a new one for each crewmate.' : 'Get a recovery key so you can restore your messages if you forget your PIN. One key covers all your chats.';
-        dmEl('dm-recover-btn').textContent = has ? 'New recovery key' : 'Get recovery key'; }
+      dmSyncKeyFab();
+      dmEl('dm-warn').style.display = 'none';
       const box = dmEl('dm-messages');
-      box.innerHTML = '<div class="dm-empty" id="dm-empty">Messages here are end-to-end encrypted. Say hi to ' + escapeHtml(DM.peer) + '!</div>';
       DM.seen = new Set();
+      const cache = dmThreadCache[peerKey];
+      if (cache && cache.size) {
+        box.innerHTML = '';
+        [...cache.entries()].sort((a, b) => ((a[1].m && a[1].m.ts) || 0) - ((b[1].m && b[1].m.ts) || 0)).slice(-DM_PAGE_SIZE).forEach(([k, it]) => {
+          DM.seen.add(k); box.appendChild(dmBuildMsgEl(k, it.m, me, it.text, it.bad));
+        });
+        box.scrollTop = box.scrollHeight;
+      } else {
+        box.innerHTML = '<div class="dm-empty" id="dm-empty">Messages here are end-to-end encrypted. Say hi to ' + escapeHtml(DM.peer) + '!</div>';
+      }
       if (DM.ref) { try { DM.ref.off(); } catch (e) {} }
-      DM.ref = nsRef('dm/' + [me, peerKey].sort().join('__')).limitToLast(150);
-      DM.ref.on('child_added', (snap) => dmRenderMsg(snap.key, snap.val(), me), (e) => console.error('Messages listen error:', e));
-      DM.ref.on('child_removed', (snap) => dmRemoveEl(snap.key));
+      dmTeardownExtras();
+      const tok = DM.token;
+      DM.oldestKey = null; DM.atStart = false; DM.olderBusy = false;
+      const threadPath = 'dm/' + [me, peerKey].sort().join('__');
+      DM.ref = nsRef(threadPath);   // placeholder until the first page has loaded
+      dmWireScroll();
+      // Live feed: from the newest loaded message onward, no size limit, so the window never slides
+      // and never drops rows that were loaded by scrolling up.
+      const liveAttach = (startKey) => {
+        let ref = nsRef(threadPath).orderByKey();
+        if (startKey) ref = ref.startAt(startKey);
+        DM.ref = ref;
+        ref.on('child_added', (snap) => dmRenderMsg(snap.key, snap.val(), me), (e) => console.error('Messages listen error:', e));
+        ref.on('child_removed', (snap) => dmRemoveEl(snap.key));
+      };
+      // First page: the newest DM_PAGE_SIZE messages. Older ones load as you scroll up (no upper limit).
+      nsRef(threadPath).orderByKey().limitToLast(DM_PAGE_SIZE).once('value').then((snap) => {
+        if (tok !== DM.token) return;
+        const items = []; snap.forEach((c) => { items.push([c.key, c.val()]); });
+        const full = items.length >= DM_PAGE_SIZE;
+        // Cached rows that don't connect to the newest page would leave a hole: start clean instead.
+        if (cache && cache.size && full && !items.some(([k]) => DM.seen.has(k))) { box.innerHTML = ''; DM.seen = new Set(); }
+        // Drop anything shown from the cache that was deleted while this chat was closed.
+        const live = new Set(items.map(([k]) => k)), lo = items.length ? items[0][0] : null;
+        [...DM.seen].forEach((k) => { if (!live.has(k) && (!full || (lo !== null && k >= lo))) dmRemoveEl(k); });
+        items.forEach(([k, v]) => dmRenderMsg(k, v, me));
+        DM.atStart = !full;
+        const keys = [...DM.seen].sort();
+        DM.oldestKey = keys.length ? keys[0] : null;
+        if (DM.oldestKey && items.length) dmWatchRemovals(DM.oldestKey, items[items.length - 1][0]);
+        liveAttach(items.length ? items[items.length - 1][0] : null);
+        dmMaybeFill();
+      }).catch((e) => { if (tok === DM.token) console.error('Messages load error:', e); });
       nsRef('dmUnread/' + me + '/' + peerKey).remove().catch(() => {});
+      // Seen receipts: watch when the crewmate last had this chat open, and record that I have it open.
+      if (DM.seenRef) { try { DM.seenRef.off(); } catch (e) {} }
+      DM.peerSeenTs = 0;
+      DM.seenRef = nsRef('dmSeen/' + dmThreadId(peerKey) + '/' + peerKey);
+      DM.seenRef.on('value', (snap) => { const v = snap.val(); DM.peerSeenTs = typeof v === 'number' ? v : 0; dmUpdateSeen(); }, () => {});
+      dmMarkSeen();
       setTimeout(() => { try { dmEl('dm-input').focus(); } catch (e) {} }, 50);
+      const showCode = async (pr) => {
+        if (DM.peer == null || dmUid(DM.peer) !== peerKey) return;
+        const code = await dmSafetyCode(DM.pubJwk, pr.pubJwk);
+        dmEl('dm-code').textContent = 'Safety code ' + code;
+        try { localStorage.setItem('dmFp:' + me + ':' + peerKey, code); } catch (e) {}
+      };
+      showCode(peer).catch(() => {});
+      // Cached peer key: quietly re-check it so a crewmate who reset their keys is picked up right away.
+      if (cachedPeer) dmGetPeer(peerKey, true).then((fresh) => {
+        if (!fresh || DM.peer == null || dmUid(DM.peer) !== peerKey) return;
+        DM.aes = fresh.aes; DM.olds = fresh.olds || []; showCode(fresh).catch(() => {});
+      }).catch(() => {});
     }
+    // ---- Thread paging: 20 messages per load, scroll up for more, no upper limit ----
+    const DM_PAGE_SIZE = 20;
+    DM.token = 0; DM.oldestKey = null; DM.atStart = false; DM.olderBusy = false; DM.extraRefs = [];
+    let dmScrollWired = false;
+    function dmTeardownExtras() {
+      DM.token++;
+      (DM.extraRefs || []).splice(0).forEach((r) => { try { r.off(); } catch (e) {} });
+    }
+    // Keeps deletions in sync for a page of already-loaded history (fixed key range, so nothing slides in or out).
+    function dmWatchRemovals(firstKey, lastKey) {
+      try {
+        const r = nsRef('dm/' + dmThreadId(dmUid(DM.peer))).orderByKey().startAt(firstKey).endAt(lastKey);
+        r.on('child_removed', (snap) => dmRemoveEl(snap.key));
+        DM.extraRefs.push(r);
+      } catch (e) { console.error('Messages watch error:', e); }
+    }
+    async function dmLoadOlder() {
+      if (DM.olderBusy || DM.atStart || !DM.peer || !DM.aes || !DM.oldestKey) return;
+      const box = dmEl('dm-messages'); if (!box) return;
+      const me = dmMe(), peerKey = dmUid(DM.peer), tok = DM.token, aes = DM.aes, olds = DM.olds || [], oldest = DM.oldestKey;
+      DM.olderBusy = true;
+      try {
+        // endAt is inclusive, so ask for one extra and drop the message we already have.
+        const snap = await nsRef('dm/' + dmThreadId(peerKey)).orderByKey().endAt(oldest).limitToLast(DM_PAGE_SIZE + 1).once('value');
+        if (tok !== DM.token) return;
+        const items = [];
+        snap.forEach((c) => { if (c.key !== oldest) items.push([c.key, c.val()]); });
+        if (items.length < DM_PAGE_SIZE) DM.atStart = true;
+        if (!items.length) return;
+        // Decrypt first, then insert everything in one go so the view never jumps.
+        const shown = items.filter(([, v]) => v && !v.unsent && v.ct);
+        const res = await Promise.all(shown.map(([, v]) => dmDecryptMsg(v, aes, olds).then(
+          (text) => ({ text, bad: false }),
+          () => ({ text: '\uD83D\uDD12 Can\u2019t decrypt this message (keys changed)', bad: true }))));
+        if (tok !== DM.token) return;
+        const frag = document.createDocumentFragment();
+        shown.forEach(([k, v], i) => {
+          if (DM.seen.has(k)) return;
+          DM.seen.add(k);
+          (dmThreadCache[peerKey] || (dmThreadCache[peerKey] = new Map())).set(k, { m: v, text: res[i].text, bad: res[i].bad });
+          frag.appendChild(dmBuildMsgEl(k, v, me, res[i].text, res[i].bad));
+        });
+        items.forEach(([k]) => DM.seen.add(k));
+        const prevH = box.scrollHeight, prevTop = box.scrollTop;
+        box.insertBefore(frag, box.firstChild);
+        box.scrollTop = prevTop + (box.scrollHeight - prevH);   // stay on the same message
+        DM.oldestKey = items[0][0];
+        dmWatchRemovals(items[0][0], items[items.length - 1][0]);
+      } catch (e) {
+        console.error('Load older messages error:', e);
+      } finally {
+        DM.olderBusy = false;
+      }
+      dmMaybeFill();
+    }
+    // If the loaded messages don't fill the box (nothing to scroll), keep loading until they do.
+    function dmMaybeFill() {
+      const box = dmEl('dm-messages');
+      if (!box || !box.clientHeight || DM.olderBusy || DM.atStart || !DM.peer) return;
+      if (box.scrollHeight <= box.clientHeight + 24) dmLoadOlder();
+    }
+    function dmWireScroll() {
+      if (dmScrollWired) return;
+      const box = dmEl('dm-messages'); if (!box) return;
+      dmScrollWired = true;
+      box.addEventListener('scroll', () => { if (box.scrollTop < 80) dmLoadOlder(); }, { passive: true });
+      try { new ResizeObserver(() => dmMaybeFill()).observe(box); } catch (e) {}
+    }
+    // ---- Seen receipts ----
+    // dmSeen/<thread>/<readerUid> = last time that person had this chat open and visible.
+    // I only ever show it to the sender: the "Seen" label is added under MY last message
+    // (a .mine bubble), never under the crewmate's.
+    let dmSeenTimer = null;
+    function dmThreadId(peerKey) { return [dmMe(), peerKey].sort().join('__'); }
+    function dmMarkSeen() {
+      if (!DM.peer) return;
+      clearTimeout(dmSeenTimer);
+      dmSeenTimer = setTimeout(() => {
+        try {
+          if (!DM.peer) return;
+          const ov = dmEl('dm-overlay');
+          if (!ov || !ov.classList.contains('visible') || document.hidden) return;
+          nsRef('dmSeen/' + dmThreadId(dmUid(DM.peer)) + '/' + dmMe()).set(firebase.database.ServerValue.TIMESTAMP).catch(() => {});
+        } catch (e) {}
+      }, 250);
+    }
+    // Status line under MY latest message (only when mine is the last message in the thread):
+    //   Seen      = crewmate opened this chat after it was sent
+    //   Delivered = crewmate has been online since it was sent (but hasn't opened the chat yet)
+    //   Sent      = crewmate hasn't been online since it was sent
+    // Online info comes from the shared presence data (online flag + 15s heartbeat lastSeen).
+    function dmPeerOnlineSince(ts) {
+      if (!DM.peer) return false;
+      try {
+        if (onlineNicknames.has(DM.peer)) return true;
+        const pr = latestPresenceData[presenceKey(DM.peer)];
+        return !!(pr && typeof pr.lastSeen === 'number' && pr.lastSeen >= ts);
+      } catch (e) { return false; }
+    }
+    function dmUpdateSeen() {
+      const box = dmEl('dm-messages'); if (!box) return;
+      const msgs = box.querySelectorAll('.dm-msg');
+      const last = msgs[msgs.length - 1];
+      let tag = box.querySelector('.dm-seen');
+      if (!last || !last.classList.contains('mine')) { if (tag) tag.remove(); return; }   // their message is last: nothing to show
+      const ts = Number(last.dataset.ts) || 0;
+      if (!ts) { if (tag) tag.remove(); return; }
+      let label = 'Sent';
+      if (DM.peerSeenTs && DM.peerSeenTs >= ts) label = 'Seen';
+      else if (dmPeerOnlineSince(ts)) label = 'Delivered';
+      if (tag && tag.previousElementSibling === last) {            // already in place: just update the text
+        if (tag.textContent !== label) tag.textContent = label;
+        return;
+      }
+      if (tag) tag.remove();
+      tag = document.createElement('div');
+      tag.className = 'dm-seen'; tag.textContent = label;
+      last.after(tag);
+      box.scrollTop = box.scrollHeight;
+    }
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) dmMarkSeen(); });
     function dmRemoveEl(key) {
+      if (DM.peer) { const c = dmThreadCache[dmUid(DM.peer)]; if (c) c.delete(key); }
       const box = dmEl('dm-messages'); if (!box) return;
       const el = box.querySelector('.dm-msg[data-key="' + key + '"]');
       if (el) el.remove();
+      dmUpdateSeen();
       if (!box.querySelector('.dm-msg') && !dmEl('dm-empty')) {
         const e = document.createElement('div');
         e.className = 'dm-empty'; e.id = 'dm-empty';
@@ -24899,8 +26550,17 @@ Answer: C</pre>
         text = await dmDecryptMsg(m, DM.aes, DM.olds);
       } catch (e) { text = '\uD83D\uDD12 Can\u2019t decrypt this message (keys changed)'; bad = true; }
       const empty = dmEl('dm-empty'); if (empty) empty.remove();
+      if (DM.peer && typeof m.ts === 'number') dmSetTs(DM.peer, m.ts);   // sending/receiving moves this chat to the top
+      if (DM.peer) { const pk = dmUid(DM.peer); (dmThreadCache[pk] || (dmThreadCache[pk] = new Map())).set(key, { m, text, bad }); }
+      box.appendChild(dmBuildMsgEl(key, m, me, text, bad));
+      box.scrollTop = box.scrollHeight;
+      if (m.from !== me && dmEl('dm-overlay').classList.contains('visible')) { nsRef('dmUnread/' + me + '/' + m.from).remove().catch(() => {}); dmMarkSeen(); }
+      dmUpdateSeen();
+    }
+    function dmBuildMsgEl(key, m, me, text, bad) {
       const div = document.createElement('div');
       div.dataset.key = key;
+      if (typeof m.ts === 'number') div.dataset.ts = String(m.ts);
       div.className = 'dm-msg' + (m.from === me ? ' mine' : '') + (bad ? ' bad' : '');
       div.appendChild(document.createTextNode(text));
       const foot = document.createElement('div');
@@ -24916,9 +26576,7 @@ Answer: C</pre>
       if (m.ts) t.textContent = new Date(m.ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
       foot.appendChild(t);
       div.appendChild(foot);
-      box.appendChild(div);
-      box.scrollTop = box.scrollHeight;
-      if (m.from !== me && dmEl('dm-overlay').classList.contains('visible')) nsRef('dmUnread/' + me + '/' + m.from).remove().catch(() => {});
+      return div;
     }
     let dmEmojiBuilt = false, dmEmojiCat = 0;
     function dmToggleEmoji() {
@@ -24992,11 +26650,14 @@ Answer: C</pre>
     }
     function closeDm() {
       dmCloseEmoji();
-      const wasGate = DM.gate; DM.gate = false;
+      const wasGate = DM.gate; DM.gate = false; DM.popup = false;
       DM.resetTok = (DM.resetTok || 0) + 1; DM.resetFlow = null;
       if (DM.ref) { try { DM.ref.off(); } catch (e) {} DM.ref = null; }
+      dmTeardownExtras();
+      if (DM.seenRef) { try { DM.seenRef.off(); } catch (e) {} DM.seenRef = null; }
+      clearTimeout(dmSeenTimer); DM.peerSeenTs = 0;
       DM.aes = null; DM.olds = null; DM.peer = null; DM.keep = null; DM.recKeyShown = null; DM.reset = null; dmClosePops();
-      const ov = dmEl('dm-overlay'); if (ov) { ov.classList.remove('visible', 'in-box', 'dm-gate'); ov.style.left = ov.style.top = ov.style.width = ov.style.height = ''; }
+      const ov = dmEl('dm-overlay'); if (ov) { ov.classList.remove('visible', 'in-box', 'dm-gate', 'dm-popup', 'dm-progress'); ov.style.left = ov.style.top = ov.style.width = ov.style.height = ''; }
       if (wasGate && !DM.priv) setChatMode('blackbox');
       else { const cp = document.getElementById('chat-panel'); if (cp && cp.classList.contains('crew-mode')) renderChatCrewList(); }
     }
@@ -25011,6 +26672,7 @@ Answer: C</pre>
         const myUid = dmUid(user.nickname);
         waitForFirebaseUidMatching(user.nickname, 15000).then((ok) => {
         if (!ok || !currentChatUser || currentChatUser.nickname !== user.nickname) return;
+        try { dmWarmCrewPreviews(); } catch (e) {}
         DM.unreadRef = nsRef('dmUnread/' + myUid);
         DM.unreadRef.on('value', (snap) => {
           const v = snap.val() || {};
@@ -25032,6 +26694,8 @@ Answer: C</pre>
       try { dmStopCrewWatches(); } catch (e) {}
       closeDm();
       DM.priv = null; DM.pubJwk = null; DM.rec = null; DM.unread = {}; DM.unreadReady = false;
+      [dmPeerCache, dmThreadCache, dmCrewPv, dmCrewTs].forEach((o) => Object.keys(o).forEach((k) => delete o[k])); dmCrewTsLoaded = null;
+      dmSyncKeyFab();
     }
     function dmIsSetupPin(t) { return t && (t.id === 'dm-pin' || t.id === 'dm-pin2' || t.id === 'dm-totp'); }
     document.addEventListener('beforeinput', (e) => {
@@ -25145,6 +26809,7 @@ Answer: C</pre>
         copilotRef(user.nickname).on('value', (snap) => {
           myCopilotKey = snap.val() || null;
           copilotDataLoaded = true;
+          try { dmWarmCrewPreviews(); } catch (e) {}
           if (profileCardOpenFor) renderProfileCard(profileCardOpenFor, profileCache[profileCardOpenFor] || { bio: '', background: null });
           if (crewListOpenFor === user.nickname) renderCrewListModal(user.nickname);
           renderNicknameListFromCache();
@@ -34155,6 +35820,9 @@ Answer: C</pre>
     }, { passive: false });
 
     // ---- block fullscreen ----
+    // (the Video Call full screen button keeps a private handle to the real function and
+    //  sets window.__vcFsAllowed while it is open, so everything else stays blocked)
+    window.__vcOrigReqFs = Element.prototype.requestFullscreen || Element.prototype.webkitRequestFullscreen || null;
     ['requestFullscreen', 'webkitRequestFullscreen', 'mozRequestFullScreen', 'msRequestFullscreen']
       .forEach((fn) => {
         if (Element.prototype[fn]) {
@@ -34165,6 +35833,7 @@ Answer: C</pre>
     ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange']
       .forEach((evt) => {
         document.addEventListener(evt, () => {
+          if (window.__vcFsAllowed) return;   // Video Call full screen is allowed
           const exit = document.exitFullscreen || document.webkitExitFullscreen ||
                        document.mozCancelFullScreen || document.msExitFullscreen;
           if (document.fullscreenElement || document.webkitFullscreenElement ||
@@ -37683,7 +39352,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   .pf-attach-btn { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; padding: 0; background: rgba(2,12,24,0.5); border: 1px solid var(--line); border-radius: 3px; color: var(--rivet); cursor: pointer; }
   .pf-attach-btn svg { width: 20px; height: 20px; }
   .pf-attach-btn:disabled { opacity: 0.5; cursor: default; }
-  @media (hover: hover) { .pf-attach-btn:not(:disabled):hover { color: var(--accent); border-color: var(--rivet); } }
+  @media (hover: hover) { .pf-attach-btn:not(:disabled):hover { color: var(--accent); border-color: var(--line); } }
   .pf-img-preview { position: relative; display: none; margin: 0 0 8px; }
   .pf-img-preview.show { display: inline-block; max-width: 100%; }
   .pf-img-preview img { display: block; max-width: 100%; max-height: 200px; border: 1px solid var(--line); border-radius: 4px; }
@@ -37897,7 +39566,14 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     if (m < 1440) return Math.floor(m / 60) + 'h ago';
     return Math.floor(m / 1440) + 'd ago';
   }
-  function status(msg) { const el = $('pf-status'); if (el) el.textContent = msg || ''; }
+  let pfStatusTimer = null;
+  // status(msg) shows a message until changed; status(msg, ms) clears it again after ms milliseconds.
+  function status(msg, ms) {
+    const el = $('pf-status'); if (!el) return;
+    clearTimeout(pfStatusTimer);
+    el.textContent = msg || '';
+    if (msg && ms) pfStatusTimer = setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, ms);
+  }
   function avatarHtml(nick, stored) {
     const av = (typeof getLiveAvatar === 'function' && getLiveAvatar(nick)) || stored || '\u2708\uFE0F';
     const border = (typeof getLiveBorderClass === 'function' && getLiveBorderClass(nick)) || '';
@@ -38342,7 +40018,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     if (!u) { status('Sign in to post.'); return; }
     if (posting) return;
     const title = $('pf-title').value.trim(), text = '', cat = $('pf-cat').value;
-    if (!title) { status('Add a title or question first.'); return; }
+    if (!title) { status('Add a title or question first.', 1000); return; }
     if (!CATS[cat]) { status('Choose a category for your post.'); return; }
     if (Date.now() - lastPostAt < COOLDOWN_MS) { status('Slow down a bit \u2014 try again in a few seconds.'); return; }
     lastPostAt = Date.now();
