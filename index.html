@@ -125,6 +125,7 @@
     --paper: #eef3f6;
     --accent: #ffb100;
     --rivet: #7fa8c9;
+    --panel-head-h: 51px; /* sidebar header, Black Box header and in-box chat header all share this height */
     --green: #4fd1a0;
   }
 
@@ -2763,6 +2764,7 @@
     letter-spacing: 0.04em;
     color: #fff;
   }
+  .reviewees-sidebar-head { height: var(--panel-head-h); padding-top: 0; padding-bottom: 0; }
   .reviewees-sidebar-body {
     flex: 1;
     overflow-y: auto;
@@ -2995,6 +2997,10 @@
     padding: 24px;
   }
   .profile-card-overlay.visible { display: flex; }
+  /* Profile card opened from inside Crewmate messages must sit above the DM (z-index 2000). */
+  body:has(#dm-overlay.visible) .profile-card-overlay { z-index: 2010; }
+  body:has(#dm-overlay.visible) #crew-list-overlay { z-index: 2011; }
+  body:has(#dm-overlay.visible) .crewmate-action-menu { z-index: 2012; }
   .profile-card {
     width: 100%;
     max-width: 480px;
@@ -3931,12 +3937,15 @@
   /* ---- Encrypted direct messages (Crewmates / Co-Pilot) ---- */
   .dm-modal { max-width: 760px; width: 94vw; height: 90vh; max-height: 90vh; }
   .dm-modal .nick-modal-head h3 { font-size: 18px; }
+  #dm-title { display: flex; align-items: center; gap: 12px; }
+  #dm-title .chat-msg-avatar { top: 0; width: 24px; height: 24px; min-width: 24px; font-size: 13px; margin: 0; flex: none; }
   .dm-secure { padding: 9px 20px; font-size: 12.5px; color: var(--accent); border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-family: 'Space Grotesk', sans-serif; }
   .dm-secure .dm-code { color: var(--rivet); font-family: monospace; letter-spacing: 0.04em; }
   .dm-recover { padding: 9px 20px; font-size: 12.5px; color: var(--paper); background: rgba(255,255,255,0.05); border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-family: 'Space Grotesk', sans-serif; }
   .dm-recover .dm-linkbtn { align-self: auto; color: var(--accent); font-size: 12.5px; text-decoration: none; }
   .dm-modal .nick-modal-head { position: relative; }
   .dm-head-actions { display: flex; align-items: center; gap: 4px; }
+  .dm-head-center { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
   .dm-head-btn { position: relative; background: none; border: none; cursor: pointer; font-size: 17px; line-height: 1; padding: 4px 7px; border-radius: 6px; opacity: 0.85; }
   @media (hover: hover) { .dm-head-btn:hover { background: rgba(255,255,255,0.08); opacity: 1; } }
   .dm-head-btn.attn::after { content: ''; position: absolute; top: 2px; right: 3px; width: 8px; height: 8px; border-radius: 50%; background: #ff4d4d; }
@@ -3966,12 +3975,9 @@
   @media (hover: none) { .dm-unsend-btn { opacity: 0.7; } }
   .dm-msg.unsent { background: transparent !important; border: 1px dashed var(--line); color: var(--rivet) !important; font-style: italic; font-size: 14px; }
   .dm-msg.unsent time { display: none; }
-  .dm-input-row { display: flex; gap: 10px; padding: 14px 18px; border-top: 1px solid var(--line); }
-  .dm-input-row input { flex: 1; min-width: 0; }
-  .dm-send { flex-shrink: 0; align-self: center; width: 44px; height: 44px; padding: 0; margin: 0; background: transparent; border: none; border-radius: 0; color: var(--accent); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: filter 0.15s ease; }
-  .dm-send svg { display: block; width: 24px; height: 24px; }
-  @media (hover: hover) { .dm-send:not(:disabled):hover { filter: brightness(1.12); } }
-  .dm-send:disabled { opacity: 0.5; cursor: default; }
+  /* Composer reuses .chat-input-row / .chat-emoji-btn / .chat-send-btn from the Black Box chat. The chat
+     input hides its own text behind a highlight layer; DM has no layer, so show the text directly. */
+  .chat-input-row.dm-chat-input-row #dm-input { color: var(--paper); }
   .dm-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #ff4d4d; margin-left: 5px; vertical-align: middle; }
   .flight-alert-btn.confirm-delete { background: #ff6b6b; color: #3a0d0d; }
   @media (hover: hover) { .flight-alert-btn.confirm-delete:hover { background: #ff8686; } }
@@ -5654,7 +5660,7 @@
   }
   /* "Black Box" stays on the left; only the flight name (e.g. Flight 2027)
      sits dead-center of the header. Guidelines link stays right. */
-  .chat-panel-head { position: relative; }
+  .chat-panel-head { position: relative; height: var(--panel-head-h); padding-top: 0; padding-bottom: 0; }
   .chat-panel-head-text > #chat-panel-flight {
     position: absolute;
     left: 50%;
@@ -5663,7 +5669,38 @@
     white-space: nowrap;
     pointer-events: none;
   }
-  #chat-panel-flight:empty { display: none !important; }
+  #chat-panel-flight, #chat-panel-flight:empty { display: none !important; }
+  /* Black Box / Crewmates switcher */
+  .chat-mode-tabs { display: flex; gap: 8px; padding: 10px 18px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+  .chat-mode-tab { flex: 1; background: rgba(255,255,255,0.07); border: 1px solid var(--line); border-radius: 10px; color: #fff; font-family: 'Space Grotesk', sans-serif; font-size: 13px; font-weight: 600; padding: 9px 10px; cursor: pointer; }
+  @media (hover: hover) { .chat-mode-tab:not(.active):hover { background: rgba(255,255,255,0.15); } }
+  .chat-mode-tab.active { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
+  .chat-crew-list { display: none; flex: 1; min-height: 0; overflow-y: auto; padding: 8px 12px; scrollbar-width: none; -ms-overflow-style: none; }
+  .chat-crew-list::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  .chat-panel.crew-mode .chat-crew-list { display: block; }
+  .chat-panel.crew-mode .chat-messages,
+  .chat-panel.crew-mode .chat-locked-note,
+  .chat-panel.crew-mode .chat-reply-preview,
+  .chat-panel.crew-mode .chat-mention-suggest,
+  .chat-panel.crew-mode .chat-emoji-picker,
+  .chat-panel.crew-mode .chat-input-row { display: none !important; }
+  .chat-crew-row { display: flex; align-items: center; gap: 12px; width: 100%; background: none; border: none; border-radius: 10px; padding: 9px 10px; cursor: pointer; color: #fff; font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; text-align: left; }
+  @media (hover: hover) { .chat-crew-row:hover { background: rgba(255,255,255,0.08); } }
+  .chat-crew-row .chat-msg-avatar { top: 0; width: 34px; height: 34px; font-size: 18px; }
+  .chat-crew-row .chat-crew-lock { margin-left: auto; font-size: 13px; opacity: 0.85; flex-shrink: 0; }
+  .chat-crew-row .chat-crew-info { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; flex: 1; }
+  .chat-crew-row .chat-crew-name { max-width: 100%; }
+  .chat-crew-row .chat-crew-preview { max-width: 100%; font-size: 12.5px; font-weight: 400; color: var(--rivet); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chat-crew-row .chat-crew-preview:empty { display: none; }
+  /* DM opened from the Crewmates tab: sits exactly on top of the Black Box panel */
+  #dm-overlay.in-box { inset: auto; padding: 0; background: transparent; align-items: stretch; justify-content: stretch; }
+  #dm-overlay.in-box .dm-modal { max-width: none; max-height: none; width: 100%; height: 100%; border-radius: 14px; box-shadow: -4px 0 20px rgba(0,0,0,0.3); }
+  .dm-back-btn { display: none; align-items: center; justify-content: center; background: none; border: none; color: #fff; cursor: pointer; padding: 4px 6px; border-radius: 8px; opacity: 0.9; }
+  @media (hover: hover) { .dm-back-btn:hover { background: rgba(255,255,255,0.1); opacity: 1; } }
+  #dm-overlay.in-box .dm-back-btn { display: flex; }
+  #dm-overlay.in-box .nick-modal-head > .nick-modal-close { display: none; }
+  #dm-overlay.in-box .nick-modal-head { box-sizing: border-box; height: var(--panel-head-h); padding: 0 18px; }
+  .chat-crew-empty { color: var(--rivet); font-size: 12.5px; text-align: center; padding: 28px 16px; line-height: 1.5; }
   /* very narrow phones: not enough room to center without overlapping the link */
   @media (max-width: 400px) {
     .chat-panel-head-text > #chat-panel-flight {
@@ -11495,13 +11532,14 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
     <div class="nick-modal dm-modal" role="dialog" aria-modal="true" aria-labelledby="dm-title">
       <div class="nick-modal-head">
         <h3 id="dm-title">Messages</h3>
-        <div class="dm-head-actions">
+        <div class="dm-head-actions dm-head-center">
           <button type="button" class="dm-head-btn" id="dm-lock-btn" onclick="dmTogglePop('dm-secure')" aria-label="Encryption info" title="End-to-end encrypted">&#128274;</button>
           <button type="button" class="dm-head-btn" id="dm-key-btn" onclick="dmTogglePop('dm-recover')" aria-label="Recovery key" title="Recovery key" style="display:none;">&#128273;</button>
-          <button class="nick-modal-close" onclick="closeDm()" aria-label="Close messages">&times;</button>
         </div>
+        <button class="nick-modal-close" onclick="closeDm()" aria-label="Close messages">&times;</button>
+        <button type="button" class="dm-back-btn" onclick="closeDm()" aria-label="Back" title="Back"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
         <div class="dm-pop dm-secure" id="dm-secure"><span>&#128274; End-to-end encrypted</span><span class="dm-code" id="dm-code" title="Compare this safety code with your crewmate to confirm no one is intercepting"></span></div>
-        <div class="dm-pop dm-recover" id="dm-recover"><span id="dm-recover-text">Get a recovery key so you can restore your messages if you forget your PIN.</span><button type="button" class="dm-linkbtn" id="dm-recover-btn" onclick="dmRecoverClick()">Get recovery key</button></div>
+        <div class="dm-pop dm-recover" id="dm-recover"><span id="dm-recover-text">Get a recovery key so you can restore your messages if you forget your PIN. One key covers all your chats.</span><button type="button" class="dm-linkbtn" id="dm-recover-btn" onclick="dmRecoverClick()">Get recovery key</button></div>
       </div>
       <div class="dm-warn" id="dm-warn" style="display:none;"></div>
       <div class="dm-setup" id="dm-setup" style="display:none;">
@@ -11510,12 +11548,12 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
           <div id="dm-qr" style="display:inline-block;background:#fff;padding:8px;border-radius:8px;min-height:20px;"></div>
         </div>
         <input type="text" id="dm-totp" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" placeholder="6-digit code" maxlength="6" style="display:none;">
+        <input type="text" id="dm-reckey" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Recovery key" maxlength="48" style="display:none;">
         <input type="password" id="dm-pin" autocomplete="new-password" inputmode="numeric" pattern="[0-9]*" placeholder="Messages PIN (6 digits)" maxlength="6">
         <div id="dm-reckey-box" style="display:none;text-align:center;">
           <div id="dm-reckey-show" style="font-family:monospace;font-size:15px;letter-spacing:0.08em;line-height:1.7;color:var(--accent);word-break:break-all;user-select:all;padding:12px;border:1px dashed var(--line);border-radius:8px;"></div>
           <button type="button" class="dm-linkbtn" id="dm-reckey-copy" onclick="dmCopyRecKey()" style="margin-top:8px;">Copy key</button>
         </div>
-        <input type="text" id="dm-reckey" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Recovery key" maxlength="48" style="display:none;">
         <input type="password" id="dm-pin2" autocomplete="new-password" inputmode="numeric" pattern="[0-9]*" placeholder="Confirm PIN (6 digits)" maxlength="6">
         <div class="dm-err" id="dm-setup-err"></div>
         <div class="mockadmin-editor-actions"><button type="button" class="mockadmin-publish-btn" id="dm-setup-btn" onclick="dmSubmitPin()">CONTINUE</button></div>
@@ -11524,9 +11562,18 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
       </div>
       <div class="dm-thread" id="dm-thread" style="display:none;">
         <div class="dm-messages" id="dm-messages"></div>
-        <div class="dm-input-row">
-          <input type="text" id="dm-input" placeholder="Type a message&hellip;" maxlength="500" autocomplete="off">
-          <button type="button" class="dm-send" id="dm-send-btn" onclick="dmSend()" aria-label="Send" title="Send"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+        <div class="chat-emoji-picker" id="dm-emoji-picker">
+          <div class="chat-emoji-tabs" id="dm-emoji-tabs"></div>
+          <div class="chat-emoji-grid" id="dm-emoji-grid"></div>
+        </div>
+        <div class="chat-input-row dm-chat-input-row">
+          <button class="chat-emoji-btn" id="dm-emoji-btn" type="button" onclick="dmToggleEmoji()">&#9992;&#65039;</button>
+          <div class="chat-input-wrap">
+            <input type="text" id="dm-input" placeholder="Type a message&hellip;" maxlength="500" autocomplete="off">
+          </div>
+          <button id="dm-send-btn" class="chat-send-btn" type="button" onclick="dmSend()" aria-label="Send" title="Send">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          </button>
         </div>
       </div>
     </div>
@@ -11827,7 +11874,12 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
       </div>
       <button class="chat-panel-close" onclick="toggleChatPanel()" title="Collapse black box" aria-label="Collapse black box"><span class="chat-panel-close-glyph">&raquo;</span></button>
     </div>
+    <div class="chat-mode-tabs" id="chat-mode-tabs">
+      <button type="button" class="chat-mode-tab active" id="chat-tab-blackbox" onclick="setChatMode('blackbox')">&#128172; Flight 2026</button>
+      <button type="button" class="chat-mode-tab" id="chat-tab-crew" onclick="setChatMode('crew')">&#128274; Crewmates</button>
+    </div>
     <div class="flight-bar" id="flight-bar" aria-label="Flights"></div>
+    <div class="chat-crew-list" id="chat-crew-list"></div>
     <!-- The "Connected" pill was removed from view. This hidden element stays
          only because the chat code writes its status text into it. -->
     <div id="chat-panel-status" hidden></div>
@@ -18909,12 +18961,15 @@ Answer: C</pre>
       if (!el) return;
       const fl = document.getElementById('chat-panel-flight');
       const rf = currentFlightId && FLIGHT_SERVERS.find((x) => x.id === currentFlightId);
-      if (rf) { el.textContent = '💬 Black Box'; if (fl) fl.textContent = rf.name; return; }
+      const tab = document.getElementById('chat-tab-blackbox');
+      const setTab = (name) => { if (tab) tab.textContent = '\uD83D\uDCAC ' + (name || 'Black Box'); };
+      if (rf) { el.textContent = '💬 Black Box'; if (fl) fl.textContent = rf.name; setTab(rf.name); return; }
       const f = currentFlightId && flightsCache[currentFlightId];
-      if (f) { el.textContent = '💬 Black Box'; if (fl) fl.textContent = f.name; return; }
+      if (f) { el.textContent = '💬 Black Box'; if (fl) fl.textContent = f.name; setTab(f.name); return; }
       // main Black Box = Flight 2026
       el.textContent = '💬 Black Box';
       if (fl) fl.textContent = currentFlightId ? '' : 'Flight 2026';
+      setTab(currentFlightId ? '' : 'Flight 2026');
     }
 
     function canDeleteFlight(f) {
@@ -22650,7 +22705,7 @@ Answer: C</pre>
         BORDER_CLASSES.forEach(c => el.classList.remove(c));
         if (borderClass) el.classList.add(borderClass);
       });
-      document.querySelectorAll('.chat-msg-meta [data-nickname-anim]').forEach(el => {
+      document.querySelectorAll('.chat-msg-meta [data-nickname-anim], #dm-title [data-nickname-anim], .chat-crew-row [data-nickname-anim]').forEach(el => {
         const nick = el.getAttribute('data-nickname-anim');
         const animClass = getLiveNicknameAnimClass(nick);
         el.style.minWidth = '';
@@ -22866,6 +22921,85 @@ Answer: C</pre>
       document.getElementById('chat-guidelines-overlay').classList.remove('visible');
     }
 
+    // Black Box (flight chat) <-> Crewmates (private 1:1 messages) switcher.
+    function setChatMode(mode) {
+      const panel = document.getElementById('chat-panel');
+      const crew = mode === 'crew';
+      panel.classList.toggle('crew-mode', crew);
+      document.getElementById('chat-tab-blackbox').classList.toggle('active', !crew);
+      document.getElementById('chat-tab-crew').classList.toggle('active', crew);
+      if (crew) renderChatCrewList();
+    }
+    function dmPlaceInBox() {
+      const ov = document.getElementById('dm-overlay'), panel = document.getElementById('chat-panel');
+      if (!ov || !panel) return;
+      const inBox = panel.classList.contains('visible') && panel.classList.contains('crew-mode');
+      ov.classList.toggle('in-box', inBox);
+      if (inBox) {
+        const r = panel.getBoundingClientRect();
+        ov.style.left = r.left + 'px'; ov.style.top = r.top + 'px';
+        ov.style.width = r.width + 'px'; ov.style.height = r.height + 'px';
+      } else {
+        ov.style.left = ov.style.top = ov.style.width = ov.style.height = '';
+      }
+    }
+    window.addEventListener('resize', () => { const ov = document.getElementById('dm-overlay'); if (ov && ov.classList.contains('visible') && ov.classList.contains('in-box')) dmPlaceInBox(); });
+    function renderChatCrewList() {
+      const el = document.getElementById('chat-crew-list');
+      if (!el) return;
+      const keys = new Set(Object.keys(myCrewmates || {}));
+      if (myCopilotKey) keys.add(myCopilotKey);
+      const names = [...keys]
+        .map((k) => (latestPresenceData && latestPresenceData[k] && latestPresenceData[k].nickname) || k)
+        .filter((n) => dmCanMessage(n))
+        .sort((a, b) => a.localeCompare(b));
+      if (!names.length) {
+        el.innerHTML = '<div class="chat-crew-empty">No crewmates to message yet.<br>Add crewmates and they will show up here.</div>';
+        return;
+      }
+      el.innerHTML = names.map((n) => {
+        const av = getLiveAvatar(n) || '\u2708\uFE0F';
+        const border = getLiveBorderClass(n) || '';
+        const nickAttr = escapeHtml(n).replace(/'/g, "\\'");
+        return '<button type="button" class="chat-crew-row" onclick="openDm(\'' + nickAttr + '\')">' +
+          '<span class="pf-av chat-msg-avatar' + (border ? ' ' + border : '') + '" data-nickname="' + escapeHtml(n) + '"' + avatarStyleAttr(av) + '>' + escapeHtml(avatarGlyph(av)) + '</span>' +
+          '<span class="chat-crew-info"><span data-nickname-anim="' + escapeHtml(n) + '" data-text="' + escapeHtml(n) + '" class="chat-crew-name ' + (getLiveNicknameAnimClass(n) || '') + '">' + escapeHtml(n) + '</span>' +
+          '<span class="chat-crew-preview" data-peer="' + escapeHtml(n) + '"></span></span><span class="chat-crew-lock">&#128274;</span></button>';
+      }).join('');
+      if (window.lockBreatheWidths) window.lockBreatheWidths(el);
+      const tok = (renderChatCrewList._tok = (renderChatCrewList._tok || 0) + 1);
+      names.forEach((n) => {
+        dmPreviewFor(n).then((pv) => {
+          if (tok !== renderChatCrewList._tok) return;
+          const node = [...el.querySelectorAll('.chat-crew-preview')].find((x) => x.getAttribute('data-peer') === n);
+          if (!node || !pv) return;
+          node.textContent = pv.locked ? '\uD83D\uDD12 Encrypted message' : (pv.mine ? 'You: ' : '') + pv.text;
+        }).catch(() => {});
+      });
+    }
+    // Last message of a chat, decrypted on this device, for the Crewmates list.
+    // Needs the unlocked key; if it isn't available here we just say it's encrypted.
+    const dmPreviewAes = {};
+    async function dmPreviewFor(name) {
+      if (!currentChatUser) return null;
+      const me = dmMe(), peerKey = dmUid(name);
+      const snap = await nsRef('dm/' + [me, peerKey].sort().join('__')).limitToLast(1).once('value');
+      let last = null;
+      snap.forEach((c) => { const v = c.val(); if (v && !v.unsent && v.ct) last = v; });
+      if (!last) return null;
+      if (!DM.priv) { try { await dmInitKeys(); } catch (e) {} }
+      if (!DM.priv) return { locked: true };
+      try {
+        let aes = dmPreviewAes[peerKey];
+        if (!aes || aes.priv !== DM.priv) {
+          const peer = await dmDerivePeer(peerKey);
+          if (!peer) return { locked: true };
+          aes = dmPreviewAes[peerKey] = { priv: DM.priv, key: peer.aes };
+        }
+        const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: dmUnB64(last.iv) }, aes.key, dmUnB64(last.ct));
+        return { text: dmDec.decode(pt).replace(/\s+/g, ' ').trim(), mine: last.from === me };
+      } catch (e) { return { locked: true }; }
+    }
     function toggleChatPanel() {
       const panel = document.getElementById('chat-panel');
       const peek = document.getElementById('chat-panel-peek');
@@ -22873,6 +23007,7 @@ Answer: C</pre>
       // Not this soul's main flight: the Black Box can't be opened (closing
       // an already-open panel is still allowed).
       if (opening && chatBlockedForActiveFlight()) return;
+      if (!opening) { const dmo = document.getElementById('dm-overlay'); if (dmo && dmo.classList.contains('in-box')) closeDm(); }
       clearTimeout(chatPanelAnimTimer);
       // Promote the panel to its own GPU layer a frame before the slide
       // actually starts (.chat-panel.animating below just sets
@@ -24175,9 +24310,11 @@ Answer: C</pre>
     async function openDm(nickname) {
       if (!currentChatUser || !dmCanMessage(nickname)) return;
       DM.peer = nickname;
-      dmEl('dm-title').textContent = '\uD83D\uDCAC ' + nickname;
+      { const av = getLiveAvatar(nickname) || '\u2708\uFE0F', border = getLiveBorderClass(nickname) || '';
+        dmEl('dm-title').innerHTML = '<span class="pf-av chat-msg-avatar' + (border ? ' ' + border : '') + '" data-nickname="' + escapeHtml(nickname) + '"' + avatarStyleAttr(av) + '>' + escapeHtml(avatarGlyph(av)) + '</span><span data-nickname-anim="' + escapeHtml(nickname) + '" data-text="' + escapeHtml(nickname) + '" class="' + (getLiveNicknameAnimClass(nickname) || '') + '">' + escapeHtml(nickname) + '</span>'; if (window.lockBreatheWidths) window.lockBreatheWidths(dmEl('dm-title')); }
       dmEl('dm-warn').style.display = 'none';
       dmEl('dm-pin').value = ''; dmEl('dm-pin2').value = '';
+      dmPlaceInBox();
       dmEl('dm-overlay').classList.add('visible');
       dmShow('wait'); dmEl('dm-setup-text').textContent = 'Setting up secure connection\u2026';
       dmEl('dm-pin').style.display = 'none'; dmEl('dm-pin2').style.display = 'none'; dmEl('dm-setup-btn').style.display = 'none'; dmEl('dm-reset-btn').style.display = 'none';
@@ -24299,7 +24436,7 @@ Answer: C</pre>
       if (!ok) return;
       dmShow('wait');
       dmEl('dm-setup-btn').style.display = 'none'; dmEl('dm-reset-btn').style.display = 'none'; dmEl('dm-userec-btn').style.display = 'none';
-      dmEl('dm-setup-text').textContent = '';
+      dmEl('dm-setup-text').textContent = 'Setting up\u2026';
       await dmStartTotp('newkey');
     }
     // Shared Authenticator flow. purpose: 'reset' (forgot PIN, new keys) | 'newkey' (replace recovery key).
@@ -24311,6 +24448,7 @@ Answer: C</pre>
       const note = (msg) => { err.classList.remove('info'); err.textContent = ''; textEl.textContent = msg; };
       const fail = (msg) => { err.classList.remove('info'); textEl.textContent = prevText; if (purpose === 'newkey') { err.textContent = ''; showWingsToast(msg); dmOpenThread(); } else err.textContent = msg; };
       if (!mine || !nick) { fail('No Google account is linked to this Callsign.'); return; }
+      note('Setting up\u2026');
       const st = await dmTotpCall({ action: 'totpStatus', nickname: nick });
       if (!st || !st.ok) { fail('Couldn\u2019t reach the server. Please try again.'); return; }
       if (st.enrolled) {
@@ -24336,13 +24474,15 @@ Answer: C</pre>
       const code = dmEl('dm-totp').value.replace(/\s/g, '');
       const r = DM.reset;
       if (!r) { dmShow('unlock'); return; }
-      if (!/^\d{6}$/.test(code)) { err.textContent = 'Enter the 6-digit code.'; return; }
-      btn.disabled = true; err.classList.remove('info'); err.textContent = '';
+      if (!/^\d{6}$/.test(code)) { err.classList.remove('info'); err.textContent = 'Enter the 6-digit code.'; return; }
+      btn.disabled = true; err.classList.add('info'); err.textContent = 'Verifying\u2026';
       const res = DM.mode === 'enroll'
         ? await dmTotpCall({ action: 'totpConfirm', nickname: r.nick, gToken: r.token, code })
         : await dmTotpCall({ action: 'totpVerify', nickname: r.nick, code });
       btn.disabled = false;
+      err.classList.remove('info');
       if (!res || !res.ok) { err.textContent = (res && res.error) || 'That code didn\u2019t work. Try again.'; return; }
+      err.textContent = '';
       if (r.purpose === 'newkey') { // verified: just replace the recovery key, keep the keys and messages
         DM.reset = null; dmEl('dm-totp').value = '';
         await dmEnableRecovery();
@@ -24365,12 +24505,11 @@ Answer: C</pre>
       const fpKey = 'dmFp:' + me + ':' + peerKey;
       let prev = null; try { prev = localStorage.getItem(fpKey); } catch (e) {}
       const warn = dmEl('dm-warn');
-      if (prev && prev !== code) { warn.textContent = 'Safety code changed. ' + DM.peer + ' reset their keys or someone may be intercepting. Check the code with them in person.'; warn.style.display = ''; }
-      else warn.style.display = 'none';
+      warn.style.display = 'none';
       try { localStorage.setItem(fpKey, code); } catch (e) {}
       { const has = !!(DM.rec && DM.rec.recovery);
         dmEl('dm-key-btn').style.display = ''; dmEl('dm-key-btn').classList.toggle('attn', !has);
-        dmEl('dm-recover-text').textContent = has ? 'Recovery key is on.' : 'Get a recovery key so you can restore your messages if you forget your PIN.';
+        dmEl('dm-recover-text').textContent = has ? 'Recovery key is on. One key covers all your chats, so you don\u2019t need a new one for each crewmate.' : 'Get a recovery key so you can restore your messages if you forget your PIN. One key covers all your chats.';
         dmEl('dm-recover-btn').textContent = has ? 'New recovery key' : 'Get recovery key'; }
       const box = dmEl('dm-messages');
       box.innerHTML = '<div class="dm-empty" id="dm-empty">Messages here are end-to-end encrypted. Say hi to ' + escapeHtml(DM.peer) + '!</div>';
@@ -24437,6 +24576,56 @@ Answer: C</pre>
       box.scrollTop = box.scrollHeight;
       if (m.from !== me && dmEl('dm-overlay').classList.contains('visible')) nsRef('dmUnread/' + me + '/' + m.from).remove().catch(() => {});
     }
+    let dmEmojiBuilt = false, dmEmojiCat = 0;
+    function dmToggleEmoji() {
+      const picker = dmEl('dm-emoji-picker'), btn = dmEl('dm-emoji-btn');
+      const opening = !picker.classList.contains('visible');
+      picker.classList.toggle('visible', opening);
+      btn.classList.toggle('active', opening);
+      if (opening) { dmBuildEmoji(); dmEl('dm-input').focus(); }
+    }
+    function dmCloseEmoji() {
+      const p = dmEl('dm-emoji-picker'), b = dmEl('dm-emoji-btn');
+      if (p) p.classList.remove('visible');
+      if (b) b.classList.remove('active');
+    }
+    function dmBuildEmoji() {
+      if (dmEmojiBuilt) return;
+      dmEmojiBuilt = true;
+      const tabsEl = dmEl('dm-emoji-tabs'), gridEl = dmEl('dm-emoji-grid');
+      EMOJI_CATEGORIES.forEach((cat, i) => {
+        const tab = document.createElement('button');
+        tab.type = 'button'; tab.className = 'chat-emoji-tab'; tab.textContent = cat.icon; tab.dataset.cat = i;
+        if (i === 0) tab.dataset.active = '';
+        tabsEl.appendChild(tab);
+        const panel = document.createElement('div');
+        panel.className = 'chat-emoji-panel'; panel.dataset.cat = i;
+        if (i === 0) panel.dataset.active = '';
+        cat.items.forEach(e => {
+          const b = document.createElement('button');
+          b.type = 'button'; b.className = 'chat-emoji-item'; b.textContent = e;
+          panel.appendChild(b);
+        });
+        gridEl.appendChild(panel);
+      });
+      tabsEl.addEventListener('click', e => {
+        const tab = e.target.closest('.chat-emoji-tab'); if (!tab) return;
+        const i = Number(tab.dataset.cat); if (i === dmEmojiCat) return;
+        tabsEl.querySelectorAll('[data-active]').forEach(el => delete el.dataset.active);
+        gridEl.querySelectorAll('[data-active]').forEach(el => delete el.dataset.active);
+        tab.dataset.active = '';
+        const panel = gridEl.querySelector('.chat-emoji-panel[data-cat="' + i + '"]');
+        panel.dataset.active = ''; panel.scrollTop = 0;
+        dmEmojiCat = i;
+      });
+      gridEl.addEventListener('click', e => {
+        const item = e.target.closest('.chat-emoji-item'); if (!item) return;
+        const input = dmEl('dm-input'), emoji = item.textContent;
+        const start = input.selectionStart ?? input.value.length, end = input.selectionEnd ?? input.value.length;
+        input.value = input.value.slice(0, start) + emoji + input.value.slice(end);
+        input.focus(); input.setSelectionRange(start + emoji.length, start + emoji.length);
+      });
+    }
     async function dmSend() {
       const input = dmEl('dm-input'), text = input.value.trim();
       if (!text || !DM.aes || !DM.peer) return;
@@ -24450,15 +24639,18 @@ Answer: C</pre>
         await nsRef('dm/' + [me, peerKey].sort().join('__')).push({ from: me, ts: stamp, iv: dmB64(iv), ct: dmB64(ct) });
         nsRef('dmUnread/' + peerKey + '/' + me).set(stamp).catch(() => {});
         input.value = '';
+        dmCloseEmoji();
       } catch (err) {
         console.error('Send message error:', err);
         showWingsToast('Message failed to send');
       } finally { btn.disabled = false; input.focus(); }
     }
     function closeDm() {
+      dmCloseEmoji();
       if (DM.ref) { try { DM.ref.off(); } catch (e) {} DM.ref = null; }
       DM.aes = null; DM.peer = null; DM.keep = null; DM.recKeyShown = null; DM.reset = null; dmClosePops();
-      const ov = dmEl('dm-overlay'); if (ov) ov.classList.remove('visible');
+      const ov = dmEl('dm-overlay'); if (ov) { ov.classList.remove('visible', 'in-box'); ov.style.left = ov.style.top = ov.style.width = ov.style.height = ''; }
+      { const cp = document.getElementById('chat-panel'); if (cp && cp.classList.contains('crew-mode')) renderChatCrewList(); }
     }
     // Live unread markers: dmUnread/<me>/<sender> = last send time. Toasts on
     // new messages and shows a red dot on the profile card's Message button.
@@ -24983,7 +25175,6 @@ Answer: C</pre>
         <div class="profile-card-crew-row">
           <button type="button" class="profile-card-crew-link profile-card-crew-link-copilot" onclick="openCrewList('${nickAttrForCrew}', 'copilot')"><span class="status-line-icon">\ud83d\udc68\ud83c\udffb\u200d\u2708\ufe0f</span>Co-Pilot</button>
           <button type="button" class="profile-card-crew-link" onclick="openCrewList('${nickAttrForCrew}', 'crewmates')"><span class="status-line-icon">\u2708\ufe0f</span>Crewmates</button>
-          ${dmCanMessage(nickname) ? `<button type="button" class="profile-card-crew-link" onclick="openDm('${nickAttrForCrew}')"><span class="status-line-icon">\uD83D\uDCAC</span>Message${DM.unread[dmUid(nickname)] ? '<span class="dm-dot"></span>' : ''}</button>` : ''}
         </div>
       `;
 
