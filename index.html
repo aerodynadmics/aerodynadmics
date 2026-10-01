@@ -847,7 +847,7 @@
     display: none;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
-    color: var(--rivet);
+    color: #fff;
     margin-top: 26px;
   }
   #nickname-step .nick-checking.visible { display: block; }
@@ -3948,6 +3948,7 @@
   .dm-setup input, .dm-input-row input { background: rgba(255,255,255,0.05); border: 1px solid var(--line); border-radius: 8px; color: #fff; padding: 13px 16px; font-size: 15px; font-family: inherit; outline: none; }
   .dm-setup input:focus, .dm-input-row input:focus { border-color: var(--line); box-shadow: none; }
   .dm-err { color: #ff6b6b; font-size: 12px; min-height: 14px; }
+  .dm-err.info { color: #fff; }
   .dm-linkbtn { background: none; border: none; color: var(--rivet); font-size: 11.5px; cursor: pointer; text-decoration: underline; align-self: flex-start; padding: 0; }
   .dm-thread { display: flex; flex-direction: column; flex: 1; min-height: 0; }
   .dm-messages { scrollbar-width: none; -ms-overflow-style: none; flex: 1; overflow-y: auto; padding: 18px 22px; display: flex; flex-direction: column; gap: 9px; }
@@ -4425,11 +4426,12 @@
     display: none;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
-    color: var(--rivet);
+    color: #fff;
     margin-top: 10px;
     text-align: center;
   }
   .profile-edit-status.visible { display: block; }
+  .profile-edit-status.error { color: #ff6b6b; }
 
   /* ---- subject cards ---- */
   .group-label {
@@ -11506,8 +11508,6 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         <p id="dm-setup-text"></p>
         <div id="dm-totp-box" style="display:none;text-align:center;">
           <div id="dm-qr" style="display:inline-block;background:#fff;padding:8px;border-radius:8px;min-height:20px;"></div>
-          <div id="dm-totp-key" style="font-family:monospace;font-size:12px;letter-spacing:0.06em;color:var(--rivet);margin-top:8px;word-break:break-all;user-select:all;"></div>
-          <a id="dm-totp-link" class="dm-linkbtn" href="#" style="display:inline-block;margin-top:6px;">Open in Authenticator app</a>
         </div>
         <input type="text" id="dm-totp" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" placeholder="6-digit code" maxlength="6" style="display:none;">
         <input type="password" id="dm-pin" autocomplete="new-password" inputmode="numeric" pattern="[0-9]*" placeholder="Messages PIN (6 digits)" maxlength="6">
@@ -14400,6 +14400,8 @@ Answer: C</pre>
 
     function showNicknameError(msg) {
       const el = document.getElementById('nickname-error');
+      const ck = document.getElementById('nickname-checking');
+      if (ck) ck.classList.remove('visible');
       el.textContent = msg;
       el.classList.add('visible');
     }
@@ -14880,6 +14882,7 @@ Answer: C</pre>
       }
 
       btn.disabled = true;
+      clearNicknameError();
       checking.classList.add('visible');
       checking.textContent = 'Checking availability\u2026';
 
@@ -24157,7 +24160,7 @@ Answer: C</pre>
       dmEl('dm-totp-box').style.display = mode === 'enroll' ? '' : 'none';
       dmEl('dm-setup-btn').style.display = '';
       dmEl('dm-setup-btn').textContent = mode === 'wait' ? 'CHECK AGAIN' : (mode === 'setup' ? 'TURN ON' : (mode === 'totp' ? 'VERIFY' : (mode === 'enroll' ? 'CONFIRM' : (mode === 'reckey' ? 'I\u2019VE SAVED IT' : (mode === 'userec' ? 'RESTORE MESSAGES' : 'UNLOCK')))));
-      dmEl('dm-setup-err').textContent = '';
+      dmEl('dm-setup-err').textContent = ''; dmEl('dm-setup-err').classList.remove('info');
       dmEl('dm-code').textContent = '';
       const t = dmEl('dm-setup-text');
       if (mode === 'setup') t.textContent = 'Messages are end-to-end encrypted, so only you and your crewmate can read them. Choose a Messages PIN. It protects the backup of your key so you can read your messages on another device. We can\u2019t recover it if you forget it.';
@@ -24268,7 +24271,8 @@ Answer: C</pre>
     function dmTotpCall(params) { return new Promise((resolve) => jsonpRequest(params, resolve, { timeoutMs: 20000 })); }
     function dmDrawQr(uri) {
       const box = dmEl('dm-qr'); box.innerHTML = '';
-      const draw = () => { try { new QRCode(box, { text: uri, width: 160, height: 160, colorDark: '#000000', colorLight: '#ffffff' }); } catch (e) { box.style.display = 'none'; } };
+      const noTip = () => { box.removeAttribute('title'); box.querySelectorAll('[title]').forEach((n) => n.removeAttribute('title')); };
+      const draw = () => { try { new QRCode(box, { text: uri, width: 160, height: 160, colorDark: '#000000', colorLight: '#ffffff' }); noTip(); setTimeout(noTip, 0); setTimeout(noTip, 300); } catch (e) { box.style.display = 'none'; } };
       if (window.QRCode) { draw(); return; }
       const sc = document.createElement('script');
       sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
@@ -24295,7 +24299,7 @@ Answer: C</pre>
       if (!ok) return;
       dmShow('wait');
       dmEl('dm-setup-btn').style.display = 'none'; dmEl('dm-reset-btn').style.display = 'none'; dmEl('dm-userec-btn').style.display = 'none';
-      dmEl('dm-setup-text').textContent = 'Checking\u2026';
+      dmEl('dm-setup-text').textContent = '';
       await dmStartTotp('newkey');
     }
     // Shared Authenticator flow. purpose: 'reset' (forgot PIN, new keys) | 'newkey' (replace recovery key).
@@ -24303,9 +24307,10 @@ Answer: C</pre>
       const err = dmEl('dm-setup-err');
       const nick = currentChatUser && currentChatUser.nickname;
       const mine = String((currentChatUser && currentChatUser.email) || '').toLowerCase();
-      const fail = (msg) => { if (purpose === 'newkey') { showWingsToast(msg); dmOpenThread(); } else err.textContent = msg; };
+      const textEl = dmEl('dm-setup-text'), prevText = textEl.textContent;
+      const note = (msg) => { err.classList.remove('info'); err.textContent = ''; textEl.textContent = msg; };
+      const fail = (msg) => { err.classList.remove('info'); textEl.textContent = prevText; if (purpose === 'newkey') { err.textContent = ''; showWingsToast(msg); dmOpenThread(); } else err.textContent = msg; };
       if (!mine || !nick) { fail('No Google account is linked to this Callsign.'); return; }
-      err.textContent = 'Checking\u2026';
       const st = await dmTotpCall({ action: 'totpStatus', nickname: nick });
       if (!st || !st.ok) { fail('Couldn\u2019t reach the server. Please try again.'); return; }
       if (st.enrolled) {
@@ -24313,18 +24318,16 @@ Answer: C</pre>
         if (purpose === 'newkey') dmEl('dm-setup-text').textContent = 'Enter the 6-digit code from Google Authenticator to make a new recovery key. Your old recovery key will stop working.';
         return;
       }
-      err.textContent = 'Waiting for Google\u2026';
+      note('Waiting for Google\u2026');
       const g = await dmGoogleAuth();
       if (!g) { fail('Google verification didn\u2019t complete. Please try again.'); return; }
       if (g.email !== mine) { fail('That Google account isn\u2019t the one linked to this Callsign.'); return; }
-      err.textContent = 'Setting up\u2026';
+      note('Setting up\u2026');
       const b = await dmTotpCall({ action: 'totpBegin', nickname: nick, gToken: g.token });
       if (!b || !b.ok || !b.secret) { fail((b && b.error) || 'Couldn\u2019t start setup. Please try again.'); return; }
       DM.reset = { nick, token: g.token, purpose };
       dmShow('enroll');
       const uri = 'otpauth://totp/' + encodeURIComponent('Aerodynadmics:' + nick) + '?secret=' + b.secret + '&issuer=Aerodynadmics';
-      dmEl('dm-totp-key').textContent = b.secret.replace(/(.{4})/g, '$1 ').trim();
-      dmEl('dm-totp-link').href = uri;
       dmEl('dm-qr').style.display = 'inline-block';
       dmDrawQr(uri);
     }
@@ -24334,7 +24337,7 @@ Answer: C</pre>
       const r = DM.reset;
       if (!r) { dmShow('unlock'); return; }
       if (!/^\d{6}$/.test(code)) { err.textContent = 'Enter the 6-digit code.'; return; }
-      btn.disabled = true; err.textContent = 'Checking\u2026';
+      btn.disabled = true; err.classList.remove('info'); err.textContent = '';
       const res = DM.mode === 'enroll'
         ? await dmTotpCall({ action: 'totpConfirm', nickname: r.nick, gToken: r.token, code })
         : await dmTotpCall({ action: 'totpVerify', nickname: r.nick, code });
@@ -25472,7 +25475,7 @@ Answer: C</pre>
       const bio = document.getElementById('profile-edit-bio').value.trim();
 
       btn.disabled = true;
-      status.textContent = 'Saving\u2026';
+      status.classList.remove('error'); status.textContent = 'Saving\u2026';
       status.classList.add('visible');
 
       const nickname = currentChatUser.nickname;
@@ -25507,12 +25510,12 @@ Answer: C</pre>
         }).catch((err) => {
           console.error('Bio save error:', err);
           btn.disabled = false;
-          status.textContent = 'Could not save right now. Try again.';
+          status.classList.add('error'); status.textContent = 'Could not save right now. Try again.';
         });
       } catch (err) {
         console.error('Bio save error:', err);
         btn.disabled = false;
-        status.textContent = 'Could not save right now. Try again.';
+        status.classList.add('error'); status.textContent = 'Could not save right now. Try again.';
       }
     }
 
@@ -25544,7 +25547,7 @@ Answer: C</pre>
       try { renderNicknameListFromCache(); } catch (err) { console.error('Nickname list refresh error:', err); }
 
       btn.disabled = true;
-      status.textContent = 'Saving\u2026';
+      status.classList.remove('error'); status.textContent = 'Saving\u2026';
       status.classList.add('visible');
 
       // Keep everything else on the profile (bio, flightHours) as-is —
@@ -25577,12 +25580,12 @@ Answer: C</pre>
         }).catch((err) => {
           console.error('Background save error:', err);
           btn.disabled = false;
-          status.textContent = 'Could not save right now. Try again.';
+          status.classList.add('error'); status.textContent = 'Could not save right now. Try again.';
         });
       } catch (err) {
         console.error('Background save error:', err);
         btn.disabled = false;
-        status.textContent = 'Could not save right now. Try again.';
+        status.classList.add('error'); status.textContent = 'Could not save right now. Try again.';
       }
     }
 
@@ -28499,7 +28502,7 @@ Answer: C</pre>
       const newProfile = { ...myProfile, quizAutoNextSeconds: val };
 
       btn.disabled = true;
-      status.textContent = 'Saving\u2026';
+      status.classList.remove('error'); status.textContent = 'Saving\u2026';
       status.classList.add('visible');
 
       if (!chatConfigIsFilledIn()) {
@@ -28523,12 +28526,12 @@ Answer: C</pre>
         }).catch((err) => {
           console.error('Quiz settings save error:', err);
           btn.disabled = false;
-          status.textContent = 'Could not save right now. Try again.';
+          status.classList.add('error'); status.textContent = 'Could not save right now. Try again.';
         });
       } catch (err) {
         console.error('Quiz settings save init error:', err);
         btn.disabled = false;
-        status.textContent = 'Could not save right now. Try again.';
+        status.classList.add('error'); status.textContent = 'Could not save right now. Try again.';
       }
     }
 
