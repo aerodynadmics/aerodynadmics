@@ -2622,6 +2622,14 @@
   .radar-tag.private { border-color: #a27be0; color: #c4a8f0; }
   .radar-count { flex: none; text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--rivet); line-height: 1.5; }
   .radar-count b { color: var(--paper); font-weight: 600; }
+  .radar-act { flex: none; margin-left: auto; }
+  .radar-act-btn { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 400; letter-spacing: 0.04em; line-height: 1; padding: 4px 9px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.28); background: transparent; color: var(--paper); cursor: pointer; }
+  @media (hover: hover) { .radar-act-btn:hover { background: var(--accent); border-color: var(--accent); color: #0b1a26; } }
+  .radar-act-btn.cooldown { border-color: var(--line); color: var(--rivet); cursor: not-allowed; }
+  @media (hover: hover) { .radar-act-btn.cooldown:hover { background: transparent; border-color: var(--line); color: var(--rivet); } }
+  .radar-act-btn.pending { border-color: #a27be0; color: #c4a8f0; }
+  @media (hover: hover) { .radar-act-btn.pending:hover { background: #a27be0; border-color: #a27be0; color: #1a0b2e; } }
+  .radar-here { display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 400; letter-spacing: 0.04em; line-height: 1; padding: 4px 9px; border-radius: 999px; border: 1px solid var(--accent); background: var(--accent); color: #0b1a26; white-space: nowrap; }
   /* private flights created by souls */
   .flight-tile.private { background: linear-gradient(145deg, #5b3a8f, #341f59); }
   .flight-tile.private.locked { cursor: not-allowed; filter: none; }
@@ -3868,6 +3876,8 @@
   }
   .flight-alert-btn.confirm { background: var(--green); color: #04321f; }
   @media (hover: hover) { .flight-alert-btn.confirm:hover { background: #6fe6b8; } }
+  .flight-alert-btn.yellow { background: var(--accent); color: var(--blueprint-dark); }
+  @media (hover: hover) { .flight-alert-btn.yellow:hover { filter: brightness(1.08); } }
   .flight-alert-btn.decline { background: transparent; color: var(--rivet); }
   @media (hover: hover) { .flight-alert-btn.decline:hover { background: rgba(255,107,107,0.18); color: #ff6b6b; } }
   .flight-alert-row.wings-alert-row {
@@ -3893,6 +3903,10 @@
     color: var(--rivet);
     font-style: italic;
   }
+  /* Terms & Privacy notice is locked until both documents are read to the bottom */
+  .wings-alert-delete-btn.legal-locked,
+  .nick-modal-close.legal-locked { opacity: 0.35; cursor: not-allowed; }
+  .flight-alert-sub.legal-sub { color: var(--accent); }
   .wings-alert-delete-btn {
     flex-shrink: 0;
     background: none;
@@ -3914,6 +3928,50 @@
     gap: 8px;
     margin-top: 4px;
   }
+  /* ---- Encrypted direct messages (Crewmates / Co-Pilot) ---- */
+  .dm-modal { max-width: 760px; width: 94vw; height: 90vh; max-height: 90vh; }
+  .dm-modal .nick-modal-head h3 { font-size: 18px; }
+  .dm-secure { padding: 9px 20px; font-size: 12.5px; color: var(--accent); border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-family: 'Space Grotesk', sans-serif; }
+  .dm-secure .dm-code { color: var(--rivet); font-family: monospace; letter-spacing: 0.04em; }
+  .dm-recover { padding: 9px 20px; font-size: 12.5px; color: var(--paper); background: rgba(255,255,255,0.05); border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-family: 'Space Grotesk', sans-serif; }
+  .dm-recover .dm-linkbtn { align-self: auto; color: var(--accent); font-size: 12.5px; text-decoration: none; }
+  .dm-modal .nick-modal-head { position: relative; }
+  .dm-head-actions { display: flex; align-items: center; gap: 4px; }
+  .dm-head-btn { position: relative; background: none; border: none; cursor: pointer; font-size: 17px; line-height: 1; padding: 4px 7px; border-radius: 6px; opacity: 0.85; }
+  @media (hover: hover) { .dm-head-btn:hover { background: rgba(255,255,255,0.08); opacity: 1; } }
+  .dm-head-btn.attn::after { content: ''; position: absolute; top: 2px; right: 3px; width: 8px; height: 8px; border-radius: 50%; background: #ff4d4d; }
+  .dm-pop.dm-secure, .dm-pop.dm-recover { display: none; position: absolute; top: calc(100% + 6px); left: 12px; right: 12px; z-index: 6; background: var(--blueprint-dark); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 8px 22px rgba(0,0,0,0.5); }
+  .dm-pop.open { display: flex; }
+  .dm-warn { padding: 7px 16px; font-size: 11.5px; color: #ff6b6b; background: rgba(255,107,107,0.1); }
+  .dm-setup { padding: 18px 16px; display: flex; flex-direction: column; gap: 10px; font-size: 12.5px; color: var(--paper); overflow-y: auto; }
+  .dm-setup p { margin: 0; line-height: 1.5; }
+  .dm-setup input, .dm-input-row input { background: rgba(255,255,255,0.05); border: 1px solid var(--line); border-radius: 8px; color: #fff; padding: 13px 16px; font-size: 15px; font-family: inherit; outline: none; }
+  .dm-setup input:focus, .dm-input-row input:focus { border-color: var(--line); box-shadow: none; }
+  .dm-err { color: #ff6b6b; font-size: 12px; min-height: 14px; }
+  .dm-linkbtn { background: none; border: none; color: var(--rivet); font-size: 11.5px; cursor: pointer; text-decoration: underline; align-self: flex-start; padding: 0; }
+  .dm-thread { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  .dm-messages { scrollbar-width: none; -ms-overflow-style: none; flex: 1; overflow-y: auto; padding: 18px 22px; display: flex; flex-direction: column; gap: 9px; }
+  .dm-messages::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  .dm-empty { margin: auto; text-align: center; color: var(--rivet); font-size: 12px; max-width: 260px; line-height: 1.5; }
+  .dm-msg { position: relative; max-width: 72%; padding: 10px 15px; border-radius: 18px; font-size: 16px; line-height: 1.45; word-break: break-word; white-space: pre-wrap; background: rgba(255,255,255,0.08); color: #fff; align-self: flex-start; border-bottom-left-radius: 4px; }
+  .dm-msg.mine { align-self: flex-end; background: var(--accent); color: var(--blueprint-dark); border-bottom-left-radius: 14px; border-bottom-right-radius: 4px; }
+  .dm-msg.bad { font-style: italic; opacity: 0.7; }
+  .dm-msg time { display: block; font-size: 11px; opacity: 0.6; margin-top: 3px; text-align: right; }
+  .dm-msg-foot { display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
+  .dm-msg-foot time { margin-top: 3px; }
+  .dm-unsend-btn { background: none; border: none; padding: 0; margin-top: 3px; font: inherit; font-size: 11px; color: inherit; opacity: 0; cursor: pointer; text-decoration: underline; transition: opacity .15s; }
+  .dm-msg.mine:hover .dm-unsend-btn, .dm-unsend-btn:focus-visible { opacity: 0.75; }
+  .dm-unsend-btn:hover { opacity: 1 !important; }
+  @media (hover: none) { .dm-unsend-btn { opacity: 0.7; } }
+  .dm-msg.unsent { background: transparent !important; border: 1px dashed var(--line); color: var(--rivet) !important; font-style: italic; font-size: 14px; }
+  .dm-msg.unsent time { display: none; }
+  .dm-input-row { display: flex; gap: 10px; padding: 14px 18px; border-top: 1px solid var(--line); }
+  .dm-input-row input { flex: 1; min-width: 0; }
+  .dm-send { flex-shrink: 0; align-self: center; width: 44px; height: 44px; padding: 0; margin: 0; background: transparent; border: none; border-radius: 0; color: var(--accent); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: filter 0.15s ease; }
+  .dm-send svg { display: block; width: 24px; height: 24px; }
+  @media (hover: hover) { .dm-send:not(:disabled):hover { filter: brightness(1.12); } }
+  .dm-send:disabled { opacity: 0.5; cursor: default; }
+  .dm-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #ff4d4d; margin-left: 5px; vertical-align: middle; }
   .flight-alert-btn.confirm-delete { background: #ff6b6b; color: #3a0d0d; }
   @media (hover: hover) { .flight-alert-btn.confirm-delete:hover { background: #ff8686; } }
   .wings-alert-detail-amount {
@@ -5480,6 +5538,9 @@
     -webkit-user-select: none;
   }
   .chat-panel-peek.available { display: flex; }
+  /* Not this soul's main flight: the Black Box strip can't be opened. */
+  .chat-panel-peek.locked, .chat-panel-peek.locked * { cursor: not-allowed; }
+  @media (hover: hover) { .chat-panel-peek.locked:hover { background-image: none; } }
   @media (hover: hover) { .chat-panel-peek:hover {
     background-image: linear-gradient(rgba(255,255,255,0.06), rgba(255,255,255,0.06));
   } }
@@ -5526,6 +5587,17 @@
     flex-shrink: 0;
   }
   /* ---- flights: each flight is its own Black Box ---- */
+  /* Black Box of a public flight that isn't the soul's own main flight: the
+     messages and input are hidden and a short note is shown instead. The
+     flight's roster (sidebar / radar) is unaffected. */
+  .chat-locked-note { display: none; flex: 1; align-items: center; justify-content: center; flex-direction: column; gap: 10px; padding: 24px; text-align: center; color: var(--rivet); font-size: 13px; line-height: 1.5; }
+  .chat-locked-note .chat-locked-icon { font-size: 28px; }
+  .chat-panel.locked .chat-locked-note { display: flex; }
+  .chat-panel.locked .chat-messages,
+  .chat-panel.locked .chat-reply-preview,
+  .chat-panel.locked .chat-mention-suggest,
+  .chat-panel.locked .chat-emoji-picker,
+  .chat-panel.locked .chat-input-row { display: none !important; }
   .flight-bar { display: flex; gap: 6px; padding: 8px 14px; overflow-x: auto; border-bottom: 1px solid var(--line); flex-shrink: 0; scrollbar-width: none; -ms-overflow-style: none; }
   .flight-bar::-webkit-scrollbar { display: none; }
   .flight-chip { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--paper); font-family: 'Space Grotesk', sans-serif; font-size: 12px; cursor: pointer; white-space: nowrap; }
@@ -8677,7 +8749,7 @@
     font-size: 13px;
     padding: 10px 18px;
     border-radius: 999px;
-    z-index: 90;
+    z-index: 2100;
     opacity: 0;
     transition: opacity 0.3s ease, transform 0.3s ease;
     pointer-events: none;
@@ -9933,6 +10005,14 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
     mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1 1L9 9M9 1L1 9' stroke='black' stroke-width='1.3' stroke-linecap='round' fill='none'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
     pointer-events: none;
   }
+  /* Flight Alerts delete/dismiss buttons show a trash can instead of an X */
+  .wings-alert-delete-btn { padding: 4px 6px; }
+  .wings-alert-delete-btn::after {
+    width: 1.05em;
+    height: 1.05em;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.5 6h17M9 6V4h6v2M6 6l1 14h10l1-14M10 10.5v6M14 10.5v6' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.5 6h17M9 6V4h6v2M6 6l1 14h10l1-14M10 10.5v6M14 10.5v6' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  }
   /* Flight Store close button has 14px of left padding (for its divider) and
      4px on the right, so its X is centred in the space right of the divider. */
   #view-shop .store-popup-head .nick-modal-close::after { left: calc(50% + 5px); }
@@ -10768,7 +10848,7 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
 aerodynadmics
 TERMS AND CONDITIONS
 
-Last Updated: September 2026
+Last Updated: October 2026
 
 
 1. ACCEPTANCE OF TERMS
@@ -11038,21 +11118,36 @@ aerodynadmics may collect and process information necessary to provide accounts,
 Users should review the platform's applicable Privacy Policy for information about how personal information is collected, used, stored, and protected.
 
 
-26. LIMITATION OF RESPONSIBILITY
+26. PRIVATE FLIGHTS AND BLACK BOX MESSAGES
+
+Users may create or join private flights, each of which has its own Black Box. Messages sent inside a private flight's Black Box are intended to be end-to-end encrypted, so that only the souls aboard that private flight can read them. The platform's admin is not able to read the contents of those messages.
+
+The platform was built by a creator who is not a professional programmer, with the help of AI tools. The encryption has not been independently audited, and aerodynadmics and its operator do not guarantee that it is free of mistakes or that it provides absolute security. You use private flights and send private flight messages at your own risk.
+
+Because private flight messages cannot be read by the admin, they are not reviewed or moderated by the admin. The creator of a private flight and the souls aboard it are responsible for what is sent there. These Terms, including the rules on Community Conduct and Prohibited Content, still apply to private flights, and accounts or private flights may be restricted, suspended, or removed based on conduct that is reported to the platform or that is otherwise visible, such as flight names or Callsigns.
+
+Everyone aboard a private flight can read its messages. Anyone who obtains a private flight's full invite link can join that flight's encryption. Share invite links only with people you trust. Messages cannot be recovered if the encryption key is lost, and the platform is not responsible for loss of access to private flight messages.
+
+You are advised to send only messages in a private flight's Black Box that you are comfortable with and that you believe will not threaten your personal space or privacy, and to keep them academic-related if you prefer. Do not share passwords, Flight Codes, financial details, government identification, or other sensitive personal information through any Black Box.
+
+aerodynadmics will continue to be developed, and the creator is committed to continuing to improve the security of the platform over time.
+
+
+27. LIMITATION OF RESPONSIBILITY
 
 To the extent permitted by applicable law, aerodynadmics and its operator are not responsible for losses, damages, interruptions, inaccurate information, user-generated content, third-party services, or other consequences arising from use of the platform.
 
 Nothing in these Terms is intended to exclude rights or protections that cannot legally be excluded under applicable law.
 
 
-27. USER RESPONSIBILITY
+28. USER RESPONSIBILITY
 
 By using aerodynadmics, you agree to use the platform responsibly and in accordance with these Terms and applicable laws.
 
 You are responsible for your own account activity, submissions, interactions, and use of information obtained through the platform.
 
 
-28. ACKNOWLEDGMENT & ACCEPTANCE
+29. ACKNOWLEDGMENT & ACCEPTANCE
 
 By using aerodynadmics, you acknowledge that:
 
@@ -11092,7 +11187,7 @@ If you do not agree with these Terms, you should discontinue use of the platform
 aerodynadmics
 PRIVACY POLICY
 
-Last Updated: September 2026
+Last Updated: October 2026
 
 
 1. INTRODUCTION
@@ -11307,21 +11402,41 @@ By creating or using an aerodynadmics account, you confirm that you are at least
 If aerodynadmics becomes aware that an account is being used by a person under 18 years of age, the account may be restricted, suspended, or removed.
 
 
-20. COOKIES AND SIMILAR TECHNOLOGIES
+20. PRIVATE FLIGHTS AND END-TO-END ENCRYPTION
+
+Private flights have their own Black Box. The messages sent inside a private flight's Black Box are end-to-end encrypted. They are scrambled in your own browser before they are sent, and only the souls aboard that private flight can unlock and read them.
+
+This means that people outside that private flight, including the platform's admin, are not able to read the contents of those messages. If the platform's database is opened by the admin or anyone else, private flight messages appear only as unreadable, scrambled text.
+
+Please also understand the following:
+
+• The platform and its security features were built by a creator who is not a professional programmer, with the help of AI tools. The creator does not have the expert knowledge to guarantee that the encryption is 100% safe or free of mistakes, and it has not been independently audited or tested by a security professional.
+• The platform is nevertheless built so that private flight messages are end-to-end encrypted, and the creator's intention is that no one outside the flight, not even the admin, can see them.
+• Encryption protects the contents of messages only. Other information is not encrypted and may be visible to others and to the admin, such as a private flight's name, who created it, which Callsigns are aboard, and who sent a message and when.
+• Everyone aboard a private flight can read its messages. Anyone you let in, including through an invite link, can read what is sent there.
+• The key to a private flight is kept on the devices of the souls aboard and is included in that flight's invite link. Anyone who has the full invite link can obtain the key, so share it only with people you trust. If you clear your browser data or use a new device, you may be unable to read old messages until another soul aboard is online to share the key with you again.
+• The Black Boxes of the public flights are not end-to-end encrypted, are visible to the souls who can access them, and may be moderated by the admin in line with the Black Box Guidelines.
+
+Because of these limits, you are advised to send only messages in a private flight's Black Box that you are comfortable with and that you believe will not threaten your personal space or privacy. If you prefer, keep your messages there academic-related only. Do not share passwords, Flight Codes, financial details, government identification, or other sensitive personal information through any Black Box.
+
+aerodynadmics will continue to be developed, and the creator is committed to continuing to improve the security of the platform over time.
+
+
+21. COOKIES AND SIMILAR TECHNOLOGIES
 
 aerodynadmics or the third-party services used by the platform may use cookies, local storage, session technologies, or similar technologies where necessary for authentication, security, preferences, functionality, or platform operation.
 
 These technologies may also be used by third-party services integrated into the platform.
 
 
-21. PRIVACY AND DATA PROTECTION
+22. PRIVACY AND DATA PROTECTION
 
 aerodynadmics is designed to collect only limited account information needed to operate the platform.
 
 Users may contact aerodynadmics regarding questions or concerns about information associated with their account.
 
 
-22. CHANGES TO THIS PRIVACY POLICY
+23. CHANGES TO THIS PRIVACY POLICY
 
 This Privacy Policy may be updated from time to time as aerodynadmics develops or as applicable requirements change.
 
@@ -11330,12 +11445,12 @@ When changes are made, the updated version may be posted on the platform with a 
 Continued use of aerodynadmics after an updated Privacy Policy becomes effective constitutes acknowledgment of the updated policy.
 
 
-23. CONTACT
+24. CONTACT
 
 If you have questions, concerns, requests, or complaints regarding this Privacy Policy or the handling of account information on aerodynadmics, you may contact the platform through its designated contact or reporting channels.
 
 
-24. ACKNOWLEDGMENT AND ACCEPTANCE
+25. ACKNOWLEDGMENT AND ACCEPTANCE
 
 By accessing, registering for, or using aerodynadmics, you acknowledge that you have read, understood, and agree to this Privacy Policy.
 
@@ -11371,6 +11486,49 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         <span class="flight-alerts-badge" id="flight-alerts-badge">0</span>
       </button>
+    </div>
+  </div>
+
+  <div class="nick-modal-overlay" id="dm-overlay" style="z-index: 2000;">
+    <div class="nick-modal dm-modal" role="dialog" aria-modal="true" aria-labelledby="dm-title">
+      <div class="nick-modal-head">
+        <h3 id="dm-title">Messages</h3>
+        <div class="dm-head-actions">
+          <button type="button" class="dm-head-btn" id="dm-lock-btn" onclick="dmTogglePop('dm-secure')" aria-label="Encryption info" title="End-to-end encrypted">&#128274;</button>
+          <button type="button" class="dm-head-btn" id="dm-key-btn" onclick="dmTogglePop('dm-recover')" aria-label="Recovery key" title="Recovery key" style="display:none;">&#128273;</button>
+          <button class="nick-modal-close" onclick="closeDm()" aria-label="Close messages">&times;</button>
+        </div>
+        <div class="dm-pop dm-secure" id="dm-secure"><span>&#128274; End-to-end encrypted</span><span class="dm-code" id="dm-code" title="Compare this safety code with your crewmate to confirm no one is intercepting"></span></div>
+        <div class="dm-pop dm-recover" id="dm-recover"><span id="dm-recover-text">Get a recovery key so you can restore your messages if you forget your PIN.</span><button type="button" class="dm-linkbtn" id="dm-recover-btn" onclick="dmRecoverClick()">Get recovery key</button></div>
+      </div>
+      <div class="dm-warn" id="dm-warn" style="display:none;"></div>
+      <div class="dm-setup" id="dm-setup" style="display:none;">
+        <p id="dm-setup-text"></p>
+        <div id="dm-totp-box" style="display:none;text-align:center;">
+          <div id="dm-qr" style="display:inline-block;background:#fff;padding:8px;border-radius:8px;min-height:20px;"></div>
+          <div id="dm-totp-key" style="font-family:monospace;font-size:12px;letter-spacing:0.06em;color:var(--rivet);margin-top:8px;word-break:break-all;user-select:all;"></div>
+          <a id="dm-totp-link" class="dm-linkbtn" href="#" style="display:inline-block;margin-top:6px;">Open in Authenticator app</a>
+        </div>
+        <input type="text" id="dm-totp" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" placeholder="6-digit code" maxlength="6" style="display:none;">
+        <input type="password" id="dm-pin" autocomplete="new-password" inputmode="numeric" pattern="[0-9]*" placeholder="Messages PIN (6 digits)" maxlength="6">
+        <div id="dm-reckey-box" style="display:none;text-align:center;">
+          <div id="dm-reckey-show" style="font-family:monospace;font-size:15px;letter-spacing:0.08em;line-height:1.7;color:var(--accent);word-break:break-all;user-select:all;padding:12px;border:1px dashed var(--line);border-radius:8px;"></div>
+          <button type="button" class="dm-linkbtn" id="dm-reckey-copy" onclick="dmCopyRecKey()" style="margin-top:8px;">Copy key</button>
+        </div>
+        <input type="text" id="dm-reckey" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Recovery key" maxlength="48" style="display:none;">
+        <input type="password" id="dm-pin2" autocomplete="new-password" inputmode="numeric" pattern="[0-9]*" placeholder="Confirm PIN (6 digits)" maxlength="6">
+        <div class="dm-err" id="dm-setup-err"></div>
+        <div class="mockadmin-editor-actions"><button type="button" class="mockadmin-publish-btn" id="dm-setup-btn" onclick="dmSubmitPin()">CONTINUE</button></div>
+        <button type="button" class="dm-linkbtn" id="dm-userec-btn" onclick="dmShowUseRec()" style="display:none;">Forgot PIN? Use your recovery key</button>
+        <button type="button" class="dm-linkbtn" id="dm-reset-btn" onclick="dmResetKeys()">No recovery key? Reset with Google</button>
+      </div>
+      <div class="dm-thread" id="dm-thread" style="display:none;">
+        <div class="dm-messages" id="dm-messages"></div>
+        <div class="dm-input-row">
+          <input type="text" id="dm-input" placeholder="Type a message&hellip;" maxlength="500" autocomplete="off">
+          <button type="button" class="dm-send" id="dm-send-btn" onclick="dmSend()" aria-label="Send" title="Send"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -11674,6 +11832,10 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
          only because the chat code writes its status text into it. -->
     <div id="chat-panel-status" hidden></div>
     <div class="chat-messages" id="chat-messages"></div>
+    <div class="chat-locked-note" id="chat-locked-note">
+      <span class="chat-locked-icon">&#128274;</span>
+      <span>You can only open the Black Box of your own main flight.<br>You can still see who is aboard this flight in the list.</span>
+    </div>
     <div class="chat-reply-preview" id="chat-reply-preview">
       <div class="chat-reply-preview-text">
         <span class="chat-reply-preview-label">Replying to <b id="chat-reply-preview-nick"></b></span>
@@ -12388,12 +12550,13 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         <button type="button" class="admin-page-card" id="admin-gift-wings-btn" onclick="openGiftWingsModal()">ADJUST BALANCE</button>
         <button type="button" class="admin-page-card" id="admin-board-settings-btn" onclick="openBoardAdminSettingsModal()">BOARD SETTINGS</button>
         <button type="button" class="admin-page-card" id="admin-cc-btn" onclick="openAdminCopyrightConcernsModal()"><span>COPYRIGHT/CONCERNS</span><span class="admin-card-badge" id="admin-cc-badge"></span></button>
-        <button type="button" class="admin-page-card" id="admin-qreports-btn" onclick="openAdminQuestionReportsModal()"><span>QUESTION REPORTS</span><span class="admin-card-badge" id="admin-qr-badge"></span></button>
-        <button type="button" class="admin-page-card" id="admin-pr-btn" onclick="openAdminPostReportsModal()"><span>POST REPORTS</span><span class="admin-card-badge" id="admin-pr-badge"></span></button>
         <button type="button" class="admin-page-card" id="admin-creator-profile-btn" onclick="openCreatorProfileEditModal()">CREATOR PROFILE</button>
         <button type="button" class="admin-page-card" id="admin-deleted-items-btn" onclick="openDeletedItemsModal()">DELETED SHOP ITEMS</button>
         <button type="button" class="admin-page-card" id="admin-toggle-flightstore-btn" onclick="toggleFlightStoreEnabled()">DISABLE FLIGHT STORE</button>
         <button type="button" class="admin-page-card" id="admin-mock-exams-btn" onclick="openMockExamAdmin()">MOCK EXAMS</button>
+        <button type="button" class="admin-page-card" id="admin-legal-notice-btn" onclick="sendLegalUpdateNotice()">NOTIFY TERMS &amp; PRIVACY UPDATE</button>
+        <button type="button" class="admin-page-card" id="admin-pr-btn" onclick="openAdminPostReportsModal()"><span>POST REPORTS</span><span class="admin-card-badge" id="admin-pr-badge"></span></button>
+        <button type="button" class="admin-page-card" id="admin-qreports-btn" onclick="openAdminQuestionReportsModal()"><span>QUESTION REPORTS</span><span class="admin-card-badge" id="admin-qr-badge"></span></button>
         <button type="button" class="admin-page-card" id="admin-unban-btn" onclick="openBannedListModal()">UNBAN</button>
       </div>
     </section>
@@ -12870,7 +13033,7 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
        everywhere in the admin tools so nothing pops the browser's native
        "site says" dialog. See openAdminModal()/adminAlert()/adminConfirm()/
        adminPrompt() below. -->
-  <div class="banned-list-overlay" id="admin-modal-overlay" style="z-index:2000;">
+  <div class="banned-list-overlay" id="admin-modal-overlay" style="z-index:2100;">
     <div class="mockadmin-card" style="max-width:420px;" onclick="event.stopPropagation();">
       <p id="admin-modal-message" style="margin:0 0 14px; font-size:13.5px; line-height:1.55; color:var(--paper); white-space:pre-wrap;"></p>
       <input type="text" id="admin-modal-input" class="mockadmin-input" style="display:none;"
@@ -14311,7 +14474,7 @@ Answer: C</pre>
     // usual check because it was restored from a cached device login).
     function openFlightCodeSetupFromAlert() {
       if (!currentChatUser) return;
-      closeFlightAlerts();
+      closeFlightAlerts(true);
       document.getElementById('signin-gate').classList.remove('hidden');
       document.body.classList.add('gate-active');
       showFlightAlertStep(currentChatUser, true);
@@ -14984,14 +15147,41 @@ Answer: C</pre>
       setNeedsFlightCode(user.needsFlightCode);
       setChatPanelAvailable(true);
       mainFlightApplied = false;
-      if (user.mainFlight && isRailFlightId(user.mainFlight)) {
+      pendingRestorePrivateFlightId = null;
+      flightRestoring = false;
+      const _startFlight = preferredRailFlightId(user.nickname, user.mainFlight);
+      restoreFallbackFlightId = _startFlight || MAIN_FLIGHT_SERVER_ID;
+      if (_startFlight) {
         mainFlightApplied = true;
-        activeFlightServerId = user.mainFlight;
-        currentFlightId = user.mainFlight === MAIN_FLIGHT_SERVER_ID ? null : user.mainFlight;
-        renderFlightsRail();
-        updateSidebarFlightHeader();
-        updateChatTitle();
+        activeFlightServerId = _startFlight;
+        currentFlightId = _startFlight === MAIN_FLIGHT_SERVER_ID ? null : _startFlight;
       }
+      // Reopen a private flight the soul was last on straight away, so the
+      // page never flashes their main flight first. It's held in a
+      // "restoring" state (no chat subscription yet) until the flight list
+      // confirms they still belong to it; otherwise they fall back.
+      const _lastSaved = loadLastFlight(user.nickname);
+      if (_lastSaved && !isRailFlightId(_lastSaved)) {
+        if (flightListRef) {
+          const _ff = flightsCache[_lastSaved];
+          if (_ff && _ff.name && canEnterFlight(_ff)) { mainFlightApplied = true; currentFlightId = _lastSaved; }
+        } else {
+          mainFlightApplied = true;
+          currentFlightId = _lastSaved;
+          pendingRestorePrivateFlightId = _lastSaved;
+          flightRestoring = true;
+          // Paint it from the cached list right away (chat still waits for
+          // the live list to confirm the soul is still aboard).
+          const _cached = loadFlightListCache();
+          if (_cached[_lastSaved] && canEnterFlight(_cached[_lastSaved])) flightsCache = _cached;
+          setTimeout(() => { if (flightRestoring) abortFlightRestore(); }, 8000);
+        }
+      }
+      renderFlightsRail();
+      updateSidebarFlightHeader();
+      updateChatTitle();
+      applyChatLockState();
+      if (flightRestoring) renderNicknameListFromCache();
       initChat();
       initPresence(user);
       watchForLiveBan(user);
@@ -15001,7 +15191,10 @@ Answer: C</pre>
       loadOwnProfile(user);
       loadCrewmateData(user);
       loadCopilotData(user);
+      loadFlightJoinRequests();
       loadWingsAlerts(user);
+      try { dmStart(user); } catch (e) { console.error(e); }
+      try { loadLegalNotice(user); } catch (e) { console.error(e); }
       showNicknameList();
       updateSidebarVisibility();
       progSyncOnSignIn(user); // pull this account's saved progress from Firebase
@@ -16400,6 +16593,8 @@ Answer: C</pre>
       // addressed, applied here too).
       if (wingsAlertsListenerRef) { try { wingsAlertsListenerRef.off('value'); } catch (e) {} wingsAlertsListenerRef = null; }
       myWingsAlerts = {};
+      try { stopLegalNotice(); } catch (e) {}
+      try { dmStop(); } catch (e) {}
       // Reset so the next account's first wallet snapshot isn't compared
       // against this account's leftover balance (that false "increase"
       // is what was firing the +wings toast on every login/logout).
@@ -16446,6 +16641,12 @@ Answer: C</pre>
       Object.keys(messageCache).forEach((k) => delete messageCache[k]);
       const messagesEl = document.getElementById('chat-messages');
       if (messagesEl) messagesEl.innerHTML = '';
+      flightRestoring = false;
+      pendingRestorePrivateFlightId = null;
+      const _lockPanel = document.getElementById('chat-panel');
+      if (_lockPanel) _lockPanel.classList.remove('locked');
+      const _lockPeek = document.getElementById('chat-panel-peek');
+      if (_lockPeek) { _lockPeek.classList.remove('locked'); _lockPeek.setAttribute('aria-disabled', 'false'); }
       cancelReply();
       mentionSuggestState = null;
       hasUnreadMention = false;
@@ -17590,9 +17791,248 @@ Answer: C</pre>
       } catch (err) { console.error('Chat order error:', err); }
     }
 
+
+    // =====================================================================
+    // End-to-end encryption for PRIVATE flights' Black Boxes.
+    // Each private flight has one random AES-256-GCM key made in the owner's
+    // browser. Messages are encrypted before they are sent, so the database
+    // only holds ciphertext. The key is never stored in the database in
+    // readable form: it travels in the invite link's #fragment (never sent to
+    // any server) or, for souls who don't have it yet, wrapped to their own
+    // one-time public key (ECDH P-256) by the owner / another member's browser.
+    // =====================================================================
+    const E2EE_PREFIX = 'e2ee1:';
+    const FLIGHT_KEYS = {};          // flightId -> CryptoKey (this session)
+    const _e2eeEnc = new TextEncoder();
+    const _e2eeDec = new TextDecoder();
+    function b64uEnc(buf) {
+      const b = new Uint8Array(buf); let s = '';
+      for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+      return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+    function b64uDec(str) {
+      str = String(str).replace(/-/g, '+').replace(/_/g, '/');
+      while (str.length % 4) str += '=';
+      const bin = atob(str); const u = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+      return u;
+    }
+    function e2eeKeyName(id) { return 'e2eeFlightKey:' + DB_NAMESPACE + ':' + id; }
+    function e2eeGetRaw(id) { try { return localStorage.getItem(e2eeKeyName(id)) || ''; } catch (e) { return ''; } }
+    function e2eeSetRaw(id, raw) { try { localStorage.setItem(e2eeKeyName(id), raw); } catch (e) {} }
+    function e2eeDropRaw(id) { try { localStorage.removeItem(e2eeKeyName(id)); localStorage.removeItem(e2eeReqName(id)); } catch (e) {} delete FLIGHT_KEYS[id]; }
+    function e2eeReqName(id) { return 'e2eeReqKeypair:' + DB_NAMESPACE + ':' + id; }
+    function e2eeImportRaw(raw) {
+      return crypto.subtle.importKey('raw', b64uDec(raw), { name: 'AES-GCM' }, true, ['encrypt', 'decrypt']);
+    }
+    async function e2eeNewKeyRaw() {
+      const k = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+      return b64uEnc(await crypto.subtle.exportKey('raw', k));
+    }
+    async function e2eeEncryptMessage(flightId, nickname, obj) {
+      const key = FLIGHT_KEYS[flightId];
+      if (!key) throw new Error('no flight key');
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const ct = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv: iv, additionalData: _e2eeEnc.encode(flightId + '|' + nickname) },
+        key, _e2eeEnc.encode(JSON.stringify(obj)));
+      return E2EE_PREFIX + b64uEnc(iv) + ':' + b64uEnc(ct);
+    }
+    async function e2eeDecryptMessage(flightId, raw) {
+      const fail = (t) => Object.assign({}, raw, { text: t });
+      const key = FLIGHT_KEYS[flightId];
+      if (!key) return fail('\uD83D\uDD12 Encrypted message');
+      try {
+        const parts = raw.text.slice(E2EE_PREFIX.length).split(':');
+        const pt = await crypto.subtle.decrypt(
+          { name: 'AES-GCM', iv: b64uDec(parts[0]), additionalData: _e2eeEnc.encode(flightId + '|' + (raw.nickname || '')) },
+          key, b64uDec(parts[1]));
+        const o = JSON.parse(_e2eeDec.decode(pt));
+        const m = Object.assign({}, raw, { text: String(o.t == null ? '' : o.t) });
+        if (o.r && typeof o.r === 'object') m.replyTo = o.r;
+        return m;
+      } catch (e) {
+        return fail('\uD83D\uDD12 Could not decrypt this message');
+      }
+    }
+    // Owner turned an old plaintext flight into an encrypted one: encrypt what is already there.
+    async function e2eeMigrateLegacyMessages(fid) {
+      const snap = await nsRef('flightMessages/' + fid).once('value');
+      const all = snap.val() || {};
+      const upd = {}; let n = 0;
+      for (const k of Object.keys(all)) {
+        const m = all[k];
+        if (!m || m.system || typeof m.text !== 'string' || m.text.indexOf(E2EE_PREFIX) === 0) continue;
+        const o = { t: m.text }; if (m.replyTo) o.r = m.replyTo;
+        upd[k + '/text'] = await e2eeEncryptMessage(fid, m.nickname || '', o);
+        upd[k + '/replyTo'] = null;
+        upd[k + '/mentions'] = null;
+        n++;
+      }
+      if (n) await nsRef('flightMessages/' + fid).update(upd);
+    }
+    // --- wrapping the flight key for another soul's one-time public key ---
+    const E2EE_ECDH = { name: 'ECDH', namedCurve: 'P-256' };
+    async function e2eeWrapFlightKey(flightId, rawKeyB64, requesterPubJwk) {
+      const pub = await crypto.subtle.importKey('jwk', requesterPubJwk, E2EE_ECDH, false, []);
+      const eph = await crypto.subtle.generateKey(E2EE_ECDH, true, ['deriveKey']);
+      const wk = await crypto.subtle.deriveKey({ name: 'ECDH', public: pub }, eph.privateKey, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv, additionalData: _e2eeEnc.encode(flightId) }, wk, b64uDec(rawKeyB64));
+      const ep = await crypto.subtle.exportKey('jwk', eph.publicKey);
+      return JSON.stringify({ e: { kty: ep.kty, crv: ep.crv, x: ep.x, y: ep.y }, i: b64uEnc(iv), c: b64uEnc(ct) });
+    }
+    async function e2eeUnwrapFlightKey(flightId, wrappedStr, privJwk) {
+      const w = JSON.parse(wrappedStr);
+      const priv = await crypto.subtle.importKey('jwk', privJwk, E2EE_ECDH, false, ['deriveKey']);
+      const epk = await crypto.subtle.importKey('jwk', w.e, E2EE_ECDH, false, []);
+      const wk = await crypto.subtle.deriveKey({ name: 'ECDH', public: epk }, priv, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+      const raw = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64uDec(w.i), additionalData: _e2eeEnc.encode(flightId) }, wk, b64uDec(w.c));
+      return b64uEnc(raw);
+    }
+    // A soul without the key publishes a one-time public key and waits for the answer.
+    const _e2eeWaiters = {};
+    async function e2eeRequestFlightKey(fid, attempt) {
+      const me = currentChatUser.nickname;
+      let kp = null;
+      try { kp = JSON.parse(localStorage.getItem(e2eeReqName(fid)) || 'null'); } catch (e) {}
+      if (!kp || !kp.priv || !kp.pub) {
+        const pair = await crypto.subtle.generateKey(E2EE_ECDH, true, ['deriveKey']);
+        const priv = await crypto.subtle.exportKey('jwk', pair.privateKey);
+        const pubFull = await crypto.subtle.exportKey('jwk', pair.publicKey);
+        kp = { priv: priv, pub: { kty: pubFull.kty, crv: pubFull.crv, x: pubFull.x, y: pubFull.y } };
+        try { localStorage.setItem(e2eeReqName(fid), JSON.stringify(kp)); } catch (e) {}
+      }
+      await nsRef('flightKeyReq/' + fid + '/' + me).set(JSON.stringify(kp.pub));
+      if (_e2eeWaiters[fid]) return;
+      const ref = nsRef('flightKeys/' + fid + '/' + me);
+      _e2eeWaiters[fid] = ref;
+      ref.on('value', async (snap) => {
+        const v = snap.val();
+        if (!v) return;
+        try {
+          const raw = await e2eeUnwrapFlightKey(fid, v, kp.priv);
+          e2eeSetRaw(fid, raw);
+          FLIGHT_KEYS[fid] = await e2eeImportRaw(raw);
+          ref.off(); delete _e2eeWaiters[fid];
+          ref.remove().catch(() => {});
+          nsRef('flightKeyReq/' + fid + '/' + me).remove().catch(() => {});
+          try { localStorage.removeItem(e2eeReqName(fid)); } catch (e) {}
+          if (currentFlightId === fid) { chatInitialized = false; initChat(); }
+        } catch (err) {
+          console.error('Flight key unwrap error:', err);
+          // stale answer for an old request: drop it and ask again once with a fresh keypair
+          ref.off(); delete _e2eeWaiters[fid];
+          ref.remove().catch(() => {});
+          try { localStorage.removeItem(e2eeReqName(fid)); } catch (e) {}
+          if ((attempt || 0) < 1) e2eeRequestFlightKey(fid, (attempt || 0) + 1).catch(() => {});
+        }
+      }, (err) => { console.error('Flight key wait error:', err); delete _e2eeWaiters[fid]; });
+    }
+    // Makes sure this browser has the key for a private flight. true = ready now.
+    async function prepareFlightKey(fid) {
+      if (FLIGHT_KEYS[fid]) return true;
+      const me = currentChatUser.nickname;
+      let raw = e2eeGetRaw(fid);
+      if (raw) { FLIGHT_KEYS[fid] = await e2eeImportRaw(raw); return true; }
+      const f = flightsCache[fid];
+      if (f && f.owner === me) {
+        // Owner and no key yet: new device, or a flight made before encryption existed.
+        const live = await nsRef('flightList/' + fid + '/e2ee').once('value');
+        if (!live.val()) {
+          raw = await e2eeNewKeyRaw();
+          e2eeSetRaw(fid, raw);
+          FLIGHT_KEYS[fid] = await e2eeImportRaw(raw);
+          await nsRef('flightList/' + fid + '/e2ee').set(true);
+          try { await e2eeMigrateLegacyMessages(fid); } catch (err) { console.error('E2EE migration error:', err); }
+          return true;
+        }
+      }
+      await e2eeRequestFlightKey(fid, 0);
+      return false;
+    }
+    // Anyone aboard who holds the key answers key requests from souls who are aboard too.
+    const _e2eeWatching = {};
+    function watchFlightKeyRequests() {
+      if (!currentChatUser) return;
+      const me = currentChatUser.nickname;
+      Object.keys(flightsCache || {}).forEach((fid) => {
+        const f = flightsCache[fid];
+        if (!f || !f.private || _e2eeWatching[fid] || !canEnterFlight(f) || !e2eeGetRaw(fid)) return;
+        _e2eeWatching[fid] = true;
+        waitForFirebaseUidMatching(me, 10000).then((ok) => {
+          if (!ok) { _e2eeWatching[fid] = false; return; }
+          const ref = nsRef('flightKeyReq/' + fid);
+          const answer = async (snap) => {
+            const uid = snap.key;
+            if (uid === me) return;
+            const fl = flightsCache[fid];
+            if (!fl || !(fl.owner === uid || (fl.members && fl.members[uid]))) return;
+            try {
+              const pub = JSON.parse(snap.val());
+              const wrapped = await e2eeWrapFlightKey(fid, e2eeGetRaw(fid), pub);
+              await nsRef('flightKeys/' + fid + '/' + uid).set(wrapped);
+              await nsRef('flightKeyReq/' + fid + '/' + uid).remove();
+            } catch (err) { console.error('Key request answer error:', err); }
+          };
+          ref.on('child_added', answer, () => { _e2eeWatching[fid] = false; });
+          ref.on('child_changed', answer, () => {});
+        });
+      });
+    }
+
+    // A soul's main flight is the one they picked at sign-up (souls from before
+    // the picker sit in Flight 2026). The Black Box of any OTHER public flight
+    // is closed to them (admins excepted, for moderation); its roster stays
+    // visible. Private flights keep their own owner/member rules.
+    function myMainFlightId() {
+      if (!currentChatUser) return MAIN_FLIGHT_SERVER_ID;
+      let mf = currentChatUser.mainFlight;
+      if (!mf && lastNicknameListData) {
+        const me = lastNicknameListData.find((it) => rosterItemNick(it) === currentChatUser.nickname);
+        mf = me && typeof me === 'object' && me.mainFlight;
+      }
+      return (mf && isRailFlightId(mf)) ? mf : MAIN_FLIGHT_SERVER_ID;
+    }
+    function chatBlockedForActiveFlight() {
+      if (!currentChatUser || privateFlightActive() || isAdminUser(currentChatUser)) return false;
+      return (currentFlightId || MAIN_FLIGHT_SERVER_ID) !== myMainFlightId();
+    }
+    // Shows/hides the locked state on the panel; returns true when locked.
+    function applyChatLockState() {
+      const blocked = chatBlockedForActiveFlight();
+      const panel = document.getElementById('chat-panel');
+      if (panel) panel.classList.toggle('locked', blocked);
+      const peek = document.getElementById('chat-panel-peek');
+      if (peek) {
+        peek.classList.toggle('locked', blocked);
+        peek.setAttribute('aria-disabled', blocked ? 'true' : 'false');
+        if (blocked) peek.tabIndex = -1;
+        else if (!(panel && panel.classList.contains('visible'))) peek.tabIndex = 0;
+      }
+      return blocked;
+    }
+
     function initChat() {
       if (chatInitialized) return;
       const statusEl = document.getElementById('chat-panel-status');
+
+      if (flightRestoring) {
+        // Waiting to confirm the remembered private flight: just load the list.
+        try { ensureFirebaseApp(); initFlightList(); } catch (err) {}
+        return;
+      }
+
+      if (applyChatLockState()) {
+        // Not this soul's flight: never subscribe to its messages.
+        if (chatDbRef) { try { chatDbRef.off(); } catch (err) {} chatDbRef = null; }
+        const msgsEl = document.getElementById('chat-messages');
+        if (msgsEl) msgsEl.innerHTML = '';
+        Object.keys(messageCache).forEach((k) => delete messageCache[k]);
+        statusEl.textContent = 'Black Box locked.';
+        try { ensureFirebaseApp(); initFlightList(); } catch (err) {}
+        return;
+      }
 
       if (!chatConfigIsFilledIn()) {
         statusEl.textContent = 'Chat not configured yet.';
@@ -17601,6 +18041,34 @@ Answer: C</pre>
 
       try {
         ensureFirebaseApp();
+        // A private flight's Black Box is only readable with the real Firebase
+        // sign-in (database rules check it), so wait for that before subscribing.
+        if (privateFlightActive() && currentChatUser && !window._privChatAuthTried) {
+          const _cu = firebase.auth().currentUser;
+          if (!_cu || _cu.uid !== avatarUploadKey(currentChatUser.nickname)) {
+            statusEl.textContent = 'Connecting...';
+            waitForFirebaseUidMatching(currentChatUser.nickname, 10000).then(() => {
+              window._privChatAuthTried = true;
+              chatInitialized = false;
+              initChat();
+            });
+            return;
+          }
+        }
+        // Private flight: this browser needs the flight's encryption key first.
+        if (privateFlightActive() && currentChatUser && !FLIGHT_KEYS[currentFlightId]) {
+          const _kfid = currentFlightId;
+          statusEl.textContent = 'Securing...';
+          prepareFlightKey(_kfid).then((ok) => {
+            if (currentFlightId !== _kfid) return;
+            if (ok) { chatInitialized = false; initChat(); }
+            else {
+              statusEl.textContent = '\uD83D\uDD12 Waiting for the flight key. It arrives when the Flight Engineer or another soul aboard is online.';
+              const _m = document.getElementById('chat-messages'); if (_m) _m.innerHTML = '';
+            }
+          }).catch((err) => { console.error('Flight key error:', err); statusEl.textContent = 'Could not set up encryption.'; });
+          return;
+        }
         chatDbRef = nsRef(chatMessagesPath()).limitToLast(100);
         initFlightList();
         chatInitialized = true;
@@ -17611,8 +18079,7 @@ Answer: C</pre>
 
         chatHistoryLoadTimestamp = Date.now();
 
-        chatDbRef.on('child_added', (snapshot) => {
-          const msg = snapshot.val();
+        const _onMsg = (snapshot, msg) => {
           renderChatMessage(msg, snapshot.key);
           placeChatRowByTimestamp(snapshot.key);
 
@@ -17631,6 +18098,17 @@ Answer: C</pre>
           if (isNewIncoming && mentionsMe) {
             notifyMention(msg);
           }
+        };
+        const _fidAtSub = currentFlightId;
+        const _refAtSub = chatDbRef;
+        chatDbRef.on('child_added', (snapshot) => {
+          const raw = snapshot.val();
+          const isEnc = !!(raw && !raw.system && typeof raw.text === 'string' && raw.text.indexOf(E2EE_PREFIX) === 0);
+          if (!isEnc) { _onMsg(snapshot, raw); return; }
+          e2eeDecryptMessage(_fidAtSub, raw).then((m) => {
+            if (chatDbRef !== _refAtSub) return;   // switched flights meanwhile
+            _onMsg(snapshot, m);
+          });
         });
 
         chatDbRef.on('child_removed', (snapshot) => {
@@ -17666,7 +18144,7 @@ Answer: C</pre>
       return !!(currentFlightId && !isRailFlightId(currentFlightId));
     }
     // Every soul sees every flight in the rail, but a private flight can only
-    // be entered by its owner (admins too, for moderation).
+    // be entered by its owner or members (admins get no special access).
     function visiblePrivateFlightIds() {
       return Object.keys(flightsCache)
         .filter((id) => flightsCache[id] && flightsCache[id].name)
@@ -17680,7 +18158,7 @@ Answer: C</pre>
     }
     function canEnterFlight(f) {
       if (!f || !f.private) return true;
-      return !!(currentChatUser && (f.owner === currentChatUser.nickname || isAdminUser(currentChatUser) || (f.members && f.members[currentChatUser.nickname])));
+      return !!(currentChatUser && (f.owner === currentChatUser.nickname || (f.members && f.members[currentChatUser.nickname])));
     }
     // Souls who joined the open private flight through its invite link
     // (the owner is listed separately as PILOT).
@@ -17747,6 +18225,280 @@ Answer: C</pre>
     }
     // ---- Radar: the airspace popup. Shows every public flight (rail) and every
     // private flight as a blip, plus a list with souls aboard / online counts. ----
+    // ---- Radar actions: transfer your main flight (public flights) and ask to
+    // join a private flight (the Flight Engineer confirms in Flight Alerts). ----
+    const FLIGHT_TRANSFER_COOLDOWN_DAYS = 1111;
+    let flightJoinRequestsCache = {};   // flightId -> { presenceKey -> { nickname, avatar, ts } }
+    let flightJoinRequestsRef = null;
+    let prevMyJoinRequestIds = null;
+
+    function rosterEntryFor(nickname) {
+      return (lastNicknameListData || []).find((it) => rosterItemNick(it) === nickname) || null;
+    }
+    // Saves a new main flight (and transfer bookkeeping) on this device's copy
+    // of the signed-in user and in the cached session.
+    function setMyMainFlightLocal(id, count, at) {
+      if (!currentChatUser) return;
+      const u = Object.assign({}, currentChatUser, { mainFlight: id });
+      if (typeof count === 'number') u.flightTransfers = count;
+      if (typeof at === 'number') u.lastFlightTransferAt = at;
+      currentChatUser = u;
+      try {
+        const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+        if (raw) {
+          const o = JSON.parse(raw);
+          o.mainFlight = id;
+          if (typeof count === 'number') o.flightTransfers = count;
+          if (typeof at === 'number') o.lastFlightTransferAt = at;
+          localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(o));
+        }
+      } catch (err) {}
+    }
+    // If the main flight was changed from another device, follow the roster.
+    function syncMyMainFlightFromRoster() {
+      if (!currentChatUser || !lastNicknameListData) return;
+      const me = rosterEntryFor(currentChatUser.nickname);
+      if (!me || typeof me !== 'object') return;
+      const mf = me.mainFlight;
+      if (!mf || !isRailFlightId(mf) || mf === currentChatUser.mainFlight) return;
+      setMyMainFlightLocal(mf, Number(me.flightTransfers) || 0, Number(me.lastFlightTransferAt) || 0);
+    }
+    // First transfer is free (no cooldown). After that, 1111 days must pass
+    // since the last transfer.
+    function flightTransferStatus(recOverride) {
+      const me = recOverride || (currentChatUser ? rosterEntryFor(currentChatUser.nickname) : null);
+      const rec = (me && typeof me === 'object') ? me : {};
+      const count = Number(rec.flightTransfers || (currentChatUser && currentChatUser.flightTransfers) || 0);
+      const lastAt = Number(rec.lastFlightTransferAt || (currentChatUser && currentChatUser.lastFlightTransferAt) || 0);
+      // Admins can transfer any time, with no cooldown.
+      if (count === 0 || !lastAt || (currentChatUser && isAdminUser(currentChatUser))) return { count: count, lastAt: lastAt, allowed: true };
+      const availableAt = lastAt + FLIGHT_TRANSFER_COOLDOWN_DAYS * 86400000;
+      return { count: count, lastAt: lastAt, allowed: Date.now() >= availableAt, availableAt: availableAt };
+    }
+    function myPendingJoinFlightIds() {
+      if (!currentChatUser) return [];
+      const k = presenceKey(currentChatUser.nickname);
+      return Object.keys(flightJoinRequestsCache || {}).filter((id) => flightJoinRequestsCache[id] && flightJoinRequestsCache[id][k]);
+    }
+    // Requests from souls wanting into private flights I'm the Flight Engineer of.
+    function incomingJoinRequests() {
+      const out = [];
+      if (!currentChatUser) return out;
+      Object.keys(flightJoinRequestsCache || {}).forEach((id) => {
+        const f = flightsCache[id];
+        if (!f || f.owner !== currentChatUser.nickname) return;
+        const reqs = flightJoinRequestsCache[id] || {};
+        Object.keys(reqs).forEach((k) => {
+          const r = reqs[k];
+          if (!r) return;
+          out.push({ flightId: id, key: k, nickname: r.nickname || k, avatar: r.avatar || '\u2708\ufe0f', ts: r.ts || 0, flightName: f.name });
+        });
+      });
+      return out.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+    }
+    function loadFlightJoinRequests() {
+      if (flightJoinRequestsRef || !chatConfigIsFilledIn()) return;
+      try {
+        ensureFirebaseApp();
+        flightJoinRequestsRef = nsRef('flightJoinRequests');
+        flightJoinRequestsRef.on('value', (snap) => {
+          flightJoinRequestsCache = snap.val() || {};
+          const mine = new Set(myPendingJoinFlightIds());
+          if (prevMyJoinRequestIds && currentChatUser) {
+            prevMyJoinRequestIds.forEach((id) => {
+              const f = flightsCache[id];
+              if (!mine.has(id) && f && f.members && f.members[currentChatUser.nickname]) {
+                showWingsToast('\u2708\uFE0F You were accepted into "' + f.name + '"');
+              }
+            });
+          }
+          prevMyJoinRequestIds = mine;
+          updateFlightAlertsBadge();
+          const ov = document.getElementById('flight-alerts-overlay');
+          if (ov && ov.classList.contains('visible')) renderFlightAlerts();
+          if (radarIsOpen()) renderFlightRadar();
+        }, (err) => console.error('Flight join requests error:', err));
+      } catch (err) {
+        console.error('Flight join requests init error:', err);
+      }
+    }
+
+    // The button / tag shown on each flight row of the radar list.
+    function radarActionHtml(f) {
+      if (!currentChatUser) return '';
+      const me = currentChatUser.nickname;
+      let inner = '';
+      if (!f.isPrivate) {
+        if (f.key === myMainFlightId()) {
+          inner = '<span class="radar-here">Your flight</span>';
+        } else {
+          const st = flightTransferStatus();
+          inner = '<button type="button" class="radar-act-btn' + (st.allowed ? '' : ' cooldown') + '" data-fk="' + escapeHtml(f.key) + '" onclick="radarFlightAction(this.dataset.fk)">Transfer</button>';
+        }
+      } else {
+        const fl = flightsCache[f.key];
+        if (!fl) return '';
+        if (fl.owner === me || (fl.members && fl.members[me])) {
+          inner = '<span class="radar-here">Aboard</span>';
+        } else if (fl.removed && fl.removed[me]) {
+          inner = '';
+        } else if (myPendingJoinFlightIds().indexOf(f.key) !== -1) {
+          inner = '<button type="button" class="radar-act-btn pending" data-fk="' + escapeHtml(f.key) + '" onclick="radarFlightAction(this.dataset.fk)">Requested</button>';
+        } else {
+          inner = '<button type="button" class="radar-act-btn" data-fk="' + escapeHtml(f.key) + '" onclick="radarFlightAction(this.dataset.fk)">Join</button>';
+        }
+      }
+      return inner ? '<div class="radar-act">' + inner + '</div>' : '';
+    }
+    function radarFlightAction(key) {
+      if (!key) return;
+      if (isRailFlightId(key)) { transferMainFlight(key); return; }
+      if (myPendingJoinFlightIds().indexOf(key) !== -1) cancelJoinRequest(key);
+      else requestJoinPrivateFlight(key);
+    }
+
+    // System line in a public flight's Black Box. Flight 2026 owns the original
+    // chat/messages; every other flight has flightMessages/<id>.
+    function postBlackBoxSystemMessage(flightId, text) {
+      if (!flightId || !text || !chatConfigIsFilledIn()) return;
+      try {
+        ensureFirebaseApp();
+        const path = (flightId === MAIN_FLIGHT_SERVER_ID) ? 'chat/messages' : 'flightMessages/' + flightId;
+        nsRef(path).push({
+          system: true,
+          text: text,
+          ts: firebase.database.ServerValue.TIMESTAMP
+        }).catch((err) => console.error('Black Box announcement denied:', err));
+      } catch (err) {
+        console.error('Black Box announcement error:', err);
+      }
+    }
+
+    async function transferMainFlight(targetId) {
+      if (!currentChatUser) { adminAlert('Sign in to transfer flights.'); return; }
+      const target = FLIGHT_SERVERS.find((x) => x.id === targetId);
+      if (!target) return;
+      // Read the saved record from the server so the one-free-transfer and
+      // 1111-day cooldown can't be dodged with a stale local copy.
+      let serverRec = null;
+      try {
+        ensureFirebaseApp();
+        serverRec = (await nsRef('nicknames/' + presenceKey(currentChatUser.nickname)).once('value')).val();
+      } catch (err) { serverRec = null; }
+      const curId = (serverRec && serverRec.mainFlight && isRailFlightId(serverRec.mainFlight)) ? serverRec.mainFlight : myMainFlightId();
+      if (targetId === curId) return;
+      const st = flightTransferStatus(serverRec);
+      if (!st.allowed) {
+        const daysLeft = Math.max(1, Math.ceil((st.availableAt - Date.now()) / 86400000));
+        const when = new Date(st.availableAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+        adminAlert('You can transfer to another flight again in ' + daysLeft.toLocaleString() + ' days (' + when + '). You can only change your main flight once every ' + FLIGHT_TRANSFER_COOLDOWN_DAYS + ' days.');
+        return;
+      }
+      const curFlight = FLIGHT_SERVERS.find((x) => x.id === curId);
+      const curName = curFlight ? curFlight.name : 'your current flight';
+      const isAdminMove = isAdminUser(currentChatUser);
+      const msg = isAdminMove
+        ? 'Transfer your main flight from "' + curName + '" to "' + target.name + '"?'
+        : 'Transfer your main flight from "' + curName + '" to "' + target.name + '"? After this, you can only change your main flight again after ' + FLIGHT_TRANSFER_COOLDOWN_DAYS + ' days.';
+      const ok = await adminConfirm(msg);
+      if (!ok) return;
+      const nick = currentChatUser.nickname;
+      // Admin transfers don't count toward, or start, the cooldown.
+      const now = isAdminMove ? st.lastAt : Date.now();
+      const count = isAdminMove ? st.count : st.count + 1;
+      try {
+        ensureFirebaseApp();
+        await nsRef('nicknames/' + presenceKey(nick)).update({ mainFlight: targetId, flightTransfers: count, lastFlightTransferAt: now });
+      } catch (err) {
+        console.error('Flight transfer error:', err);
+        adminAlert('Could not transfer your flight. Please try again.');
+        return;
+      }
+      const entry = rosterEntryFor(nick);
+      if (entry && typeof entry === 'object') { entry.mainFlight = targetId; entry.flightTransfers = count; entry.lastFlightTransferAt = now; }
+      setMyMainFlightLocal(targetId, count, now);
+      // Old flight's Black Box: "a wild '<callsign>' disappeared!"; new flight's: "... appeared!"
+      postBlackBoxSystemMessage(curId, "a wild '" + nick + "' disappeared!");
+      postBlackBoxSystemMessage(targetId, "a wild '" + nick + "' appeared!");
+      showWingsToast('\u2708\uFE0F You transferred to ' + target.name);
+      closeFlightRadar();
+      switchFlight(targetId === MAIN_FLIGHT_SERVER_ID ? null : targetId);
+    }
+
+    async function requestJoinPrivateFlight(id) {
+      if (!currentChatUser) { adminAlert('Sign in to join a private flight.'); return; }
+      const f = flightsCache[id];
+      if (!f || !f.name) return;
+      const me = currentChatUser.nickname;
+      if (canEnterFlight(f)) return;
+      if (f.removed && f.removed[me]) { adminAlert('You were removed from this flight, so you can\'t request to join it again.'); return; }
+      const ok = await adminConfirm('Ask ' + (f.owner || 'the Flight Engineer') + ' for permission to join the private flight "' + f.name + '"?');
+      if (!ok) return;
+      const key = presenceKey(me);
+      const req = { nickname: me, avatar: currentChatUser.avatar || '\u2708\ufe0f' };
+      try {
+        ensureFirebaseApp();
+        await nsRef('flightJoinRequests/' + id + '/' + key).set(Object.assign({}, req, { ts: firebase.database.ServerValue.TIMESTAMP }));
+        if (!flightJoinRequestsCache[id]) flightJoinRequestsCache[id] = {};
+        flightJoinRequestsCache[id][key] = Object.assign({}, req, { ts: Date.now() });
+        showWingsToast('\u2708\uFE0F Request sent to ' + (f.owner || 'the Flight Engineer'));
+        if (radarIsOpen()) renderFlightRadar();
+      } catch (err) {
+        console.error('Join request error:', err);
+        adminAlert('Could not send your request. Please try again.');
+      }
+    }
+    async function cancelJoinRequest(id) {
+      if (!currentChatUser) return;
+      const f = flightsCache[id];
+      const ok = await adminConfirm('Cancel your request to join "' + ((f && f.name) || 'this flight') + '"?');
+      if (!ok) return;
+      const key = presenceKey(currentChatUser.nickname);
+      try {
+        ensureFirebaseApp();
+        await nsRef('flightJoinRequests/' + id + '/' + key).remove();
+        if (flightJoinRequestsCache[id]) delete flightJoinRequestsCache[id][key];
+        if (radarIsOpen()) renderFlightRadar();
+      } catch (err) {
+        console.error('Cancel join request error:', err);
+        adminAlert('Could not cancel your request. Please try again.');
+      }
+    }
+    async function acceptFlightJoinRequest(flightId, key) {
+      const f = flightsCache[flightId];
+      const r = flightJoinRequestsCache[flightId] && flightJoinRequestsCache[flightId][key];
+      if (!f || !r || !currentChatUser || f.owner !== currentChatUser.nickname) return;
+      const nick = r.nickname || key;
+      try {
+        ensureFirebaseApp();
+        await nsRef('flightList/' + flightId + '/members/' + nick).set(true);
+        await nsRef('flightJoinRequests/' + flightId + '/' + key).remove();
+        if (flightJoinRequestsCache[flightId]) delete flightJoinRequestsCache[flightId][key];
+        if (f.members) f.members[nick] = true; else f.members = { [nick]: true };
+        announceFlightArrival(flightId, nick);
+        showWingsToast('\u2708\uFE0F ' + nick + ' joined "' + f.name + '"');
+      } catch (err) {
+        console.error('Accept join request error:', err);
+        adminAlert('Could not accept the request. Please try again.');
+      }
+      updateFlightAlertsBadge();
+      renderFlightAlerts();
+      if (radarIsOpen()) renderFlightRadar();
+    }
+    async function declineFlightJoinRequest(flightId, key) {
+      const f = flightsCache[flightId];
+      if (!f || !currentChatUser || f.owner !== currentChatUser.nickname) return;
+      try {
+        ensureFirebaseApp();
+        await nsRef('flightJoinRequests/' + flightId + '/' + key).remove();
+        if (flightJoinRequestsCache[flightId]) delete flightJoinRequestsCache[flightId][key];
+      } catch (err) {
+        console.error('Decline join request error:', err);
+      }
+      updateFlightAlertsBadge();
+      renderFlightAlerts();
+    }
+
     function radarFlights() {
       const list = [];
       const rosterNicks = (lastNicknameListData || []).map((it) => (typeof it === 'string' ? it : it && it.nickname)).filter(Boolean);
@@ -18056,6 +18808,7 @@ Answer: C</pre>
             const tag = '<span class="radar-tag' + (f.isPrivate ? ' private' : '') + '">' + (f.isPrivate ? 'PRIVATE' : 'PUBLIC') + '</span>';
             return '<div class="banned-list-item">' +
               '<div class="banned-list-item-info"><div class="banned-list-item-nick">' + escapeHtml(f.name) + tag + '</div></div>' +
+              radarActionHtml(f) +
               '<div class="radar-count"><b>' + f.souls + '</b> aboard<br><b>' + f.online + '</b> online</div>' +
               '</div>';
           }).join('');
@@ -18101,6 +18854,9 @@ Answer: C</pre>
       return (lastNicknameListData || []).filter((it) => rosterItemFlight(it) === flightId);
     }
     function activeFlightIsEmpty() {
+      // A private flight has its own roster (owner + members); the public
+      // flight that was last highlighted must not decide whether it's empty.
+      if (privateFlightActive()) return false;
       if (!lastNicknameListData) return false;
       return publicFlightRoster(activeFlightServerId).length === 0;
     }
@@ -18108,6 +18864,13 @@ Answer: C</pre>
       return FLIGHT_SERVERS.some((x) => x.id === id);
     }
     function updateSidebarFlightHeader() {
+      if (flightRestoring && !(currentFlightId && flightsCache[currentFlightId])) {
+        const _h = document.querySelector('.reviewees-sidebar-head h3');
+        if (_h) _h.textContent = '';
+        const _g = document.getElementById('flight-settings-btn');
+        if (_g) _g.style.display = 'none';
+        return;
+      }
       const f = privateFlightActive() ? flightsCache[currentFlightId] : FLIGHT_SERVERS.find((x) => x.id === activeFlightServerId);
       const h = document.querySelector('.reviewees-sidebar-head h3');
       if (f && h) h.textContent = f.name.toUpperCase() + ' SOB';
@@ -18127,6 +18890,9 @@ Answer: C</pre>
     let currentFlightId = null;
     let flightsCache = {};
     let flightListRef = null;
+    let pendingRestorePrivateFlightId = null;
+    let flightRestoring = false;            // reopening a remembered private flight; waiting for the flight list
+    let restoreFallbackFlightId = MAIN_FLIGHT_SERVER_ID;
     const MAX_FLIGHTS_PER_USER = 3;
     const PRIVATE_FLIGHT_COST = 1111; // wings
     renderFlightsRail();
@@ -18149,7 +18915,7 @@ Answer: C</pre>
     }
 
     function canDeleteFlight(f) {
-      return !!(currentChatUser && f && (f.owner === currentChatUser.nickname || isAdminUser(currentChatUser)));
+      return !!(currentChatUser && f && f.owner === currentChatUser.nickname);
     }
 
     function renderFlightBar() {
@@ -18190,6 +18956,19 @@ Answer: C</pre>
       flightListRef = nsRef('flightList');
       flightListRef.on('value', (snap) => {
         flightsCache = snap.val() || {};
+        saveFlightListCache();
+        try { watchFlightKeyRequests(); } catch (err) { console.error(err); }
+        if (flightRestoring) {
+          const _pid = pendingRestorePrivateFlightId;
+          if (_pid && flightsCache[_pid] && flightsCache[_pid].name && canEnterFlight(flightsCache[_pid])) {
+            flightRestoring = false;
+            pendingRestorePrivateFlightId = null;
+            chatInitialized = false;
+            initChat();
+          } else {
+            abortFlightRestore();
+          }
+        }
         if (currentFlightId && !isRailFlightId(currentFlightId) && (!flightsCache[currentFlightId] || !canEnterFlight(flightsCache[currentFlightId]))) {
           switchFlight(null);
           return;
@@ -18203,30 +18982,84 @@ Answer: C</pre>
         const _fm = document.getElementById('flight-members-overlay');
         if (_fm && _fm.classList.contains('visible')) renderFlightMembersList();
         processPendingFlightJoin();
-      }, (err) => console.error('Flight list error:', err));
+      }, (err) => { console.error('Flight list error:', err); abortFlightRestore(); });
+    }
+
+    // ---- remember the last flight the soul opened (per nickname, per device) so
+    // a page reload lands them back on it instead of on their main flight. ----
+    // The flight list is cached on this device so a reload can paint the
+    // remembered private flight (name, icon, roster) instantly, exactly like
+    // a public flight, before the live list arrives and confirms it.
+    function saveFlightListCache() {
+      try {
+        const slim = {};
+        Object.keys(flightsCache || {}).forEach((id) => {
+          const f = flightsCache[id];
+          if (!f || !f.name) return;
+          const c = Object.assign({}, f);
+          if (typeof c.image === 'string' && c.image.length > 3000) delete c.image;
+          slim[id] = c;
+        });
+        localStorage.setItem('flightListCache', JSON.stringify(slim));
+      } catch (err) {}
+    }
+    function loadFlightListCache() {
+      try { return JSON.parse(localStorage.getItem('flightListCache') || 'null') || {}; } catch (err) { return {}; }
+    }
+    function abortFlightRestore() {
+      if (!flightRestoring) return;
+      flightRestoring = false;
+      pendingRestorePrivateFlightId = null;
+      const fb = restoreFallbackFlightId;
+      currentFlightId = null;
+      switchFlight(fb && fb !== MAIN_FLIGHT_SERVER_ID ? fb : null);
+    }
+    function lastFlightStorageKey(nick) { return 'lastFlight:' + String(nick || ''); }
+    function saveLastFlight(id) {
+      if (!currentChatUser || !currentChatUser.nickname) return;
+      try { localStorage.setItem(lastFlightStorageKey(currentChatUser.nickname), id || MAIN_FLIGHT_SERVER_ID); } catch (err) {}
+    }
+    function loadLastFlight(nick) {
+      try { return localStorage.getItem(lastFlightStorageKey(nick)) || null; } catch (err) { return null; }
+    }
+    // Public flight to open at sign-in / reload. A remembered flight only
+    // counts if the soul is actually aboard it: for a public flight that means
+    // their main flight (peeking at another year's flight is not remembered).
+    // Remembered private flights are restored separately, once the flight
+    // list has loaded, and only if the soul is its owner or a member.
+    function preferredRailFlightId(nick, mainFlight) {
+      const main = (mainFlight && isRailFlightId(mainFlight)) ? mainFlight : null;
+      const last = loadLastFlight(nick);
+      if (last && isRailFlightId(last) && last === (main || MAIN_FLIGHT_SERVER_ID)) return last;
+      return main;
     }
 
     function switchFlight(id) {
       id = id || null;
       if (id && !isRailFlightId(id) && !canEnterFlight(flightsCache[id])) return;
+      saveLastFlight(id);
       const railId = id || MAIN_FLIGHT_SERVER_ID;
-      if (isRailFlightId(railId)) {
-        activeFlightServerId = railId;
-        renderFlightsRail();
-        updateSidebarFlightHeader();
-        if (activeFlightIsEmpty() || lastNicknameListData) renderNicknameListFromCache(); else showNicknameList();
+      const sameFlight = (id === currentFlightId && chatInitialized);
+      // Update the current-flight state FIRST: the rail highlight, sidebar
+      // title and roster below all read it. (They used to run before it was
+      // set, so leaving a private flight for a public one kept showing the
+      // private flight's name and roster.)
+      if (!sameFlight) {
+        if (chatDbRef) { try { chatDbRef.off(); } catch (err) {} }
+        chatDbRef = null;
+        chatInitialized = false;
+        currentFlightId = id;
       }
-      if (id === currentFlightId && chatInitialized) return;
-      if (chatDbRef) { try { chatDbRef.off(); } catch (err) {} }
-      chatDbRef = null;
-      chatInitialized = false;
-      currentFlightId = id;
-      if (!isRailFlightId(railId)) {
-        // private flight: highlight its tile, retitle the sidebar, show its roster
-        renderFlightsRail();
-        updateSidebarFlightHeader();
+      if (isRailFlightId(railId)) activeFlightServerId = railId;
+      renderFlightsRail();
+      updateSidebarFlightHeader();
+      if (isRailFlightId(railId)) {
+        if (activeFlightIsEmpty() || lastNicknameListData) renderNicknameListFromCache(); else showNicknameList();
+      } else {
+        // private flight: show its roster
         renderNicknameListFromCache();
       }
+      if (sameFlight) return;
       Object.keys(messageCache).forEach((k) => delete messageCache[k]);
       cancelReply();
       unreadChatCount = 0;
@@ -18259,6 +19092,11 @@ Answer: C</pre>
 
       const nickname = currentChatUser.nickname;
       let newBalance = null;
+      ensureFirebaseApp();
+      if (!(await waitForFirebaseUidMatching(nickname, 8000))) {
+        adminAlert('Could not verify your sign-in with the server. Please reload the page and try again. You were not charged.');
+        return;
+      }
       try {
         ensureFirebaseApp();
         suppressAutoWingsToast = true;
@@ -18287,11 +19125,15 @@ Answer: C</pre>
 
       try {
         const ref = nsRef('flightList').push();
+        const _newKey = await e2eeNewKeyRaw();
+        e2eeSetRaw(ref.key, _newKey);
+        FLIGHT_KEYS[ref.key] = await e2eeImportRaw(_newKey);
         await ref.set({
           name: name,
           owner: nickname,
           ownerAvatar: currentChatUser.avatar || '\u2708\uFE0F',
           private: true,
+          e2ee: true,
           createdAt: firebase.database.ServerValue.TIMESTAMP
         });
         showWingsToast('\u2708\uFE0F Private flight "' + name + '" created (-' + costLabel + ')');
@@ -18444,7 +19286,8 @@ Answer: C</pre>
     }
     function flightInviteUrl(id, code) {
       const base = /^https?:$/.test(location.protocol) ? (location.origin + location.pathname) : 'https://aerodynadmics.com/';
-      return base + '?join=' + encodeURIComponent(id + '.' + code);
+      const k = e2eeGetRaw(id);
+      return base + '?join=' + encodeURIComponent(id + '.' + code) + (k ? '#k=' + k : '');
     }
     async function copyInviteText(link, message) {
       try {
@@ -18497,9 +19340,11 @@ Answer: C</pre>
         const v = new URLSearchParams(location.search).get('join');
         if (!v) return;
         localStorage.setItem('pendingFlightJoin', v);
+        const hk = /^#k=([A-Za-z0-9_-]{40,50})$/.exec(location.hash || '');
+        if (hk) localStorage.setItem('pendingFlightJoinKey', hk[1]); else localStorage.removeItem('pendingFlightJoinKey');
         const u = new URL(location.href);
         u.searchParams.delete('join');
-        history.replaceState(null, '', u.pathname + u.search + u.hash);
+        history.replaceState(null, '', u.pathname + u.search);
       } catch (err) {}
     })();
     function readPendingFlightJoin() {
@@ -18513,7 +19358,7 @@ Answer: C</pre>
       } catch (err) { return null; }
     }
     function clearPendingFlightJoin() {
-      try { localStorage.removeItem('pendingFlightJoin'); } catch (err) {}
+      try { localStorage.removeItem('pendingFlightJoin'); localStorage.removeItem('pendingFlightJoinKey'); } catch (err) {}
     }
     let flightJoinBusy = false;
     async function processPendingFlightJoin() {
@@ -18533,7 +19378,7 @@ Answer: C</pre>
           return;
         }
         const me = currentChatUser.nickname;
-        if (f.removed && f.removed[me] && !isAdminUser(currentChatUser)) {
+        if (f.removed && f.removed[me]) {
           clearPendingFlightJoin();
           adminAlert('You were removed from this flight, so this invite link can\'t be used.');
           return;
@@ -18544,16 +19389,26 @@ Answer: C</pre>
           return;
         }
         ensureFirebaseApp();
-        const snap = await nsRef('flightInvites/' + pending.id).once('value');
-        if (snap.val() !== pending.code) {
-          clearPendingFlightJoin();
+        const ok = await adminConfirm('Join the private flight \"' + f.name + '\"' + (f.owner ? ' by ' + f.owner : '') + '?');
+        const joinCode = pending.code;
+        let joinKey = ''; try { joinKey = localStorage.getItem('pendingFlightJoinKey') || ''; } catch (e) {}
+        clearPendingFlightJoin();
+        if (!ok) return;
+        if (!(await waitForFirebaseUidMatching(me, 8000))) {
+          adminAlert('Could not verify your sign-in with the server. Please reload and open the invite link again.');
+          return;
+        }
+        // The invite code is no longer readable by anyone but the flight's owner,
+        // so joining proves the code by writing it; the database rules compare it.
+        try {
+          await nsRef('flightJoin/' + pending.id + '/' + me).set(joinCode);
+        } catch (e0) {
           adminAlert('This invite link has expired or was reset by the flight\'s creator. Ask for a new one.');
           return;
         }
-        const ok = await adminConfirm('Join the private flight \"' + f.name + '\"' + (f.owner ? ' by ' + f.owner : '') + '?');
-        clearPendingFlightJoin();
-        if (!ok) return;
         await nsRef('flightList/' + pending.id + '/members/' + me).set(true);
+        nsRef('flightJoin/' + pending.id + '/' + me).remove().catch(() => {});
+        if (joinKey) e2eeSetRaw(pending.id, joinKey);   // key from the invite link's #fragment
         announceFlightArrival(pending.id, me);
         showWingsToast('\u2708\uFE0F You joined \"' + f.name + '\"');
         if (flightsCache[pending.id]) {
@@ -18716,9 +19571,11 @@ Answer: C</pre>
         ensureFirebaseApp();
         if (currentFlightId === id) switchFlight(null);
         await nsRef('flightMessages/' + id).remove();
-        await nsRef('flightList/' + id).remove();
-        // the invite link dies with the flight (best effort)
+        // the invite link dies with the flight (removed first: its rule checks the flight's owner)
         try { await nsRef('flightInvites/' + id).remove(); } catch (e2) {}
+        try { await nsRef('flightKeys/' + id).remove(); await nsRef('flightKeyReq/' + id).remove(); } catch (e3) {}
+        e2eeDropRaw(id);
+        await nsRef('flightList/' + id).remove();
         showWingsToast('\u2708\uFE0F Flight "' + f.name + '" was deleted');
         return true;
       } catch (err) {
@@ -18898,8 +19755,13 @@ Answer: C</pre>
           // account connects — this is what lets the sidebar list read
           // straight from Firebase instead of Apps Script.
           const rosterUpdate = { nickname: user.nickname, avatar: user.avatar || '✈️' };
-          if (user.mainFlight && isRailFlightId(user.mainFlight)) rosterUpdate.mainFlight = user.mainFlight;
           nsRef('nicknames/' + presenceKey(user.nickname)).update(rosterUpdate);
+          // Only seed the main flight when the roster has none yet, so a stale
+          // cached session can never undo a transfer made elsewhere.
+          const _seedMf = (currentChatUser && currentChatUser.mainFlight) || user.mainFlight;
+          if (_seedMf && isRailFlightId(_seedMf)) {
+            nsRef('nicknames/' + presenceKey(user.nickname) + '/mainFlight').transaction((cur) => cur || _seedMf);
+          }
 
           myPresenceRef.set({
             nickname: user.nickname,
@@ -19699,6 +20561,118 @@ Answer: C</pre>
 
     function wingsHistoryRef(nickname) {
       return nsRef('transactions/' + presenceKey(nickname));
+    }
+
+
+    // ---- "Terms & Privacy updated" notice (Flight Alerts) ----
+    // The admin's "Notify Terms & Privacy Update" button writes one broadcast
+    // record (platformSettings/legalUpdate). Every signed-in account listens to
+    // it and shows a Flight Alert until that account dismisses it (or opens
+    // both documents). "Seen" is remembered per account on this device.
+    let legalNotice = null;
+    let legalNoticeListenerRef = null;
+    let legalNoticeRead = { terms: false, privacy: false };
+    let legalNoticeHint = false;
+    function legalSeenKey() { return 'legalNoticeSeen:' + (currentChatUser ? presenceKey(currentChatUser.nickname) : ''); }
+    function legalNoticeUnseen() {
+      if (!legalNotice || !legalNotice.id || !currentChatUser) return false;
+      try { return localStorage.getItem(legalSeenKey()) !== String(legalNotice.id); } catch (e) { return true; }
+    }
+    function stopLegalNotice() {
+      if (legalNoticeListenerRef) { try { legalNoticeListenerRef.off('value'); } catch (e) {} legalNoticeListenerRef = null; }
+      legalNotice = null;
+      legalNoticeRead = { terms: false, privacy: false };
+      legalNoticeHint = false;
+    }
+    function loadLegalNotice(user) {
+      if (!chatConfigIsFilledIn() || !user || !user.nickname) return;
+      stopLegalNotice();
+      ensureFirebaseApp();
+      legalNoticeListenerRef = nsRef('platformSettings/legalUpdate');
+      legalNoticeListenerRef.on('value', (snap) => {
+        const v = snap.val();
+        legalNotice = (v && v.id) ? v : null;
+        legalNoticeRead = loadLegalRead();
+        legalNoticeHint = false;
+        updateFlightAlertsBadge();
+        const overlay = document.getElementById('flight-alerts-overlay');
+        if (overlay && overlay.classList.contains('visible')) renderFlightAlerts();
+      }, (err) => console.error('Legal notice load error:', err));
+    }
+    // "Read" = the person opened that document from the alert AND scrolled to
+    // its very bottom. Remembered per account + notice id on this device.
+    function legalReadKey() { return 'legalNoticeRead:' + (currentChatUser ? presenceKey(currentChatUser.nickname) : ''); }
+    function loadLegalRead() {
+      try {
+        const o = JSON.parse(localStorage.getItem(legalReadKey()) || 'null');
+        if (o && legalNotice && o.id === legalNotice.id) return { terms: !!o.terms, privacy: !!o.privacy };
+      } catch (e) {}
+      return { terms: false, privacy: false };
+    }
+    function saveLegalRead() {
+      if (!legalNotice) return;
+      try { localStorage.setItem(legalReadKey(), JSON.stringify({ id: legalNotice.id, terms: legalNoticeRead.terms, privacy: legalNoticeRead.privacy })); } catch (e) {}
+    }
+    function legalNoticeLocked() {
+      return legalNoticeUnseen() && !(legalNoticeRead.terms && legalNoticeRead.privacy);
+    }
+    // Shown when someone tries to dismiss / close while the notice is unread.
+    function legalNudge() {
+      legalNoticeHint = true;
+      renderFlightAlerts();
+    }
+    function dismissLegalNotice() {
+      if (!legalNotice || !legalNotice.id) return;
+      if (legalNoticeLocked()) { legalNudge(); return; }
+      try { localStorage.setItem(legalSeenKey(), String(legalNotice.id)); } catch (e) {}
+      legalNoticeHint = false;
+      updateFlightAlertsBadge();
+      renderFlightAlerts();
+    }
+    function markLegalRead(which) {
+      if (!legalNotice || legalNoticeRead[which]) return;
+      legalNoticeRead[which] = true;
+      saveLegalRead();
+      updateFlightAlertsBadge();
+      renderFlightAlerts();
+    }
+    // Watches the opened document's scroll area and marks it read once the
+    // reader reaches the bottom (also handles a document short enough that
+    // it never needs scrolling).
+    function legalWatchScroll(which) {
+      if (legalNoticeRead[which]) return;
+      const body = document.getElementById(which === 'terms' ? 'terms-body' : 'privacy-body');
+      if (!body) return;
+      if (body._legalCheck) body.removeEventListener('scroll', body._legalCheck);
+      const check = () => {
+        if (body.clientHeight > 0 && body.scrollTop + body.clientHeight >= body.scrollHeight - 8) {
+          body.removeEventListener('scroll', check);
+          body._legalCheck = null;
+          markLegalRead(which);
+        }
+      };
+      body._legalCheck = check;
+      body.addEventListener('scroll', check, { passive: true });
+      requestAnimationFrame(() => requestAnimationFrame(check));
+    }
+    function openLegalFromAlert(which, btn) {
+      if (which === 'terms') openTermsAndConditions(btn); else openPrivacyPolicy(btn);
+      legalWatchScroll(which);
+    }
+    // Admin: send every account the "Terms & Privacy updated" alert.
+    async function sendLegalUpdateNotice() {
+      if (!isAdminUser(currentChatUser)) return;
+      const ok = await adminConfirm('Send ALL users a Flight Alert that the Terms and Conditions and Privacy Policy were updated?');
+      if (!ok) return;
+      try {
+        ensureFirebaseApp();
+        const id = nsRef('platformSettings').push().key;
+        await nsRef('platformSettings/legalUpdate').set({ id: id, ts: firebase.database.ServerValue.TIMESTAMP });
+        showWingsToast('\uD83D\uDCE2 Terms & Privacy update sent to all users');
+      } catch (err) {
+        console.error('Send legal notice error:', err);
+        adminAlert('Could not send the notice. Please try again.');
+      }
     }
 
     function wingsAlertsRef(nickname) {
@@ -21818,7 +22792,29 @@ Answer: C</pre>
       if (mentions.length) payload.mentions = mentions;
       if (replyingTo) payload.replyTo = { key: replyingTo.key, nickname: replyingTo.nickname, text: replyingTo.text, avatar: replyingTo.avatar || '✈️' };
 
-      nsRef(chatMessagesPath()).push(payload);
+      if (privateFlightActive()) {
+        // End-to-end encrypted: text and reply quote are sealed in the browser.
+        const fid = currentFlightId;
+        if (!FLIGHT_KEYS[fid]) {
+          document.getElementById('chat-panel-status').textContent = '\uD83D\uDD12 Waiting for the flight key.';
+          return;
+        }
+        const inner = { t: text };
+        if (payload.replyTo) inner.r = payload.replyTo;
+        e2eeEncryptMessage(fid, payload.nickname, inner).then((sealed) => {
+          return nsRef('flightMessages/' + fid).push({
+            nickname: payload.nickname,
+            avatar: payload.avatar,
+            text: sealed,
+            ts: firebase.database.ServerValue.TIMESTAMP
+          });
+        }).catch((err) => {
+          console.error('Encrypted send error:', err);
+          document.getElementById('chat-panel-status').textContent = 'Could not send message.';
+        });
+      } else {
+        nsRef(chatMessagesPath()).push(payload);
+      }
 
       input.value = '';
       cancelReply();
@@ -21871,6 +22867,9 @@ Answer: C</pre>
       const panel = document.getElementById('chat-panel');
       const peek = document.getElementById('chat-panel-peek');
       const opening = !panel.classList.contains('visible');
+      // Not this soul's main flight: the Black Box can't be opened (closing
+      // an already-open panel is still allowed).
+      if (opening && chatBlockedForActiveFlight()) return;
       clearTimeout(chatPanelAnimTimer);
       // Promote the panel to its own GPU layer a frame before the slide
       // actually starts (.chat-panel.animating below just sets
@@ -22028,13 +23027,21 @@ Answer: C</pre>
         nicknamesRosterRef = nsRef('nicknames');
         nicknamesRosterRef.on('value', (snap) => {
           lastNicknameListData = Object.values(snap.val() || {});
+          syncMyMainFlightFromRoster();
           if (!mainFlightApplied && currentChatUser && currentChatUser.nickname) {
             mainFlightApplied = true;
             const me = lastNicknameListData.find((it) => rosterItemNick(it) === currentChatUser.nickname);
-            const mf = me && typeof me === 'object' && me.mainFlight;
+            const mf = preferredRailFlightId(currentChatUser.nickname, me && typeof me === 'object' && me.mainFlight);
             if (mf && isRailFlightId(mf) && mf !== activeFlightServerId && !privateFlightActive()) {
               switchFlight(mf === MAIN_FLIGHT_SERVER_ID ? null : mf);
             }
+          }
+          // The soul's main flight may only become known now (older accounts):
+          // re-evaluate whether the open flight's Black Box is theirs to see.
+          if (currentChatUser) {
+            const _wasLocked = document.getElementById('chat-panel').classList.contains('locked');
+            if (!chatBlockedForActiveFlight() && (_wasLocked || !chatInitialized)) { applyChatLockState(); initChat(); }
+            else if (chatBlockedForActiveFlight() && !_wasLocked) { chatInitialized = false; if (chatDbRef) { try { chatDbRef.off(); } catch (err) {} chatDbRef = null; } initChat(); }
           }
           renderNicknameListFromCache();
           if (radarIsOpen()) renderFlightRadar();
@@ -22750,7 +23757,7 @@ Answer: C</pre>
       const badge = document.getElementById('flight-alerts-badge');
       if (!badge) return;
       const unreadWingsCount = Object.values(myWingsAlerts || {}).filter(a => a && !a.read).length;
-      const count = Object.keys(myIncomingRequests || {}).length + Object.keys(myIncomingCopilotRequests || {}).length + (currentUserNeedsFlightCode ? 1 : 0) + unreadWingsCount;
+      const count = Object.keys(myIncomingRequests || {}).length + Object.keys(myIncomingCopilotRequests || {}).length + incomingJoinRequests().length + (currentUserNeedsFlightCode ? 1 : 0) + (legalNoticeLocked() ? 1 : 0) + unreadWingsCount;
       if (count > 0) {
         badge.textContent = count > 9 ? '9+' : String(count);
         badge.classList.add('visible');
@@ -22851,7 +23858,40 @@ Answer: C</pre>
         `;
       }).join('');
 
-      const allRows = flightCodeRow + copilotRowsHtml + crewmateRowsHtml + wingsRowsHtml;
+      // Soul asking to join a private flight this soul is Flight Engineer of.
+      const joinRowsHtml = incomingJoinRequests().map((r) => `
+          <div class="flight-alert-row">
+            <span class="avatar-circle"${avatarStyleAttr(r.avatar)}>${avatarGlyph(r.avatar)}</span>
+            <div class="flight-alert-info">
+              <span class="flight-alert-name">${escapeHtml(r.nickname)}</span>
+              <span class="flight-alert-sub">Wants to join ${escapeHtml(r.flightName || 'your flight')}</span>
+            </div>
+            <div class="flight-alert-actions">
+              <button type="button" class="flight-alert-btn confirm" data-fid="${escapeHtml(r.flightId)}" data-rk="${escapeHtml(r.key)}" onclick="acceptFlightJoinRequest(this.dataset.fid, this.dataset.rk);">Confirm</button>
+              <button type="button" class="flight-alert-btn decline" data-fid="${escapeHtml(r.flightId)}" data-rk="${escapeHtml(r.key)}" onclick="declineFlightJoinRequest(this.dataset.fid, this.dataset.rk);">Decline</button>
+            </div>
+          </div>
+        `).join('');
+
+      const legalLocked = legalNoticeLocked();
+      const legalRow = legalNoticeUnseen() ? `
+        <div class="flight-alert-row">
+          <span class="avatar-circle">\uD83D\uDCC4</span>
+          <div class="flight-alert-info">
+            <span class="flight-alert-name">Terms &amp; Privacy Updated</span>
+            <span class="flight-alert-sub legal-sub">${legalLocked ? (legalNoticeHint ? 'Open both and scroll to the bottom first' : 'Please review the changes') : 'Thanks for reviewing the changes'}</span>
+          </div>
+          <div class="flight-alert-actions">
+            <button type="button" class="flight-alert-btn yellow" onclick="openLegalFromAlert('terms', this)">${legalNoticeRead.terms ? '\u2713 ' : ''}Terms</button>
+            <button type="button" class="flight-alert-btn yellow" onclick="openLegalFromAlert('privacy', this)">${legalNoticeRead.privacy ? '\u2713 ' : ''}Privacy</button>
+            <button type="button" class="wings-alert-delete-btn${legalLocked ? ' legal-locked' : ''}" aria-label="Dismiss" aria-disabled="${legalLocked}" title="${legalLocked ? 'Open and read both documents to the bottom first' : 'Dismiss'}" onclick="dismissLegalNotice()">&times;</button>
+          </div>
+        </div>
+      ` : '';
+      const flightAlertsClose = document.querySelector('#flight-alerts-overlay .nick-modal-close');
+      if (flightAlertsClose) flightAlertsClose.classList.toggle('legal-locked', legalLocked);
+
+      const allRows = flightCodeRow + legalRow + joinRowsHtml + copilotRowsHtml + crewmateRowsHtml + wingsRowsHtml;
       body.innerHTML = allRows || '<div class="flight-alerts-empty">No Pending Flight Alerts</div>';
     }
 
@@ -22925,10 +23965,542 @@ Answer: C</pre>
       document.getElementById('flight-alerts-overlay').classList.add('visible');
     }
 
-    function closeFlightAlerts() {
+    function closeFlightAlerts(force) {
+      // Can't leave Flight Alerts while the Terms & Privacy notice is unread
       const overlay = document.getElementById('flight-alerts-overlay');
+      if (!force && overlay && overlay.classList.contains('visible') && legalNoticeLocked()) { legalNudge(); return; }
       if (overlay) overlay.classList.remove('visible');
     }
+
+    // ---- Encrypted direct messages (Crewmates / Co-Pilot) ----
+    // End-to-end: every account has an ECDH P-256 key pair. The PUBLIC key is
+    // published at dmKeys/<me>/pub; the PRIVATE key never leaves the device in
+    // readable form (a copy wrapped with the person's Messages PIN is stored at
+    // dmKeys/<me>/backup so a new device can restore it). Two people derive the
+    // same AES-GCM key from (my private, their public) and each message is
+    // encrypted with a fresh random IV before it is written to dm/<pair>/.
+    // Firebase only ever sees ciphertext + who/when.
+    const DM = { priv: null, pubJwk: null, rec: null, peer: null, aes: null, ref: null, seen: new Set(), unread: {}, unreadRef: null, unreadReady: false, mode: '' };
+    const dmEnc = new TextEncoder(), dmDec = new TextDecoder();
+    const DM_ECDH = { name: 'ECDH', namedCurve: 'P-256' };
+    function dmB64(buf) { const a = new Uint8Array(buf); let s = ''; for (let i = 0; i < a.length; i++) s += String.fromCharCode(a[i]); return btoa(s); }
+    function dmUnB64(str) { const b = atob(str); const a = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; }
+    function dmUid(nick) { return avatarUploadKey(nick); } // same id the server signs into Firebase Auth with
+    function dmMe() { return dmUid(currentChatUser.nickname); }
+    function dmCanMessage(nick) {
+      return !!currentChatUser && nick !== currentChatUser.nickname &&
+        (getCrewmateStatus(nick) === 'crewmates' || getCopilotStatus(nick) === 'copilot');
+    }
+    function dmEl(id) { return document.getElementById(id); }
+
+    async function dmPinKey(pin, salt) {
+      const base = await crypto.subtle.importKey('raw', dmEnc.encode(pin), 'PBKDF2', false, ['deriveKey']);
+      return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 250000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+    }
+    async function dmUsePriv(privJwk, pubJwk) {
+      DM.priv = await crypto.subtle.importKey('jwk', privJwk, DM_ECDH, false, ['deriveKey']);
+      DM.pubJwk = pubJwk;
+    }
+    // -> 'ready' | 'setup' | 'unlock'
+    async function dmInitKeys() {
+      const me = dmMe();
+      const snap = await nsRef('dmKeys/' + me).once('value');
+      DM.rec = snap.val() || {};
+      let local = null;
+      try { local = JSON.parse(localStorage.getItem('dmPriv:' + me) || 'null'); } catch (e) {}
+      if (local && DM.rec.pub) {
+        try {
+          const pub = JSON.parse(DM.rec.pub);
+          if (pub.x === local.x && pub.y === local.y) { await dmUsePriv(local, pub); return 'ready'; }
+        } catch (e) {}
+      }
+      return DM.rec.backup ? 'unlock' : 'setup';
+    }
+    async function dmCreateKeys(pin) {
+      // After a verified reset with recovery on, DM.keep holds the OLD keypair, so we re-wrap it
+      // with the new PIN instead of making new keys (old messages stay readable, same safety code).
+      let privJwk, pubJwk;
+      if (DM.keep) { privJwk = DM.keep.priv; pubJwk = DM.keep.pub; }
+      else {
+        const kp = await crypto.subtle.generateKey(DM_ECDH, true, ['deriveKey']);
+        privJwk = await crypto.subtle.exportKey('jwk', kp.privateKey);
+        pubJwk = await crypto.subtle.exportKey('jwk', kp.publicKey);
+      }
+      const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+      const wrap = await dmPinKey(pin, salt);
+      const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, wrap, dmEnc.encode(JSON.stringify(privJwk)));
+      const node = { pub: JSON.stringify(pubJwk), backup: { salt: dmB64(salt), iv: dmB64(iv), data: dmB64(data) } };
+      if (DM.keep && DM.keep.recovery) node.recovery = DM.keep.recovery;
+      await nsRef('dmKeys/' + dmMe()).set(node);
+      DM.rec = node; DM.keep = null;
+      try { localStorage.setItem('dmPriv:' + dmMe(), JSON.stringify(privJwk)); } catch (e) {}
+      await dmUsePriv(privJwk, pubJwk);
+    }
+    // ---- Recovery key (still end-to-end): a random key made on this device and shown ONCE.
+    // A second copy of the private key is locked with it. The server never sees the key,
+    // so only the person holding it can restore their messages after forgetting the PIN. ----
+    const DM_B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    function dmNewRecKey() {
+      const bytes = crypto.getRandomValues(new Uint8Array(20)); // 160 bits
+      let bits = 0, val = 0, out = '';
+      for (let i = 0; i < bytes.length; i++) {
+        val = (val << 8) | bytes[i]; bits += 8;
+        while (bits >= 5) { out += DM_B32[(val >>> (bits - 5)) & 31]; bits -= 5; }
+      }
+      return out.match(/.{4}/g).join('-'); // 8 groups of 4
+    }
+    function dmNormRecKey(k) { return String(k || '').toUpperCase().replace(/[^A-Z2-7]/g, ''); }
+    async function dmRecKey(k) {
+      const h = await crypto.subtle.digest('SHA-256', dmEnc.encode('dm-recovery:' + dmNormRecKey(k)));
+      return crypto.subtle.importKey('raw', h, 'AES-GCM', false, ['encrypt', 'decrypt']);
+    }
+    async function dmEnableRecovery() {
+      const me = dmMe();
+      let privJwk = null; try { privJwk = JSON.parse(localStorage.getItem('dmPriv:' + me) || 'null'); } catch (e) {}
+      if (!privJwk) { dmRecoverNote('Couldn\u2019t find your key on this device. Close and reopen Messages, then enter your PIN.'); return; }
+      try {
+        const key = dmNewRecKey();
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const data = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await dmRecKey(key), dmEnc.encode(JSON.stringify(privJwk)));
+        const rec = { iv: dmB64(iv), data: dmB64(data) };
+        await nsRef('dmKeys/' + me + '/recovery').set(rec);
+        if (DM.rec) DM.rec.recovery = rec;
+        dmShow('reckey');
+        dmEl('dm-reckey-show').textContent = key;
+      } catch (err) {
+        console.error('Recovery key error:', err);
+        const denied = err && (err.code === 'PERMISSION_DENIED' || /permission_denied/i.test(String(err.message || err)));
+        dmRecoverNote(denied ? 'Couldn\u2019t save it: the updated database rules haven\u2019t been published yet.' : 'Couldn\u2019t create a recovery key. Please try again.');
+      }
+    }
+    function dmTogglePop(id) {
+      ['dm-secure', 'dm-recover'].forEach((x) => {
+        const el = dmEl(x); if (!el) return;
+        el.classList.toggle('open', x === id ? !el.classList.contains('open') : false);
+      });
+    }
+    function dmClosePops() { ['dm-secure', 'dm-recover'].forEach((x) => { const el = dmEl(x); if (el) el.classList.remove('open'); }); }
+    document.addEventListener('click', (e) => {
+      if (e.target.closest && !e.target.closest('.dm-pop') && !e.target.closest('.dm-head-btn')) dmClosePops();
+    });
+    function dmRecoverNote(msg) { const t = dmEl('dm-recover-text'); if (t) t.textContent = msg; const rb = dmEl('dm-recover'); if (rb) rb.classList.add('open'); try { showWingsToast(msg); } catch (e) {} }
+    function dmCopyRecKey() {
+      const t = dmEl('dm-reckey-show').textContent;
+      try { navigator.clipboard.writeText(t).then(() => showWingsToast('Recovery key copied')); } catch (e) {}
+    }
+    function dmShowUseRec() { dmEl('dm-reckey').value = ''; dmEl('dm-pin').value = ''; dmEl('dm-pin2').value = ''; dmShow('userec'); }
+    async function dmSubmitRecKey() {
+      const err = dmEl('dm-setup-err');
+      const k = dmEl('dm-reckey').value, pin = dmEl('dm-pin').value;
+      if (dmNormRecKey(k).length !== 32) { err.textContent = 'Enter your full recovery key.'; return; }
+      if (!/^\d{6}$/.test(pin)) { err.textContent = 'PIN must be exactly 6 digits (numbers only).'; return; }
+      if (pin !== dmEl('dm-pin2').value) { err.textContent = 'PINs don\u2019t match.'; return; }
+      const r = DM.rec && DM.rec.recovery;
+      if (!r || !DM.rec.pub) { err.textContent = 'No recovery key was set up for this account.'; return; }
+      let privJwk;
+      try {
+        const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: dmUnB64(r.iv) }, await dmRecKey(k), dmUnB64(r.data));
+        privJwk = JSON.parse(dmDec.decode(plain));
+      } catch (e) { err.textContent = 'That recovery key isn\u2019t right. Check it and try again.'; return; }
+      DM.keep = { priv: privJwk, pub: JSON.parse(DM.rec.pub), recovery: r };
+      await dmCreateKeys(pin); // same keys, new PIN: old messages stay readable
+      dmEl('dm-reckey').value = ''; dmEl('dm-pin').value = ''; dmEl('dm-pin2').value = '';
+      await dmOpenThread();
+    }
+    async function dmRestoreKeys(pin) {
+      const b = DM.rec.backup;
+      const wrap = await dmPinKey(pin, dmUnB64(b.salt));
+      const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: dmUnB64(b.iv) }, wrap, dmUnB64(b.data)); // throws on wrong PIN
+      const privJwk = JSON.parse(dmDec.decode(plain));
+      try { localStorage.setItem('dmPriv:' + dmMe(), JSON.stringify(privJwk)); } catch (e) {}
+      await dmUsePriv(privJwk, JSON.parse(DM.rec.pub));
+    }
+    async function dmDerivePeer(peerKey) {
+      const snap = await nsRef('dmKeys/' + peerKey + '/pub').once('value');
+      if (!snap.val()) return null;
+      const pubJwk = JSON.parse(snap.val());
+      const pub = await crypto.subtle.importKey('jwk', pubJwk, DM_ECDH, true, []);
+      const aes = await crypto.subtle.deriveKey({ name: 'ECDH', public: pub }, DM.priv, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+      return { aes, pubJwk };
+    }
+    async function dmSafetyCode(a, b) {
+      const joined = [a.x + a.y, b.x + b.y].sort().join('|');
+      const h = new Uint8Array(await crypto.subtle.digest('SHA-256', dmEnc.encode(joined)));
+      let out = [];
+      for (let i = 0; i < 6; i += 2) out.push(String((h[i] * 256 + h[i + 1]) % 10000).padStart(4, '0'));
+      return out.join(' ');
+    }
+
+    function dmShow(mode) { // 'setup' | 'unlock' | 'thread' | 'wait'
+      DM.mode = mode;
+      const thread = mode === 'thread';
+      dmClosePops();
+      dmEl('dm-key-btn').style.display = thread ? '' : 'none';
+      dmEl('dm-thread').style.display = thread ? 'flex' : 'none';
+      dmEl('dm-setup').style.display = thread ? 'none' : 'flex';
+      dmEl('dm-pin').style.display = (mode === 'setup' || mode === 'unlock' || mode === 'userec') ? '' : 'none';
+      dmEl('dm-pin2').style.display = (mode === 'setup' || mode === 'userec') ? '' : 'none';
+      dmEl('dm-reset-btn').style.display = mode === 'unlock' ? '' : 'none';
+      dmEl('dm-userec-btn').style.display = (mode === 'unlock' && DM.rec && DM.rec.recovery) ? '' : 'none';
+      dmEl('dm-reckey').style.display = mode === 'userec' ? '' : 'none';
+      dmEl('dm-reckey-box').style.display = mode === 'reckey' ? '' : 'none';
+      { // PIN boxes (create + unlock): 6 digits, numbers only
+        ['dm-pin', 'dm-pin2'].forEach((id) => {
+          const el = dmEl(id);
+          el.maxLength = 6; el.inputMode = 'numeric'; el.pattern = '[0-9]*';
+          el.value = el.value.replace(/\D/g, '').slice(0, 6);
+        });
+        dmEl('dm-pin').placeholder = mode === 'userec' ? 'New Messages PIN (6 digits)' : 'Messages PIN (6 digits)';
+        dmEl('dm-pin2').placeholder = mode === 'userec' ? 'Confirm new PIN (6 digits)' : 'Confirm PIN (6 digits)';
+      }
+      dmEl('dm-totp').style.display = (mode === 'totp' || mode === 'enroll') ? '' : 'none';
+      dmEl('dm-totp-box').style.display = mode === 'enroll' ? '' : 'none';
+      dmEl('dm-setup-btn').style.display = '';
+      dmEl('dm-setup-btn').textContent = mode === 'wait' ? 'CHECK AGAIN' : (mode === 'setup' ? 'TURN ON' : (mode === 'totp' ? 'VERIFY' : (mode === 'enroll' ? 'CONFIRM' : (mode === 'reckey' ? 'I\u2019VE SAVED IT' : (mode === 'userec' ? 'RESTORE MESSAGES' : 'UNLOCK')))));
+      dmEl('dm-setup-err').textContent = '';
+      dmEl('dm-code').textContent = '';
+      const t = dmEl('dm-setup-text');
+      if (mode === 'setup') t.textContent = 'Messages are end-to-end encrypted, so only you and your crewmate can read them. Choose a Messages PIN. It protects the backup of your key so you can read your messages on another device. We can\u2019t recover it if you forget it.';
+      else if (mode === 'totp') t.textContent = 'Open Google Authenticator and enter the 6-digit code for your account.';
+      else if (mode === 'enroll') t.textContent = 'Google verified. Now link Google Authenticator: scan the QR code (or enter the key), then type the 6-digit code it shows. You\u2019ll use it any time you forget your PIN.';
+      else if (mode === 'unlock') t.textContent = 'Enter your Messages PIN to unlock your encrypted messages on this device.';
+      else if (mode === 'reckey') t.textContent = 'Save this recovery key somewhere safe (a password manager or written down). If you forget your PIN, it restores all your messages. Anyone with this key and your account can read them, and we can\u2019t show it again or recover it for you.';
+      else if (mode === 'userec') t.textContent = 'Enter your recovery key and choose a new Messages PIN. Your old messages will be restored.';
+      else if (mode === 'wait') t.textContent = DM.peer + ' hasn\u2019t turned on encrypted messages yet. Once they open Messages for the first time, tap check again.';
+    }
+
+    async function openDm(nickname) {
+      if (!currentChatUser || !dmCanMessage(nickname)) return;
+      DM.peer = nickname;
+      dmEl('dm-title').textContent = '\uD83D\uDCAC ' + nickname;
+      dmEl('dm-warn').style.display = 'none';
+      dmEl('dm-pin').value = ''; dmEl('dm-pin2').value = '';
+      dmEl('dm-overlay').classList.add('visible');
+      dmShow('wait'); dmEl('dm-setup-text').textContent = 'Setting up secure connection\u2026';
+      dmEl('dm-pin').style.display = 'none'; dmEl('dm-pin2').style.display = 'none'; dmEl('dm-setup-btn').style.display = 'none'; dmEl('dm-reset-btn').style.display = 'none';
+      try {
+        ensureFirebaseApp();
+        if (!(await waitForFirebaseUidMatching(currentChatUser.nickname, 6000))) throw new Error('not signed in to Firebase');
+        const state = DM.priv ? 'ready' : await dmInitKeys();
+        if (state === 'ready') await dmOpenThread(); else dmShow(state);
+      } catch (err) {
+        console.error('Messages init error:', err);
+        dmShow('wait'); dmEl('dm-setup-text').textContent = 'Couldn\u2019t start encrypted messages. Please try again.';
+        dmEl('dm-setup-btn').textContent = 'TRY AGAIN';
+      }
+    }
+    async function dmSubmitPin() {
+      const err = dmEl('dm-setup-err');
+      try {
+        if (DM.mode === 'wait') { if (DM.peer) await openDm(DM.peer); return; }
+        if (DM.mode === 'totp' || DM.mode === 'enroll') { await dmSubmitTotp(); return; }
+        if (DM.mode === 'reckey') { DM.recKeyShown = null; dmEl('dm-reckey-show').textContent = ''; await dmOpenThread(); return; }
+        if (DM.mode === 'userec') { await dmSubmitRecKey(); return; }
+        const pin = dmEl('dm-pin').value;
+        if (DM.mode === 'setup') {
+          if (!/^\d{6}$/.test(pin)) { err.textContent = 'PIN must be exactly 6 digits (numbers only).'; return; }
+        } else if (!/^\d{6}$/.test(pin)) { err.textContent = 'Enter your 6-digit PIN.'; return; }
+        if (DM.mode === 'setup') {
+          if (pin !== dmEl('dm-pin2').value) { err.textContent = 'PINs don\u2019t match.'; return; }
+          await dmCreateKeys(pin);
+        } else {
+          try { await dmRestoreKeys(pin); } catch (e) { err.textContent = 'Wrong PIN. Try again.'; return; }
+        }
+        dmEl('dm-pin').value = ''; dmEl('dm-pin2').value = '';
+        if (DM.mode === 'setup' && !(DM.rec && DM.rec.recovery)) { // brand-new keys: hand over a recovery key right away
+          await dmEnableRecovery();
+          if (DM.mode === 'reckey') return;
+        }
+        await dmOpenThread();
+      } catch (e) {
+        console.error('Messages PIN error:', e);
+        err.textContent = 'Something went wrong. Please try again.';
+      }
+    }
+    // Asks Google to confirm who is at the keyboard (popup, no new account
+    // created) and resolves with the verified Google email, or null.
+    function dmGoogleEmail() {
+      return new Promise((resolve) => {
+        try {
+          if (!(window.google && google.accounts && google.accounts.oauth2)) { resolve(null); return; }
+          const client = google.accounts.oauth2.initTokenClient({
+            client_id: GOOGLE_CLIENT_ID,
+            scope: 'openid email',
+            prompt: 'select_account',
+            callback: async (resp) => {
+              if (!resp || !resp.access_token) { resolve(null); return; }
+              try {
+                const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: 'Bearer ' + resp.access_token } });
+                const u = await r.json();
+                resolve(u && u.email && u.email_verified !== false ? String(u.email).toLowerCase() : null);
+              } catch (e) { resolve(null); }
+            },
+            error_callback: () => resolve(null)
+          });
+          client.requestAccessToken();
+        } catch (e) { resolve(null); }
+      });
+    }
+    // Like dmGoogleEmail, but also returns the access token so the backend can
+    // verify the Google account itself (needed to enroll Authenticator safely).
+    function dmGoogleAuth() {
+      return new Promise((resolve) => {
+        try {
+          if (!(window.google && google.accounts && google.accounts.oauth2)) { resolve(null); return; }
+          const client = google.accounts.oauth2.initTokenClient({
+            client_id: GOOGLE_CLIENT_ID,
+            scope: 'openid email',
+            prompt: 'select_account',
+            callback: async (resp) => {
+              if (!resp || !resp.access_token) { resolve(null); return; }
+              try {
+                const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: 'Bearer ' + resp.access_token } });
+                const u = await r.json();
+                resolve(u && u.email && u.email_verified !== false ? { email: String(u.email).toLowerCase(), token: resp.access_token } : null);
+              } catch (e) { resolve(null); }
+            },
+            error_callback: () => resolve(null)
+          });
+          client.requestAccessToken();
+        } catch (e) { resolve(null); }
+      });
+    }
+    function dmTotpCall(params) { return new Promise((resolve) => jsonpRequest(params, resolve, { timeoutMs: 20000 })); }
+    function dmDrawQr(uri) {
+      const box = dmEl('dm-qr'); box.innerHTML = '';
+      const draw = () => { try { new QRCode(box, { text: uri, width: 160, height: 160, colorDark: '#000000', colorLight: '#ffffff' }); } catch (e) { box.style.display = 'none'; } };
+      if (window.QRCode) { draw(); return; }
+      const sc = document.createElement('script');
+      sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+      sc.onload = draw; sc.onerror = () => { box.style.display = 'none'; };
+      document.head.appendChild(sc);
+    }
+    // Forgot the Messages PIN. Enrolled in Google Authenticator: ask for the
+    // 6-digit code (checked by the backend). Not enrolled yet: verify with
+    // Google once, then enroll Authenticator. Either way ends at a new PIN.
+    // Old messages can't be recovered (that's what end-to-end means).
+    async function dmResetKeys() {
+      const nick = currentChatUser && currentChatUser.nickname;
+      const mine = String((currentChatUser && currentChatUser.email) || '').toLowerCase();
+      if (!mine || !nick) { dmEl('dm-setup-err').textContent = 'No Google account is linked to this Callsign.'; return; }
+      const ok = await adminConfirm('Reset without your recovery key? You\u2019ll verify with Google Authenticator and get new encryption keys. Your old messages will become unreadable, and your crewmates will see a new safety code. If you have your recovery key, cancel and use it instead to keep your messages.');
+      if (!ok) return;
+      await dmStartTotp('reset');
+    }
+    // Making a new recovery key (while unlocked) also needs Google Authenticator.
+    async function dmRecoverClick() {
+      if (!(DM.rec && DM.rec.recovery)) { await dmEnableRecovery(); return; }
+      if (!DM.priv) { showWingsToast('Unlock your messages first'); return; }
+      const ok = await adminConfirm('Make a new recovery key? You\u2019ll verify with Google Authenticator first. Your old recovery key will stop working.');
+      if (!ok) return;
+      dmShow('wait');
+      dmEl('dm-setup-btn').style.display = 'none'; dmEl('dm-reset-btn').style.display = 'none'; dmEl('dm-userec-btn').style.display = 'none';
+      dmEl('dm-setup-text').textContent = 'Checking\u2026';
+      await dmStartTotp('newkey');
+    }
+    // Shared Authenticator flow. purpose: 'reset' (forgot PIN, new keys) | 'newkey' (replace recovery key).
+    async function dmStartTotp(purpose) {
+      const err = dmEl('dm-setup-err');
+      const nick = currentChatUser && currentChatUser.nickname;
+      const mine = String((currentChatUser && currentChatUser.email) || '').toLowerCase();
+      const fail = (msg) => { if (purpose === 'newkey') { showWingsToast(msg); dmOpenThread(); } else err.textContent = msg; };
+      if (!mine || !nick) { fail('No Google account is linked to this Callsign.'); return; }
+      err.textContent = 'Checking\u2026';
+      const st = await dmTotpCall({ action: 'totpStatus', nickname: nick });
+      if (!st || !st.ok) { fail('Couldn\u2019t reach the server. Please try again.'); return; }
+      if (st.enrolled) {
+        DM.reset = { nick, purpose }; dmShow('totp');
+        if (purpose === 'newkey') dmEl('dm-setup-text').textContent = 'Enter the 6-digit code from Google Authenticator to make a new recovery key. Your old recovery key will stop working.';
+        return;
+      }
+      err.textContent = 'Waiting for Google\u2026';
+      const g = await dmGoogleAuth();
+      if (!g) { fail('Google verification didn\u2019t complete. Please try again.'); return; }
+      if (g.email !== mine) { fail('That Google account isn\u2019t the one linked to this Callsign.'); return; }
+      err.textContent = 'Setting up\u2026';
+      const b = await dmTotpCall({ action: 'totpBegin', nickname: nick, gToken: g.token });
+      if (!b || !b.ok || !b.secret) { fail((b && b.error) || 'Couldn\u2019t start setup. Please try again.'); return; }
+      DM.reset = { nick, token: g.token, purpose };
+      dmShow('enroll');
+      const uri = 'otpauth://totp/' + encodeURIComponent('Aerodynadmics:' + nick) + '?secret=' + b.secret + '&issuer=Aerodynadmics';
+      dmEl('dm-totp-key').textContent = b.secret.replace(/(.{4})/g, '$1 ').trim();
+      dmEl('dm-totp-link').href = uri;
+      dmEl('dm-qr').style.display = 'inline-block';
+      dmDrawQr(uri);
+    }
+    async function dmSubmitTotp() {
+      const err = dmEl('dm-setup-err'), btn = dmEl('dm-setup-btn');
+      const code = dmEl('dm-totp').value.replace(/\s/g, '');
+      const r = DM.reset;
+      if (!r) { dmShow('unlock'); return; }
+      if (!/^\d{6}$/.test(code)) { err.textContent = 'Enter the 6-digit code.'; return; }
+      btn.disabled = true; err.textContent = 'Checking\u2026';
+      const res = DM.mode === 'enroll'
+        ? await dmTotpCall({ action: 'totpConfirm', nickname: r.nick, gToken: r.token, code })
+        : await dmTotpCall({ action: 'totpVerify', nickname: r.nick, code });
+      btn.disabled = false;
+      if (!res || !res.ok) { err.textContent = (res && res.error) || 'That code didn\u2019t work. Try again.'; return; }
+      if (r.purpose === 'newkey') { // verified: just replace the recovery key, keep the keys and messages
+        DM.reset = null; dmEl('dm-totp').value = '';
+        await dmEnableRecovery();
+        return;
+      }
+      DM.keep = null; DM.rec = {}; DM.priv = null; DM.reset = null;
+      try { localStorage.removeItem('dmPriv:' + dmMe()); } catch (e) {}
+      dmEl('dm-totp').value = '';
+      dmShow('setup');
+      dmEl('dm-setup-text').textContent = 'Verified. Choose a new Messages PIN. It protects the backup of your new key. We can\u2019t recover it if you forget it again.';
+    }
+    async function dmOpenThread() {
+      const me = dmMe(), peerKey = dmUid(DM.peer);
+      const peer = await dmDerivePeer(peerKey);
+      if (!peer) { dmShow('wait'); dmEl('dm-setup-btn').style.display = ''; return; }
+      DM.aes = peer.aes;
+      dmShow('thread');
+      const code = await dmSafetyCode(DM.pubJwk, peer.pubJwk);
+      dmEl('dm-code').textContent = 'Safety code ' + code;
+      const fpKey = 'dmFp:' + me + ':' + peerKey;
+      let prev = null; try { prev = localStorage.getItem(fpKey); } catch (e) {}
+      const warn = dmEl('dm-warn');
+      if (prev && prev !== code) { warn.textContent = 'Safety code changed. ' + DM.peer + ' reset their keys or someone may be intercepting. Check the code with them in person.'; warn.style.display = ''; }
+      else warn.style.display = 'none';
+      try { localStorage.setItem(fpKey, code); } catch (e) {}
+      { const has = !!(DM.rec && DM.rec.recovery);
+        dmEl('dm-key-btn').style.display = ''; dmEl('dm-key-btn').classList.toggle('attn', !has);
+        dmEl('dm-recover-text').textContent = has ? 'Recovery key is on.' : 'Get a recovery key so you can restore your messages if you forget your PIN.';
+        dmEl('dm-recover-btn').textContent = has ? 'New recovery key' : 'Get recovery key'; }
+      const box = dmEl('dm-messages');
+      box.innerHTML = '<div class="dm-empty" id="dm-empty">Messages here are end-to-end encrypted. Say hi to ' + escapeHtml(DM.peer) + '!</div>';
+      DM.seen = new Set();
+      if (DM.ref) { try { DM.ref.off(); } catch (e) {} }
+      DM.ref = nsRef('dm/' + [me, peerKey].sort().join('__')).limitToLast(150);
+      DM.ref.on('child_added', (snap) => dmRenderMsg(snap.key, snap.val(), me), (e) => console.error('Messages listen error:', e));
+      DM.ref.on('child_removed', (snap) => dmRemoveEl(snap.key));
+      nsRef('dmUnread/' + me + '/' + peerKey).remove().catch(() => {});
+      setTimeout(() => { try { dmEl('dm-input').focus(); } catch (e) {} }, 50);
+    }
+    function dmRemoveEl(key) {
+      const box = dmEl('dm-messages'); if (!box) return;
+      const el = box.querySelector('.dm-msg[data-key="' + key + '"]');
+      if (el) el.remove();
+      if (!box.querySelector('.dm-msg') && !dmEl('dm-empty')) {
+        const e = document.createElement('div');
+        e.className = 'dm-empty'; e.id = 'dm-empty';
+        e.textContent = 'Messages here are end-to-end encrypted. Say hi to ' + (DM.peer || '') + '!';
+        box.appendChild(e);
+      }
+    }
+    async function dmDelete(key) {
+      if (!DM.ref || !DM.peer) return;
+      const me = dmMe(), peerKey = dmUid(DM.peer);
+      try {
+        // Permanently removes the message from the database for both people.
+        await nsRef('dm/' + [me, peerKey].sort().join('__') + '/' + key).remove();
+        dmRemoveEl(key);
+      } catch (err) {
+        console.error('Delete message error:', err);
+        showWingsToast('Couldn\u2019t delete that message');
+      }
+    }
+    async function dmRenderMsg(key, m, me) {
+      if (!m || DM.seen.has(key)) return;
+      DM.seen.add(key);
+      const box = dmEl('dm-messages'); if (!box) return;
+      if (m.unsent) return; // leftover stub from the old unsend; never shown
+      let text, bad = false;
+      try {
+        const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: dmUnB64(m.iv) }, DM.aes, dmUnB64(m.ct));
+        text = dmDec.decode(pt);
+      } catch (e) { text = '\uD83D\uDD12 Can\u2019t decrypt this message (keys changed)'; bad = true; }
+      const empty = dmEl('dm-empty'); if (empty) empty.remove();
+      const div = document.createElement('div');
+      div.dataset.key = key;
+      div.className = 'dm-msg' + (m.from === me ? ' mine' : '') + (bad ? ' bad' : '');
+      div.appendChild(document.createTextNode(text));
+      const foot = document.createElement('div');
+      foot.className = 'dm-msg-foot';
+      if (m.from === me) {
+        const ub = document.createElement('button');
+        ub.type = 'button'; ub.className = 'dm-unsend-btn'; ub.textContent = 'Delete';
+        ub.title = 'Permanently delete this message for everyone';
+        ub.addEventListener('click', () => openConfirmDialog('Permanently delete this message for everyone? This can\u2019t be undone.', () => dmDelete(key), 'Delete', 'danger'));
+        foot.appendChild(ub);
+      }
+      const t = document.createElement('time');
+      if (m.ts) t.textContent = new Date(m.ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      foot.appendChild(t);
+      div.appendChild(foot);
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+      if (m.from !== me && dmEl('dm-overlay').classList.contains('visible')) nsRef('dmUnread/' + me + '/' + m.from).remove().catch(() => {});
+    }
+    async function dmSend() {
+      const input = dmEl('dm-input'), text = input.value.trim();
+      if (!text || !DM.aes || !DM.peer) return;
+      if (!dmCanMessage(DM.peer)) { showWingsToast('You can only message your Crewmates and Co-Pilot'); return; }
+      const me = dmMe(), peerKey = dmUid(DM.peer);
+      const btn = dmEl('dm-send-btn'); btn.disabled = true;
+      try {
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, DM.aes, dmEnc.encode(text));
+        const stamp = firebase.database.ServerValue.TIMESTAMP;
+        await nsRef('dm/' + [me, peerKey].sort().join('__')).push({ from: me, ts: stamp, iv: dmB64(iv), ct: dmB64(ct) });
+        nsRef('dmUnread/' + peerKey + '/' + me).set(stamp).catch(() => {});
+        input.value = '';
+      } catch (err) {
+        console.error('Send message error:', err);
+        showWingsToast('Message failed to send');
+      } finally { btn.disabled = false; input.focus(); }
+    }
+    function closeDm() {
+      if (DM.ref) { try { DM.ref.off(); } catch (e) {} DM.ref = null; }
+      DM.aes = null; DM.peer = null; DM.keep = null; DM.recKeyShown = null; DM.reset = null; dmClosePops();
+      const ov = dmEl('dm-overlay'); if (ov) ov.classList.remove('visible');
+    }
+    // Live unread markers: dmUnread/<me>/<sender> = last send time. Toasts on
+    // new messages and shows a red dot on the profile card's Message button.
+    function dmStart(user) {
+      dmStop();
+      if (!chatConfigIsFilledIn() || !user || !user.nickname) return;
+      try {
+        ensureFirebaseApp();
+        DM.unreadReady = false;
+        const myUid = dmUid(user.nickname);
+        waitForFirebaseUidMatching(user.nickname, 15000).then((ok) => {
+        if (!ok || !currentChatUser || currentChatUser.nickname !== user.nickname) return;
+        DM.unreadRef = nsRef('dmUnread/' + myUid);
+        DM.unreadRef.on('value', (snap) => {
+          const v = snap.val() || {};
+          const open = dmEl('dm-overlay') && dmEl('dm-overlay').classList.contains('visible');
+          Object.keys(v).forEach((k) => {
+            if (open && DM.peer && dmUid(DM.peer) === k) { nsRef('dmUnread/' + myUid + '/' + k).remove().catch(() => {}); return; }
+            if (DM.unreadReady && v[k] !== DM.unread[k]) { const pk = Object.keys(latestPresenceData || {}).find((x) => latestPresenceData[x] && latestPresenceData[x].nickname && dmUid(latestPresenceData[x].nickname) === k); showWingsToast('\uD83D\uDCAC New message from ' + (pk ? latestPresenceData[pk].nickname : k)); }
+          });
+          DM.unread = v; DM.unreadReady = true;
+          if (profileCardOpenFor) renderProfileCard(profileCardOpenFor, profileCache[profileCardOpenFor] || { bio: '', background: null });
+        }, (err) => console.error('Messages unread error:', err));
+        });
+      } catch (err) { console.error('Messages start error:', err); }
+    }
+    function dmStop() {
+      if (DM.unreadRef) { try { DM.unreadRef.off('value'); } catch (e) {} DM.unreadRef = null; }
+      closeDm();
+      DM.priv = null; DM.pubJwk = null; DM.rec = null; DM.unread = {}; DM.unreadReady = false;
+    }
+    function dmIsSetupPin(t) { return t && (t.id === 'dm-pin' || t.id === 'dm-pin2' || t.id === 'dm-totp'); }
+    document.addEventListener('beforeinput', (e) => {
+      if (!dmIsSetupPin(e.target) || !e.data) return;
+      if (/\D/.test(e.data)) e.preventDefault();
+    });
+    document.addEventListener('input', (e) => {
+      if (!dmIsSetupPin(e.target)) return;
+      const clean = e.target.value.replace(/\D/g, '').slice(0, 6);
+      if (clean !== e.target.value) e.target.value = clean;
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && e.target && e.target.id === 'dm-input') { e.preventDefault(); dmSend(); }
+      else if (e.key === 'Enter' && e.target && (e.target.id === 'dm-pin' || e.target.id === 'dm-pin2' || e.target.id === 'dm-reckey')) { e.preventDefault(); dmSubmitPin(); }
+    });
 
     // Themed replacement for native confirm() — shows a centered dialog
     // with Cancel/Remove buttons and calls onConfirm only if the person
@@ -23408,6 +24980,7 @@ Answer: C</pre>
         <div class="profile-card-crew-row">
           <button type="button" class="profile-card-crew-link profile-card-crew-link-copilot" onclick="openCrewList('${nickAttrForCrew}', 'copilot')"><span class="status-line-icon">\ud83d\udc68\ud83c\udffb\u200d\u2708\ufe0f</span>Co-Pilot</button>
           <button type="button" class="profile-card-crew-link" onclick="openCrewList('${nickAttrForCrew}', 'crewmates')"><span class="status-line-icon">\u2708\ufe0f</span>Crewmates</button>
+          ${dmCanMessage(nickname) ? `<button type="button" class="profile-card-crew-link" onclick="openDm('${nickAttrForCrew}')"><span class="status-line-icon">\uD83D\uDCAC</span>Message${DM.unread[dmUid(nickname)] ? '<span class="dm-dot"></span>' : ''}</button>` : ''}
         </div>
       `;
 
@@ -33399,6 +34972,7 @@ Answer: C</pre>
         ['profile-edit-bio-overlay', () => closeEditBio()],
         ['profile-edit-bg-overlay', () => closeEditBackground()],
         ['profile-card-overlay', () => { if (profileCardStack && profileCardStack.length) goBackProfileCard(); else closeUserProfile(); }],
+        ['dm-overlay', () => closeDm()],
         ['flight-alerts-overlay', () => closeFlightAlerts()],
         ['avatar-change-overlay', null],
         ['avatar-picker-overlay', () => closeAvatarPicker()],
