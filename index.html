@@ -6341,6 +6341,9 @@
     background: transparent;
   }
   #mockadmin-scrollbar-track.visible { opacity: 1; pointer-events: auto; }
+  /* fade IN is kept, but on hide it disappears instantly: a 0.15s fade-out
+     left the bar floating for a moment after the popup itself was gone */
+  #mockadmin-scrollbar-track:not(.visible) { transition: none; }
   #mockadmin-scrollbar-thumb {
     position: absolute;
     left: 2px;
@@ -6517,6 +6520,16 @@
   .mockadmin-option-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
   .mockadmin-option-row .mockadmin-input { padding: 7px 10px; font-size: 12.5px; }
   .mockadmin-option-row input[type="radio"] { flex-shrink: 0; accent-color: var(--accent); width: 15px; height: 15px; }
+  /* hand cursor on everything clickable in the exam editor: the correct-answer
+     radio circles plus the ADD IMAGE, ADD OPTION, Math, REMOVE and x buttons.
+     No !important, so the hidden cursor while a controller is connected still wins. */
+  #mockadmin-overlay input[type="radio"],
+  #mockadmin-overlay button:not(:disabled),
+  .mockadmin-option-row input[type="radio"],
+  .mockadmin-image-upload-btn:not(:disabled),
+  .mockadmin-add-opt-btn:not(:disabled),
+  .mockadmin-mini-btn:not(:disabled),
+  .math-toolbar-btn:not(:disabled) { cursor: pointer; }
   .mockadmin-image-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
   .mockadmin-image-upload-btn {
     background: transparent; border: 1px solid var(--line); color: var(--paper);
@@ -19887,8 +19900,6 @@ Answer: C</pre>
         if (!fl) return '';
         if (fl.owner === me || (fl.members && fl.members[me])) {
           inner = '<span class="radar-here">Aboard</span>';
-        } else if (fl.removed && fl.removed[me]) {
-          inner = '';
         } else if (myPendingJoinFlightIds().indexOf(f.key) !== -1) {
           inner = '<button type="button" class="radar-act-btn pending" data-fk="' + escapeHtml(f.key) + '" onclick="radarFlightAction(this.dataset.fk)">Requested</button>';
         } else {
@@ -19978,7 +19989,6 @@ Answer: C</pre>
       if (!f || !f.name) return;
       const me = currentChatUser.nickname;
       if (canEnterFlight(f)) return;
-      if (f.removed && f.removed[me]) { adminAlert('You were removed from this flight, so you can\'t request to join it again.'); return; }
       const ok = await adminConfirm('Ask the Flight Engineer for permission to join the private flight "' + f.name + '"?');
       if (!ok) return;
       const key = presenceKey(me);
@@ -20019,6 +20029,10 @@ Answer: C</pre>
       try {
         ensureFirebaseApp();
         await nsRef('flightList/' + flightId + '/members/' + nick).set(true);
+        // a soul who was removed earlier and asked to come back is cleared once accepted
+        if (f.removed && f.removed[nick]) {
+          try { await nsRef('flightList/' + flightId + '/removed/' + nick).remove(); delete f.removed[nick]; } catch (e) { console.error('Clear removed flag error:', e); }
+        }
         await nsRef('flightJoinRequests/' + flightId + '/' + key).remove();
         if (flightJoinRequestsCache[flightId]) delete flightJoinRequestsCache[flightId][key];
         if (f.members) f.members[nick] = true; else f.members = { [nick]: true };
@@ -21702,7 +21716,8 @@ Answer: C</pre>
       ],
       models: [
         { id: 'mig-21', name: 'MiG-21', priceWings: 1111, imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg/640px-Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg', tier: 'Supersonic', modelSrc: 'flight%20store/aircraft%20models/MiG-21/MiG_Project_1.42.gltf' },
-        { id: 'f22', name: 'F-22 Raptor', priceWings: 1500, imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Lockheed_Martin_F-22A_Raptor_JSOH.jpg?width=640', tier: 'Supersonic', modelSrc: 'flight%20store/aircraft%20models/F-22/F22.gltf' }
+        { id: 'f22', name: 'F-22 Raptor', priceWings: 1500, imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Lockheed_Martin_F-22A_Raptor_JSOH.jpg?width=640', tier: 'Supersonic', modelSrc: 'flight%20store/aircraft%20models/F-22/F22.gltf' },
+        { id: 'b2-spirit', name: 'B-2 Spirit', priceWings: 1500, imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/B-2_Spirit_original.jpg?width=640', tier: 'Supersonic', modelSrc: 'flight%20store/aircraft%20models/B-2%20Spirit/b28444db9c584692997590265ee83d00.gltf' }
       ]
     };
 
@@ -40219,6 +40234,13 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     // every editor function individually.
     setInterval(scheduleUpdate, 400);
     window.hideMockadminScrollbarNow = function () { track.classList.remove('visible'); };
+    var editorOverlay = document.getElementById('mockadmin-overlay');
+    if (editorOverlay && window.MutationObserver) {
+      new MutationObserver(function () {
+        if (!editorOverlay.classList.contains('visible')) track.classList.remove('visible');
+        else scheduleUpdate();
+      }).observe(editorOverlay, { attributes: true, attributeFilter: ['class', 'style'] });
+    }
 
     scheduleUpdate();
   })();
@@ -41666,6 +41688,30 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     if (queue.length) qTimer = setTimeout(drain, 16);
   }
   function schedule() { if (!raf) raf = requestAnimationFrame(update); }
+  // A popup that fades out (opacity transition) is still "there" for a few
+  // frames, so its scrollbar must fade with it instead of staying solid.
+  function effOpacity(el) {
+    var op = 1;
+    for (var n = el; n && n.nodeType === 1; n = n.parentElement) {
+      var v = parseFloat(getComputedStyle(n).opacity);
+      if (v < 1) op *= v;
+    }
+    return op;
+  }
+  var burstUntil = 0;
+  function affectsTracked(t) {
+    var hit = false;
+    if (!t || t.nodeType !== 1 || (t.closest && t.closest('.gs-track'))) return false;
+    items.forEach(function (o, el) { if (!hit && (t === el || t.contains(el))) hit = true; });
+    return hit;
+  }
+  ['transitionrun', 'transitionstart', 'transitionend', 'transitioncancel', 'animationstart', 'animationend'].forEach(function (name) {
+    document.addEventListener(name, function (e) {
+      if (!affectsTracked(e.target)) return;
+      burstUntil = performance.now() + 500;
+      schedule();
+    }, true);
+  });
   function attach(el) {
     var track = document.createElement('div'), thumb = document.createElement('div');
     track.className = 'gs-track'; thumb.className = 'gs-thumb';
@@ -41713,6 +41759,9 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
         ok = !!pt && (el.contains(pt) || pt === o.track || pt === o.thumb);
       }
       if (!ok) { o.track.style.display = 'none'; return; }
+      var op = effOpacity(el);
+      if (op <= 0.02) { o.track.style.display = 'none'; return; }
+      o.track.style.opacity = op < 0.999 ? String(op) : '';
       var cs = getComputedStyle(el);
       o.track.style.display = 'block';
       o.track.style.left = (r.right - num(cs.borderRightWidth) - 10) + 'px';
@@ -41722,6 +41771,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
       o.thumb.style.height = th + 'px';
       o.thumb.style.top = (el.scrollTop / (sh - ch) * (ch - th)) + 'px';
     });
+    if (performance.now() < burstUntil) schedule();
   }
   document.addEventListener('scroll', function (e) { if (e.target !== document) consider(e.target); schedule(); }, true);
   document.addEventListener('input', function (e) { consider(e.target); schedule(); }, true);
