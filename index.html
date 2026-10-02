@@ -3331,7 +3331,8 @@
     background: none;
     color: var(--paper);
   }
-  @media (hover: hover) { .confirm-dialog-btn.cancel:hover { background: rgba(255,255,255,0.08); } }
+  /* Cancel: no dim/fill on hover, just the text turns yellow (same as the other Cancel buttons, e.g. .qreport-btn.cancel). */
+  @media (hover: hover) { .confirm-dialog-btn.cancel:hover { background: none; color: var(--accent); } }
   .confirm-dialog-btn.confirm {
     border-color: transparent;
     color: #ff6b6b;
@@ -10921,6 +10922,193 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
     .nick-modal-close, .nick-modal-back { padding: 8px 10px; }
   }
 </style>
+
+<style id="flight-schedule-css">
+  /* ---- Flight Schedule page ---- */
+  #view-schedule { --fs-panel: rgba(8,39,68,0.62); }
+  .fs-wrap { max-width: 1180px; margin: 0 auto; padding: 4px 0 40px; }
+  .fs-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .fs-title { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: 0.01em; color: var(--paper); }
+  .fs-head-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .fs-btn { font: 600 13px 'Space Grotesk', sans-serif; color: var(--paper); background: rgba(255,255,255,0.05); border: 1px solid var(--line); border-radius: 10px; height: 38px; padding: 0 14px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: background .15s ease, color .15s ease, border-color .15s ease; }
+  .fs-btn:focus-visible { outline: none; }
+  /* App-standard hover: secondary buttons only turn the TEXT yellow (no fill), primary only brightens, danger gets the red tint. */
+  @media (hover: hover) { .fs-btn:not(.primary):not(.danger):hover { color: var(--accent); } }
+  .fs-btn.primary { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
+  @media (hover: hover) { .fs-btn.primary:hover { filter: brightness(1.08); background: var(--accent); } }
+  .fs-btn.danger { color: #ff8a8a; border-color: rgba(255,138,138,0.45); }
+  @media (hover: hover) { .fs-btn.danger:hover { background: rgba(255,107,107,0.22); } }
+  .fs-btn.icon { width: 38px; padding: 0; }
+  .fs-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .fs-month { font-size: 17px; font-weight: 600; min-width: 150px; text-align: center; color: var(--paper); }
+
+  .fs-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .fs-chip { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--paper); font: 500 12.5px 'Space Grotesk', sans-serif; cursor: pointer; }
+  .fs-chip::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+  .fs-chip.off { opacity: 0.45; }
+  .fs-chip.off::before { background: transparent; box-shadow: inset 0 0 0 1.5px var(--c); }
+  .fs-chip:focus-visible { outline: none; }
+
+  .fs-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
+  .fs-panel { background: var(--fs-panel); border: 1px solid var(--line); border-radius: 14px; }
+  .fs-cal { padding: 12px; }
+  .fs-dow, .fs-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+  .fs-dow { margin-bottom: 6px; }
+  .fs-dow span { text-align: center; font: 500 11.5px 'IBM Plex Mono', monospace; color: var(--rivet); padding: 4px 0; }
+  .fs-day { position: relative; min-height: 96px; padding: 7px 6px 6px; text-align: left; background: rgba(255,255,255,0.025); border: 1px solid rgba(63,109,146,0.55); border-radius: 10px; color: var(--paper); cursor: pointer; display: flex; flex-direction: column; gap: 4px; font-family: 'Space Grotesk', sans-serif; min-width: 0; overflow: hidden; }
+  .fs-day.out { opacity: 0.4; }
+  @media (hover: hover) { .fs-day:hover { background: rgba(255,255,255,0.07); } }
+  .fs-day:focus-visible { outline: none; }
+  /* Selected day: no fill/outline, just the number turns yellow. */
+  .fs-day.sel .fs-num { color: var(--accent); }
+  .fs-num { font: 600 13px 'IBM Plex Mono', monospace; color: var(--paper); width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; }
+  .fs-day.today .fs-num { color: var(--accent); }
+  .fs-pills { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .fs-pill { display: block; font-size: 11.5px; line-height: 1.25; padding: 2px 6px; border-radius: 5px; background: color-mix(in srgb, var(--c) 24%, transparent); border-left: 3px solid var(--c); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--paper); }
+  .fs-pill.done { text-decoration: line-through; opacity: 0.55; }
+  .fs-more { font: 500 11px 'IBM Plex Mono', monospace; color: var(--rivet); padding-left: 2px; }
+
+  .fs-side { display: flex; flex-direction: column; gap: 16px; }
+  .fs-card { padding: 14px; }
+  .fs-card h3 { margin: 0 0 10px; font-size: 15px; font-weight: 600; color: var(--paper); }
+  .fs-sub { font: 400 12px 'IBM Plex Mono', monospace; color: var(--rivet); margin: -6px 0 10px; }
+  .fs-count { display: flex; align-items: baseline; gap: 10px; }
+  .fs-count b { font: 600 34px 'IBM Plex Mono', monospace; color: #ff7eb6; line-height: 1; }
+  .fs-count span { font-size: 13px; color: var(--paper); line-height: 1.35; }
+  .fs-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .fs-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 9px 10px; border-radius: 10px; border: 1px solid rgba(63,109,146,0.55); border-left: 4px solid var(--c); background: rgba(255,255,255,0.03); }
+  .fs-item.done .fs-item-title { text-decoration: line-through; opacity: 0.55; }
+  .fs-check { appearance: none; -webkit-appearance: none; width: 20px; height: 20px; margin: 0; flex-shrink: 0; border: 1.5px solid var(--rivet); border-radius: 6px; background: transparent; cursor: pointer; position: relative; }
+  .fs-check:checked { background: var(--green); border-color: var(--green); }
+  .fs-check:checked::after { content: ''; position: absolute; left: 50%; top: 46%; width: 5px; height: 10px; border: solid var(--blueprint-dark); border-width: 0 2.5px 2.5px 0; transform: translate(-50%, -55%) rotate(45deg); }
+  .fs-check:focus-visible { outline: none; }
+  .fs-item-body { min-width: 0; }
+  .fs-item-title { font-size: 14px; font-weight: 600; color: var(--paper); overflow-wrap: anywhere; }
+  .fs-item-meta { font: 400 11.5px 'IBM Plex Mono', monospace; color: var(--rivet); margin-top: 2px; }
+  .fs-item-note { font-size: 12.5px; color: var(--paper); opacity: 0.8; margin-top: 4px; overflow-wrap: anywhere; white-space: pre-wrap; }
+  .fs-item-btn { background: none; border: none; color: var(--rivet); width: 30px; height: 30px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  .fs-item-btn.on { color: var(--accent); }
+  .fs-pin-row { display: flex; align-items: center; gap: 8px; font: 500 13px 'Space Grotesk', sans-serif; color: var(--paper); cursor: pointer; margin-bottom: 12px; }
+  .fs-pin-row { transition: color .15s ease; }
+  @media (hover: hover) { .fs-pin-row:hover { color: var(--accent); } }
+  .fs-item-btn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  @media (hover: hover) { .fs-item-btn:hover { background: rgba(255,255,255,0.08); color: var(--accent); } }
+  .fs-item-btn:focus-visible { outline: none; }
+  button.fs-up { width: 100%; text-align: left; cursor: pointer; font-family: 'Space Grotesk', sans-serif; color: var(--paper); }
+  .fs-empty { font-size: 13px; color: var(--rivet); line-height: 1.5; margin: 0 0 12px; }
+
+  .fs-overlay { position: fixed; inset: 0; z-index: 5000; background: rgba(2,12,24,0.72); display: none; align-items: center; justify-content: center; padding: 16px; }
+  .fs-overlay.open { display: flex; }
+  .fs-modal { width: 100%; max-width: 460px; max-height: calc(100dvh - 32px); overflow-y: auto; background: #0a2f52; border: 1px solid var(--line); border-radius: 16px; padding: 18px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .fs-modal h3 { margin: 0 0 14px; font-size: 18px; font-weight: 600; color: var(--paper); }
+  .fs-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .fs-field > label, .fs-field > .fs-lbl { font: 500 12px 'IBM Plex Mono', monospace; color: var(--rivet); }
+  .fs-input { width: 100%; font: 400 14px 'Space Grotesk', sans-serif; color: var(--paper); background: rgba(2,12,24,0.55); border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; color-scheme: dark; }
+  .fs-input:focus-visible { outline: none; }
+  textarea.fs-input { resize: vertical; min-height: 64px; }
+  .fs-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .fs-types { display: flex; flex-wrap: wrap; gap: 8px; }
+  .fs-types input { position: absolute; opacity: 0; pointer-events: none; }
+  .fs-types label { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); font: 500 12.5px 'Space Grotesk', sans-serif; color: var(--paper); cursor: pointer; }
+  .fs-types label::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+  .fs-types input:checked + label { background: color-mix(in srgb, var(--c) 28%, transparent); border-color: var(--c); }
+  .fs-types input:focus-visible + label { outline: none; }
+  .fs-types label, .fs-chip { transition: color .15s ease; }
+  @media (hover: hover) { .fs-types label:hover, .fs-chip:hover { color: var(--accent); } }
+  .fs-err { color: #ff8a8a; font-size: 12.5px; min-height: 0; margin: -4px 0 10px; }
+  .fs-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 6px; }
+  /* Themed date / time pickers for the schedule form (replace the browser's default popups) */
+  .fs-pick { display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; cursor: pointer; min-height: 38px; }
+  .fs-pick .fs-pick-v.ph { color: var(--rivet); opacity: 0.7; }
+  .fs-pick svg { width: 16px; height: 16px; flex: none; fill: none; stroke: var(--rivet); stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  .fs-pick svg { transition: stroke .15s ease; }
+  @media (hover: hover) { .fs-pick:hover svg { stroke: var(--accent); } }
+  .fs-pop { position: fixed; z-index: 5200; display: none; background: #0a2f52; border: 1px solid var(--line); border-radius: 14px; padding: 12px; box-shadow: 0 16px 44px rgba(0,0,0,0.55); font-family: 'Space Grotesk', sans-serif; color: var(--paper); }
+  .fs-pop.open { display: block; }
+  .fs-pop button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
+  .fs-pop button:focus-visible { outline: none; }
+  .fs-pop-head { display: flex; align-items: center; gap: 4px; margin-bottom: 8px; }
+  .fs-pop-head .fs-pop-ml { flex: 1; text-align: left; font-weight: 600; font-size: 14px; padding: 6px 8px; border-radius: 8px; }
+  .fs-pop-nav { width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; color: var(--rivet); }
+  .fs-pop-nav svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .fs-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .fs-cal-grid.months { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .fs-cal-dow { font: 500 11px 'IBM Plex Mono', monospace; color: var(--rivet); text-align: center; padding: 4px 0; }
+  .fs-cal-d { height: var(--cell, 34px); border-radius: 9px; font-size: 13px; }
+  .fs-cal-grid.months .fs-cal-d { height: var(--cellm, 40px); }
+  .fs-cal-d.out { opacity: 0.35; }
+  .fs-cal-d.today { box-shadow: inset 0 0 0 1px var(--accent); }
+  .fs-pop .fs-cal-d.sel, .fs-pop .fs-tcol button.sel { background: var(--accent); color: var(--blueprint-dark); font-weight: 700; opacity: 1; }
+  .fs-pop-foot { display: flex; justify-content: space-between; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+  .fs-pop-foot button { font: 600 13px 'Space Grotesk', sans-serif; color: var(--paper); padding: 6px 8px; border-radius: 8px; }
+  .fs-pop .fs-pop-foot button:active { color: var(--accent); }
+  @media (hover: hover) { .fs-pop .fs-pop-foot button:hover { color: var(--accent); } }
+  .fs-tcols { display: flex; gap: 8px; }
+  .fs-tcol { width: 64px; height: var(--tcolh, 208px); overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; display: flex; flex-direction: column; gap: 2px; }
+  .fs-tcol::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  .fs-tcol button { flex: 0 0 34px; border-radius: 8px; font: 500 14px 'IBM Plex Mono', monospace; }
+  @media (hover: hover) {
+    .fs-pop .fs-cal-d:hover, .fs-pop .fs-tcol button:hover, .fs-pop .fs-pop-nav:hover, .fs-pop .fs-pop-ml:hover { background: rgba(255,255,255,0.09); }
+    .fs-pop .fs-cal-d.sel:hover, .fs-pop .fs-tcol button.sel:hover { background: var(--accent); }
+    .fs-pop .fs-pop-nav:hover { color: var(--accent); }
+  }
+
+  .fs-actions .grow { margin-right: auto; }
+  /* Cancel/Save row: match the app-standard buttons (.mockadmin-save-btn / .mockadmin-publish-btn) -- pill shape, Cancel is outlined with NO fill. */
+  .fs-actions .fs-btn { border-radius: 999px; }
+  .fs-actions .fs-btn:not(.primary):not(.danger) { background: none; }
+
+  @media (max-width: 900px) {
+    .fs-layout { grid-template-columns: minmax(0, 1fr); }
+    .fs-wrap { padding-bottom: 90px; }
+  }
+  @media (max-width: 640px) {
+    .fs-title { font-size: 19px; }
+    .fs-cal { padding: 8px; }
+    .fs-dow, .fs-grid { gap: 3px; }
+    .fs-day { min-height: 54px; padding: 4px 3px; align-items: center; gap: 3px; border-radius: 8px; }
+    .fs-pills { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 3px; }
+    .fs-pill { width: 7px; height: 7px; padding: 0; border: none; border-radius: 50%; background: var(--c); font-size: 0; }
+    .fs-more { display: none; }
+    .fs-row2 { grid-template-columns: 1fr; }
+  }
+
+  /* ---- Flight Schedule: fit the viewport, no page scrolling (desktop) ---- */
+  html:has(#view-schedule.visible), html:has(#view-schedule.visible) body { overflow: hidden !important; overscroll-behavior: none; height: 100%; }
+  @media (min-width: 901px) {
+    body.sidebar-active:has(#view-schedule.visible) .wrap {
+      box-sizing: border-box; height: 100vh; height: 100dvh;
+      padding-top: 88px; padding-bottom: 16px;
+      display: flex; flex-direction: column;
+    }
+    body.sidebar-active:has(#view-schedule.visible) .wrap > footer { display: none; }
+    #view-schedule.visible { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow: hidden; }
+    #view-schedule .fs-wrap { flex: 1 1 auto; min-height: 0; width: 100%; max-width: none; padding: 0; display: flex; flex-direction: column; }
+    #view-schedule .fs-head { margin-bottom: 8px; flex: 0 0 auto; }
+    #view-schedule .fs-filters { margin-bottom: 8px; flex: 0 0 auto; }
+    #view-schedule .fs-layout { flex: 1 1 auto; min-height: 0; align-items: stretch; }
+    #view-schedule .fs-cal { display: flex; flex-direction: column; min-height: 0; padding: 10px; }
+    #view-schedule .fs-dow { margin-bottom: 4px; flex: 0 0 auto; }
+    #view-schedule .fs-dow span { padding: 2px 0; }
+    #view-schedule .fs-grid { flex: 1 1 auto; min-height: 0; grid-auto-rows: minmax(0, 1fr); gap: 5px; }
+    #view-schedule .fs-day { min-height: 0; padding: 5px 6px; gap: 2px; }
+    #view-schedule .fs-pills { gap: 2px; }
+    #view-schedule .fs-pill { font-size: 11px; padding: 1px 6px; }
+    #view-schedule .fs-side { min-height: 0; gap: 12px; overflow: hidden; }
+    /* Same scrollbar as the Flight Radar list: the bar lives in a 10px gap at the card's right edge
+       (2px | 6px bar | 2px), the text stops at the gap, so nothing overlaps. */
+    #view-schedule .fs-card { min-height: 0; padding: 14px; overflow: hidden; }
+    #view-schedule #fs-day-card, #view-schedule #fs-upcoming-card { padding: 0; display: flex; flex-direction: column; }
+    #view-schedule .fs-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; margin: 10px 14px; padding-right: 0; scrollbar-width: none; -ms-overflow-style: none; }
+    #view-schedule .fs-scroll::-webkit-scrollbar { display: none; width: 0; height: 0; }
+    #view-schedule .fs-card h3 { margin-bottom: 6px; }
+    #view-schedule .fs-empty { margin-bottom: 8px; }
+    #view-schedule .fs-cal { overflow: hidden; }
+    #view-schedule #fs-day-card { flex: 1 1 auto; }
+    #view-schedule #fs-upcoming-card { flex: 0 1 auto; max-height: 45%; }
+  }
+  @media (prefers-reduced-motion: reduce) { .fs-btn { transition: none; } }
+</style>
 </head>
 <body class="gate-active">
 
@@ -12354,7 +12542,7 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
           <button class="topbar-nav-btn icon-only" id="topbar-flight-store-btn" title="Flight Store" aria-label="Flight Store" onclick="showFlightStore()">🛒</button>
           <button class="topbar-nav-btn icon-only" id="topbar-hangar-btn" title="Hangar" aria-label="Hangar" onclick="showHangar()">📦</button>
           <div class="admin-settings-wrap" id="admin-settings-wrap" style="display:none;">
-            <button class="signout-btn icon-only ico-svg" id="admin-settings-btn" title="Admin" aria-label="Admin" onclick="toggleAdminPage(event)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            <button class="signout-btn icon-only" id="admin-settings-btn" title="Admin" aria-label="Admin" onclick="toggleAdminPage(event)">⚙️</button>
             <span class="admin-notif-badge" id="admin-gear-badge" aria-hidden="true"></span>
           </div>
           <button type="button" class="topbar-icon-btn tab-game" id="topbar-game-btn" title="Flappy Plane" aria-label="Flappy Plane" onclick="handleTopbarTabClick('game')">
@@ -12368,6 +12556,9 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         <div class="topbar-icon-nav" id="topbar-icon-nav">
           <button type="button" class="topbar-icon-btn tab-home" title="Homepage" aria-label="Homepage" onclick="goHomeFromHeader()">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9v11a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9"/></svg>
+          </button>
+          <button type="button" class="topbar-icon-btn tab-schedule" id="topbar-schedule-btn" title="Flight Schedule" aria-label="Flight Schedule" onclick="handleTopbarTabClick('schedule')">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 17.5h.01M12 17.5h.01" style="stroke-width:2.4"/></svg>
           </button>
           <button type="button" class="topbar-icon-btn tab-review" id="topbar-review-btn" title="Review" aria-label="Review" onclick="handleTopbarTabClick('review')">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 5.5C4.5 4.2 8 4.2 12 6c4-1.8 7.5-1.8 10-.5V19c-2.5-1.3-6-1.3-10 .5-4-1.8-7.5-1.8-10-.5V5.5z"/><path d="M12 6v13.5"/></svg>
@@ -12404,6 +12595,517 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
       }
       place();
       if (mq.addEventListener) mq.addEventListener('change', place); else mq.addListener(place);
+    })();
+    </script>
+
+
+    <!-- ============ FLIGHT SCHEDULE VIEW ============ -->
+    <section id="view-schedule" class="view">
+      <div class="fs-wrap">
+        <div class="fs-head">
+          <h2 class="fs-title">Flight Schedule</h2>
+          <div class="fs-head-actions">
+            <button type="button" class="fs-btn icon" id="fs-prev" aria-label="Previous month"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <div class="fs-month" id="fs-month" aria-live="polite"></div>
+            <button type="button" class="fs-btn icon" id="fs-next" aria-label="Next month"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg></button>
+            <button type="button" class="fs-btn" id="fs-today">Today</button>
+            <button type="button" class="fs-btn primary" id="fs-add">Add schedule</button>
+          </div>
+        </div>
+        <div class="fs-filters" id="fs-filters" role="group" aria-label="Show or hide schedule types"></div>
+        <div class="fs-layout">
+          <div class="fs-panel fs-cal">
+            <div class="fs-dow" aria-hidden="true"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+            <div class="fs-grid" id="fs-grid"></div>
+          </div>
+          <aside class="fs-side">
+            <div class="fs-panel fs-card" id="fs-countdown" style="display:none;"></div>
+            <div class="fs-panel fs-card" id="fs-day-card"></div>
+            <div class="fs-panel fs-card" id="fs-upcoming-card"></div>
+          </aside>
+        </div>
+      </div>
+
+      <div class="fs-overlay" id="fs-overlay" role="dialog" aria-modal="true" aria-labelledby="fs-modal-title">
+        <div class="fs-modal">
+          <h3 id="fs-modal-title">Add schedule</h3>
+          <div class="fs-field">
+            <span class="fs-lbl" id="fs-type-lbl">Type</span>
+            <div class="fs-types" id="fs-types" role="radiogroup" aria-labelledby="fs-type-lbl"></div>
+          </div>
+          <div class="fs-field">
+            <label for="fs-f-title">Title</label>
+            <input class="fs-input" id="fs-f-title" type="text" maxlength="80" autocomplete="off">
+          </div>
+          <div class="fs-field">
+            <label for="fs-pk-date">Date</label>
+            <input id="fs-f-date" type="hidden">
+            <button type="button" class="fs-input fs-pick" id="fs-pk-date" data-ph="dd/mm/yyyy" aria-haspopup="dialog"><span class="fs-pick-v"></span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg></button>
+          </div>
+          <div class="fs-row2">
+            <div class="fs-field"><label for="fs-pk-start">Start time (optional)</label><input id="fs-f-start" type="hidden"><button type="button" class="fs-input fs-pick" id="fs-pk-start" data-ph="--:--" aria-haspopup="dialog"><span class="fs-pick-v"></span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></button></div>
+            <div class="fs-field"><label for="fs-pk-end">End time (optional)</label><input id="fs-f-end" type="hidden"><button type="button" class="fs-input fs-pick" id="fs-pk-end" data-ph="--:--" aria-haspopup="dialog"><span class="fs-pick-v"></span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></button></div>
+          </div>
+          <div class="fs-field">
+            <label for="fs-f-notes">Notes (optional)</label>
+            <textarea class="fs-input" id="fs-f-notes" maxlength="400"></textarea>
+          </div>
+          <label class="fs-pin-row"><input type="checkbox" class="fs-check" id="fs-f-pin"> Pin to countdown</label>
+          <div class="fs-err" id="fs-err" role="alert"></div>
+          <div class="fs-actions">
+            <button type="button" class="fs-btn" id="fs-cancel">Cancel</button>
+            <button type="button" class="fs-btn primary" id="fs-save">Save</button>
+          </div>
+        </div>
+      </div>
+    </section>
+    <script>
+    (function () {
+      var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      var DOW = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+      var ARROW_L = '<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>';
+      var ARROW_R = '<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>';
+      var pop = document.createElement('div');
+      pop.className = 'fs-pop'; pop.id = 'fs-pop'; pop.setAttribute('role', 'dialog');
+      document.body.appendChild(pop);
+      var cur = null;
+      function pad(n) { return (n < 10 ? '0' : '') + n; }
+      function ymd(y, m, d) { return y + '-' + pad(m + 1) + '-' + pad(d); }
+      function fmtDate(v) { var a = (v || '').split('-'); return a.length === 3 ? a[2] + '/' + a[1] + '/' + a[0] : ''; }
+
+      function bind(inputId, btnId, kind, fmt) {
+        var inp = document.getElementById(inputId), btn = document.getElementById(btnId);
+        if (!inp || !btn) return;
+        var v = '';
+        function paint() {
+          var el = btn.querySelector('.fs-pick-v'), t = v ? fmt(v) : '';
+          el.textContent = t || btn.getAttribute('data-ph');
+          el.className = 'fs-pick-v' + (t ? '' : ' ph');
+        }
+        Object.defineProperty(inp, 'value', { configurable: true,
+          get: function () { return v; },
+          set: function (x) { v = x || ''; paint(); } });
+        btn.addEventListener('click', function () {
+          if (cur && cur.btn === btn) { closePop(); return; }
+          openPop(kind, inp, btn);
+        });
+        paint();
+      }
+
+      function closePop() {
+        pop.classList.remove('open'); pop.innerHTML = ''; cur = null;
+      }
+
+      function place() {
+        if (!cur) return;
+        var r = cur.btn.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
+        var left = Math.max(8, Math.min(r.left, window.innerWidth - pw - 8));
+        var top = r.bottom + 6;
+        var over = top + ph - (window.innerHeight - 8);
+        if (over > 0) {
+          /* Always open downward and never move the form: shrink the popup to the space available. */
+          if (cur.kind === 'time') {
+            pop.style.setProperty('--tcolh', Math.max(96, 208 - over) + 'px');
+          } else if (cur.mode === 'months') {
+            pop.style.setProperty('--cellm', Math.max(26, 40 - Math.ceil(over / 4)) + 'px');
+          } else {
+            pop.style.setProperty('--cell', Math.max(22, 34 - Math.ceil(over / 6)) + 'px');
+          }
+          ph = pop.offsetHeight;
+          if (top + ph > window.innerHeight - 8) top = Math.max(8, window.innerHeight - 8 - ph);
+        }
+        pop.style.left = left + 'px'; pop.style.top = top + 'px';
+      }
+
+      function openPop(kind, inp, btn) {
+        var now = new Date(), v = inp.value;
+        cur = { kind: kind, inp: inp, btn: btn, mode: 'days', y: now.getFullYear(), m: now.getMonth() };
+        if (kind === 'date' && /^\d{4}-\d{2}-\d{2}$/.test(v)) { cur.y = +v.slice(0, 4); cur.m = +v.slice(5, 7) - 1; }
+        pop.classList.add('open');
+        render();
+        if (kind === 'time') {
+          var sels = pop.querySelectorAll('.fs-tcol button.sel');
+          for (var i = 0; i < sels.length; i++) sels[i].parentNode.scrollTop = Math.max(0, sels[i].offsetTop - 80);
+        }
+      }
+
+      function render() {
+        if (!cur) return;
+        pop.style.removeProperty('--cell'); pop.style.removeProperty('--cellm'); pop.style.removeProperty('--tcolh');
+        if (cur.kind === 'date') renderDate(); else renderTime();
+        place();
+      }
+
+      function renderDate() {
+        var v = cur.inp.value, today = new Date(), tk = ymd(today.getFullYear(), today.getMonth(), today.getDate());
+        var h = '<div class="fs-pop-head">';
+        if (cur.mode === 'days') {
+          h += '<button type="button" class="fs-pop-ml" data-a="mode">' + MONTHS[cur.m] + ' ' + cur.y + ' \u25BE</button>' +
+               '<button type="button" class="fs-pop-nav" data-a="prev" aria-label="Previous month">' + ARROW_L + '</button>' +
+               '<button type="button" class="fs-pop-nav" data-a="next" aria-label="Next month">' + ARROW_R + '</button></div>';
+          h += '<div class="fs-cal-grid">' + DOW.map(function (d) { return '<span class="fs-cal-dow">' + d + '</span>'; }).join('');
+          var first = new Date(cur.y, cur.m, 1), start = new Date(cur.y, cur.m, 1 - first.getDay());
+          for (var i = 0; i < 42; i++) {
+            var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i), k = ymd(d.getFullYear(), d.getMonth(), d.getDate());
+            h += '<button type="button" class="fs-cal-d' + (d.getMonth() !== cur.m ? ' out' : '') + (k === tk ? ' today' : '') + (k === v ? ' sel' : '') + '" data-d="' + k + '">' + d.getDate() + '</button>';
+          }
+          h += '</div>';
+        } else {
+          h += '<button type="button" class="fs-pop-ml" data-a="mode">' + cur.y + ' \u25B4</button>' +
+               '<button type="button" class="fs-pop-nav" data-a="prevy" aria-label="Previous year">' + ARROW_L + '</button>' +
+               '<button type="button" class="fs-pop-nav" data-a="nexty" aria-label="Next year">' + ARROW_R + '</button></div>';
+          h += '<div class="fs-cal-grid months">' + MONTHS.map(function (n, i) {
+            return '<button type="button" class="fs-cal-d' + (v && +v.slice(0, 4) === cur.y && +v.slice(5, 7) - 1 === i ? ' sel' : '') + '" data-m="' + i + '">' + n.slice(0, 3) + '</button>';
+          }).join('') + '</div>';
+        }
+        h += '<div class="fs-pop-foot"><button type="button" data-a="clear">Clear</button><button type="button" data-a="today">Today</button></div>';
+        pop.style.width = '292px';
+        pop.innerHTML = h;
+      }
+
+      function renderTime() {
+        var v = cur.inp.value, hh = v ? v.slice(0, 2) : '', mm = v ? v.slice(3, 5) : '';
+        var h = '<div class="fs-tcols"><div class="fs-tcol" aria-label="Hour">', i;
+        for (i = 0; i < 24; i++) h += '<button type="button" class="' + (pad(i) === hh ? 'sel' : '') + '" data-h="' + pad(i) + '">' + pad(i) + '</button>';
+        h += '</div><div class="fs-tcol" aria-label="Minute">';
+        for (i = 0; i < 60; i++) h += '<button type="button" class="' + (pad(i) === mm ? 'sel' : '') + '" data-mi="' + pad(i) + '">' + pad(i) + '</button>';
+        h += '</div></div><div class="fs-pop-foot"><button type="button" data-a="clear">Clear</button><button type="button" data-a="done">Done</button></div>';
+        pop.style.width = 'auto';
+        pop.innerHTML = h;
+      }
+
+      function keepScroll(fn) {
+        var cols = pop.querySelectorAll('.fs-tcol'), st = [];
+        for (var i = 0; i < cols.length; i++) st.push(cols[i].scrollTop);
+        fn();
+        cols = pop.querySelectorAll('.fs-tcol');
+        for (var j = 0; j < cols.length; j++) cols[j].scrollTop = st[j] || 0;
+      }
+
+      pop.addEventListener('click', function (e) {
+        var t = e.target.closest('button'); if (!t || !cur) return;
+        var a = t.getAttribute('data-a');
+        if (t.hasAttribute('data-d')) { cur.inp.value = t.getAttribute('data-d'); closePop(); return; }
+        if (t.hasAttribute('data-m')) { cur.m = +t.getAttribute('data-m'); cur.mode = 'days'; render(); return; }
+        if (t.hasAttribute('data-h') || t.hasAttribute('data-mi')) {
+          var v = cur.inp.value, hh = v ? v.slice(0, 2) : pad(new Date().getHours()), mm = v ? v.slice(3, 5) : '00';
+          if (t.hasAttribute('data-h')) hh = t.getAttribute('data-h'); else mm = t.getAttribute('data-mi');
+          cur.inp.value = hh + ':' + mm;
+          keepScroll(renderTime);
+          return;
+        }
+        if (a === 'mode') { cur.mode = cur.mode === 'days' ? 'months' : 'days'; render(); }
+        else if (a === 'prev') { cur.m--; if (cur.m < 0) { cur.m = 11; cur.y--; } render(); }
+        else if (a === 'next') { cur.m++; if (cur.m > 11) { cur.m = 0; cur.y++; } render(); }
+        else if (a === 'prevy') { cur.y--; render(); }
+        else if (a === 'nexty') { cur.y++; render(); }
+        else if (a === 'clear') { cur.inp.value = ''; closePop(); }
+        else if (a === 'today') { var n = new Date(); cur.inp.value = ymd(n.getFullYear(), n.getMonth(), n.getDate()); closePop(); }
+        else if (a === 'done') { closePop(); }
+      });
+
+      document.addEventListener('pointerdown', function (e) {
+        if (!cur) return;
+        if (pop.contains(e.target) || cur.btn.contains(e.target)) return;
+        closePop();
+      }, true);
+      document.addEventListener('keydown', function (e) {
+        if (cur && e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closePop(); }
+      }, true);
+      window.addEventListener('resize', place);
+      window.addEventListener('scroll', function (e) { if (cur && !pop.contains(e.target)) closePop(); }, true);
+
+      bind('fs-f-date', 'fs-pk-date', 'date', fmtDate);
+      bind('fs-f-start', 'fs-pk-start', 'time', function (v) { return v; });
+      bind('fs-f-end', 'fs-pk-end', 'time', function (v) { return v; });
+    })();
+    </script>
+    <script>
+    (function () {
+      var TYPES = [
+        { id: 'study',      label: 'Study',             color: '#5cb8ff' },
+        { id: 'review',     label: 'Review',            color: '#4fd1a0' },
+        { id: 'quiz',       label: 'Quiz',              color: '#c792ff' },
+        { id: 'mock-exam',  label: 'Exam',              color: '#ff4d4d' },
+        { id: 'mock-board', label: 'Mock Board Exam',   color: '#ff8a5c' },
+        { id: 'board',      label: 'Actual Board Exam', color: '#ff7eb6' },
+        { id: 'other',      label: 'Other',             color: '#9fb3c4' }
+      ];
+      var TYPE_BY_ID = {};
+      TYPES.forEach(function (t) { TYPE_BY_ID[t.id] = t; });
+      var MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      var ICON_EDIT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+      var ICON_PIN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v5"/><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3z"/></svg>';
+      var ICON_DEL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/></svg>';
+
+      var now = new Date();
+      var state = { y: now.getFullYear(), m: now.getMonth(), sel: ymd(now), events: [], hidden: {}, editId: null, loadedKey: null };
+
+      function $(id) { return document.getElementById(id); }
+      function pad(n) { return (n < 10 ? '0' : '') + n; }
+      function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+      function parse(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+      function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+      function fmtTime(t) {
+        if (!t) return '';
+        var p = t.split(':'), h = +p[0], ap = h >= 12 ? 'PM' : 'AM';
+        h = h % 12; if (h === 0) h = 12;
+        return h + ':' + p[1] + ' ' + ap;
+      }
+      function timeRange(e) {
+        if (e.start && e.end) return fmtTime(e.start) + ' – ' + fmtTime(e.end);
+        if (e.start) return fmtTime(e.start);
+        return 'All day';
+      }
+      function longDate(s) {
+        return parse(s).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+      }
+      function shortDate(s) {
+        return parse(s).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+      }
+
+      function legacyKey() {
+        var k = 'guest';
+        try { if (typeof currentChatUser !== 'undefined' && currentChatUser && currentChatUser.nickname) k = presenceKey(currentChatUser.nickname); } catch (e) {}
+        return 'flightSchedule_v1_' + k;
+      }
+      function isSignedIn() {
+        try { return !!(typeof currentChatUser !== 'undefined' && currentChatUser && currentChatUser.email); } catch (e) { return false; }
+      }
+      /* Signed in: "<email>::flightSchedule" - mirrored to the user's Firebase
+         database by the progress sync. Guest: the old local-only key. */
+      function storageKey() {
+        if (isSignedIn()) { try { return userScopedKey('flightSchedule'); } catch (e) {} }
+        return legacyKey();
+      }
+      function migrateLegacy(key) {
+        /* one-time: move schedules saved before cloud sync into the account key */
+        if (!isSignedIn() || key === legacyKey()) return;
+        try {
+          var old = localStorage.getItem(legacyKey());
+          if (old && localStorage.getItem(key) === null) localStorage.setItem(key, old);
+          var oldH = localStorage.getItem(legacyKey() + '_hidden');
+          if (oldH && localStorage.getItem(key + '_hidden') === null) localStorage.setItem(key + '_hidden', oldH);
+        } catch (e) {}
+      }
+      function load() {
+        var key = storageKey();
+        if (state.loadedKey === key) return;
+        state.loadedKey = key;
+        migrateLegacy(key);
+        try { state.events = JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) { state.events = []; }
+        if (!Array.isArray(state.events)) state.events = [];
+        try { state.hidden = JSON.parse(localStorage.getItem(key + '_hidden') || '{}') || {}; } catch (e) { state.hidden = {}; }
+      }
+      function save() {
+        try { localStorage.setItem(state.loadedKey, JSON.stringify(state.events)); } catch (e) {}
+      }
+      function saveHidden() {
+        try { localStorage.setItem(state.loadedKey + '_hidden', JSON.stringify(state.hidden)); } catch (e) {}
+      }
+
+      function visibleOn(date) {
+        return state.events.filter(function (e) { return e.date === date && !state.hidden[e.type]; })
+          .sort(function (a, b) { return (a.start || '99:99').localeCompare(b.start || '99:99'); });
+      }
+
+      function renderFilters() {
+        $('fs-filters').innerHTML = TYPES.map(function (t) {
+          var off = !!state.hidden[t.id];
+          return '<button type="button" class="fs-chip' + (off ? ' off' : '') + '" data-type="' + t.id + '" aria-pressed="' + (!off) + '" style="--c:' + t.color + '">' + esc(t.label) + '</button>';
+        }).join('');
+      }
+
+      function renderGrid() {
+        $('fs-month').textContent = MONTHS[state.m] + ' ' + state.y;
+        var first = new Date(state.y, state.m, 1);
+        var start = new Date(state.y, state.m, 1 - first.getDay());
+        var today = ymd(new Date());
+        var html = '';
+        for (var i = 0; i < 42; i++) {
+          var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+          var key = ymd(d);
+          if (i >= 35 && d.getMonth() !== state.m) break;
+          var evs = visibleOn(key);
+          var cls = 'fs-day' + (d.getMonth() !== state.m ? ' out' : '') + (key === today ? ' today' : '') + (key === state.sel ? ' sel' : '');
+          var pills = evs.slice(0, 3).map(function (e) {
+            var t = TYPE_BY_ID[e.type] || TYPE_BY_ID.other;
+            return '<span class="fs-pill' + (e.done ? ' done' : '') + '" style="--c:' + t.color + '">' + esc(e.title) + '</span>';
+          }).join('');
+          var more = evs.length > 3 ? '<span class="fs-more">+' + (evs.length - 3) + ' more</span>' : '';
+          html += '<button type="button" class="' + cls + '" data-date="' + key + '" aria-label="' + esc(longDate(key)) + (evs.length ? ', ' + evs.length + ' scheduled' : '') + '"' + (key === state.sel ? ' aria-current="date"' : '') + '>' +
+            '<span class="fs-num">' + d.getDate() + '</span><span class="fs-pills">' + pills + more + '</span></button>';
+        }
+        $('fs-grid').innerHTML = html;
+      }
+
+      function itemHtml(e, showDate) {
+        var t = TYPE_BY_ID[e.type] || TYPE_BY_ID.other;
+        return '<li class="fs-item' + (e.done ? ' done' : '') + '" style="--c:' + t.color + '">' +
+          '<input type="checkbox" class="fs-check" data-act="done" data-id="' + e.id + '"' + (e.done ? ' checked' : '') + ' aria-label="Mark ' + esc(e.title) + ' as done">' +
+          '<div class="fs-item-body"><div class="fs-item-title">' + esc(e.title) + '</div>' +
+          '<div class="fs-item-meta">' + esc(t.label) + ' · ' + (showDate ? esc(shortDate(e.date)) + ' · ' : '') + esc(timeRange(e)) + '</div>' +
+          (e.notes ? '<div class="fs-item-note">' + esc(e.notes) + '</div>' : '') + '</div>' +
+          '<div><button type="button" class="fs-item-btn' + (e.pinned ? ' on' : '') + '" data-act="pin" data-id="' + e.id + '" aria-pressed="' + (!!e.pinned) + '" title="' + (e.pinned ? 'Unpin from countdown' : 'Pin to countdown') + '" aria-label="' + (e.pinned ? 'Unpin ' : 'Pin ') + esc(e.title) + '">' + ICON_PIN + '</button>' +
+          '<button type="button" class="fs-item-btn" data-act="edit" data-id="' + e.id + '" aria-label="Edit ' + esc(e.title) + '">' + ICON_EDIT + '</button>' +
+          '<button type="button" class="fs-item-btn" data-act="del" data-id="' + e.id + '" aria-label="Delete ' + esc(e.title) + '">' + ICON_DEL + '</button></div></li>';
+      }
+
+      function renderSide() {
+        var evs = visibleOn(state.sel);
+        var h = '<h3>' + esc(longDate(state.sel)) + '</h3>';
+        if (evs.length) {
+          h += '<ul class="fs-list">' + evs.map(function (e) { return itemHtml(e, false); }).join('') + '</ul>' +
+               '<div style="margin-top:12px"><button type="button" class="fs-btn" data-act="add-day">Add to this day</button></div>';
+        } else {
+          h += '<p class="fs-empty">Nothing scheduled for this day. Plan a study session, quiz or exam.</p>' +
+               '<button type="button" class="fs-btn primary" data-act="add-day">Add to this day</button>';
+        }
+        $('fs-day-card').innerHTML = '<div class="fs-scroll">' + h + '</div>';
+
+        var today = ymd(new Date());
+        var up = state.events.filter(function (e) { return e.date >= today && !e.done && !state.hidden[e.type]; })
+          .sort(function (a, b) { return (a.date + (a.start || '99:99')).localeCompare(b.date + (b.start || '99:99')); }).slice(0, 6);
+        var u = '<h3>Coming up</h3>';
+        if (up.length) {
+          u += '<ul class="fs-list">' + up.map(function (e) {
+            var t = TYPE_BY_ID[e.type] || TYPE_BY_ID.other;
+            return '<li><button type="button" class="fs-item fs-up" data-act="goto" data-date="' + e.date + '" style="--c:' + t.color + ';grid-template-columns:minmax(0,1fr)">' +
+              '<div class="fs-item-body"><div class="fs-item-title">' + esc(e.title) + '</div><div class="fs-item-meta">' + esc(t.label) + ' · ' + esc(shortDate(e.date)) + ' · ' + esc(timeRange(e)) + '</div></div></button></li>';
+          }).join('') + '</ul>';
+        } else {
+          u += '<p class="fs-empty" style="margin:0">No upcoming schedules yet.</p>';
+        }
+        $('fs-upcoming-card').innerHTML = '<div class="fs-scroll">' + u + '</div>';
+
+        var cd = $('fs-countdown');
+        var live = function (e) { return e.date >= today && !e.done; };
+        var pick = state.events.filter(function (e) { return e.pinned && live(e); })[0];
+        if (pick) {
+          var days = Math.round((parse(pick.date) - parse(today)) / 86400000);
+          var pt = TYPE_BY_ID[pick.type] || TYPE_BY_ID.other;
+          cd.style.display = '';
+          cd.innerHTML = '<div class="fs-count"><b style="color:' + pt.color + '">' + days + '</b><span>' + (days === 0 ? esc(pick.title) + ' is today' : (days === 1 ? 'day until ' : 'days until ') + esc(pick.title)) + '<br>' + esc(shortDate(pick.date)) + '</span></div>';
+        } else {
+          cd.style.display = 'none';
+        }
+      }
+
+      function render() { load(); renderFilters(); renderGrid(); renderSide(); }
+      window.renderSchedule = render;
+      window.reloadScheduleFromStorage = function () { state.loadedKey = null; render(); };
+
+      /* ---- modal ---- */
+      function openModal(date, id) {
+        load();
+        state.editId = id || null;
+        var ev = id ? state.events.filter(function (e) { return e.id === id; })[0] : null;
+        $('fs-modal-title').textContent = ev ? 'Edit schedule' : 'Add schedule';
+        $('fs-types').innerHTML = TYPES.map(function (t) {
+          return '<span><input type="radio" name="fs-type" id="fs-type-' + t.id + '" value="' + t.id + '"' + ((ev ? ev.type : 'study') === t.id ? ' checked' : '') + '><label for="fs-type-' + t.id + '" style="--c:' + t.color + '">' + esc(t.label) + '</label></span>';
+        }).join('');
+        $('fs-f-title').value = ev ? ev.title : '';
+        $('fs-f-date').value = ev ? ev.date : (date || state.sel);
+        $('fs-f-start').value = ev ? (ev.start || '') : '';
+        $('fs-f-end').value = ev ? (ev.end || '') : '';
+        $('fs-f-notes').value = ev ? (ev.notes || '') : '';
+        $('fs-f-pin').checked = ev ? !!ev.pinned : false;
+        $('fs-err').textContent = '';
+        $('fs-overlay').classList.add('open');
+        setTimeout(function () { $('fs-f-title').focus(); }, 30);
+      }
+      function closeModal() { $('fs-overlay').classList.remove('open'); state.editId = null; }
+
+      function saveModal() {
+        var typeEl = document.querySelector('input[name="fs-type"]:checked');
+        var type = typeEl ? typeEl.value : 'study';
+        var date = $('fs-f-date').value;
+        var start = $('fs-f-start').value, end = $('fs-f-end').value;
+        if (!date) { $('fs-err').textContent = 'Pick a date for this schedule.'; return; }
+        if (end && !start) { $('fs-err').textContent = 'Add a start time, or clear the end time.'; return; }
+        if (start && end && end <= start) { $('fs-err').textContent = 'End time must be after the start time.'; return; }
+        var title = $('fs-f-title').value.trim() || TYPE_BY_ID[type].label;
+        var notes = $('fs-f-notes').value.trim();
+        var pinned = $('fs-f-pin').checked;
+        if (pinned) state.events.forEach(function (e) { e.pinned = false; });
+        if (state.editId) {
+          state.events.forEach(function (e) {
+            if (e.id === state.editId) { e.type = type; e.title = title; e.date = date; e.start = start; e.end = end; e.notes = notes; e.pinned = pinned; }
+          });
+        } else {
+          state.events.push({ id: 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), type: type, title: title, date: date, start: start, end: end, notes: notes, done: false, pinned: pinned });
+        }
+        save();
+        var d = parse(date);
+        state.sel = date; state.y = d.getFullYear(); state.m = d.getMonth();
+        closeModal();
+        render();
+      }
+
+      function deleteEvent(id) {
+        var ev = state.events.filter(function (e) { return e.id === id; })[0];
+        if (!ev) return;
+        var go = function () { state.events = state.events.filter(function (e) { return e.id !== id; }); save(); closeModal(); render(); };
+        if (typeof adminConfirm === 'function') {
+          adminConfirm('Delete "' + ev.title + '" from your schedule?').then(function (ok) { if (ok) go(); });
+        } else if (window.confirm('Delete "' + ev.title + '" from your schedule?')) { go(); }
+      }
+
+      /* ---- events ---- */
+      function shiftMonth(n) {
+        var d = new Date(state.y, state.m + n, 1);
+        state.y = d.getFullYear(); state.m = d.getMonth();
+        renderGrid();
+      }
+      $('fs-prev').addEventListener('click', function () { shiftMonth(-1); });
+      $('fs-next').addEventListener('click', function () { shiftMonth(1); });
+      $('fs-today').addEventListener('click', function () {
+        var t = new Date(); state.y = t.getFullYear(); state.m = t.getMonth(); state.sel = ymd(t); render();
+      });
+      $('fs-add').addEventListener('click', function () { openModal(state.sel); });
+      $('fs-cancel').addEventListener('click', closeModal);
+      $('fs-save').addEventListener('click', saveModal);
+      $('fs-overlay').addEventListener('click', function (e) { if (e.target === $('fs-overlay')) closeModal(); });
+      $('fs-overlay').addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeModal();
+        else if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.type !== 'radio') { e.preventDefault(); saveModal(); }
+      });
+      $('fs-filters').addEventListener('click', function (e) {
+        var b = e.target.closest('.fs-chip'); if (!b) return;
+        var id = b.getAttribute('data-type');
+        if (state.hidden[id]) delete state.hidden[id]; else state.hidden[id] = true;
+        saveHidden(); render();
+      });
+      $('fs-grid').addEventListener('click', function (e) {
+        var b = e.target.closest('.fs-day'); if (!b) return;
+        var date = b.getAttribute('data-date');
+        var d = parse(date);
+        state.sel = date;
+        if (d.getMonth() !== state.m) { state.y = d.getFullYear(); state.m = d.getMonth(); }
+        renderGrid(); renderSide();
+      });
+      $('view-schedule').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-act]'); if (!b) return;
+        var act = b.getAttribute('data-act'), id = b.getAttribute('data-id');
+        if (act === 'add-day') openModal(state.sel);
+        else if (act === 'pin') {
+          var was = state.events.some(function (e) { return e.id === id && e.pinned; });
+          state.events.forEach(function (e) { e.pinned = (!was && e.id === id); });
+          save(); render();
+        }
+        else if (act === 'edit') openModal(null, id);
+        else if (act === 'del') deleteEvent(id);
+        else if (act === 'goto') {
+          var date = b.getAttribute('data-date'), d = parse(date);
+          state.sel = date; state.y = d.getFullYear(); state.m = d.getMonth(); render();
+        }
+      });
+      $('view-schedule').addEventListener('change', function (e) {
+        var b = e.target.closest('[data-act="done"]'); if (!b) return;
+        var id = b.getAttribute('data-id');
+        state.events.forEach(function (ev) { if (ev.id === id) ev.done = b.checked; });
+        save(); render();
+      });
     })();
     </script>
 
@@ -18197,6 +18899,7 @@ Answer: C</pre>
     //                           migrateLegacyExamProgress() below)
     //                           (see examProgressKey())
     //   quizProgress_*          saveQuizProgress() / loadQuizProgress()
+    //   flightSchedule(_hidden) Flight Schedule events + hidden type filters
     //
     // How: Storage.prototype.setItem / removeItem are wrapped (only for
     // localStorage and only for the keys above), so EVERY existing save,
@@ -18246,7 +18949,9 @@ Answer: C</pre>
         raw.indexOf('examTimerStart:') === 0 ||
         raw.indexOf('examProgress_') === 0 ||
         raw.indexOf('gformProgress_') === 0 ||
-        raw.indexOf('quizProgress_') === 0;
+        raw.indexOf('quizProgress_') === 0 ||
+        raw === 'flightSchedule' ||
+        raw === 'flightSchedule_hidden';
     }
 
     function progSyncEmail() {
@@ -18485,9 +19190,10 @@ Answer: C</pre>
           if (!local[raw]) local[raw] = { exists: false, ts: Number(meta[raw][0]) || 0 };
         });
 
-        const changed = { board: false, exam: false, quiz: false };
+        const changed = { board: false, exam: false, quiz: false, schedule: false };
         const flag = (raw) => {
           if (raw === 'boardExamSet') changed.board = true;
+          else if (raw.indexOf('flightSchedule') === 0) changed.schedule = true;
           else if (raw.indexOf('quizProgress_') === 0) changed.quiz = true;
           else changed.exam = true;
         };
@@ -18538,7 +19244,7 @@ Answer: C</pre>
           base.update(toWrite).catch(err => console.error('Progress sync (upload) failed:', err));
         }
         migrateLegacyExamProgress();
-        if (changed.board || changed.exam || changed.quiz) progSyncRefreshUI(changed);
+        if (changed.board || changed.exam || changed.quiz || changed.schedule) progSyncRefreshUI(changed);
       } catch (err) {
         console.error('Progress sync (pull) failed:', err);
       }
@@ -18562,6 +19268,7 @@ Answer: C</pre>
           refreshMockExamTabIcon();
         }
         if (changed.quiz) renderQuizExamList();
+        if (changed.schedule && typeof window.reloadScheduleFromStorage === 'function') window.reloadScheduleFromStorage();
       } catch (err) { console.error('Progress sync (refresh) error:', err); }
     }
 
@@ -35709,7 +36416,8 @@ Answer: C</pre>
       'mock-board': 'view-board',
       'quiz': 'view-quiz',
       'shop': 'view-shop',
-      'game': 'view-game'
+      'game': 'view-game',
+      'schedule': 'view-schedule'
     };
     const HOME_TAB_SECTION_LABEL = {
       'review': 'reviewing',
@@ -35717,7 +36425,8 @@ Answer: C</pre>
       'mock-board': 'taking a mock board exam',
       'quiz': 'taking a quiz',
       'shop': 'browsing the Flight Store',
-      'game': 'playing Flappy Plane'
+      'game': 'playing Flappy Plane',
+      'schedule': 'planning their flight schedule'
     };
 
     let homeScrollY = 0;
@@ -35804,13 +36513,14 @@ Answer: C</pre>
       return null;
     }
     const TOPBAR_TAB_ICON_SVG = {
+      'schedule': '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 17.5h.01M12 17.5h.01" style="stroke-width:2.4"/></svg>',
       'review': '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 5.5C4.5 4.2 8 4.2 12 6c4-1.8 7.5-1.8 10-.5V19c-2.5-1.3-6-1.3-10 .5-4-1.8-7.5-1.8-10-.5V5.5z"/><path d="M12 6v13.5"/></svg>',
       'quiz': '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>',
       'mock-exam': '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M9 13.5l2 2 4-4.5"/></svg>',
       'mock-board': '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5-10-5z"/><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5"/><path d="M22 9v6"/></svg>',
       'game': '<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M7.5 5h9a5.5 5.5 0 0 1 5.4 4.6l.9 5.4a3.4 3.4 0 0 1-5.9 2.8L15 15.5H9l-1.9 2.3A3.4 3.4 0 0 1 1.2 15l.9-5.4A5.5 5.5 0 0 1 7.5 5z\"/><path d=\"M8 9v4M6 11h4\"/><path d=\"M15.5 10h.01M17.8 12.2h.01\" style=\"stroke-width:2.4\"/></svg>'
     };
-    const TOPBAR_TAB_LABELS = { 'review': 'Review', 'quiz': 'Quiz', 'mock-exam': 'Mock Exam', 'mock-board': 'Mock Board Exam', 'game': 'Flappy Plane' };
+    const TOPBAR_TAB_LABELS = { 'schedule': 'Flight Schedule', 'review': 'Review', 'quiz': 'Quiz', 'mock-exam': 'Mock Exam', 'mock-board': 'Mock Board Exam', 'game': 'Flappy Plane' };
     const TOPBAR_BACK_ICON_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>';
 
     function handleTopbarTabClick(tab) {
@@ -35932,6 +36642,7 @@ Answer: C</pre>
       // (and, for the board, could stomp on state mid-exam).
       if (tab === 'mock-board' && tab !== gformOwnerTab) restoreBoardSetIfAny();
       if (tab === 'quiz') refreshQuizViewOnOpen();
+      if (tab === 'schedule' && typeof renderSchedule === 'function') renderSchedule();
       updateSidebarVisibility();
       refreshTopbarTabIcons();
     }
