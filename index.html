@@ -13760,6 +13760,16 @@ Answer: C</pre>
     // with another site's data for the same Google account.
     const APP_ID = 'aerodynadmics';
 
+    // ---- Fast sign-in (direct Firebase Auth) -------------------------
+    // Each Callsign has a Firebase Auth user (uid = Callsign) with a hidden
+    // email "<callsign>@FAST_LOGIN_EMAIL_DOMAIN" and its Flight Code hash as
+    // the password. Callsign + Flight Code sign-in tries Firebase directly
+    // (about a second) and silently falls back to Apps Script if that
+    // can't answer. Keep this false until the Apps Script side is set up
+    // (see HANDOFF_STEP1.md), then set it to true.
+    const FAST_LOGIN_ENABLED = true;
+    const FAST_LOGIN_EMAIL_DOMAIN = 'callsign.aerodynadmics.com'; // must match the .gs file
+
     // ---- moderation / bans ----
     // Set this to your own Google account email, only this signed-in account
     // sees the ban (🚫) button next to other people's chat messages.
@@ -13890,6 +13900,10 @@ Answer: C</pre>
     }
 
     let pendingUser = null;
+    // Google's sign-in proof for this page session (memory only, never saved).
+    // Sent with account lookups so the server can verify the email is really
+    // yours before it hands out a Firebase login.
+    let googleIdToken = '';
 
     // Flight Codes are never kept or sent as plain text past this point,
     // every place that used to read/send/store a raw Flight Code now
@@ -14671,6 +14685,7 @@ Answer: C</pre>
     function handleCredentialResponse(response) {
       const payload = decodeJwt(response.credential);
       if (!payload) return;
+      googleIdToken = response.credential || '';
 
       // Show the arrival animation immediately, right as the account is
       // picked, the lookups below happen underneath it instead of making
@@ -14732,7 +14747,7 @@ Answer: C</pre>
 
       function attemptLookup() {
         lookupAttempt++;
-        jsonpRequest({ action: 'lookupNickname', email: pendingUser.email }, (data) => {
+        jsonpRequest({ action: 'lookupNickname', email: pendingUser.email, idToken: googleIdToken }, (data) => {
           if (data && data.nickname) {
             signInWithFirebaseToken(data.firebaseToken);
             // Account confirmed to still exist. Prefer the cached
@@ -15053,7 +15068,7 @@ Answer: C</pre>
 
       function attemptVerify() {
         verifyAttempt++;
-        jsonpRequest({ action: 'lookupNickname', email: user.email }, (data) => {
+        jsonpRequest({ action: 'lookupNickname', email: user.email, idToken: googleIdToken }, (data) => {
           const confirmed = !!(data && data.nickname &&
             ('hasFlightCode' in data ? data.hasFlightCode : !!data.flightCode));
 
@@ -15118,6 +15133,62 @@ Answer: C</pre>
       setTimeout(attemptVerify, 1200);
     }
 
+    // Tries Firebase Auth directly first (fast, no Apps Script cold start),
+    // then falls back to the Apps Script backend. The callback gets the same
+    // shape either way: { success, ... } or null when nothing could be
+    // reached. The fast path is only attempted when FAST_LOGIN_ENABLED and
+    // only on the first attempt. "banned" and "too many attempts" answers
+    // are final; anything else (wrong code, account not migrated yet,
+    // network trouble) falls back, because the Sheet is still the source
+    // of truth until the migration is finished.
+    async function loginByCallsignRequest(nickname, flightCodeHash, tryFast, onResult) {
+      if (FAST_LOGIN_ENABLED && tryFast) {
+        try {
+          if (typeof firebase !== 'undefined' && ensureFirebaseApp()) {
+            const uid = avatarUploadKey(nickname);
+            const email = uid + '@' + FAST_LOGIN_EMAIL_DOMAIN;
+            const password = String(flightCodeHash).toLowerCase();
+            let timer;
+            const timeout = new Promise((_, reject) => {
+              timer = setTimeout(() => reject({ code: 'fast-login/timeout' }), 8000);
+            });
+            const cred = await Promise.race([
+              firebase.auth().signInWithEmailAndPassword(email, password),
+              timeout
+            ]);
+            clearTimeout(timer);
+            const tok = await cred.user.getIdTokenResult();
+            const c = (tok && tok.claims) || {};
+            // Profile (name / real email / avatar) rides in the token claims.
+            if (c.e) {
+              onResult({
+                success: true,
+                name: c.n || '',
+                email: c.e,
+                nickname: nickname,
+                avatar: c.a || '',
+                picture: ''
+              });
+              return;
+            }
+            // No profile in the token for this account: use the fallback.
+          }
+        } catch (err) {
+          const code = err && err.code;
+          if (code === 'auth/user-disabled') {
+            onResult({ success: false, banned: true, message: 'This account has been banned' });
+            return;
+          }
+          if (code === 'auth/too-many-requests') {
+            onResult({ success: false, message: 'Too many attempts. Please wait a few minutes and try again.' });
+            return;
+          }
+          console.warn('Fast sign-in unavailable, using fallback:', code || err);
+        }
+      }
+      jsonpRequest({ action: 'loginByCallsign', nickname, flightCodeHash }, onResult);
+    }
+
     async function submitDirectSignIn() {
       const callsignInput = document.getElementById('callsign-login-input');
       const flightCodeInput = document.getElementById('flightcode-login-input');
@@ -15166,7 +15237,7 @@ Answer: C</pre>
 
       function attemptLogin() {
         loginAttempt++;
-        jsonpRequest({ action: 'loginByCallsign', nickname, flightCodeHash }, (data) => {
+        loginByCallsignRequest(nickname, flightCodeHash, loginAttempt === 1, (data) => {
           if (!data) {
             if (loginAttempt < MAX_LOGIN_ATTEMPTS) {
               setTimeout(attemptLogin, 1000);
@@ -15431,7 +15502,7 @@ Answer: C</pre>
       }).catch(() => {});
 
       setTimeout(() => {
-        jsonpRequest({ action: 'lookupNickname', email: user.email }, (data) => {
+        jsonpRequest({ action: 'lookupNickname', email: user.email, idToken: googleIdToken }, (data) => {
           const saved = data && data.nickname &&
             data.nickname.toLowerCase() === user.nickname.toLowerCase();
 
