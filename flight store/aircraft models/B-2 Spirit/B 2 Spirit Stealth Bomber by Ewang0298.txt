@@ -1,0 +1,44 @@
+Title: B 2 Spirit Stealth Bomber
+URL: http://sketchfab.com/3d-models/b-2-spirit-stealth-bomber-b28444db9c584692997590265ee83d00
+Author: https://sketchfab.com/Ewang0298
+
+Vertices: 586189
+Polygons: 1170336
+Animations: 0
+
+Download Date: 03/10/2026
+Download Format: GLTF
+Download Path: C:\Users\Nad\OneDrive\Documents\3d_Ripper_Pro_v109\Downloads\Ewang0298\01- B.2.Spirit.Stealth.Bomber\
+Download File: b28444db9c584692997590265ee83d00.gltf
+
+Textures: 30
+#1: 0fac82b0c36b494da39df273610c7de2_RGB_Glass_BaseColor.png
+#2: 1cf37e213ba24394897d42819321d715_N_Bomb_Bay_and_Landing_Gears_Normal.png
+#3: 2b62f5daea2c481d852bb570c4a0623d_RGB_Bomb_Bay_and_Landing_Gears_BaseColor.png
+#4: 2e9e1d4da4034be7bcf0a2e01057be9e_RGB_radalt-display.jpeg
+#5: 3686933c749d44e8a290675c20a64292_R_Bomb_Bay_and_Landing_Gears_Metallic.png
+#6: 3956a8d647364081a3c33ef3c611cb1e_R_Glass_Roughness.png
+#7: 40c74d74763e4dd2a8971095e646d39d_R_Glass_Metallic.png
+#8: 530196614e344615987bca852a35946c_RGB_Bomb_Bay_and_Landing_Gears_Emissive.png
+#9: 56ef079e6f9443ec9127f36e78822c6f_R_Bomber_Specular.png
+#10: 61984049e9c14ab2ab380ba4b007e90a_R_Bomber_Roughness.png
+#11: 75bf272b6d41481583681f782ab729bf_N_Cockpit_Normal.png
+#12: 7701bcef10524ac6b49826d97a888860_RGB_Bomber_BaseColor.png
+#13: 7968823274f9466c840722a4ce76aafb_RGB_Speed_Meter.jpeg
+#14: 80157be3d94340ea9d77801719da7b73_RGB_Bomber_Emissive.png
+#15: 8fb4b7830aaa4b4aae8190a432b06a97_RGB_Instruments_BaseColor.png
+#16: 92784278f71142f6af28ce022fdfb697_N_Bomber_Normal.png
+#17: 98215fb99bb0408180925dd1ed7f12fc_RGB_51-gVWl6c-L._AC_SY355_.jpeg
+#18: a24cc41ec714479b9d33a388e0984513_RGB_Cockpit_Emissive.png
+#19: a971c9b3bbad444a83fc3a1d1aa9e32d_A_Glass_Opacity.png
+#20: cc828da5c1c0402ab6c99fc989d37328_R_Glass_Specular.png
+#21: ce508464d0ad4448997696ffc8334e7a_N_Glass_Normal.png
+#22: ddb0b19ebb124fbdb8f0bab53b881312_R_Bomb_Bay_and_Landing_Gears_Roughness.png
+#23: de7ede51cb384c01bb66cf4aaa5a3fbf_N_Instruments_Normal.png
+#24: e1d4e8377eaf464d815e01553a2fefd6_R_Cockpit_Roughness.png
+#25: e8434286ce6e438f89c79b81113b17e5_R_Bomb_Bay_and_Landing_Gears_Specular.png
+#26: e8e91d4bee8a4461aad6bb593fd2cabe_RGB_Instruments_Emissive.png
+#27: ef32ca4aa9364320be08ac8b9b014950_R_Cockpit_Metallic.png
+#28: fcc6feebfd31447e98e8e961ce948c1a_RGB_Cockpit_BaseColor.png
+#29: fe66cab5f3364aadbefecd71a67a0f93_RGB_3300-10.jpeg
+#30: ffecc8fb8ce64a56a93716d999c7bd19_R_Bomber_Metallic.png
