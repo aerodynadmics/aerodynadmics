@@ -41998,63 +41998,94 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
 /* ---- Auto copy on highlight ----
    Whenever text is highlighted anywhere on the page, it is copied to the
    clipboard right away (no right click or long press needed). The highlight
-   stays visible. Set COPY_FROM_INPUTS to true to also copy text selected
-   inside input boxes and textareas (off by default so selecting text in a
-   box you are typing in does not overwrite what you copied earlier). */
+   stays visible. The site's normal toast notification says "Copied" (or
+   "Copy blocked" if the browser refused).
+   Settings:
+   - COPY_FROM_INPUTS: true also copies text selected inside input boxes and
+     textareas (off by default so selecting text in a box you are typing in
+     does not overwrite what you copied earlier).
+   - SHOW_NOTE: false hides the toast.
+   Listeners use the capture phase so other scripts on the page that stop
+   mouse events cannot block the copy. */
 (function () {
   var COPY_FROM_INPUTS = false;
-  var lastCopied = '';
+  var SHOW_NOTE = true;
   var timer = 0;
-
-  function selectionInsideField() {
-    var el = document.activeElement;
-    return !!(el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA'));
+  var mouseDown = false;
+  var lastText = '';
+  var lastTime = 0;
+  // Uses the site's own toast (same look, position and timing as the other
+  // notifications). If it is ever missing, a plain .wings-toast is made instead.
+  function note(msg) {
+    if (!SHOW_NOTE) return;
+    try {
+      if (typeof showWingsToast === 'function') { showWingsToast(msg); return; }
+    } catch (e) {}
+    var t = document.getElementById('wings-toast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'wings-toast';
+      t.className = 'wings-toast';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.classList.add('visible');
+    clearTimeout(t._hideTimer);
+    t._hideTimer = setTimeout(function () { t.classList.remove('visible'); }, 3200);
   }
 
-  function legacyCopy(text) {
-    var sel = window.getSelection();
-    var ranges = [];
-    for (var i = 0; i < sel.rangeCount; i++) ranges.push(sel.getRangeAt(i));
-    var ta = document.createElement('textarea');
-    ta.value = text;
-    ta.setAttribute('readonly', '');
-    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;';
-    document.body.appendChild(ta);
-    ta.select();
-    try { document.execCommand('copy'); } catch (e) {}
-    document.body.removeChild(ta);
-    // put the user's highlight back
-    sel.removeAllRanges();
-    for (var j = 0; j < ranges.length; j++) sel.addRange(ranges[j]);
+  function selectionIsInsideField() {
+    var el = document.activeElement;
+    if (!el || (el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA')) return false;
+    try { return el.selectionStart !== el.selectionEnd; } catch (e) { return true; }
+  }
+
+  function legacyCopy() {
+    // copies the current highlight directly, so the highlight stays visible
+    try { return document.execCommand('copy'); } catch (e) { return false; }
   }
 
   function copySelection() {
     var sel = window.getSelection();
-    if (!sel || sel.isCollapsed) { lastCopied = ''; return; }
-    if (!COPY_FROM_INPUTS && selectionInsideField()) return;
+    if (!sel || sel.isCollapsed) return;
+    if (!COPY_FROM_INPUTS && selectionIsInsideField()) return;
     var text = sel.toString().trim();
-    if (!text || text === lastCopied) return;
-    lastCopied = text;
+    if (!text) return;
+    // avoid a double copy when mouseup and selectionchange both fire for the same highlight
+    var now = Date.now();
+    if (text === lastText && now - lastTime < 700) return;
+    lastText = text;
+    lastTime = now;
+    function fail() { note('Copy blocked'); }
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).catch(function () { legacyCopy(text); });
+      navigator.clipboard.writeText(text).then(
+        function () { note('Copied'); },
+        function () { if (legacyCopy()) note('Copied'); else fail(); }
+      );
+    } else if (legacyCopy()) {
+      note('Copied');
     } else {
-      legacyCopy(text);
+      fail();
     }
   }
 
-  function schedule(delay) {
+  function later(delay) {
     clearTimeout(timer);
     timer = setTimeout(copySelection, delay);
   }
 
-  // Mouse: copy the moment the button is released (also covers double and triple click)
-  document.addEventListener('mouseup', function () { schedule(10); });
-  // Keyboard selection (Shift + arrows, Ctrl+A)
-  document.addEventListener('keyup', function (e) {
-    if (e.shiftKey || ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A'))) schedule(10);
+  document.addEventListener('mousedown', function () { mouseDown = true; }, true);
+  document.addEventListener('mouseup', function () {
+    mouseDown = false;
+    copySelection();
+  }, true);
+  window.addEventListener('blur', function () { mouseDown = false; });
+  // Covers keyboard selection (Shift + arrows, Ctrl+A in any key order) and
+  // phone selection handles. Waits until the highlight stops changing and the
+  // mouse button is up (mouse drags are handled by mouseup above).
+  document.addEventListener('selectionchange', function () {
+    if (!mouseDown) later(300);
   });
-  // Phones and tablets: selection is changed with drag handles, so wait until it settles
-  document.addEventListener('touchend', function () { schedule(350); }, { passive: true });
 })();
 </script>
 </body>
