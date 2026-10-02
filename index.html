@@ -41994,5 +41994,68 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   document.addEventListener('visibilitychange', syncQuizMusic);
 })();
 </script>
+<script>
+/* ---- Auto copy on highlight ----
+   Whenever text is highlighted anywhere on the page, it is copied to the
+   clipboard right away (no right click or long press needed). The highlight
+   stays visible. Set COPY_FROM_INPUTS to true to also copy text selected
+   inside input boxes and textareas (off by default so selecting text in a
+   box you are typing in does not overwrite what you copied earlier). */
+(function () {
+  var COPY_FROM_INPUTS = false;
+  var lastCopied = '';
+  var timer = 0;
+
+  function selectionInsideField() {
+    var el = document.activeElement;
+    return !!(el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA'));
+  }
+
+  function legacyCopy(text) {
+    var sel = window.getSelection();
+    var ranges = [];
+    for (var i = 0; i < sel.rangeCount; i++) ranges.push(sel.getRangeAt(i));
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    // put the user's highlight back
+    sel.removeAllRanges();
+    for (var j = 0; j < ranges.length; j++) sel.addRange(ranges[j]);
+  }
+
+  function copySelection() {
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed) { lastCopied = ''; return; }
+    if (!COPY_FROM_INPUTS && selectionInsideField()) return;
+    var text = sel.toString().trim();
+    if (!text || text === lastCopied) return;
+    lastCopied = text;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(function () { legacyCopy(text); });
+    } else {
+      legacyCopy(text);
+    }
+  }
+
+  function schedule(delay) {
+    clearTimeout(timer);
+    timer = setTimeout(copySelection, delay);
+  }
+
+  // Mouse: copy the moment the button is released (also covers double and triple click)
+  document.addEventListener('mouseup', function () { schedule(10); });
+  // Keyboard selection (Shift + arrows, Ctrl+A)
+  document.addEventListener('keyup', function (e) {
+    if (e.shiftKey || ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A'))) schedule(10);
+  });
+  // Phones and tablets: selection is changed with drag handles, so wait until it settles
+  document.addEventListener('touchend', function () { schedule(350); }, { passive: true });
+})();
+</script>
 </body>
 </html>
