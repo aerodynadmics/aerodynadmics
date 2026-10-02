@@ -1543,8 +1543,18 @@
   .cc-badge.pr-harmful { background: #e65a5a; color: #000; border: 1px solid #e65a5a; }
   .cc-badge.pr-other { background: var(--green); color: #000; border: 1px solid var(--green); }
   #admin-pr-detail-overlay .cc-admin-item-foot { justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+  #admin-pr-detail-overlay .cc-admin-item-locate,
   #admin-pr-detail-overlay .cc-admin-item-dismiss,
   #admin-pr-detail-overlay .cc-admin-item-resolve { font-size: 13px; padding: 10px 22px; }
+  #admin-pr-detail-overlay .cc-admin-item-foot .pr-btn-danger { background: #ff6b6b; border-color: #ff6b6b; color: #3a0d0d; }
+  #admin-pr-feedback-overlay { z-index: 1600; }
+  #admin-pr-feedback-overlay .pr-fb-disapprove { background: #ff6b6b; border-color: #ff6b6b; color: #3a0d0d; }
+  #admin-pr-feedback-overlay .pr-fb-question { margin: 6px 0 18px; font-size: 14px; line-height: 1.5; text-align: center; }
+  #admin-pr-feedback-overlay .cc-admin-item-foot { justify-content: center; gap: 12px; flex-wrap: wrap; }
+  #admin-pr-feedback-overlay .cc-admin-item-dismiss,
+  #admin-pr-feedback-overlay .cc-admin-item-resolve { font-size: 13px; padding: 10px 22px; }
+  .mod-alert-detail-title { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; color: var(--paper); text-align: center; margin: 0 0 12px; }
+  .mod-alert-detail-msg { font-family: 'Space Grotesk', sans-serif; font-size: 14px; line-height: 1.55; color: var(--paper); text-align: center; margin: 0 0 12px; white-space: pre-wrap; word-break: break-word; }
   #admin-pr-detail-overlay .pr-detail-label { margin: 0 0 4px; font-size: 11px; opacity: 0.65; text-transform: uppercase; letter-spacing: 0.04em; }
   #admin-pr-detail-overlay .pr-detail-text { margin: 0 0 12px; font-size: 13px; line-height: 1.5; word-break: break-word; }
   .cc-admin-items { display: flex; flex-direction: column; gap: 10px; margin-bottom: 6px; }
@@ -1559,17 +1569,23 @@
     background: transparent;
     cursor: pointer;
   }
-  @media (hover: hover) { .cc-admin-item:hover { border-color: var(--rivet); background: rgba(127,168,201,0.08); } }
+  @media (hover: hover) {
+    .cc-admin-item:hover { border-color: var(--accent); background: var(--accent); }
+    .cc-admin-item:hover .cc-admin-item-who,
+    .cc-admin-item:hover .cc-admin-item-who strong,
+    .cc-admin-item:hover .cc-admin-item-ts,
+    .cc-admin-item:hover .cc-admin-item-msg { color: var(--blueprint-dark); }
+  }
   /* List row only: the badge grows to match the height of the
      callsign/email + timestamp block beside it, instead of the small
      compact pill used in the detail pop-up header. */
   .cc-badge-list {
-    align-self: stretch;
+    align-self: center;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px;
-    padding: 0 22px;
+    font-size: 11px;
+    padding: 5px 13px;
   }
   .cc-admin-item-info {
     display: flex;
@@ -3834,10 +3850,12 @@
     transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   }
   @media (hover: hover) { .flight-alerts-btn:hover {
-    background: rgba(255,255,255,0.11);
-    border-color: var(--rivet);
+    color: var(--accent);
   } }
-  .flight-alerts-btn svg { width: 14px; height: 14px; }
+  @media (hover: hover) { .flight-alerts-btn:hover svg {
+    fill: var(--accent);
+  } }
+  .flight-alerts-btn svg { width: 14px; height: 14px; transition: fill 0.15s ease; }
   .flight-alerts-badge {
     position: absolute;
     top: -5px;
@@ -7703,8 +7721,8 @@
     border-radius: 999px;
     transition: color 0.15s ease, background 0.15s ease;
   }
-  @media (hover: hover) { .topbar-wings-balance-inner:hover { color: var(--accent); background: rgba(255,255,255,0.07); } }
-  .topbar-wings-balance-inner:focus-visible { outline: none; background: rgba(255,255,255,0.07); }
+  @media (hover: hover) { .topbar-wings-balance-inner:hover { color: var(--accent); } }
+  .topbar-wings-balance-inner:focus-visible { outline: none; }
   /* hidden while the Flight Store page is open (it shows the balance itself) */
   .wrap:has(#view-shop.visible) .topbar-wings-balance { display: none !important; }
   /* phones: the top bar is a tight bottom bar, no room for it */
@@ -11920,6 +11938,37 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
     </div>
   </div>
 
+  <!-- Confirm pop-up for "NOTIFY TERMS & PRIVACY UPDATE" (admin). -->
+  <div class="nick-modal-overlay" id="legal-send-confirm-overlay" style="z-index: 2300;" onclick="closeLegalSendConfirm()">
+    <div class="nick-modal" style="max-width: 380px;" onclick="event.stopPropagation();">
+      <div class="nick-modal-head">
+        <h3>Send Terms &amp; Privacy notice?</h3>
+      </div>
+      <div class="nick-modal-body" style="padding: 18px 18px 20px;">
+        <p class="mod-alert-detail-msg" style="text-align:left;">This sends a Flight Alert to <strong>ALL users</strong> saying the Terms and Conditions and Privacy Policy were updated.</p>
+        <p class="mod-alert-detail-msg" id="legal-send-last" style="text-align:left; color: var(--accent); font-size: 13px;"></p>
+        <p class="mod-alert-detail-msg" style="text-align:left; font-size: 12px; opacity: 0.75;">Press Send only once. Every send shows the alert again to everyone, even people who already dismissed it.</p>
+        <div class="mockadmin-editor-actions" style="margin-top:18px;">
+          <button type="button" class="mockadmin-save-btn" id="legal-send-cancel-btn" onclick="closeLegalSendConfirm()">CANCEL</button>
+          <button type="button" class="mockadmin-publish-btn" id="legal-send-ok-btn" onclick="confirmLegalSend()">SEND</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nick-modal-overlay" id="mod-alert-detail-overlay" style="z-index: 2100;" onclick="closeModAlertDetail()">
+    <div class="nick-modal" style="max-width: 360px;" onclick="event.stopPropagation();">
+      <div class="nick-modal-head">
+        <h3 id="mod-alert-detail-head">Notice</h3>
+      </div>
+      <div class="nick-modal-body" style="padding: 20px 18px;">
+        <p class="mod-alert-detail-title" id="mod-alert-detail-title"></p>
+        <p class="mod-alert-detail-msg" id="mod-alert-detail-msg"></p>
+        <p class="wings-alert-detail-time" id="mod-alert-detail-time"></p>
+      </div>
+    </div>
+  </div>
+
   <div class="nick-modal-overlay" id="wings-alert-delete-confirm-overlay" style="z-index: 2200;">
     <div class="nick-modal" style="max-width: 320px;">
       <div class="nick-modal-head">
@@ -13344,8 +13393,24 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         <span class="cc-admin-item-ts" id="pr-detail-ts"></span>
       </div>
       <div class="cc-admin-item-foot">
-        <button type="button" class="cc-admin-item-dismiss" id="pr-detail-dismiss-btn">DISMISS</button>
-        <button type="button" class="cc-admin-item-resolve" id="pr-detail-delete-btn">DELETE CONTENT</button>
+        <button type="button" class="cc-admin-item-dismiss" id="pr-detail-dismiss-btn">DELETE</button>
+        <button type="button" class="cc-admin-item-locate" id="pr-detail-locate-btn">LOCATE</button>
+        <button type="button" class="cc-admin-item-resolve pr-btn-danger" id="pr-detail-delete-btn">REMOVE POST</button>
+        <button type="button" class="cc-admin-item-resolve" id="pr-detail-alert-btn">ALERT</button>
+        <button type="button" class="cc-admin-item-resolve" id="pr-detail-feedback-btn">FEEDBACK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feedback pop-up: tells the REPORTER (via Flight Alerts) whether the
+       report was upheld. Opened from the FEEDBACK button above. -->
+  <div class="banned-list-overlay" id="admin-pr-feedback-overlay" onclick="closePrFeedback()">
+    <div class="mockadmin-card" style="max-width:420px;" onclick="event.stopPropagation();">
+      <h3 style="text-align:center;">Report Feedback</h3>
+      <p class="pr-fb-question" id="pr-fb-question"></p>
+      <div class="cc-admin-item-foot">
+        <button type="button" class="cc-admin-item-resolve pr-fb-disapprove" id="pr-fb-disapprove-btn">DISAPPROVE</button>
+        <button type="button" class="cc-admin-item-resolve" id="pr-fb-approve-btn">APPROVE</button>
       </div>
     </div>
   </div>
@@ -15634,6 +15699,7 @@ Answer: C</pre>
       loadCopilotData(user);
       loadFlightJoinRequests();
       loadWingsAlerts(user);
+      loadModAlerts(user);
       try { dmStart(user); } catch (e) { console.error(e); }
       try { loadLegalNotice(user); } catch (e) { console.error(e); }
       showNicknameList();
@@ -16231,8 +16297,11 @@ Answer: C</pre>
       document.getElementById('pr-detail-author').textContent = e.authorNickname || '(unknown)';
       document.getElementById('pr-detail-ts').textContent = when;
       document.getElementById('pr-detail-dismiss-btn').onclick = () => dismissPostReportEntry(key);
+      document.getElementById('pr-detail-locate-btn').onclick = () => locateReportedContent(e);
+      document.getElementById('pr-detail-feedback-btn').onclick = () => openPrFeedback(e);
+      document.getElementById('pr-detail-alert-btn').onclick = () => warnReportedUser(e);
       const delBtn = document.getElementById('pr-detail-delete-btn');
-      delBtn.textContent = 'DELETE ' + kindWord.toUpperCase();
+      delBtn.textContent = 'REMOVE ' + kindWord.toUpperCase();
       delBtn.onclick = () => deleteReportedContent(e);
       document.getElementById('admin-pr-detail-overlay').classList.add('visible');
     }
@@ -16243,7 +16312,7 @@ Answer: C</pre>
 
     async function dismissPostReportEntry(key) {
       if (!isAdminUser(currentChatUser)) return;
-      const confirmed = await adminConfirm('Dismiss this report? The content stays as it is.');
+      const confirmed = await adminConfirm('Delete this report? The content stays as it is.');
       if (!confirmed) return;
       try {
         ensureFirebaseApp();
@@ -16252,6 +16321,125 @@ Answer: C</pre>
       } catch (err) {
         console.error('Dismiss post report error:', err);
         adminAlert("Couldn't dismiss that report. Please try again.");
+      }
+    }
+
+
+    // ---- Moderation Flight Alerts (admin -> user) ----
+    // ALERT button: sends a warning to the REPORTED user.
+    // FEEDBACK button: tells the REPORTER whether their report was upheld.
+    // Both land in the person's Flight Alerts (modAlerts/<user>), same idea
+    // as the Wings alerts.
+    function prKindWord(e) {
+      return e.type === 'comment' ? 'comment' : (e.type === 'reply' ? 'reply' : 'post');
+    }
+
+    function prSnippet(e) {
+      const t = String(e.content || '').replace(/\s+/g, ' ').trim();
+      if (!t) return '';
+      return t.length > 80 ? t.slice(0, 80) + '\u2026' : t;
+    }
+
+    function pushModAlert(nickname, kind, title, message) {
+      if (!nickname || !chatConfigIsFilledIn()) return Promise.reject(new Error('no recipient'));
+      ensureFirebaseApp();
+      return modAlertsRef(nickname).push({
+        kind: kind,
+        title: title,
+        message: message,
+        ts: firebase.database.ServerValue.TIMESTAMP,
+        read: false
+      });
+    }
+
+    let prModSendBusy = false;
+
+    // LOCATE: opens the reported post in the comments popup. For a reported
+    // comment/reply it also unfolds the thread, scrolls to it and highlights it.
+    async function locateReportedContent(e) {
+      if (!isAdminUser(currentChatUser)) return;
+      if (typeof window.pfLocateReported !== 'function') {
+        adminAlert('The community feed is not ready yet. Please try again in a moment.');
+        return;
+      }
+      const isReply = e.type === 'reply' || e.type === 'comment';
+      const found = await window.pfLocateReported(e.postId, isReply ? e.replyId : null);
+      if (!found) adminAlert('Could not find it. The ' + prKindWord(e) + ' may have already been deleted.');
+    }
+
+    async function warnReportedUser(e) {
+      if (!isAdminUser(currentChatUser)) return;
+      const target = e.authorNickname;
+      if (!target) { adminAlert('This report has no author on file, so there is nobody to warn.'); return; }
+      if (prModSendBusy) return;
+      const word = prKindWord(e);
+      const latest = prAdminEntries.find((x) => x.key === e.key) || e;
+      const confirmed = await adminConfirm(latest.warnedAt
+        ? '\u26A0\uFE0F You already sent ' + target + ' a warning for this ' + word + ' on ' + new Date(latest.warnedAt).toLocaleString([], { hour12: false }) + '.\n\nSend another warning?'
+        : 'Send ' + target + ' a warning in their Flight Alerts about this ' + word + '?');
+      if (!confirmed) return;
+      prModSendBusy = true;
+      const snip = prSnippet(e);
+      const reason = PR_REASON_LABELS[e.reason] ? ' (' + PR_REASON_LABELS[e.reason] + ')' : '';
+      const message = 'Your ' + word + (snip ? ' "' + snip + '"' : '') + ' was reported' + reason + ' and reviewed by the admin team.\n\n'
+        + 'Please follow the community guidelines. Repeated violations may lead to removal of content or a ban.';
+      try {
+        await pushModAlert(target, 'warning', 'Warning from Admin', message);
+        try { await nsRef('postReports/' + e.key).update({ warnedAt: firebase.database.ServerValue.TIMESTAMP }); } catch (err2) { console.error('Mark warned error:', err2); }
+        showWingsToast('\u26A0\uFE0F Warning sent to ' + target);
+      } catch (err) {
+        console.error('Send warning error:', err);
+        adminAlert("Couldn't send that warning. Please try again.");
+      } finally {
+        prModSendBusy = false;
+      }
+    }
+
+    let prFeedbackEntry = null;
+
+    function openPrFeedback(e) {
+      if (!isAdminUser(currentChatUser)) return;
+      if (!e.reporterNickname) { adminAlert('This report has no reporter on file, so there is nobody to send feedback to.'); return; }
+      prFeedbackEntry = e;
+      const word = prKindWord(e);
+      document.getElementById('pr-fb-question').textContent = 'Does ' + e.reporterNickname + '\u2019s report on this ' + word + ' really violate the community guidelines?';
+      document.getElementById('pr-fb-approve-btn').onclick = () => sendPrFeedback(true);
+      document.getElementById('pr-fb-disapprove-btn').onclick = () => sendPrFeedback(false);
+      document.getElementById('admin-pr-feedback-overlay').classList.add('visible');
+    }
+
+    function closePrFeedback() {
+      document.getElementById('admin-pr-feedback-overlay').classList.remove('visible');
+      prFeedbackEntry = null;
+    }
+
+    async function sendPrFeedback(approved) {
+      const e = prFeedbackEntry;
+      if (!e || !isAdminUser(currentChatUser) || prModSendBusy) return;
+      const latest = prAdminEntries.find((x) => x.key === e.key) || e;
+      if (latest.feedbackAt) {
+        const prev = latest.feedbackResult === 'approved' ? 'Approved' : (latest.feedbackResult === 'disapproved' ? 'Disapproved' : 'feedback');
+        const again = await adminConfirm('\u26A0\uFE0F You already sent ' + e.reporterNickname + ' ' + prev + ' feedback on ' + new Date(latest.feedbackAt).toLocaleString([], { hour12: false }) + '.\n\nSend ' + (approved ? 'APPROVED' : 'DISAPPROVED') + ' feedback again?');
+        if (!again) return;
+      }
+      prModSendBusy = true;
+      const word = prKindWord(e);
+      const snip = prSnippet(e);
+      const ref = 'your report on the ' + word + (snip ? ' "' + snip + '"' : '');
+      const title = approved ? 'Report Approved' : 'Report Not Approved';
+      const message = approved
+        ? 'Thank you for helping keep the community safe. We reviewed ' + ref + ' and it does violate our community guidelines. We are now taking action against the reported ' + word + '.'
+        : 'Thank you for your report. We reviewed ' + ref + ' and it does not violate our community guidelines, so no action will be taken. We appreciate you looking out for the community.';
+      closePrFeedback();
+      try {
+        await pushModAlert(e.reporterNickname, approved ? 'report-approved' : 'report-disapproved', title, message);
+        try { await nsRef('postReports/' + e.key).update({ feedbackAt: firebase.database.ServerValue.TIMESTAMP, feedbackResult: approved ? 'approved' : 'disapproved' }); } catch (err2) { console.error('Mark feedback error:', err2); }
+        showWingsToast((approved ? '\u2705 Approval' : '\u274C Disapproval') + ' sent to ' + e.reporterNickname);
+      } catch (err) {
+        console.error('Send report feedback error:', err);
+        adminAlert("Couldn't send that feedback. Please try again.");
+      } finally {
+        prModSendBusy = false;
       }
     }
 
@@ -17036,6 +17224,8 @@ Answer: C</pre>
       // addressed, applied here too).
       if (wingsAlertsListenerRef) { try { wingsAlertsListenerRef.off('value'); } catch (e) {} wingsAlertsListenerRef = null; }
       myWingsAlerts = {};
+      if (modAlertsListenerRef) { try { modAlertsListenerRef.off('value'); } catch (e) {} modAlertsListenerRef = null; }
+      myModAlerts = {};
       try { stopLegalNotice(); } catch (e) {}
       try { dmStop(); } catch (e) {}
       // Reset so the next account's first wallet snapshot isn't compared
@@ -21211,12 +21401,26 @@ Answer: C</pre>
     let legalNoticeRead = { terms: false, privacy: false };
     let legalNoticeHint = false;
     function legalSeenKey() { return 'legalNoticeSeen:' + (currentChatUser ? presenceKey(currentChatUser.nickname) : ''); }
+    // "Seen" is saved on the ACCOUNT (Firebase legalSeen/<user>) so it follows
+    // the person across devices/browsers and survives cleared storage.
+    // localStorage is only a fast local copy.
+    let legalSeenRemote = null;
+    let legalSeenLoaded = false;
+    let legalSeenListenerRef = null;
+    function legalSeenRef(nickname) { return nsRef('legalSeen/' + presenceKey(nickname)); }
     function legalNoticeUnseen() {
       if (!legalNotice || !legalNotice.id || !currentChatUser) return false;
+      // Wait for the account's saved answer first so a notice that was
+      // already dismissed never flashes back (or locks the panel).
+      if (!legalSeenLoaded) return false;
+      if (legalSeenRemote !== null && String(legalSeenRemote) === String(legalNotice.id)) return false;
       try { return localStorage.getItem(legalSeenKey()) !== String(legalNotice.id); } catch (e) { return true; }
     }
     function stopLegalNotice() {
       if (legalNoticeListenerRef) { try { legalNoticeListenerRef.off('value'); } catch (e) {} legalNoticeListenerRef = null; }
+      if (legalSeenListenerRef) { try { legalSeenListenerRef.off('value'); } catch (e) {} legalSeenListenerRef = null; }
+      legalSeenRemote = null;
+      legalSeenLoaded = false;
       legalNotice = null;
       legalNoticeRead = { terms: false, privacy: false };
       legalNoticeHint = false;
@@ -21225,6 +21429,26 @@ Answer: C</pre>
       if (!chatConfigIsFilledIn() || !user || !user.nickname) return;
       stopLegalNotice();
       ensureFirebaseApp();
+      legalSeenListenerRef = legalSeenRef(user.nickname);
+      legalSeenListenerRef.on('value', (snap) => {
+        legalSeenRemote = snap.val();
+        legalSeenLoaded = true;
+        // This device already knew it was dismissed but the account didn't
+        // (e.g. dismissed before this fix): save it to the account too.
+        try {
+          if (legalNotice && legalNotice.id && String(legalSeenRemote) !== String(legalNotice.id)
+              && localStorage.getItem(legalSeenKey()) === String(legalNotice.id)) {
+            legalSeenRef(user.nickname).set(String(legalNotice.id)).catch(() => {});
+          }
+        } catch (e) {}
+        updateFlightAlertsBadge();
+        const ov = document.getElementById('flight-alerts-overlay');
+        if (ov && ov.classList.contains('visible')) renderFlightAlerts();
+      }, (err) => {
+        console.error('Legal seen load error:', err);
+        legalSeenLoaded = true;
+        updateFlightAlertsBadge();
+      });
       legalNoticeListenerRef = nsRef('platformSettings/legalUpdate');
       legalNoticeListenerRef.on('value', (snap) => {
         const v = snap.val();
@@ -21262,6 +21486,13 @@ Answer: C</pre>
       if (!legalNotice || !legalNotice.id) return;
       if (legalNoticeLocked()) { legalNudge(); return; }
       try { localStorage.setItem(legalSeenKey(), String(legalNotice.id)); } catch (e) {}
+      // Save on the account too, so it stays dismissed on every device.
+      legalSeenRemote = String(legalNotice.id);
+      try {
+        ensureFirebaseApp();
+        legalSeenRef(currentChatUser.nickname).set(String(legalNotice.id))
+          .catch((err) => console.error('Save legal seen error:', err));
+      } catch (err) { console.error('Save legal seen init error:', err); }
       legalNoticeHint = false;
       updateFlightAlertsBadge();
       renderFlightAlerts();
@@ -21297,23 +21528,85 @@ Answer: C</pre>
       legalWatchScroll(which);
     }
     // Admin: send every account the "Terms & Privacy updated" alert.
+    // Opens a confirm pop-up first (shows when it was last sent). The Send
+    // button locks as soon as it's pressed, so it can only go out once per
+    // confirmation.
+    let legalSendBusy = false;
+
     async function sendLegalUpdateNotice() {
       if (!isAdminUser(currentChatUser)) return;
-      const ok = await adminConfirm('Send ALL users a Flight Alert that the Terms and Conditions and Privacy Policy were updated?');
-      if (!ok) return;
+      const lastEl = document.getElementById('legal-send-last');
+      lastEl.textContent = '';
+      document.getElementById('legal-send-ok-btn').disabled = false;
+      document.getElementById('legal-send-ok-btn').textContent = 'SEND';
+      document.getElementById('legal-send-cancel-btn').disabled = false;
+      document.getElementById('legal-send-confirm-overlay').classList.add('visible');
+      try {
+        ensureFirebaseApp();
+        const snap = await nsRef('platformSettings/legalUpdate').once('value');
+        const v = snap.val();
+        if (v && v.ts) {
+          lastEl.textContent = '\u26A0\uFE0F Already sent on ' + new Date(v.ts).toLocaleString([], { hour12: false }) + '. Sending again will notify everyone again.';
+        }
+      } catch (err) {
+        console.error('Read last legal notice error:', err);
+      }
+    }
+
+    function closeLegalSendConfirm() {
+      if (legalSendBusy) return;
+      document.getElementById('legal-send-confirm-overlay').classList.remove('visible');
+    }
+
+    async function confirmLegalSend() {
+      if (legalSendBusy || !isAdminUser(currentChatUser)) return;
+      legalSendBusy = true;
+      const okBtn = document.getElementById('legal-send-ok-btn');
+      const cancelBtn = document.getElementById('legal-send-cancel-btn');
+      okBtn.disabled = true;
+      cancelBtn.disabled = true;
+      okBtn.textContent = 'SENDING\u2026';
       try {
         ensureFirebaseApp();
         const id = nsRef('platformSettings').push().key;
         await nsRef('platformSettings/legalUpdate').set({ id: id, ts: firebase.database.ServerValue.TIMESTAMP });
+        legalSendBusy = false;
+        document.getElementById('legal-send-confirm-overlay').classList.remove('visible');
         showWingsToast('\uD83D\uDCE2 Terms & Privacy update sent to all users');
       } catch (err) {
         console.error('Send legal notice error:', err);
+        legalSendBusy = false;
+        okBtn.disabled = false;
+        cancelBtn.disabled = false;
+        okBtn.textContent = 'SEND';
         adminAlert('Could not send the notice. Please try again.');
       }
     }
 
     function wingsAlertsRef(nickname) {
       return nsRef('wingsAlerts/' + presenceKey(nickname));
+    }
+
+    // Moderation alerts (admin warnings + report feedback), per account.
+    function modAlertsRef(nickname) {
+      return nsRef('modAlerts/' + presenceKey(nickname));
+    }
+
+    function loadModAlerts(user) {
+      if (!chatConfigIsFilledIn() || !user || !user.nickname) return;
+      try {
+        ensureFirebaseApp();
+        if (modAlertsListenerRef) { try { modAlertsListenerRef.off('value'); } catch (e) {} }
+        modAlertsListenerRef = modAlertsRef(user.nickname);
+        modAlertsListenerRef.on('value', (snap) => {
+          myModAlerts = snap.val() || {};
+          updateFlightAlertsBadge();
+          const overlay = document.getElementById('flight-alerts-overlay');
+          if (overlay && overlay.classList.contains('visible')) renderFlightAlerts();
+        }, (err) => console.error('Mod alerts load error:', err));
+      } catch (err) {
+        console.error('Mod alerts init error:', err);
+      }
     }
 
     // Subscribes the signed-in account to its own Wings alerts (pushed by
@@ -25485,6 +25778,8 @@ Answer: C</pre>
     // was fixed to be per-account.
     let myWingsAlerts = {};
     let wingsAlertsListenerRef = null;
+    let myModAlerts = {};
+    let modAlertsListenerRef = null;
     function setNeedsFlightCode(value) {
       currentUserNeedsFlightCode = !!value;
       updateFlightAlertsBadge();
@@ -25736,7 +26031,7 @@ Answer: C</pre>
     function updateFlightAlertsBadge() {
       const badge = document.getElementById('flight-alerts-badge');
       if (!badge) return;
-      const unreadWingsCount = Object.values(myWingsAlerts || {}).filter(a => a && !a.read).length;
+      const unreadWingsCount = Object.values(myWingsAlerts || {}).filter(a => a && !a.read).length + Object.values(myModAlerts || {}).filter(a => a && !a.read).length;
       const count = Object.keys(myIncomingRequests || {}).length + Object.keys(myIncomingCopilotRequests || {}).length + incomingJoinRequests().length + (currentUserNeedsFlightCode ? 1 : 0) + (legalNoticeLocked() ? 1 : 0) + unreadWingsCount;
       if (count > 0) {
         badge.textContent = count > 9 ? '9+' : String(count);
@@ -25838,6 +26133,25 @@ Answer: C</pre>
         `;
       }).join('');
 
+      // Moderation alerts (admin warning / report feedback), newest first.
+      const modKeys = Object.keys(myModAlerts || {}).sort((a, b) => ((myModAlerts[b] && myModAlerts[b].ts) || 0) - ((myModAlerts[a] && myModAlerts[a].ts) || 0));
+      const modRowsHtml = modKeys.map((key) => {
+        const entry = myModAlerts[key] || {};
+        const icon = entry.kind === 'warning' ? '\u26A0\uFE0F' : (entry.kind === 'report-approved' ? '\u2705' : '\uD83D\uDCCB');
+        const keyAttr = escapeHtml(key).replace(/'/g, "\\'");
+        const unreadClass = entry.read ? '' : ' unread';
+        return `
+          <div class="flight-alert-row wings-alert-row${unreadClass}" onclick="openModAlertDetail('${keyAttr}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openModAlertDetail('${keyAttr}');}">
+            <span class="avatar-circle">${icon}</span>
+            <div class="flight-alert-info">
+              <span class="flight-alert-name">${escapeHtml(entry.title || 'Notice')}</span>
+              <span class="flight-alert-sub">Tap to view details</span>
+            </div>
+            <button type="button" class="wings-alert-delete-btn" aria-label="Delete notification" title="Delete notification" onclick="event.stopPropagation(); deleteModAlert('${keyAttr}');">&times;</button>
+          </div>
+        `;
+      }).join('');
+
       // Soul asking to join a private flight this soul is Flight Engineer of.
       const joinRowsHtml = incomingJoinRequests().map((r) => `
           <div class="flight-alert-row">
@@ -25871,7 +26185,7 @@ Answer: C</pre>
       const flightAlertsClose = document.querySelector('#flight-alerts-overlay .nick-modal-close');
       if (flightAlertsClose) flightAlertsClose.classList.toggle('legal-locked', legalLocked);
 
-      const allRows = flightCodeRow + legalRow + joinRowsHtml + copilotRowsHtml + crewmateRowsHtml + wingsRowsHtml;
+      const allRows = flightCodeRow + legalRow + modRowsHtml + joinRowsHtml + copilotRowsHtml + crewmateRowsHtml + wingsRowsHtml;
       body.innerHTML = allRows || '<div class="flight-alerts-empty">No Pending Flight Alerts</div>';
     }
 
@@ -25882,9 +26196,18 @@ Answer: C</pre>
     // wings-alert-delete-confirm-overlay) instead of the native browser
     // confirm() dialog.
     let pendingWingsAlertDeleteKey = null;
+    let pendingAlertDeleteIsMod = false;
+
+    function deleteModAlert(key) {
+      if (!currentChatUser || !currentChatUser.nickname) return;
+      pendingAlertDeleteIsMod = true;
+      pendingWingsAlertDeleteKey = key;
+      document.getElementById('wings-alert-delete-confirm-overlay').classList.add('visible');
+    }
 
     function deleteWingsAlert(key) {
       if (!currentChatUser || !currentChatUser.nickname) return;
+      pendingAlertDeleteIsMod = false;
       pendingWingsAlertDeleteKey = key;
       document.getElementById('wings-alert-delete-confirm-overlay').classList.add('visible');
     }
@@ -25897,11 +26220,12 @@ Answer: C</pre>
 
     function confirmDeleteWingsAlert() {
       const key = pendingWingsAlertDeleteKey;
+      const isMod = pendingAlertDeleteIsMod;
       cancelDeleteWingsAlert();
       if (!key || !currentChatUser || !currentChatUser.nickname) return;
       try {
         ensureFirebaseApp();
-        wingsAlertsRef(currentChatUser.nickname).child(key).remove()
+        (isMod ? modAlertsRef : wingsAlertsRef)(currentChatUser.nickname).child(key).remove()
           .catch((err) => console.error('Delete wings alert error:', err));
       } catch (err) {
         console.error('Delete wings alert init error:', err);
@@ -25937,6 +26261,31 @@ Answer: C</pre>
 
     function closeWingsAlertDetail() {
       const overlay = document.getElementById('wings-alert-detail-overlay');
+      if (overlay) overlay.classList.remove('visible');
+    }
+
+    function openModAlertDetail(key) {
+      const entry = myModAlerts && myModAlerts[key];
+      if (!entry) return;
+      const when = entry.ts ? new Date(entry.ts).toLocaleString([], { hour12: false }) : '';
+      document.getElementById('mod-alert-detail-head').textContent = entry.kind === 'warning' ? 'Warning' : 'Report Update';
+      document.getElementById('mod-alert-detail-title').textContent = entry.title || 'Notice';
+      document.getElementById('mod-alert-detail-msg').textContent = entry.message || '';
+      document.getElementById('mod-alert-detail-time').textContent = when;
+      document.getElementById('mod-alert-detail-overlay').classList.add('visible');
+      if (!entry.read && currentChatUser && currentChatUser.nickname) {
+        try {
+          ensureFirebaseApp();
+          modAlertsRef(currentChatUser.nickname).child(key).update({ read: true })
+            .catch((err) => console.error('Mark mod alert read error:', err));
+        } catch (err) {
+          console.error('Mark mod alert read init error:', err);
+        }
+      }
+    }
+
+    function closeModAlertDetail() {
+      const overlay = document.getElementById('mod-alert-detail-overlay');
       if (overlay) overlay.classList.remove('visible');
     }
 
@@ -39693,6 +40042,8 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   html.gc-connected .pfr-overlay, html.gc-connected .pfr-overlay * { pointer-events: auto !important; cursor: auto !important; }
   html.gc-connected .pfr-overlay button:not(:disabled) { cursor: pointer !important; }
   html.gc-connected .pfr-overlay textarea { cursor: text !important; }
+  .pf-reply > .pf-reply-main > .pf-body { transition: color 0.6s ease; }
+  .pf-reply.pf-locate-flash > .pf-reply-main > .pf-body { color: var(--accent); }
 </style>
 <script>
 (function () {
@@ -39788,11 +40139,11 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
       : '';
     const showLine = !!chHtml && depth <= 1;
     if (r.deleted) {
-      return '<div class="pf-reply"><div class="pf-reply-main pf-del' + (showLine ? ' has-kids' : '') + '"><p class="pf-body pf-deleted">deleted ' + (depth === 0 ? 'comment' : 'reply') + '</p>' +
+      return '<div class="pf-reply" data-rid="' + escapeHtml(rid) + '"><div class="pf-reply-main pf-del' + (showLine ? ' has-kids' : '') + '"><p class="pf-body pf-deleted">deleted ' + (depth === 0 ? 'comment' : 'reply') + '</p>' +
         (toggleBtn ? '<div class="pf-actions pf-reply-actions">' + toggleBtn + '</div>' : '') + '</div>' + chHtml + '</div>';
     }
     const replyBtn = isMine ? '' : '<button class="pf-link" title="' + (replyOpen[rKey] ? 'Cancel' : 'Reply') + '" aria-label="' + (replyOpen[rKey] ? 'Cancel' : 'Reply') + '" onclick="pfReplyTo(\'' + pid + '\',\'' + rid + '\')">' + (replyOpen[rKey] ? '&#10005;' : '&#8617;') + '</button>';
-    return '<div class="pf-reply"><div class="pf-reply-main' + (showLine ? ' has-kids' : '') + '">' + metaHtml(r, replyBtn + toggleBtn + del) + '<p class="pf-body">' + bodyHtml + '</p>' +
+    return '<div class="pf-reply" data-rid="' + escapeHtml(rid) + '"><div class="pf-reply-main' + (showLine ? ' has-kids' : '') + '">' + metaHtml(r, replyBtn + toggleBtn + del) + '<p class="pf-body">' + bodyHtml + '</p>' +
       form + '</div>' + chHtml + '</div>';
   }
 
@@ -39979,8 +40330,9 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   // Re-measure everywhere once the variable font has actually loaded.
   if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', () => window.lockBreatheWidths(document.body));
 
+  const locatedPosts = {};
   window.pfOpenComments = (id) => {
-    const p = posts[id]; if (!p) return;
+    const p = posts[id] || locatedPosts[id]; if (!p) return;
     if (popupId) pfCloseComments();
     const old = $('pfc-overlay'); if (old) old.remove();
     popupId = id; popupCache = p; popupLoaded = false;
@@ -40008,6 +40360,45 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
       popupLoaded = true; renderPopup();
     }, (err) => { console.error('Replies load error:', err); popupLoaded = true; renderPopup(); });
     renderPopup();
+  };
+
+  // Admin "LOCATE" from Post Reports. Resolves true if the post (and reply, if
+  // given) still exists and was opened, false if it is gone.
+  window.pfLocateReported = async (postId, replyId) => {
+    if (!postId) return false;
+    try {
+      ensureFirebaseApp();
+      if (replyId) {
+        const rsnap = await nsRef('postReplies/' + postId + '/' + replyId).once('value');
+        if (!rsnap.val()) return false;
+      }
+      if (!posts[postId]) {
+        const snap = await nsRef('posts/' + postId).once('value');
+        const v = snap.val();
+        if (!v) return false;
+        locatedPosts[postId] = v;
+      }
+      window.pfOpenComments(postId);
+      if (!replyId) return true;
+      for (let i = 0; i < 50 && !(popupId === postId && popupLoaded); i++) await new Promise((r) => setTimeout(r, 100));
+      const rs = replies[postId] || {};
+      if (!rs[replyId]) return false;
+      // Unfold every comment above the reported one so it is on screen.
+      let cur = rs[replyId].parentId, guard = 0;
+      while (cur && rs[cur] && guard++ < 100) { delete collapsed[postId + '/' + cur]; cur = rs[cur].parentId; }
+      renderPopup();
+      const body = $('pfc-body');
+      const el = body && body.querySelector('.pf-reply[data-rid="' + String(replyId).replace(/"/g, '') + '"]');
+      if (el) {
+        el.scrollIntoView({ block: 'center' });
+        el.classList.add('pf-locate-flash');
+        setTimeout(() => el.classList.remove('pf-locate-flash'), 1500);
+      }
+      return true;
+    } catch (err) {
+      console.error('Locate reported content error:', err);
+      return false;
+    }
   };
 
   function pfFoldAllReplies(id) {
