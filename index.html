@@ -7849,6 +7849,17 @@
   #quiz-header .site-title-row h1 { justify-self: start; }
   #view-mock-exam .site-title-row .mock-exam-settings-btn:last-child,
   #quiz-header .site-title-row .mock-exam-settings-btn:last-child { justify-self: end; }
+  /* Quiz music mute button: same look as the Flappy Plane game's sound button
+     (40px dark translucent circle, white speaker emoji). Sits at the far right of
+     the quiz title row and only shows while a quiz is being played. */
+  #quiz-music-btn {
+    grid-column: 3; justify-self: end; align-items: center; justify-content: center;
+    width: 40px; height: 40px; padding: 0; margin: -3px 0; border: 0; border-radius: 50%;
+    background: rgba(0,0,0,0.38); color: #fff; font-size: 20px; line-height: 40px; text-align: center;
+    cursor: pointer; -webkit-tap-highlight-color: transparent; user-select: none; flex-shrink: 0;
+  }
+  #quiz-music-btn:hover { background: rgba(0,0,0,0.55); }
+  #quiz-music-btn:active { transform: scale(0.94); }
   /* Controller icon shares the gear's bare-icon look; tinted accent while
      Game Mode is on, green once a controller is actually connected. */
   .game-mode-header-btn { font-size: 17px; }
@@ -12851,6 +12862,7 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
           <button type="button" class="mock-exam-settings-btn game-mode-header-btn" onclick="openGameModePopup()" aria-label="Game Mode (Bluetooth Controller)" title="Game Mode (Bluetooth Controller)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="6" x2="10" y1="11" y2="11"/><line x1="8" x2="8" y1="9" y2="13"/><line x1="15" x2="15.01" y1="12" y2="12"/><line x1="18" x2="18.01" y1="10" y2="10"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.152A4 4 0 0 0 17.32 5z"/></svg>
           </button>
+          <button type="button" id="quiz-music-btn" aria-label="Toggle quiz music" title="Sound on" style="display:none;">&#128266;</button>
           <button type="button" class="mock-exam-settings-btn" onclick="openQuizRandomizeSettingsModal()" aria-label="Quiz Settings" title="Quiz Settings">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           </button>
@@ -20982,8 +20994,8 @@ Answer: C</pre>
         { id: 'moire', name: 'Moiré', priceWings: 200, cssClass: 'nick-moire', tier: 'Sonic' }
       ],
       models: [
-        { id: 'mig-21', name: 'MiG-21', priceWings: 1111, imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg/640px-Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg', tier: 'Supersonic', modelSrc: 'MiG_Project_1.42/MiG_Project_1.42.gltf' },
-        { id: 'f22', name: 'F-22 Raptor', priceWings: 1500, imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Lockheed_Martin_F-22A_Raptor_JSOH.jpg?width=640', tier: 'Supersonic', modelSrc: 'F22/F22.gltf' }
+        { id: 'mig-21', name: 'MiG-21', priceWings: 1111, imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg/640px-Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg', tier: 'Supersonic', modelSrc: 'flight%20store/aircraft%20models/MiG-21/MiG_Project_1.42.gltf' },
+        { id: 'f22', name: 'F-22 Raptor', priceWings: 1500, imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Lockheed_Martin_F-22A_Raptor_JSOH.jpg?width=640', tier: 'Supersonic', modelSrc: 'flight%20store/aircraft%20models/F-22/F22.gltf' }
       ]
     };
 
@@ -36320,7 +36332,7 @@ Answer: C</pre>
       const titleEl = document.getElementById('mig-viewer-title');
       const item = (SHOP_ITEMS.models || []).find((i) => i.id === itemId);
       if (currentViewerItemId !== itemId) {
-        model.setAttribute('src', (item && item.modelSrc) || 'MiG_Project_1.42/MiG_Project_1.42.gltf');
+        model.setAttribute('src', (item && item.modelSrc) || 'flight%20store/aircraft%20models/MiG-21/MiG_Project_1.42.gltf');
         currentViewerItemId = itemId;
       }
       migModelLoaded = true;
@@ -41203,6 +41215,72 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     schedule();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+</script>
+<script>
+/* ---- Quiz background music ----
+   Loops "quiz/sound effects/quiz bg music.wav" while a quiz is being played.
+   Stops (and rewinds) on the results screen, when leaving the quiz, or when
+   the quiz view is hidden; pauses while the browser tab is in the background.
+   The round speaker button on the quiz title row mutes/unmutes it (remembered). */
+(function () {
+  var MUSIC_SRC = 'quiz/sound%20effects/quiz%20bg%20music.wav';
+  var VOLUME = 0.3;
+  var audio = null;
+  var muted = false;
+  try { muted = localStorage.getItem('quizMusicMuted') === '1'; } catch (e) {}
+  var btn = document.getElementById('quiz-music-btn');
+
+  function paintBtn() {
+    if (!btn) return;
+    btn.textContent = muted ? '\uD83D\uDD07' : '\uD83D\uDD0A';
+    btn.title = muted ? 'Sound off' : 'Sound on';
+  }
+  paintBtn();
+
+  function getAudio() {
+    if (!audio) {
+      audio = new Audio(MUSIC_SRC);
+      audio.loop = true;
+      audio.preload = 'auto';
+      audio.volume = VOLUME;
+    }
+    return audio;
+  }
+
+  function quizIsBeingPlayed() {
+    var area = document.getElementById('quiz-play-area');
+    // offsetParent is null when the element or any ancestor is display:none,
+    // so this is false whenever the quiz tab itself is hidden too.
+    return !!(area && area.offsetParent !== null);
+  }
+
+  function syncQuizMusic() {
+    var playing = quizIsBeingPlayed();
+    if (btn) btn.style.display = playing ? 'inline-flex' : 'none';
+    var shouldPlay = playing && !muted && !document.hidden;
+    if (shouldPlay) {
+      var a = getAudio();
+      if (a.paused) { var p = a.play(); if (p && p.catch) p.catch(function () {}); }
+    } else if (audio && !audio.paused) {
+      audio.pause();
+    }
+    // Fully leaving the quiz (not just muting / a hidden browser tab) restarts the track next time.
+    if (audio && !playing && audio.currentTime > 0) audio.currentTime = 0;
+  }
+
+  if (btn) {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      muted = !muted;
+      try { localStorage.setItem('quizMusicMuted', muted ? '1' : '0'); } catch (err) {}
+      paintBtn();
+      syncQuizMusic();
+    });
+  }
+
+  setInterval(syncQuizMusic, 400);
+  document.addEventListener('visibilitychange', syncQuizMusic);
 })();
 </script>
 </body>
