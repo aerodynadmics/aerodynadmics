@@ -5288,6 +5288,12 @@
     color: #dcebf7;
     text-align: justify;
   }
+  /* All facts share one grid cell with hidden copies of the longest ones, so the
+     box is always as tall as the tallest fact and nothing moves between facts.
+     Pure CSS: no extra measuring while the page fits itself to the screen. */
+  #trivia-stack { display: grid; }
+  #trivia-stack > p { grid-area: 1 / 1; }
+  #trivia-stack > p.ts-ghost { visibility: hidden; pointer-events: none; user-select: none; }
   .trivia-next-btn {
     display: inline-flex;
     align-items: center;
@@ -10531,7 +10537,7 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
      script at the end of the page. */
   .topbar-logo-btn {
     overflow: hidden;
-    transition: max-width 0.7s cubic-bezier(.45, 0, .2, 1), margin-right 0.7s cubic-bezier(.45, 0, .2, 1), transform 0.15s ease, filter 0.15s ease;
+    transition: transform 0.15s ease, filter 0.15s ease;
   }
   .topbar-logo-btn.logo-instant { transition: none !important; }
   .topbar-logo-flight {
@@ -13301,7 +13307,7 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
 
       <div class="trivia-card" id="trivia-card">
         <span class="trivia-label">DID YOU KNOW? <span id="trivia-count"></span></span>
-        <p id="trivia-text"></p>
+        <div id="trivia-stack"><p id="trivia-text"></p></div>
         <button type="button" class="trivia-next-btn" onclick="nextTrivia()">NOW I KNOW!</button>
       </div>
 
@@ -43142,35 +43148,113 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     about.style.zoom = String(z);
     return about.scrollHeight <= about.clientHeight + 1;
   }
+  (function buildTriviaStack() {
+    var stack = document.getElementById('trivia-stack'), facts = window.triviaFacts || [];
+    if (!stack || !facts.length) return;
+    var idx = facts.map(function (f, i) { return i; })
+      .sort(function (a, b) { return facts[b].length - facts[a].length; })
+      .slice(0, 16);
+    if (idx.indexOf(facts.length - 1) === -1) idx.push(facts.length - 1); // the special last fact
+    idx.forEach(function (i) {
+      var g = document.createElement('p');
+      g.className = 'ts-ghost'; g.setAttribute('aria-hidden', 'true');
+      g.textContent = facts[i];
+      stack.appendChild(g);
+    });
+  })();
+  /* Finds the biggest zoom at which the About page still fits the screen. It used
+     to bisect (about 9 layout passes). Now it measures the real content height at
+     the current zoom and jumps to the zoom where that height would exactly fill the
+     screen, repeating until it settles (usually 3-4 layout passes). */
+  function contentScreenHeight() {
+    var top = about.getBoundingClientRect().top, bottom = top;
+    for (var c = about.firstElementChild; c; c = c.nextElementSibling) {
+      if (!c.getClientRects().length) continue;
+      var pos = getComputedStyle(c).position;
+      if (pos === 'fixed' || pos === 'absolute') continue;
+      var b = c.getBoundingClientRect().bottom;
+      if (b > bottom) bottom = b;
+    }
+    return bottom - top;
+  }
+  function searchZoom() {
+    var z = 1, best = 0, worst = MAX + 1;
+    for (var i = 0; i < 6; i++) {
+      about.style.zoom = String(z);
+      var fit = about.scrollHeight <= about.clientHeight + 1;
+      var avail = about.getBoundingClientRect().height, H = contentScreenHeight();
+      var t = H > 0 ? z * avail / H : z;
+      t = Math.max(MIN, Math.min(MAX, t));
+      if (fit) {
+        if (z > best) best = z;
+        if (t <= z * 1.004) break;           // fits and cannot grow noticeably
+        z = Math.min(t, worst * 0.999);
+      } else {
+        if (z <= MIN) return MIN;            // even the smallest zoom overflows
+        if (z < worst) worst = z;
+        z = Math.max(MIN, Math.min(t * 0.998, z * 0.998));
+      }
+      if (best && z <= best) break;
+    }
+    if (best) return best;
+    // rare: the estimate never found a size that fits, fall back to bisection
+    var lo = MIN, hi = Math.min(worst, MAX);
+    for (var j = 0; j < 7; j++) { var mid = (lo + hi) / 2; if (fits(mid)) lo = mid; else hi = mid; }
+    return lo;
+  }
+  /* The result is remembered in this browser (per window size / layout), so the
+     very first opening of About in later visits needs no fitting at all. */
+  var STORE = 'aboutFitZoom.v1';
+  function loadStore() { try { return JSON.parse(localStorage.getItem(STORE) || '{}') || {}; } catch (e) { return {}; } }
+  function saveStore(sig, z) {
+    try {
+      var m = loadStore(); m[sig] = z;
+      var ks = Object.keys(m); if (ks.length > 8) delete m[ks[0]];
+      localStorage.setItem(STORE, JSON.stringify(m));
+    } catch (e) {}
+  }
+  function fitSig() {
+    var tp = document.getElementById('trivia-text');
+    return fitKey() + '|' + (about.textContent.length - (tp ? tp.textContent.length : 0));
+  }
   var lastKey = '';
   function fitKey() {
-    var wrap = about.parentNode, tr = document.getElementById('trivia-text'), note = about.querySelector('.timer-info-note');
-    return [wrap.clientWidth, wrap.clientHeight, tr ? tr.textContent : '', note ? note.className : ''].join('|');
+    var wrap = about.parentNode, note = about.querySelector('.timer-info-note');
+    return [wrap.clientWidth, wrap.clientHeight, note ? note.className : ''].join('|');
   }
   function fitAboutToScreen() {
     if (busy) return;
-    document.documentElement.classList.toggle('about-open', about.classList.contains('visible'));
-    // Already fitted for exactly this window size and content: nothing to redo
-    // (avoids a second round of layout passes in the middle of the logo flight).
-    if (about.classList.contains('visible') && mq.matches && about.style.zoom && fitKey() === lastKey) {
+    var vis = about.classList.contains('visible');
+    document.documentElement.classList.toggle('about-open', vis);
+    if (!vis) {
+      // Leaving About: keep the zoom we already worked out so that opening it
+      // again does not repeat the (slow) fitting passes. Phones never use zoom.
+      about.classList.remove('fit-measuring');
+      if (!mq.matches) { about.style.zoom = ''; lastKey = ''; }
+      return;
+    }
+    // Already fitted for exactly this window size and content: nothing to redo.
+    if (mq.matches && about.style.zoom && fitKey() === lastKey) {
       window.dispatchEvent(new Event('about-fit'));
       return;
     }
     busy = true;
     try {
-      about.style.zoom = '';
       about.classList.remove('fit-measuring');
-      if (!about.classList.contains('visible') || !mq.matches) return;
+      if (!mq.matches) { about.style.zoom = ''; lastKey = ''; return; }
+      var sig = fitSig(), saved = loadStore()[sig], z = 0;
       about.classList.add('fit-measuring');
-      var lo = MIN, hi = MAX;
-      if (fits(hi)) { lo = hi; }
-      else {
-        for (var i = 0; i < 7; i++) {
-          var mid = (lo + hi) / 2;
-          if (fits(mid)) lo = mid; else hi = mid;
-        }
+      if (saved >= MIN && saved <= MAX) {
+        // this browser already worked out the zoom for this window size: just check it still fits
+        about.style.zoom = String(saved);
+        if (about.scrollHeight <= about.clientHeight + 1) z = saved;
       }
-      about.style.zoom = String(lo);
+      if (!z) {
+        about.style.zoom = '';
+        z = searchZoom();
+        saveStore(sig, z);
+      }
+      about.style.zoom = String(z);
       about.classList.remove('fit-measuring');
       lastKey = fitKey();
     } finally { busy = false; }
@@ -43187,12 +43271,10 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   new MutationObserver(syncRootClass).observe(about, { attributes: true, attributeFilter: ['class'] });
   syncRootClass();
   new MutationObserver(queueFit).observe(about, { attributes: true, attributeFilter: ['class'] });
-  var trivia = document.getElementById('trivia-card');
-  if (trivia) new MutationObserver(queueFit).observe(trivia, { childList: true, subtree: true, characterData: true });
   var note = about.querySelector('.timer-info-note');
   if (note) new MutationObserver(queueFit).observe(note, { attributes: true, attributeFilter: ['class'] });
   window.addEventListener('resize', queueFit);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(queueFit);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { lastKey = ''; queueFit(); });
   queueFit();
 })();
 </script>
@@ -43215,7 +43297,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   var DUR = 800;
   var EASE = 'cubic-bezier(.45, 0, .15, 1)';
   var GAP = 12; // .top-bar gap
-  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var reduce = true; // animation turned off: the logo / icons jump straight to their final place
   var cache = null, fl = null, away = null;
 
   function px(n) { return n + 'px'; }
@@ -43369,7 +43451,6 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     cancelSlide();
     killFlight();
     if (window.__fitAbout) window.__fitAbout();
-    snap();
     setAway(true, true);               // final layout straight away
     if (!reduce) slide(before);        // icons glide from their old spots
     if (reduce || !cache) return;
@@ -43404,9 +43485,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   }
 
   new MutationObserver(sync).observe(about, { attributes: true, attributeFilter: ['class'] });
-  window.addEventListener('about-fit', snap);
-  window.addEventListener('resize', function () { requestAnimationFrame(function () { requestAnimationFrame(snap); }); });
-  ['pointerdown', 'click', 'keydown'].forEach(function (ev) { document.addEventListener(ev, snap, true); });
+  // (animation is off, so no title snapshots are needed on every click / resize)
   sync();
 })();
 </script>
