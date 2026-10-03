@@ -22611,8 +22611,8 @@ Answer: C</pre>
     // at MAX_EQUIPPED_MODELS long-term; EQUIPPED_MODELS_AVAILABLE is how
     // many of those slots are actually open right now (raise this, not
     // the max, when more slots unlock).
-    const MAX_EQUIPPED_MODELS = 4;
-    const EQUIPPED_MODELS_AVAILABLE = 2;
+    const MAX_EQUIPPED_MODELS = 5;
+    const EQUIPPED_MODELS_AVAILABLE = 5;
 
     function isModelEquipped(id) {
       return !!(userWallet.equippedModels && userWallet.equippedModels.indexOf(id) !== -1);
