@@ -3133,6 +3133,41 @@
     transform: scaleX(-1);
   }
   @media (hover: hover) { .profile-card-bg-edit-btn:hover { background: rgba(4, 18, 32, 0.85); color: var(--accent); } }
+  /* Copy-profile-link button, sits just left of the X on every profile
+     card (own, other people's, and the signed-out public view). */
+  .profile-card-link-btn {
+    position: absolute;
+    top: 8px;
+    right: 40px;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border-radius: 50%;
+    border: none;
+    background: rgba(4, 18, 32, 0.55);
+    color: var(--paper);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .profile-card-link-btn svg { width: 14px; height: 14px; display: block; }
+  @media (hover: hover) { .profile-card-link-btn:hover { background: rgba(4, 18, 32, 0.85); color: var(--accent); } }
+  /* Signed-out visitor on a profile link: split screen. The profile card
+     sits in the LEFT half and the sign-in card in the RIGHT half. This only
+     applies while the sign-in screen is showing; once they sign in, the
+     profile card goes back to being a normal popup. On narrow screens the
+     halves would be too small, so the old stacked popup look is kept. */
+  @media (min-width: 701px) {
+    body.profile-split:has(#signin-gate:not(.hidden)) #signin-gate { padding-left: 50%; }
+    body.profile-split:has(#signin-gate:not(.hidden)) #profile-card-overlay {
+      right: 50%;
+      z-index: 1001;
+      background: none;
+      overflow-y: auto;
+    }
+    body.profile-split:has(#signin-gate:not(.hidden)) #profile-card-overlay .profile-card { margin: auto; }
+  }
   .profile-card-avatar-wrap {
     position: absolute;
     left: 26px;
@@ -28359,10 +28394,216 @@ Answer: C</pre>
     // looking at. The back arrow pops this to return to it.
     let profileCardStack = [];
 
+    // ==========================================================
+    // ---- shareable profile links ----
+    // Every profile has its own link: <site>#/engineer/<callsign>
+    //  - Opening any profile card puts that link in the address bar, and
+    //    closing the card puts the address back.
+    //  - Signed in: the link opens that person's normal profile card.
+    //  - Signed out (a visitor with no account): the link shows only that
+    //    person's profile card on top of the sign-in page (profileCardPublic).
+    //    Closing the card, or the SIGN IN button, reveals the sign-in form.
+    //  - A Callsign that does not exist shows a "profile not found" card.
+    // The public view only READS three Firebase paths, so the database
+    // rules must allow unauthenticated reads of them:
+    //    nicknames/<callsign>, profiles/<callsign>, presence/<callsign>
+    // ==========================================================
+    let profileCardPublic = false;      // true while the signed-out public view is showing
+    let profileLinkPushed = false;      // true if WE added a history entry for the open card
+    let profileLinkToken = 0;           // cancels stale async opens
+    // Old #/profile/<callsign> links keep working; new links use #/engineer/.
+    const PROFILE_LINK_RE = /^#\/(?:engineer|profile)\/([^\/?#]{1,40})\/?$/;
+    const PROFILE_LINK_BTN_HTML = '<button type="button" class="profile-card-link-btn" onclick="copyProfileLink()" aria-label="Copy profile link" title="Copy profile link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/></svg></button>';
+
+    // Split-screen layout switch (profile card left, sign-in card right).
+    function setProfileSplit(on) { document.body.classList.toggle('profile-split', !!on); }
+
+    function profileLinkFor(nickname) {
+      const base = /^https?:$/.test(location.protocol) ? (location.origin + location.pathname) : 'https://aerodynadmics.com/';
+      return base + '#/engineer/' + encodeURIComponent(nickname);
+    }
+    function profileNickFromHash() {
+      const m = PROFILE_LINK_RE.exec(location.hash || '');
+      if (!m) return null;
+      try { return decodeURIComponent(m[1]); } catch (e) { return null; }
+    }
+    function signedInUi() {
+      const g = document.getElementById('signin-gate');
+      return !g || g.classList.contains('hidden');
+    }
+
+    // Put the profile link in the address bar while a card is open.
+    function setProfileUrl(nickname) {
+      try {
+        const want = '#/engineer/' + encodeURIComponent(nickname);
+        if (location.hash === want) return;
+        if (profileNickFromHash() !== null) {
+          history.replaceState(null, '', location.pathname + location.search + want);   // switching profile: no extra history entry
+        } else {
+          history.pushState(null, '', location.pathname + location.search + want);       // first card: Back closes it
+          profileLinkPushed = true;
+        }
+      } catch (e) {}
+    }
+    // Card closed: put the address back to what it was.
+    function clearProfileUrl() {
+      try {
+        if (profileNickFromHash() === null) { profileLinkPushed = false; return; }
+        if (profileLinkPushed) {
+          profileLinkPushed = false;
+          history.back();
+        } else {
+          history.replaceState(null, '', location.pathname + location.search);          // opened straight from a link
+        }
+      } catch (e) { profileLinkPushed = false; }
+    }
+
+    function copyProfileLink() {
+      const nick = profileCardOpenFor || profileNickFromHash();
+      if (!nick) return;
+      const link = profileLinkFor(nick);
+      const done = () => { try { showWingsToast('\uD83D\uDD17 Profile link copied'); } catch (e) {} };
+      const legacy = () => {
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = link;
+          ta.setAttribute('readonly', '');
+          ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          done();
+        } catch (e) {}
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(done, legacy);
+      } else {
+        legacy();
+      }
+    }
+
+    // Looks the Callsign up in the public roster. Returns { nickname, avatar } or null.
+    async function lookupRosterEntry(raw) {
+      if (!ensureFirebaseApp()) return null;
+      const tries = [raw];
+      if (raw !== raw.toLowerCase()) tries.push(raw.toLowerCase());
+      for (let i = 0; i < tries.length; i++) {
+        const v = (await nsRef('nicknames/' + presenceKey(tries[i])).once('value')).val();
+        if (v) return { nickname: v.nickname || tries[i], avatar: v.avatar || null };
+      }
+      return null;
+    }
+
+    function renderProfileNotFound(message) {
+      document.getElementById('profile-card-overlay').classList.add('visible');
+      document.getElementById('profile-card-body').innerHTML = `
+        <div class="profile-card-banner">
+          <button class="profile-card-close" onclick="closeUserProfile()">&times;</button>
+        </div>
+        <div class="profile-card-body">
+          <div class="profile-card-nickname-row"><div class="profile-card-nickname">Profile not found</div></div>
+          <div class="profile-card-bio empty" style="display:block;">${escapeHtml(message || 'This link may be wrong, or that Callsign does not exist.')}</div>
+        </div>
+      `;
+    }
+
+    // Signed-out visitor: show only that person's profile card over the sign-in page.
+    async function openPublicProfile(raw) {
+      const token = ++profileLinkToken;
+      profileCardPublic = true;
+      setProfileSplit(true);
+      profileCardOpenFor = null;
+      profileCardReadOnly = true;
+      profileCardStack = [];
+      document.getElementById('profile-card-overlay').classList.add('visible');
+      document.getElementById('profile-card-body').innerHTML =
+        '<div class="profile-card-status-row" style="padding:20px;"><span class="nick-modal-status">Loading&hellip;</span></div>';
+      try {
+        const found = await lookupRosterEntry(raw);
+        if (token !== profileLinkToken) return;
+        if (!found) { renderProfileNotFound(); return; }
+        const nick = found.nickname;
+        const key = presenceKey(nick);
+        const [profSnap, presSnap] = await Promise.all([
+          profileRef(nick).once('value'),
+          nsRef('presence/' + key).once('value')
+        ]);
+        if (token !== profileLinkToken) return;
+        const data = profSnap.val() || {};
+        const presence = presSnap.val() || {};
+        profileCache[nick] = { bio: data.bio || '', background: data.background || null, flightHours: Number(data.flightHours) || 0 };
+        // Feed the same lookups the signed-in card uses (avatar, border,
+        // callsign animation, equipped aircraft, online status). Once the
+        // visitor signs in, the live presence listener replaces all of this.
+        const entry = Object.assign({}, presence, { nickname: nick, avatar: presence.avatar || found.avatar || null });
+        latestPresenceData = Object.assign({}, latestPresenceData);
+        latestPresenceData[key] = entry;
+        const isOnlineNow = !!(presence.online && presence.lastSeen && (Date.now() - presence.lastSeen) < ONLINE_THRESHOLD_MS);
+        onlineNicknames = new Set(isOnlineNow ? [nick] : []);
+        profileCardOpenFor = nick;
+        renderProfileCard(nick, profileCache[nick]);
+      } catch (err) {
+        console.error('Public profile error:', err);
+        if (token === profileLinkToken) renderProfileNotFound('This profile could not be loaded right now. Please try again in a moment.');
+      }
+    }
+
+    // Opens whatever profile the address bar points at.
+    function openProfileFromLink() {
+      const raw = profileNickFromHash();
+      if (!raw) return;
+      if (!signedInUi()) { openPublicProfile(raw); return; }
+      const token = ++profileLinkToken;
+      let tries = 0;
+      const wait = setInterval(async () => {
+        if (token !== profileLinkToken || profileNickFromHash() !== raw) { clearInterval(wait); return; }
+        // Wait for the sign-in to finish and the live presence data to arrive
+        // (avatar, border, equipped aircraft), up to ~8 seconds.
+        if (!(currentChatUser && Object.keys(latestPresenceData).length > 0) && ++tries < 40) return;
+        clearInterval(wait);
+        profileCardPublic = false;
+        setProfileSplit(false);
+        try {
+          const found = await lookupRosterEntry(raw);
+          if (token !== profileLinkToken) return;
+          if (!found) { renderProfileNotFound(); return; }
+          openUserProfile(found.nickname);
+        } catch (err) {
+          console.error('Profile link error:', err);
+          openUserProfile(raw);
+        }
+      }, 200);
+    }
+
+    // Back / Forward / pasting another profile link while the site is open.
+    window.addEventListener('hashchange', () => {
+      const raw = profileNickFromHash();
+      if (raw) {
+        if (profileCardOpenFor && presenceKey(profileCardOpenFor) === presenceKey(raw)) return;
+        openProfileFromLink();
+      } else if (document.getElementById('profile-card-overlay').classList.contains('visible')) {
+        profileLinkPushed = false;
+        closeUserProfile(true);   // the address already changed, leave it alone
+      }
+    });
+    // Signed-out visitor who arrives on a profile link: show the card right
+    // away. (Signed-in visitors are handled by the page router once the
+    // sign-in screen goes away, see start() in the router script.)
+    (function bootProfileLink() {
+      function go() {
+        if (!profileNickFromHash()) return;
+        setTimeout(() => { if (!signedInUi() && profileNickFromHash()) openProfileFromLink(); }, 400);
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
+    })();
+
     function openUserProfile(nickname, readOnly) {
       if (!nickname) return;
       profileCardOpenFor = nickname;
       profileCardReadOnly = !!readOnly;
+      profileCardPublic = false;
+      setProfileUrl(nickname);
       const overlay = document.getElementById('profile-card-overlay');
       overlay.classList.add('visible');
       document.getElementById('profile-card-body').innerHTML =
@@ -28497,7 +28738,7 @@ Answer: C</pre>
       // further down in .profile-card-relations-row). Shown on every
       // profile card, own included, so opening your own card is also how
       // you check your own crew.
-      ensureCopilotListener(nickname);
+      if (!profileCardPublic) ensureCopilotListener(nickname);
       const nickAttrForCrew = escapeHtml(nickname).replace(/'/g, "\\'");
       const copilotLineHtml = `
         <div class="profile-card-crew-row">
@@ -28511,8 +28752,8 @@ Answer: C</pre>
       // took up its own margin/gap, which is what left that dead band of
       // space under Co-Pilot/Crewmates in the common case (no request
       // pending), so the whole row is skipped when both are blank.
-      const copilotStatusLineHtml = isOwn ? '' : renderCopilotStatusLine(nickname);
-      const crewmateStatusLineHtml = isOwn ? '' : renderCrewmateStatusLine(nickname);
+      const copilotStatusLineHtml = (isOwn || profileCardPublic) ? '' : renderCopilotStatusLine(nickname);
+      const crewmateStatusLineHtml = (isOwn || profileCardPublic) ? '' : renderCrewmateStatusLine(nickname);
       const relationsRowHtml = (copilotStatusLineHtml || crewmateStatusLineHtml)
         ? `<div class="profile-card-relations-row">${copilotStatusLineHtml}${crewmateStatusLineHtml}</div>`
         : '';
@@ -28521,6 +28762,7 @@ Answer: C</pre>
         <div class="profile-card-banner" style="background:${bannerCss};">
           ${profileCardStack.length ? '<button class="profile-card-back" onclick="goBackProfileCard()" aria-label="Back">&lsaquo;</button>' : ''}
           ${showEditUi ? '<button type="button" class="profile-card-bg-edit-btn" onclick="openEditBackground()" aria-label="Edit background">&#9998;</button>' : ''}
+          ${PROFILE_LINK_BTN_HTML}
           <button class="profile-card-close" onclick="closeUserProfile()">&times;</button>
           <div class="profile-card-avatar-wrap">
             ${showEditUi ? `
@@ -28531,7 +28773,7 @@ Answer: C</pre>
             ` : `
             <span class="avatar-edit-wrap">
               <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}</span>
-              ${isOwn ? '' : (getCopilotStatus(nickname) === 'copilot' ? renderCopilotAvatarBadge(nickname) : renderCrewmateBtn(nickname))}
+              ${(isOwn || profileCardPublic) ? '' : (getCopilotStatus(nickname) === 'copilot' ? renderCopilotAvatarBadge(nickname) : renderCrewmateBtn(nickname))}
             </span>
             `}
           </div>
@@ -28541,7 +28783,7 @@ Answer: C</pre>
             <div class="profile-card-nickname ${animClass}" data-text="${escapeHtml(nickname)}">${escapeHtml(nickname)}</div>
           </div>
           <div class="profile-card-status-row"><span class="nick-status-tag ${statusClass}">${statusLabel}</span></div>
-          ${copilotLineHtml}
+          ${profileCardPublic ? '' : copilotLineHtml}
           ${relationsRowHtml}
           <div class="profile-card-divider"></div>
           <p class="profile-card-section-label">Achievements</p>
@@ -28601,10 +28843,15 @@ Answer: C</pre>
       profileCardTickNickname = null;
     }
 
-    function closeUserProfile() {
+    function closeUserProfile(keepUrl) {
+      const wasOpen = document.getElementById('profile-card-overlay').classList.contains('visible');
       profileCardOpenFor = null;
       profileCardReadOnly = false;
+      profileCardPublic = false;
+      setProfileSplit(false);
       profileCardStack = [];
+      profileLinkToken++;
+      if (!keepUrl && wasOpen) clearProfileUrl();
       stopProfileCardHoursTicker();
       if (sentRequestWatchRef) {
         sentRequestWatchRef.off();
@@ -42267,13 +42514,16 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
 </script>
 
 <!-- URL hash router: the address bar follows the page you are on, including
-     the page inside a page:
-       #/home  #/schedule  #/review  #/exam  #/board  #/quiz  #/game
-       #/store  #/hangar  #/about  #/admin
-       #/exam/aerodynamics  #/review/aircraft-structures-and-design
+     the page inside a page (full names, same words as on screen):
+       (homepage: no hash)  #/flight-schedule  #/review  #/mock-exam
+       #/mock-board-exam  #/quiz  #/flappy-plane  #/flight-store  #/hangar
+       #/about  #/admin-settings
+       #/mock-exam/aerodynamics  #/review/aircraft-structures-and-design
        #/quiz/aircraft-powerplant   (a subject, by its full name)
-       #/store/models  #/store/borders  #/store/animations   (store tabs)
-       #/hangar/models  #/hangar/borders  #/hangar/animations (hangar tabs)
+       #/flight-store/aircraft-models  #/flight-store/avatar-decorations
+       #/flight-store/callsign-animations  (store tabs)
+       #/hangar/aircraft-collections  #/hangar/avatar-decorations
+       #/hangar/callsign-animations  (hangar tabs)
      Back/Forward move between pages, and a refresh or a shared link reopens
      the same page once you are signed in. -->
 <script>
@@ -42319,23 +42569,46 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     }
     return null;
   }
+  // Pages and tabs appear in the link by their full names (the same words as
+  // on screen). Inside the page they keep their short names; old short links
+  // such as #/store or #/exam still open the right page.
+  var ROUTE_SLUG = { schedule: 'flight-schedule', exam: 'mock-exam', board: 'mock-board-exam',
+                     game: 'flappy-plane', store: 'flight-store', admin: 'admin-settings' };
+  var TAB_SLUG = {
+    store:  { models: 'aircraft-models', borders: 'avatar-decorations', animations: 'callsign-animations' },
+    hangar: { models: 'aircraft-collections', borders: 'avatar-decorations', animations: 'callsign-animations' }
+  };
+  function slugOfRoute(r) { return ROUTE_SLUG[r] || r; }
+  function routeOfSlug(x) {
+    for (var k in ROUTE_SLUG) if (ROUTE_SLUG[k] === x) return k;
+    return x;
+  }
+  function slugOfTab(route, tab) { return (TAB_SLUG[route] || {})[tab] || tab; }
+  function tabOfSlug(route, x) {
+    var m = TAB_SLUG[route] || {};
+    for (var k in m) if (m[k] === x) return k;
+    return STORE_TABS.indexOf(x) !== -1 ? x : null;
+  }
   function isSubjectRoute(route) { return route === 'exam' || route === 'review' || route === 'quiz'; }
   function validSub(route, sub) {
     if (!sub) return null;
     if (isSubjectRoute(route)) return keyOfSlug(sub);
-    if (route === 'store' || route === 'hangar') return STORE_TABS.indexOf(sub) !== -1 ? sub : null;
+    if (route === 'store' || route === 'hangar') return tabOfSlug(route, sub);
     return null;
   }
 
   // { route, sub } from the address bar, or null.
   function parseHash() {
     var m = /^#\/([a-z-]+)(?:\/([A-Za-z0-9_-]+))?\/?$/.exec(location.hash || '');
-    if (!m || VIEW_ROUTE_VALUES.indexOf(m[1]) === -1) return null;
-    return { route: m[1], sub: validSub(m[1], m[2]) };
+    if (!m) return null;
+    var route = routeOfSlug(m[1]);
+    if (VIEW_ROUTE_VALUES.indexOf(route) === -1) return null;
+    return { route: route, sub: validSub(route, m[2]) };
   }
   function pathOf(r) {
-    if (!r.sub) return r.route;
-    return r.route + '/' + (isSubjectRoute(r.route) ? slugOfKey(r.sub) : r.sub);
+    var head = slugOfRoute(r.route);
+    if (!r.sub) return head;
+    return head + '/' + (isSubjectRoute(r.route) ? slugOfKey(r.sub) : slugOfTab(r.route, r.sub));
   }
 
   // Remember which subject was opened (showSubject knows its key; the page does not).
@@ -42530,11 +42803,15 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     ready = true;
     watchViews();
     var cur = currentPath();
+    // A profile link (#/engineer/callsign) is not a page: keep it in the
+    // address bar and open that person's profile card on top of the home page.
+    var linkedProfile = (typeof profileNickFromHash === 'function') ? profileNickFromHash() : null;
     if (initialPath && (!cur || pathOf(initialPath) !== pathOf(cur))) {
       openFromLink(initialPath);
-    } else {
+    } else if (!linkedProfile) {
       syncUrl(true); // first page: set the link without adding a history entry
     }
+    if (linkedProfile && typeof openProfileFromLink === 'function') openProfileFromLink();
   }
 
   // Show the "nothing here yet" messages only once the data has really loaded:
