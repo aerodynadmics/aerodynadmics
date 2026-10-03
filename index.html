@@ -28435,7 +28435,7 @@ Answer: C</pre>
     // Split-screen layout switch (profile card left, sign-in card right).
     function setProfileSplit(on) { document.body.classList.toggle('profile-split', !!on); }
 
-    // Share links go through /u/<nickname>, a server-side page (see the
+    // Share links go through /engineer/<nickname>, a server-side page (see the
     // profilePreview Cloud Function) that gives Messenger/Facebook a
     // per-profile preview card, then sends real visitors on to the app at
     // #/engineer/<nickname>. Chat apps ignore everything after the #, so a
@@ -28444,7 +28444,7 @@ Answer: C</pre>
     // while the function is not deployed yet).
     const PROFILE_SHARE_PREVIEW = true;
     function profileLinkFor(nickname) {
-      if (PROFILE_SHARE_PREVIEW) return 'https://aerodynadmics.com/u/' + encodeURIComponent(nickname);
+      if (PROFILE_SHARE_PREVIEW) return 'https://aerodynadmics.com/engineer/' + encodeURIComponent(nickname);
       const base = /^https?:$/.test(location.protocol) ? (location.origin + location.pathname) : 'https://aerodynadmics.com/';
       return base + '#/engineer/' + encodeURIComponent(nickname);
     }

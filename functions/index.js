@@ -105,13 +105,13 @@ exports.buildCard = buildCard;
 exports.profilePreview = onRequest(
   { region: "asia-southeast1", memory: "512MiB", timeoutSeconds: 30 },
   async (req, res) => {
-    const parts = req.path.split("/").filter(Boolean); // ["u", "<nick>", "card.jpg"?]
+    const parts = req.path.split("/").filter(Boolean); // ["engineer", "<nick>", "card.jpg"?]
     let raw = "";
     try { raw = decodeURIComponent(parts[1] || "").trim().slice(0, 40); } catch (e) {}
     const wantsCard = parts[2] === "card.jpg";
     const info = await lookup(raw);
 
-    // ---- /u/<nick>/card.jpg : the 1200x630 preview picture ----
+    // ---- /engineer/<nick>/card.jpg : the 1200x630 preview picture ----
     if (wantsCard) {
       try {
         if (info.avatar && isPhoto(info.avatar)) {
@@ -132,14 +132,14 @@ exports.profilePreview = onRequest(
       return;
     }
 
-    // ---- /u/<nick> : the page Facebook/Messenger reads ----
+    // ---- /engineer/<nick> : the page Facebook/Messenger reads ----
     const nick = info.nick || "Engineer";
     const title = nick + " on aerodynadmics";
     const desc = info.bio.trim()
       ? info.bio.trim().slice(0, 180)
       : "View " + nick + "'s profile on aerodynadmics, a platform for Aeronautical Engineering students and graduates.";
     const appUrl = SITE + "/#/engineer/" + encodeURIComponent(info.nick || raw);
-    const shareUrl = SITE + "/u/" + encodeURIComponent(info.nick || raw);
+    const shareUrl = SITE + "/engineer/" + encodeURIComponent(info.nick || raw);
 
     let image = DEFAULT_IMAGE;
     if (info.avatar && isPhoto(info.avatar)) {
