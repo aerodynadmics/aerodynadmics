@@ -56,6 +56,11 @@
 -->
 <html lang="en">
 <head>
+<!-- Hides "nothing here yet" messages until the app has finished loading its
+     data, so they never flash on screen for a moment after a reload. The
+     router script at the bottom of the page removes this class. -->
+<style id="load-gate-css">html.data-loading .empty-note { display: none !important; }</style>
+<script>document.documentElement.classList.add('data-loading');</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=720, user-scalable=no">
 <script>
@@ -42508,6 +42513,38 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
       syncUrl(true); // first page: set the link without adding a history entry
     }
   }
+
+  // Show the "nothing here yet" messages only once the data has really loaded:
+  // all exam lists and the wallet have arrived, or ~7 s after sign-in at the
+  // latest (so a genuinely empty list still says so).
+  (function releaseLoadGate() {
+    var root = document.documentElement;
+    if (!root.classList.contains('data-loading')) return;
+    var g = document.getElementById('signin-gate');
+    var waited = 0;
+    function loaded() {
+      try {
+        var keys = ['aero', 'structures', 'powerplant', 'construction', 'econ', 'math'];
+        for (var i = 0; i < keys.length; i++) if (!(keys[i] in LIVE_MOCK_EXAM_CACHE)) return false;
+      } catch (e) { return false; }
+      try { if (!walletLoaded) return false; } catch (e) {}
+      return true;
+    }
+    function release() {
+      clearInterval(t);
+      // Redraw lists that were built before their data arrived, then reveal.
+      try { if (currentQuizSubjectKey) renderQuizExamList(); } catch (e) {}
+      try { renderHangarIfVisible(); } catch (e) {}
+      try { renderShopIfVisible(); } catch (e) {}
+      root.classList.remove('data-loading');
+    }
+    var t = setInterval(function () {
+      var signedOut = g && !g.classList.contains('hidden');
+      if (signedOut) { waited = 0; return; }   // the clock starts after sign-in
+      waited += 100;
+      if (loaded() || waited >= 7000) release();
+    }, 100);
+  })();
 
   // Wait until the user is signed in before opening a deep link.
   // Watches the sign-in screen itself, so it does not depend on how the
