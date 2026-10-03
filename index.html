@@ -42260,5 +42260,218 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   else window.addEventListener('load', startEarlyPreload, { once: true });
 })();
 </script>
+
+<!-- URL hash router: the address bar follows the page you are on, including
+     the page inside a page:
+       #/home  #/schedule  #/review  #/exam  #/board  #/quiz  #/game
+       #/store  #/hangar  #/about  #/admin
+       #/exam/aero  #/review/structures  #/quiz/powerplant   (a subject)
+       #/store/models  #/store/borders  #/store/animations   (store tabs)
+       #/hangar/models  #/hangar/borders  #/hangar/animations (hangar tabs)
+     Back/Forward move between pages, and a refresh or a shared link reopens
+     the same page once you are signed in. -->
+<script>
+(function () {
+  var VIEW_ROUTE = {
+    'view-home': 'home', 'view-schedule': 'schedule', 'view-review': 'review',
+    'view-mock-exam': 'exam', 'view-board': 'board', 'view-quiz': 'quiz',
+    'view-game': 'game', 'view-shop': 'store', 'view-hangar': 'hangar',
+    'view-about': 'about', 'view-admin': 'admin'
+  };
+  var SUBJECT_VIEW_KEY = { 'view-aero': 'aero', 'view-structures': 'structures',
+                           'view-powerplant': 'powerplant', 'view-empty': null };
+  var ROUTE_TAB = { schedule: 'schedule', review: 'review', exam: 'mock-exam',
+                    board: 'mock-board', quiz: 'quiz', game: 'game' };
+  var STORE_TABS = ['models', 'borders', 'animations'];
+
+  var ready = false;       // true once the initial route has been applied
+  var navigating = false;  // true while we are applying a route from the URL
+  var lastSubjectKey = null;
+
+  try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) {}
+
+  var VIEW_ROUTE_VALUES = Object.keys(VIEW_ROUTE).map(function (k) { return VIEW_ROUTE[k]; });
+
+  function subjectKeys() {
+    try { return subjects.map(function (s) { return s.key; }); } catch (e) { return []; }
+  }
+  function validSub(route, sub) {
+    if (!sub) return null;
+    if (route === 'exam' || route === 'review' || route === 'quiz') return subjectKeys().indexOf(sub) !== -1 ? sub : null;
+    if (route === 'store' || route === 'hangar') return STORE_TABS.indexOf(sub) !== -1 ? sub : null;
+    return null;
+  }
+
+  // { route, sub } from the address bar, or null.
+  function parseHash() {
+    var m = /^#\/([a-z-]+)(?:\/([A-Za-z0-9_-]+))?\/?$/.exec(location.hash || '');
+    if (!m || VIEW_ROUTE_VALUES.indexOf(m[1]) === -1) return null;
+    return { route: m[1], sub: validSub(m[1], m[2]) };
+  }
+  function pathOf(r) { return r.route + (r.sub ? '/' + r.sub : ''); }
+
+  // Remember which subject was opened (showSubject knows its key; the page does not).
+  if (typeof window.showSubject === 'function') {
+    var origShowSubject = window.showSubject;
+    window.showSubject = function (key) {
+      lastSubjectKey = key;
+      return origShowSubject.apply(this, arguments);
+    };
+  }
+
+  function activeTab(prefix) {
+    for (var i = 0; i < STORE_TABS.length; i++) {
+      var b = document.getElementById(prefix + STORE_TABS[i]);
+      if (b && b.classList.contains('active')) return STORE_TABS[i];
+    }
+    return STORE_TABS[0];
+  }
+
+  // Which page (and sub-page) is on screen right now?
+  function currentPath() {
+    var views = document.querySelectorAll('.view.visible');
+    if (!views.length) return null;
+    var id = views[views.length - 1].id;
+    var route = VIEW_ROUTE[id], sub = null;
+    if (route) {
+      if (route === 'quiz') {
+        try { sub = currentQuizSubjectKey || null; } catch (e) {}
+      } else if (route === 'store') {
+        sub = activeTab('shop-tab-');
+      } else if (route === 'hangar') {
+        sub = activeTab('hangar-tab-');
+      }
+    } else if (id in SUBJECT_VIEW_KEY) {
+      var origin = 'view-mock-exam';
+      try { origin = lastSubjectsOrigin; } catch (e) {}
+      route = origin === 'view-review' ? 'review' : 'exam';
+      sub = SUBJECT_VIEW_KEY[id];
+      if (!sub) {
+        var et = document.getElementById('empty-title');
+        var nm = et ? et.textContent.trim() : '';
+        try { subjects.forEach(function (s) { if (s.name === nm) sub = s.key; }); } catch (e) {}
+        sub = sub || lastSubjectKey;
+      }
+    } else {
+      return null;
+    }
+    return { route: route, sub: validSub(route, sub) };
+  }
+
+  // Open a page the same way its button does.
+  function goRoute(route) {
+    try {
+      if (route === 'home') showHome();
+      else if (ROUTE_TAB[route]) navigateHomeTab(ROUTE_TAB[route]);
+      else if (route === 'store') showFlightStore();
+      else if (route === 'hangar') showHangar();
+      else if (route === 'about') showAbout();
+      else if (route === 'admin') toggleAdminPage();
+    } catch (e) { /* leave the current page as is */ }
+    if (typeof refreshTopbarTabIcons === 'function') refreshTopbarTabIcons();
+  }
+
+  // Open a page plus its sub-page (subject / tab).
+  function goPath(target) {
+    var cur = currentPath();
+    if (!cur || cur.route !== target.route) goRoute(target.route);
+    cur = currentPath();
+    if (!cur || cur.route !== target.route || cur.sub === target.sub) return;
+    try {
+      if (target.route === 'exam' || target.route === 'review') {
+        if (target.sub) showSubject(target.sub, target.route === 'review' ? 'view-review' : 'view-mock-exam');
+        else backToSubjects();
+      } else if (target.route === 'quiz') {
+        if (target.sub) openQuizSubject(target.sub);
+        else backToQuizSubjects();
+      } else if (target.route === 'store') {
+        showShopTab(target.sub || STORE_TABS[0]);
+      } else if (target.route === 'hangar') {
+        showHangarTab(target.sub || STORE_TABS[0]);
+      }
+    } catch (e) {}
+  }
+
+  // Make the address bar match what is on screen.
+  function syncUrl(replace) {
+    var cur = currentPath();
+    if (!cur) return;
+    var want = pathOf(cur), have = parseHash();
+    if (have && pathOf(have) === want) return;
+    try {
+      history[replace ? 'replaceState' : 'pushState'](null, '', '#/' + want);
+    } catch (e) {}
+  }
+
+  // Back / Forward / edited address -> open that page.
+  window.addEventListener('hashchange', function () {
+    if (!ready) return;
+    var target = parseHash();
+    var cur = currentPath();
+    if (!target || (cur && pathOf(target) === pathOf(cur))) return;
+    navigating = true;
+    goPath(target);
+    setTimeout(function () {
+      navigating = false;
+      syncUrl(true); // if the page could not open (e.g. store closed), fix the link
+    }, 0);
+  });
+
+  // The page changed through the app's own buttons -> add a history entry.
+  var observer = new MutationObserver(function () {
+    if (!ready || navigating) return;
+    syncUrl(false);
+  });
+  function watchViews() {
+    document.querySelectorAll('.view').forEach(function (v) {
+      observer.observe(v, { attributes: true, attributeFilter: ['class'] });
+    });
+    // Tabs and panels that change a page without switching the view.
+    ['shop-tab-', 'hangar-tab-'].forEach(function (p) {
+      STORE_TABS.forEach(function (t) {
+        var b = document.getElementById(p + t);
+        if (b) observer.observe(b, { attributes: true, attributeFilter: ['class'] });
+      });
+    });
+    ['quiz-subjects-panel', 'quiz-exam-list-panel'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) observer.observe(el, { attributes: true, attributeFilter: ['style'] });
+    });
+  }
+
+  var initialPath = parseHash(); // read now, before anything can change it
+  function start() {
+    if (ready) return;
+    ready = true;
+    watchViews();
+    var cur = currentPath();
+    if (initialPath && (!cur || pathOf(initialPath) !== pathOf(cur))) {
+      navigating = true;
+      goPath(initialPath);
+      setTimeout(function () { navigating = false; syncUrl(true); }, 0);
+    } else {
+      syncUrl(true); // first page: set the link without adding a history entry
+    }
+  }
+
+  // Wait until the user is signed in before opening a deep link.
+  // Watches the sign-in screen itself, so it does not depend on how the
+  // sign-in code is wired up.
+  var gate = document.getElementById('signin-gate');
+  var signedIn = function () { return !gate || gate.classList.contains('hidden'); };
+  if (signedIn()) {
+    start();
+  } else {
+    var gateObs = new MutationObserver(function () {
+      if (signedIn()) { gateObs.disconnect(); setTimeout(start, 0); }
+    });
+    gateObs.observe(gate, { attributes: true, attributeFilter: ['class', 'style'] });
+    var tries = 0, poll = setInterval(function () {   // safety net
+      if (ready || ++tries > 600) return clearInterval(poll);
+      if (signedIn()) { clearInterval(poll); start(); }
+    }, 500);
+  }
+})();
+</script>
 </body>
 </html>
