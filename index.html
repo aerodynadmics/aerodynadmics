@@ -42643,6 +42643,8 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
        #/about  #/admin-settings
        #/mock-exam/aerodynamics  #/review/aircraft-structures-and-design
        #/quiz/aircraft-powerplant   (a subject, by its full name)
+       #/quiz/aircraft-powerplant/<quiz id>   (one quiz inside a subject)
+       #/mock-exam/aerodynamics/<exam id>   (one mock exam inside a subject)
        #/flight-store/aircraft-models  #/flight-store/avatar-decorations
        #/flight-store/callsign-animations  (store tabs)
        #/hangar/aircraft-collections  #/hangar/avatar-decorations
@@ -42722,16 +42724,20 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
 
   // { route, sub } from the address bar, or null.
   function parseHash() {
-    var m = /^#\/([a-z-]+)(?:\/([A-Za-z0-9_-]+))?\/?$/.exec(location.hash || '');
+    var m = /^#\/([a-z-]+)(?:\/([A-Za-z0-9_-]+))?(?:\/([A-Za-z0-9_-]+))?\/?$/.exec(location.hash || '');
     if (!m) return null;
     var route = routeOfSlug(m[1]);
     if (VIEW_ROUTE_VALUES.indexOf(route) === -1) return null;
-    return { route: route, sub: validSub(route, m[2]) };
+    var sub = validSub(route, m[2]);
+    // A third part is one quiz or one mock exam inside a subject.
+    var item = (sub && m[3] && (route === 'quiz' || route === 'exam')) ? m[3] : null;
+    return { route: route, sub: sub, item: item };
   }
   function pathOf(r) {
     var head = slugOfRoute(r.route);
     if (!r.sub) return head;
-    return head + '/' + (isSubjectRoute(r.route) ? slugOfKey(r.sub) : slugOfTab(r.route, r.sub));
+    var p = head + '/' + (isSubjectRoute(r.route) ? slugOfKey(r.sub) : slugOfTab(r.route, r.sub));
+    return r.item ? p + '/' + r.item : p;
   }
 
   // Remember which subject was opened (showSubject knows its key; the page does not).
@@ -42756,10 +42762,18 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     var views = document.querySelectorAll('.view.visible');
     if (!views.length) return null;
     var id = views[views.length - 1].id;
-    var route = VIEW_ROUTE[id], sub = null;
+    var route = VIEW_ROUTE[id], sub = null, item = null;
     if (route) {
       if (route === 'quiz') {
         try { sub = currentQuizSubjectKey || null; } catch (e) {}
+        // A quiz is open (being played, or showing its results).
+        try {
+          var playing = document.getElementById('quiz-play-area').style.display !== 'none';
+          var onResults = document.getElementById('quiz-results-card').style.display !== 'none';
+          if (sub && (playing || onResults) && currentQuizExamRef && currentQuizExamRef.subjectKey === sub) {
+            item = currentQuizExamRef.setId;
+          }
+        } catch (e) {}
       } else if (route === 'store') {
         sub = activeTab('shop-tab-');
       } else if (route === 'hangar') {
@@ -42776,10 +42790,22 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
         try { subjects.forEach(function (s) { if (s.name === nm) sub = s.key; }); } catch (e) {}
         sub = sub || lastSubjectKey;
       }
+    } else if (id === 'gform-overlay') {
+      // A mock exam is open (it is taken inside the page, in place of the
+      // subject page). Board exams and exams opened from Review keep the
+      // plain link they already had.
+      var em = null, isBoardExam = false, origin2 = 'view-mock-exam';
+      try { em = /^live:([^:]+):([A-Za-z0-9_-]+)$/.exec(currentExamId || ''); } catch (e) {}
+      try { isBoardExam = !!gformIsBoard; } catch (e) {}
+      try { origin2 = lastSubjectsOrigin; } catch (e) {}
+      if (!em || isBoardExam || origin2 === 'view-review') return null;
+      route = 'exam';
+      sub = em[1];
+      item = em[2];
     } else {
       return null;
     }
-    return { route: route, sub: validSub(route, sub) };
+    return { route: route, sub: validSub(route, sub), item: item };
   }
 
   // Open a page the same way its button does.
@@ -42816,12 +42842,48 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     }, 300);
   }
 
+  // Close the quiz or exam that is open, the same way its own back/close does.
+  function closeItem(cur) {
+    try {
+      if (cur.route === 'quiz') backToQuizExamList();
+      else if (cur.route === 'exam') closeInAppMockExam();
+    } catch (e) {}
+  }
+
+  // Open one quiz or one mock exam of the subject that is on screen. Does
+  // nothing until its data has arrived (the caller keeps retrying), and only
+  // opens ones this person can actually see (published, or admin).
+  function openItem(target) {
+    try {
+      if (target.route === 'quiz') {
+        var found = false;
+        collectPublishedExamsForSubject(target.sub).forEach(function (e) { if (e[0] === target.item) found = true; });
+        if (found) openQuizModeExam(target.sub, target.item);
+      } else if (target.route === 'exam') {
+        var id = 'live:' + target.sub + ':' + target.item;
+        var cards = document.querySelectorAll('.exam-card[onclick*="openInAppMockExam(\'' + id + '\'"]');
+        var card = null;
+        for (var i = 0; i < cards.length; i++) {
+          if (!cards[i].closest('#view-board')) { card = cards[i]; break; }
+        }
+        if (card) openInAppMockExam(id, card);
+      }
+    } catch (e) {}
+  }
+
   // Open a page plus its sub-page (subject / tab).
   function goPath(target) {
     var cur = currentPath();
     if (!cur || cur.route !== target.route) goRoute(target.route);
     cur = currentPath();
-    if (!cur || cur.route !== target.route || cur.sub === target.sub) return;
+    if (!cur || cur.route !== target.route) return;
+    // A quiz or exam is open but the link points somewhere else (for example
+    // Back): leave it first.
+    if (cur.item && cur.item !== target.item) { closeItem(cur); return; }
+    if (cur.sub === target.sub) {
+      if (target.item && !cur.item) openItem(target);
+      return;
+    }
     try {
       if (target.route === 'exam' || target.route === 'review') {
         if (target.sub) showSubject(target.sub, target.route === 'review' ? 'view-review' : 'view-mock-exam');
