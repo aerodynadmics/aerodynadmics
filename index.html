@@ -16542,6 +16542,8 @@ Answer: C</pre>
       try { dmStart(user); } catch (e) { console.error(e); }
       try { loadLegalNotice(user); } catch (e) { console.error(e); }
       showNicknameList();
+      syncMyMainFlightFromRoster();
+      applyMainFlightFromRoster();   // roster may already be loaded from an earlier sign-in in this tab
       updateSidebarVisibility();
       progSyncOnSignIn(user); // pull this account's saved progress from Firebase
     }
@@ -26128,6 +26130,24 @@ Answer: C</pre>
       }, { timeoutMs: 20000 });
     }
 
+    // Lands a freshly signed-in soul on THEIR main flight. Callsign + Flight
+    // Code sign-in (and Google sign-in) don't return mainFlight, so the page
+    // first opens on Flight 2026 and has to read the real one from the roster.
+    // This used to run only inside the roster's 'value' listener, which fires
+    // once per page load. After signing out and back in (roster already
+    // loaded, no new snapshot) it never ran again, so the soul stayed on
+    // Flight 2026 even when it wasn't their flight. Now it also runs at
+    // sign-in whenever the roster is already in memory.
+    function applyMainFlightFromRoster() {
+      if (mainFlightApplied || !currentChatUser || !currentChatUser.nickname || !lastNicknameListData) return;
+      mainFlightApplied = true;
+      const me = lastNicknameListData.find((it) => rosterItemNick(it) === currentChatUser.nickname);
+      const mf = preferredRailFlightId(currentChatUser.nickname, me && typeof me === 'object' && me.mainFlight);
+      if (mf && isRailFlightId(mf) && mf !== activeFlightServerId && !privateFlightActive()) {
+        switchFlight(mf === MAIN_FLIGHT_SERVER_ID ? null : mf);
+      }
+    }
+
     // Subscribes to the live roster (once) and renders on every change.
     // onDone fires once the first snapshot has arrived (or on timeout), the
     // same shape as the old backend-fetch version so the existing caller
@@ -26149,14 +26169,7 @@ Answer: C</pre>
         nicknamesRosterRef.on('value', (snap) => {
           lastNicknameListData = Object.values(snap.val() || {});
           syncMyMainFlightFromRoster();
-          if (!mainFlightApplied && currentChatUser && currentChatUser.nickname) {
-            mainFlightApplied = true;
-            const me = lastNicknameListData.find((it) => rosterItemNick(it) === currentChatUser.nickname);
-            const mf = preferredRailFlightId(currentChatUser.nickname, me && typeof me === 'object' && me.mainFlight);
-            if (mf && isRailFlightId(mf) && mf !== activeFlightServerId && !privateFlightActive()) {
-              switchFlight(mf === MAIN_FLIGHT_SERVER_ID ? null : mf);
-            }
-          }
+          applyMainFlightFromRoster();
           // The soul's main flight may only become known now (older accounts):
           // re-evaluate whether the open flight's Black Box is theirs to see.
           if (currentChatUser) {
@@ -26175,6 +26188,8 @@ Answer: C</pre>
       }
 
       if (lastNicknameListData) {
+        syncMyMainFlightFromRoster();
+        applyMainFlightFromRoster();
         if (onDone) onDone(true);
         return;
       }
