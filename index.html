@@ -27527,27 +27527,44 @@ Answer: C</pre>
     }
     // Like dmGoogleEmail, but also returns the access token so the backend can
     // verify the Google account itself (needed to enroll Authenticator safely).
-    function dmGoogleAuth() {
+    let dmGoogleFailReason = '';   // why the last dmGoogleAuth() came back empty: 'blocked' | 'closed' | 'sdk' | 'other'
+    function dmGoogleAuth(hintEmail) {
+      dmGoogleFailReason = '';
       return new Promise((resolve) => {
+        const bail = (why) => { dmGoogleFailReason = why; resolve(null); };
         try {
-          if (!(window.google && google.accounts && google.accounts.oauth2)) { resolve(null); return; }
-          const client = google.accounts.oauth2.initTokenClient({
+          if (!(window.google && google.accounts && google.accounts.oauth2)) { bail('sdk'); return; }
+          const cfg = {
             client_id: GOOGLE_CLIENT_ID,
             scope: 'openid email',
             prompt: 'select_account',
             callback: async (resp) => {
-              if (!resp || !resp.access_token) { resolve(null); return; }
+              if (!resp || !resp.access_token) { bail('other'); return; }
               try {
                 const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: 'Bearer ' + resp.access_token } });
                 const u = await r.json();
-                resolve(u && u.email && u.email_verified !== false ? { email: String(u.email).toLowerCase(), token: resp.access_token } : null);
-              } catch (e) { resolve(null); }
+                if (u && u.email && u.email_verified !== false) resolve({ email: String(u.email).toLowerCase(), token: resp.access_token });
+                else bail('other');
+              } catch (e) { bail('other'); }
             },
-            error_callback: () => resolve(null)
-          });
+            error_callback: (e) => {
+              const t = e && e.type;
+              bail(t === 'popup_failed_to_open' ? 'blocked' : (t === 'popup_closed' ? 'closed' : 'other'));
+            }
+          };
+          // Point Google at the account linked to this Callsign, so a browser
+          // that is signed into some other Google account is steered to the right one.
+          if (hintEmail) cfg.hint = hintEmail;
+          const client = google.accounts.oauth2.initTokenClient(cfg);
           client.requestAccessToken();
-        } catch (e) { resolve(null); }
+        } catch (e) { bail('other'); }
       });
+    }
+    function dmMaskEmail(em) {
+      const m = /^([^@]+)@(.+)$/.exec(String(em || ''));
+      if (!m) return '';
+      const u = m[1];
+      return u.slice(0, Math.min(2, u.length)) + '\u2022\u2022\u2022\u2022@' + m[2];
     }
     // The backend (Apps Script) sometimes drops a request or is slow to wake up, so a single
     // try fails every now and then. Retry a few times with a longer wait each time.
@@ -27624,8 +27641,17 @@ Answer: C</pre>
       };
       if (!mine || !nick) { fail('No Google account is linked to this Callsign.'); return; }
       note('Setting up\u2026');
-      const st = await dmTotpCall({ action: 'totpStatus', nickname: nick });
-      if (tok !== DM.resetTok) return;
+      // Browsers only allow the Google window to open shortly after a click. A slow server
+      // answer here used up that time and the window was blocked ("Google verification
+      // didn't complete"). So a status answer from the last minute is reused, which lets a
+      // retry open the Google window straight away.
+      let st;
+      if (DM.stCache && DM.stCache.nick === nick && Date.now() - DM.stCache.at < 60000) st = DM.stCache.st;
+      else {
+        st = await dmTotpCall({ action: 'totpStatus', nickname: nick });
+        if (tok !== DM.resetTok) return;
+        if (st && st.ok) DM.stCache = { nick, st, at: Date.now() };
+      }
       if (!st || !st.ok) { fail('Couldn\u2019t reach the server. Please try again.'); return; }
       if (st.enrolled) {
         DM.reset = { nick, purpose }; dmShow('totp');
@@ -27633,10 +27659,17 @@ Answer: C</pre>
         return;
       }
       note('Waiting for Google\u2026');
-      const g = await dmGoogleAuth();
+      const g = await dmGoogleAuth(mine);
       if (tok !== DM.resetTok) return;
-      if (!g) { fail('Google verification didn\u2019t complete. Please try again.'); return; }
-      if (g.email !== mine) { fail('That Google account isn\u2019t the one linked to this Callsign.'); return; }
+      if (!g) {
+        const why = dmGoogleFailReason;
+        fail(why === 'blocked' ? 'Your browser blocked the Google window. Allow pop-ups for this site, then tap the button again.'
+          : why === 'closed' ? 'The Google window was closed before finishing. Tap the button and choose ' + (dmMaskEmail(mine) || 'the linked account') + '.'
+          : why === 'sdk' ? 'Google sign-in is still loading. Wait a moment and try again.'
+          : 'Google verification didn\u2019t complete. Please try again.');
+        return;
+      }
+      if (g.email !== mine) { fail('That Google account isn\u2019t the one linked to this Callsign. Choose ' + (dmMaskEmail(mine) || 'the linked account') + ' instead.'); return; }
       note('Setting up\u2026');
       const b = await dmTotpCall({ action: 'totpBegin', nickname: nick, gToken: g.token });
       if (tok !== DM.resetTok) return;
