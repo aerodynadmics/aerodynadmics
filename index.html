@@ -15571,10 +15571,11 @@ Answer: C</pre>
 
       window[callbackName] = finish;
 
+      const url = `${SHEET_LOG_URL}?${qs}`;
       const send = () => {
         if (settled) return;
         script = document.createElement('script');
-        script.src = `${SHEET_LOG_URL}?${qs}`;
+        script.src = url;
         script.onerror = () => finish(null);
         document.body.appendChild(script);
 
@@ -15583,16 +15584,37 @@ Answer: C</pre>
         // there silently forever. Without this timeout, a slow Apps Script
         // cold-start could leave sign-in hanging instead of falling back
         // cleanly to a retry.
+        clearTimeout(timeoutId);
         timeoutId = setTimeout(() => finish(null), timeoutMs);
+      };
+      const sendAfterLoad = () => {
+        if (document.readyState === 'complete') send();
+        else window.__afterLoad(send);
       };
 
       // A <script> tag injected before the window 'load' event keeps the
       // browser tab's spinner going until Apps Script answers (up to the
-      // timeout above on a cold start), even though the page is already
-      // usable. The startup calls (listNicknames, checkBanned,
-      // lookupNickname) are all background checks, so wait for 'load'.
-      if (document.readyState === 'complete') send();
-      else window.__afterLoad(send);
+      // timeout above on a cold start). So background calls wait for 'load'.
+      // EXCEPTION: the two startup reads below feed the saved-login restore
+      // (Firebase sign-in token -> presence data -> profile links such as
+      // #/engineer/<callsign>), so they must start right away. They go out
+      // through fetch(), which does not hold the tab spinner, and the
+      // response is parsed out of the JSONP wrapper. If fetch is blocked
+      // (e.g. CORS), they fall back to the normal <script> route after load.
+      const startupRead = params.action === 'lookupNickname' || params.action === 'checkBanned';
+      if (startupRead && document.readyState !== 'complete' && typeof fetch === 'function') {
+        timeoutId = setTimeout(() => finish(null), timeoutMs);
+        fetch(url, { cache: 'no-store', credentials: 'omit' })
+          .then((r) => { if (!r.ok) throw new Error('http ' + r.status); return r.text(); })
+          .then((t) => {
+            const a = t.indexOf('('), b = t.lastIndexOf(')');
+            if (a < 0 || b <= a) throw new Error('not jsonp');
+            return JSON.parse(t.slice(a + 1, b));
+          })
+          .then((data) => { finish(data); }, () => { if (!settled) sendAfterLoad(); });
+      } else {
+        sendAfterLoad();
+      }
     }
 
     function handleCredentialResponse(response) {
@@ -43052,7 +43074,21 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
 
   // Make the address bar match what is on screen.
   // The homepage has no hash at all (just the plain address).
+  // True while a page that was loaded straight onto a profile link is still
+  // waiting to open that card (it needs sign-in + live data first, a few
+  // seconds). Cleared after 20 s or as soon as the person clicks / types.
+  var profileLinkPending = false;
   function syncUrl(replace) {
+    // While a profile card is open it owns the address bar
+    // (#/engineer/<callsign>). Opening a card makes the page redraw, which
+    // used to make this function put the plain address straight back, so
+    // the profile link flashed and vanished. Leave it alone until the card
+    // closes (closing restores the address itself).
+    try {
+      if (typeof profileNickFromHash === 'function' && profileNickFromHash() !== null &&
+          (profileLinkPending ||
+           document.getElementById('profile-card-overlay').classList.contains('visible'))) return;
+    } catch (e) {}
     var cur = currentPath();
     if (!cur) return;
     var want = pathOf(cur), have = parseHash();
@@ -43147,7 +43183,18 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     } else if (!linkedProfile) {
       syncUrl(true); // first page: set the link without adding a history entry
     }
-    if (linkedProfile && typeof openProfileFromLink === 'function') openProfileFromLink();
+    if (linkedProfile && typeof openProfileFromLink === 'function') {
+      profileLinkPending = true;
+      var endPending = function () {
+        profileLinkPending = false;
+        document.removeEventListener('pointerdown', endPending, true);
+        document.removeEventListener('keydown', endPending, true);
+      };
+      document.addEventListener('pointerdown', endPending, true);
+      document.addEventListener('keydown', endPending, true);
+      setTimeout(endPending, 20000);
+      openProfileFromLink();
+    }
   }
 
   // Show the "nothing here yet" messages only once the data has really loaded:
