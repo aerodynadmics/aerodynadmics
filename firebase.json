@@ -16,13 +16,6 @@
         }
       },
       {
-        "source": "/u/**",
-        "function": {
-          "functionId": "profilePreview",
-          "region": "asia-southeast1"
-        }
-      },
-      {
         "source": "**",
         "destination": "/index.html"
       }
