@@ -6987,6 +6987,26 @@
     flex-direction: column;
     gap: 3px;
   }
+  /* Date divider between days in the Black Box (public + private flights). */
+  .chat-date-divider {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--rivet);
+    user-select: none;
+    pointer-events: none;
+  }
+  .chat-date-divider::before,
+  .chat-date-divider::after {
+    content: '';
+    flex: 1 1 auto;
+    height: 1px;
+    background: var(--line);
+  }
   .chat-msg-reply-thread {
     position: absolute;
     top: 0;
@@ -19036,6 +19056,7 @@ Answer: C</pre>
           renderChatMessage(msgs[i], k);
           placeChatRowByTimestamp(k);
         });
+        updateChatDateDividers();
         el.scrollTop = prevTop + (el.scrollHeight - prevH);   // stay on the same message
         chatOldestKey = items[0][0];
         chatWatchRemovals(items[0][0], items[items.length - 1][0]);
@@ -19540,13 +19561,71 @@ Answer: C</pre>
         let anchor = null;
         let prev = row.previousElementSibling;
         while (prev) {
+          if (prev.classList && prev.classList.contains('chat-date-divider')) { prev = prev.previousElementSibling; continue; }
           const pk = prev.dataset && prev.dataset.msgKey;
           const pts = pk && messageCache[pk] && messageCache[pk].ts;
           if (typeof pts === 'number' && pts > ts) { anchor = prev; prev = prev.previousElementSibling; }
           else break;
         }
-        if (anchor) messagesEl.insertBefore(row, anchor);
+        if (anchor) { messagesEl.insertBefore(row, anchor); scheduleChatDateDividers(); }
       } catch (err) { console.error('Chat order error:', err); }
+    }
+
+    // ---- date dividers (Black Box of public + private flights; not Crewmates) ----
+    function chatDayKey(ts) {
+      const d = new Date(ts);
+      return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+    }
+    function chatDayLabel(ts) {
+      return new Date(ts).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    }
+    // Walks the message rows in DOM order and makes sure there is exactly one
+    // divider in front of the first message of each day (and none anywhere else).
+    function updateChatDateDividers() {
+      const el = document.getElementById('chat-messages');
+      if (!el) return;
+      const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+      let prevDay = null;
+      let pending = null;       // divider seen since the last message row
+      const stale = [];
+      for (let node = el.firstElementChild; node; node = node.nextElementSibling) {
+        if (node.classList.contains('chat-date-divider')) {
+          if (pending) stale.push(pending);
+          pending = node;
+          continue;
+        }
+        const k = node.dataset && node.dataset.msgKey;
+        const ts = k && messageCache[k] && messageCache[k].ts;
+        if (typeof ts !== 'number') continue;
+        const day = chatDayKey(ts);
+        if (day !== prevDay) {
+          if (pending && pending.dataset.day === day) {
+            pending = null;                        // already correct, keep it
+          } else {
+            if (pending) { stale.push(pending); pending = null; }
+            const d = document.createElement('div');
+            d.className = 'chat-date-divider';
+            d.dataset.day = day;
+            d.textContent = chatDayLabel(ts);
+            el.insertBefore(d, node);
+          }
+          prevDay = day;
+        } else if (pending) {
+          stale.push(pending);
+          pending = null;
+        }
+      }
+      if (pending) stale.push(pending);
+      stale.forEach((n) => n.remove());
+      if (atBottom) el.scrollTop = el.scrollHeight;
+    }
+    let chatDividerTimer = null;
+    function scheduleChatDateDividers() {
+      if (chatDividerTimer) return;
+      chatDividerTimer = setTimeout(() => {
+        chatDividerTimer = null;
+        try { updateChatDateDividers(); } catch (err) { console.error('Date divider error:', err); }
+      }, 0);
     }
 
 
@@ -24340,6 +24419,7 @@ Answer: C</pre>
         row.innerHTML = `<div class="chat-msg-system-text">${renderSystemMessageText(msg.text)}${deleteBtnHtml}</div>`;
         messagesEl.appendChild(row);
         messagesEl.scrollTop = messagesEl.scrollHeight;
+        scheduleChatDateDividers();
         return;
       }
 
@@ -24394,6 +24474,7 @@ Answer: C</pre>
       if (window.lockBreatheWidths) window.lockBreatheWidths(row);
       if (msg.replyTo) positionReplyThreadLine(row);
       messagesEl.scrollTop = messagesEl.scrollHeight;
+      scheduleChatDateDividers();
     }
 
     function renderSystemMessageText(text) {
@@ -24556,7 +24637,7 @@ Answer: C</pre>
       if (!key) return;
       delete messageCache[key];
       const row = document.querySelector(`.chat-msg[data-msg-key="${CSS.escape(key)}"]`);
-      if (row) row.remove();
+      if (row) { row.remove(); scheduleChatDateDividers(); }
     }
 
     async function deleteChatMessage(key) {
@@ -28127,6 +28208,16 @@ Answer: C</pre>
       if (m.from !== me && dmEl('dm-overlay').classList.contains('visible')) { nsRef('dmUnread/' + me + '/' + m.from).remove().catch(() => {}); dmMarkSeen(); }
       dmUpdateSeen();
     }
+    // Time stamp under each Crewmates message: today shows just the time,
+    // any other day shows the date too (year only when it is not this year).
+    function dmFormatStamp(ts) {
+      const d = new Date(ts), now = new Date();
+      const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+      if (d.toDateString() === now.toDateString()) return time;
+      const opts = { month: 'short', day: 'numeric' };
+      if (d.getFullYear() !== now.getFullYear()) opts.year = 'numeric';
+      return d.toLocaleDateString([], opts) + ', ' + time;
+    }
     function dmBuildMsgEl(key, m, me, text, bad) {
       const div = document.createElement('div');
       div.dataset.key = key;
@@ -28143,7 +28234,7 @@ Answer: C</pre>
         foot.appendChild(ub);
       }
       const t = document.createElement('time');
-      if (m.ts) t.textContent = new Date(m.ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      if (m.ts) t.textContent = dmFormatStamp(m.ts);
       foot.appendChild(t);
       div.appendChild(foot);
       return div;
