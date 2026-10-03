@@ -4306,6 +4306,7 @@
     font-family: 'IBM Plex Mono', monospace;
     font-size: 9.5px;
     letter-spacing: 0.02em;
+    line-height: 1.3;
     color: var(--paper);
     display: block;
     max-width: 48px;
@@ -21715,7 +21716,7 @@ Answer: C</pre>
         { id: 'moire', name: 'Moiré', priceWings: 200, cssClass: 'nick-moire', tier: 'Sonic' }
       ],
       models: [
-        { id: 'mig-21', name: 'MiG-21', priceWings: 1111, imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg/640px-Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg', tier: 'Supersonic', modelSrc: 'flight%20store/aircraft%20models/MiG-21/MiG_Project_1.42.gltf' },
+        { id: 'mig-21', name: 'MiG-21 Fishbed', priceWings: 1111, imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg/640px-Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg', tier: 'Supersonic', modelSrc: 'flight%20store/aircraft%20models/MiG-21/MiG_Project_1.42.gltf' },
         { id: 'f22', name: 'F-22 Raptor', priceWings: 1500, imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Lockheed_Martin_F-22A_Raptor_JSOH.jpg?width=640', tier: 'Supersonic', modelSrc: 'flight%20store/aircraft%20models/F-22/F22.gltf' },
         { id: 'b2-spirit', name: 'B-2 Spirit', priceWings: 1500, imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/B-2_Spirit_original.jpg?width=640', tier: 'Supersonic', modelSrc: 'flight%20store/aircraft%20models/B-2%20Spirit/B-2_Spirit_Stealth_Bomber.gltf' }
       ]
@@ -36945,7 +36946,7 @@ Answer: C</pre>
           ` : `
           <span class="profile-aircraft-thumb" style="background-image:url('${item.imageUrl}')"></span>
           `}
-          <span class="profile-aircraft-name">${escapeHtml(item.id === 'f22' ? 'F-22' : item.name)}</span>
+          <span class="profile-aircraft-name">${escapeHtml(item.name.split(' ')[0])}${item.name.indexOf(' ') !== -1 ? `<br>${escapeHtml(item.name.slice(item.name.indexOf(' ') + 1))}` : ''}</span>
         </div>
       `).join('');
       return `<div class="profile-aircraft-grid"${isOwn ? ' id="profile-aircraft-grid"' : ''}>${tiles}</div>`;
