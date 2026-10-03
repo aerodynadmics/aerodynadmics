@@ -61,6 +61,33 @@
      router script at the bottom of the page removes this class. -->
 <style id="load-gate-css">html.data-loading .empty-note { display: none !important; }</style>
 <script>document.documentElement.classList.add('data-loading');</script>
+<script>
+/* __afterLoad(fn): runs fn right AFTER the window 'load' event, i.e. after
+   the browser tab's loading spinner has already stopped.
+   Why this exists: the tab spinner keeps going until every script / iframe /
+   stylesheet that was started BEFORE 'load' has finished. Background work
+   that talks to slow third parties (the Apps Script backend, Google's sign-in
+   script, the 3D viewer library) used to be started before 'load', so on a
+   cold Apps Script start (1-10s) the tab kept spinning even though the page
+   was already usable. Anything non-essential for first paint goes through
+   here instead. Safety net: if 'load' is held up by something else, queued
+   work still starts after 8s so features are never blocked forever. */
+(function () {
+  var done = false, q = [];
+  function flush() {
+    if (done) return;
+    done = true;
+    var l = q; q = [];
+    for (var i = 0; i < l.length; i++) { try { l[i](); } catch (e) { console.error(e); } }
+  }
+  window.__afterLoad = function (fn) {
+    if (done) setTimeout(fn, 0); else q.push(fn);
+  };
+  if (document.readyState === 'complete') setTimeout(flush, 0);
+  else window.addEventListener('load', function () { setTimeout(flush, 0); }, { once: true });
+  setTimeout(flush, 8000);
+})();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=720, user-scalable=no">
 <script>
@@ -10609,13 +10636,33 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
     #view-about.fit-measuring > * { flex-grow: 0 !important; }
   }
 </style>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+  /* Google sign-in library: loaded right after 'load' so it can't hold the
+     tab spinner. The button is rendered as soon as it arrives (see
+     pollForGoogleButton further down). */
+  window.__afterLoad(function () {
+    var s = document.createElement('script');
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.async = true;
+    document.head.appendChild(s);
+  });
+</script>
 <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-database-compat.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-auth-compat.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-storage-compat.js" defer></script>
 <!-- MiG 3D Viewer: model-viewer component -->
-<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.0.0/dist/model-viewer.min.js"></script>
+<script>
+  /* Loaded after 'load' (it is the heaviest script on the page and only the
+     3D previews need it; everything that uses it already waits on
+     customElements.whenDefined('model-viewer')). */
+  window.__afterLoad(function () {
+    var s = document.createElement('script');
+    s.type = 'module';
+    s.src = 'https://cdn.jsdelivr.net/npm/@google/model-viewer@4.0.0/dist/model-viewer.min.js';
+    document.head.appendChild(s);
+  });
+</script>
 <style>
   #mig-viewer-overlay {
     display: none;
@@ -15511,28 +15558,41 @@ Answer: C</pre>
       const qs = new URLSearchParams({ app: APP_ID, ...params, callback: callbackName }).toString();
 
       let settled = false;
+      let script = null;
+      let timeoutId = null;
       const finish = (data) => {
         if (settled) return;
         settled = true;
         clearTimeout(timeoutId);
         delete window[callbackName];
-        script.remove();
+        if (script) script.remove();
         onResult(data);
       };
 
       window[callbackName] = finish;
 
-      const script = document.createElement('script');
-      script.src = `${SHEET_LOG_URL}?${qs}`;
-      script.onerror = () => finish(null);
-      document.body.appendChild(script);
+      const send = () => {
+        if (settled) return;
+        script = document.createElement('script');
+        script.src = `${SHEET_LOG_URL}?${qs}`;
+        script.onerror = () => finish(null);
+        document.body.appendChild(script);
 
-      // JSONP has no built-in failure signal for a slow/hung backend, unlike
-      // a real fetch(), a <script> tag whose callback never fires just sits
-      // there silently forever. Without this timeout, a slow Apps Script
-      // cold-start could leave sign-in hanging instead of falling back
-      // cleanly to a retry.
-      const timeoutId = setTimeout(() => finish(null), timeoutMs);
+        // JSONP has no built-in failure signal for a slow/hung backend, unlike
+        // a real fetch(), a <script> tag whose callback never fires just sits
+        // there silently forever. Without this timeout, a slow Apps Script
+        // cold-start could leave sign-in hanging instead of falling back
+        // cleanly to a retry.
+        timeoutId = setTimeout(() => finish(null), timeoutMs);
+      };
+
+      // A <script> tag injected before the window 'load' event keeps the
+      // browser tab's spinner going until Apps Script answers (up to the
+      // timeout above on a cold start), even though the page is already
+      // usable. The startup calls (listNicknames, checkBanned,
+      // lookupNickname) are all background checks, so wait for 'load'.
+      if (document.readyState === 'complete') send();
+      else window.__afterLoad(send);
     }
 
     function handleCredentialResponse(response) {
@@ -18276,7 +18336,13 @@ Answer: C</pre>
     // style, so there's nothing extra to add here.
     const FIREBASE_CONFIG = {
       apiKey: "AIzaSyD4mtstgvr5licATfJjjA6gJPvcz4G9-bw",
-      authDomain: "aele-mock-exam-hub.firebaseapp.com",
+      // authDomain intentionally removed: it is only needed for signInWithPopup /
+      // signInWithRedirect, which this app never uses (it signs in with custom
+      // tokens, anonymous and email/password). With it present, Firebase Auth
+      // loads apis.google.com/js/api.js plus a hidden <iframe> from
+      // aele-mock-exam-hub.firebaseapp.com on every page load, which holds the
+      // tab spinner open. To undo: put this line back:
+      //   authDomain: "aele-mock-exam-hub.firebaseapp.com",
       databaseURL: "https://aele-mock-exam-hub-default-rtdb.asia-southeast1.firebasedatabase.app",
       projectId: "aele-mock-exam-hub",
       storageBucket: "aele-mock-exam-hub.firebasestorage.app",
@@ -29748,7 +29814,7 @@ Answer: C</pre>
         if (window.google && google.accounts && google.accounts.id) {
           clearInterval(tryInit);
           initGoogleButton();
-        } else if (attempts > 40) {
+        } else if (attempts > 300) { // up to ~30s, the script now starts after 'load'
           clearInterval(tryInit);
         }
       }, 100);
