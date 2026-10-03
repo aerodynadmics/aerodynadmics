@@ -23528,7 +23528,7 @@ Answer: C</pre>
           : category === 'animations'
           ? `<span class="shop-item-preview"><span class="shop-anim-preview ${item.cssClass}">Callsign</span></span>`
           : category === 'models' && item.modelSrc
-          ? `<span class="shop-item-preview model-preview"><model-viewer src="${item.modelSrc}" alt="${escapeHtml(item.name)}" auto-rotate rotation-per-second="25deg" disable-zoom interaction-prompt="none" shadow-intensity="0" exposure="1"></model-viewer></span>`
+          ? `<span class="shop-item-preview model-preview"><model-viewer src="${item.modelSrc}" loading="eager" data-pending alt="${escapeHtml(item.name)}" auto-rotate rotation-per-second="25deg" disable-zoom interaction-prompt="none" shadow-intensity="0" exposure="1"></model-viewer></span>`
           : `<span class="shop-item-preview bg-preview" style="background-image:url('${item.imageUrl}')"></span>`;
 
         // Models now equip the same way borders/animations do, up to
@@ -23624,7 +23624,7 @@ Answer: C</pre>
           : category === 'animations'
           ? `<span class="shop-item-preview"><span class="shop-anim-preview ${item.cssClass}">Callsign</span></span>`
           : category === 'models' && item.modelSrc
-          ? `<span class="shop-item-preview model-preview"><model-viewer src="${item.modelSrc}" alt="${escapeHtml(item.name)}" auto-rotate rotation-per-second="25deg" disable-zoom interaction-prompt="none" shadow-intensity="0" exposure="1"></model-viewer></span>`
+          ? `<span class="shop-item-preview model-preview"><model-viewer src="${item.modelSrc}" loading="eager" data-pending alt="${escapeHtml(item.name)}" auto-rotate rotation-per-second="25deg" disable-zoom interaction-prompt="none" shadow-intensity="0" exposure="1"></model-viewer></span>`
           : `<span class="shop-item-preview bg-preview" style="background-image:url('${item.imageUrl}')"></span>`;
 
         let actionsHtml;
@@ -36941,7 +36941,7 @@ Answer: C</pre>
           ondragend="handleAircraftDragEnd(event)"` : ''}>
           ${item.modelSrc ? `
           <span class="profile-aircraft-thumb-wrap">
-            <model-viewer src="${item.modelSrc}" alt="${escapeHtml(item.name)}" auto-rotate rotation-per-second="25deg" disable-zoom interaction-prompt="none" shadow-intensity="0" exposure="1"></model-viewer>
+            <model-viewer src="${item.modelSrc}" loading="eager" data-pending alt="${escapeHtml(item.name)}" auto-rotate rotation-per-second="25deg" disable-zoom interaction-prompt="none" shadow-intensity="0" exposure="1"></model-viewer>
           </span>
           ` : `
           <span class="profile-aircraft-thumb" style="background-image:url('${item.imageUrl}')"></span>
@@ -42137,6 +42137,124 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   document.addEventListener('selectionchange', function () {
     if (!mouseDown) later(300);
   });
+})();
+</script>
+
+<!-- Aircraft model sync: every 3D aircraft thumbnail (Flight Store, owned
+     cards, profile Aircraft Collections) loads eagerly and stays hidden
+     until ALL aircraft models have finished loading, then they all appear
+     together. Without this each model popped in whenever its own file
+     finished downloading (smallest file first), so F-22 -> MiG-21 -> B-2. -->
+<style>
+  model-viewer { transition: opacity 0.25s ease; }
+  model-viewer[data-pending] { opacity: 0; }
+</style>
+<script>
+(function () {
+  var TIMEOUT_MS = 20000;      // never keep a thumbnail hidden longer than this
+  var preloadPromise = null;
+  var seen = new WeakSet();
+  var revealQueue = [], revealScheduled = false;
+
+  function modelSrcs() {
+    try {
+      return (SHOP_ITEMS.models || []).map(function (i) { return i.modelSrc; }).filter(Boolean);
+    } catch (e) { return []; }
+  }
+
+  // Resolves when the element has loaded (or failed, so one bad file can
+  // never block the others).
+  function whenLoaded(mv) {
+    return new Promise(function (resolve) {
+      if (mv.loaded) { resolve(); return; }
+      function done() {
+        mv.removeEventListener('load', done);
+        mv.removeEventListener('error', done);
+        resolve();
+      }
+      mv.addEventListener('load', done);
+      mv.addEventListener('error', done);
+    });
+  }
+
+  // Starts loading every aircraft model in parallel (once), resolves when
+  // the last one is done.
+  function preloadAll() {
+    if (preloadPromise) return preloadPromise;
+    preloadPromise = customElements.whenDefined('model-viewer').then(function () {
+      var box = document.createElement('div');
+      box.setAttribute('aria-hidden', 'true');
+      box.style.cssText = 'position:fixed;left:-9999px;top:0;width:64px;height:64px;' +
+        'opacity:0;pointer-events:none;overflow:hidden;';
+      var loads = modelSrcs().map(function (src) {
+        var mv = document.createElement('model-viewer');
+        mv.setAttribute('loading', 'eager');
+        mv.setAttribute('src', src);
+        var p = whenLoaded(mv);
+        box.appendChild(mv);
+        return p;
+      });
+      document.body.appendChild(box);
+      var timeout = new Promise(function (r) { setTimeout(r, TIMEOUT_MS); });
+      return Promise.race([Promise.all(loads), timeout]).then(function () {
+        // free the extra WebGL contexts; the parsed models stay cached
+        if (box.parentNode) box.parentNode.removeChild(box);
+      });
+    });
+    return preloadPromise;
+  }
+
+  // Reveal everything that is ready in the same frame.
+  function queueReveal(mv) {
+    revealQueue.push(mv);
+    if (revealScheduled) return;
+    revealScheduled = true;
+    requestAnimationFrame(function () {
+      revealScheduled = false;
+      var q = revealQueue; revealQueue = [];
+      q.forEach(function (el) { el.removeAttribute('data-pending'); });
+    });
+  }
+
+  function handle(mv) {
+    if (seen.has(mv) || !mv.hasAttribute('data-pending')) return;
+    seen.add(mv);
+    var safety = new Promise(function (r) { setTimeout(r, TIMEOUT_MS); });
+    var ready = customElements.whenDefined('model-viewer').then(function () {
+      return Promise.all([whenLoaded(mv), preloadAll()]);
+    });
+    Promise.race([ready, safety]).then(function () { queueReveal(mv); },
+                                       function () { queueReveal(mv); });
+  }
+
+  function scan(root) {
+    if (!root || root.nodeType !== 1) return;
+    if (root.tagName === 'MODEL-VIEWER') handle(root);
+    if (root.querySelectorAll) {
+      var list = root.querySelectorAll('model-viewer[data-pending]');
+      for (var i = 0; i < list.length; i++) handle(list[i]);
+    }
+  }
+
+  new MutationObserver(function (muts) {
+    for (var i = 0; i < muts.length; i++) {
+      var added = muts[i].addedNodes;
+      for (var j = 0; j < added.length; j++) scan(added[j]);
+    }
+  }).observe(document.body, { childList: true, subtree: true });
+
+  scan(document.body);
+
+  // Warm the cache early: once the page has finished loading and the browser
+  // is idle, start downloading every aircraft model so they're usually ready
+  // before the Flight Store or a profile is opened.
+  function startEarlyPreload() {
+    var go = function () { preloadAll(); };
+    if (window.requestIdleCallback) requestIdleCallback(go, { timeout: 4000 });
+    else setTimeout(go, 1500);
+  }
+  if (document.readyState === 'complete') startEarlyPreload();
+  else window.addEventListener('load', startEarlyPreload, { once: true });
 })();
 </script>
 </body>
