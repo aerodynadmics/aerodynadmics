@@ -2528,10 +2528,32 @@
     background: linear-gradient(rgba(0,0,0,0.28), rgba(0,0,0,0.28)), var(--blueprint-dark);
     border-radius: 14px 0 0 14px;
     box-shadow: -4px 0 20px rgba(0,0,0,0.3);
+    overflow: hidden;
+  }
+  /* Only the flights scroll; the Crewmates / Radar / "+" buttons sit in a
+     fixed footer that never moves. */
+  .flights-rail-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 0;
     overflow-y: auto;
     scrollbar-width: none;
   }
-  .flights-rail::-webkit-scrollbar { display: none; }
+  .flights-rail-scroll::-webkit-scrollbar { display: none; }
+  .flights-rail-fixed {
+    flex: 0 0 auto;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .flights-rail-fixed .flight-tile { margin-top: 0; }
   .flight-tile {
     position: relative;
     flex: 0 0 auto;
@@ -19936,7 +19958,15 @@ Answer: C</pre>
     function renderFlightsRail() {
       const rail = document.getElementById('flights-rail');
       if (!rail) return;
+      const prevScroll = rail.querySelector('.flights-rail-scroll');
+      const prevScrollTop = prevScroll ? prevScroll.scrollTop : 0;
       rail.innerHTML = '';
+      const flightsScroll = document.createElement('div');
+      flightsScroll.className = 'flights-rail-scroll';
+      const railFixed = document.createElement('div');
+      railFixed.className = 'flights-rail-fixed';
+      rail.appendChild(flightsScroll);
+      rail.appendChild(railFixed);
       const onPrivate = privateFlightActive();
       FLIGHT_SERVERS.forEach((f) => {
         const b = document.createElement('button');
@@ -19946,7 +19976,7 @@ Answer: C</pre>
         b.title = f.name + (f.isPublic ? ' \u00b7 Public Flight' : '');
         b.setAttribute('aria-label', b.title);
         b.addEventListener('click', () => switchFlight(f.id === MAIN_FLIGHT_SERVER_ID ? null : f.id));
-        rail.appendChild(b);
+        flightsScroll.appendChild(b);
       });
       visiblePrivateFlightIds().forEach((id) => {
         const f = flightsCache[id];
@@ -19964,7 +19994,7 @@ Answer: C</pre>
         b.setAttribute('aria-label', b.title);
         if (canEnter) b.addEventListener('click', () => switchFlight(id));
         else b.setAttribute('aria-disabled', 'true');
-        rail.appendChild(b);
+        flightsScroll.appendChild(b);
       });
       // Crewmates tile: first of the bottom group (above Radar and "+"). Opens the Black Box panel on
       // the Crewmates view (same as the old Crewmates tab). Signed-in only.
@@ -19977,7 +20007,7 @@ Answer: C</pre>
         crew.setAttribute('aria-label', 'Crewmates');
         crew.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
         crew.addEventListener('click', openCrewmatesFromRail);
-        rail.appendChild(crew);
+        railFixed.appendChild(crew);
       }
       // Radar tile: opens the airspace popup (every public + private flight).
       // Sits directly above the "+" tile.
@@ -19988,7 +20018,7 @@ Answer: C</pre>
       radar.setAttribute('aria-label', 'Radar');
       radar.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12L18.4 5.6"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg>';
       radar.addEventListener('click', openFlightRadar);
-      rail.appendChild(radar);
+      railFixed.appendChild(radar);
       // "+" tile: create a private flight
       const add = document.createElement('button');
       add.type = 'button';
@@ -19997,7 +20027,8 @@ Answer: C</pre>
       add.setAttribute('aria-label', 'Create a private flight');
       add.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>';
       add.addEventListener('click', createFlight);
-      rail.appendChild(add);
+      railFixed.appendChild(add);
+      flightsScroll.scrollTop = prevScrollTop;
     }
     // ---- Radar: the airspace popup. Shows every public flight (rail) and every
     // private flight as a blip, plus a list with souls aboard / online counts. ----
