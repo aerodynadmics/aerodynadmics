@@ -15187,8 +15187,8 @@ Answer: C</pre>
     // THAT (not the image itself) in the same `avatar` field the backend
     // already persists, saveAvatarChange() below needs no changes to pick
     // this up, exactly like it didn't need changes for the emoji avatars.
-    const AVATAR_UPLOAD_MAX_DIMENSION = 256; // px, square
-    const AVATAR_UPLOAD_JPEG_QUALITY = 0.8;
+    const AVATAR_UPLOAD_MAX_DIMENSION = 512; // px, square
+    const AVATAR_UPLOAD_JPEG_QUALITY = 0.9;
     const PROFILE_BG_UPLOAD_MAX_BYTES = 8 * 1024 * 1024; // 8 MB, uploaded as-is (no recompression) so GIF animation survives
     // Uploading your own profile background costs Wings. Animated GIFs cost
     // considerably more than a static image, they're heavier to store and
