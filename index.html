@@ -42270,7 +42270,8 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
      the page inside a page:
        #/home  #/schedule  #/review  #/exam  #/board  #/quiz  #/game
        #/store  #/hangar  #/about  #/admin
-       #/exam/aero  #/review/structures  #/quiz/powerplant   (a subject)
+       #/exam/aerodynamics  #/review/aircraft-structures-and-design
+       #/quiz/aircraft-powerplant   (a subject, by its full name)
        #/store/models  #/store/borders  #/store/animations   (store tabs)
        #/hangar/models  #/hangar/borders  #/hangar/animations (hangar tabs)
      Back/Forward move between pages, and a refresh or a shared link reopens
@@ -42297,12 +42298,31 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
 
   var VIEW_ROUTE_VALUES = Object.keys(VIEW_ROUTE).map(function (k) { return VIEW_ROUTE[k]; });
 
-  function subjectKeys() {
-    try { return subjects.map(function (s) { return s.key; }); } catch (e) { return []; }
+  // Subjects appear in the link by their full name, for example
+  // #/quiz/aerodynamics or #/exam/aircraft-structures-and-design.
+  // Inside the page they are still handled by their short key (aero ...).
+  function slugify(name) {
+    return String(name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   }
+  function subjectList() {
+    try { return subjects; } catch (e) { return []; }
+  }
+  function slugOfKey(key) {
+    var list = subjectList();
+    for (var i = 0; i < list.length; i++) if (list[i].key === key) return slugify(list[i].name);
+    return key;
+  }
+  function keyOfSlug(x) {            // also accepts the old short keys (aero ...)
+    var list = subjectList();
+    for (var i = 0; i < list.length; i++) {
+      if (slugify(list[i].name) === x || list[i].key === x) return list[i].key;
+    }
+    return null;
+  }
+  function isSubjectRoute(route) { return route === 'exam' || route === 'review' || route === 'quiz'; }
   function validSub(route, sub) {
     if (!sub) return null;
-    if (route === 'exam' || route === 'review' || route === 'quiz') return subjectKeys().indexOf(sub) !== -1 ? sub : null;
+    if (isSubjectRoute(route)) return keyOfSlug(sub);
     if (route === 'store' || route === 'hangar') return STORE_TABS.indexOf(sub) !== -1 ? sub : null;
     return null;
   }
@@ -42313,7 +42333,10 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     if (!m || VIEW_ROUTE_VALUES.indexOf(m[1]) === -1) return null;
     return { route: m[1], sub: validSub(m[1], m[2]) };
   }
-  function pathOf(r) { return r.route + (r.sub ? '/' + r.sub : ''); }
+  function pathOf(r) {
+    if (!r.sub) return r.route;
+    return r.route + '/' + (isSubjectRoute(r.route) ? slugOfKey(r.sub) : r.sub);
+  }
 
   // Remember which subject was opened (showSubject knows its key; the page does not).
   if (typeof window.showSubject === 'function') {
@@ -42429,7 +42452,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
       if (!location.hash) return;                 // already the plain address
       url = location.pathname + location.search;
     } else {
-      if (have && pathOf(have) === want) return;
+      if (location.hash === '#/' + want) return;
       url = '#/' + want;
     }
     try {
