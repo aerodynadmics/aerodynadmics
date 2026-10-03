@@ -5843,6 +5843,8 @@
   .chat-panel.crew-mode .chat-mode-tabs { display: none; }
   /* Crewmates view: no Guidelines link and no » button; the Crewmates icon on the Flights rail closes it. */
   .chat-panel.crew-mode .chat-panel-close { display: none !important; }
+  /* Private flights hide the Guidelines link, so drop the divider left of the » button there. */
+  .chat-panel.priv-flight .chat-panel-head .chat-panel-close { border-left: 0; padding-left: 4px; }
   .chat-panel.crew-mode .chat-guidelines-link,
   .chat-panel.priv-flight .chat-panel-head .chat-guidelines-link { display: none !important; }
   .chat-mode-tab.active { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); }
@@ -22350,7 +22352,7 @@ Answer: C</pre>
     // pack and credits Wings automatically via webhook once payment succeeds.
     // Replace with your deployed function's URL, e.g.:
     // 'https://us-central1-aele-mock-exam-hub.cloudfunctions.net/createWingsCheckout'
-    const CREATE_WINGS_CHECKOUT_URL = 'https://us-central1-aele-mock-exam-hub.cloudfunctions.net/createWingsCheckout';
+    const CREATE_WINGS_CHECKOUT_URL = 'https://asia-southeast1-aele-mock-exam-hub.cloudfunctions.net/createWingsCheckoutSG';
 
     function wingsCheckoutIsConfigured() {
       return CREATE_WINGS_CHECKOUT_URL && !CREATE_WINGS_CHECKOUT_URL.startsWith('PASTE_');
