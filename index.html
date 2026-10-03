@@ -10523,6 +10523,85 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
     outline: none;
   } }
   .info-links-icon { font-size: 14px; line-height: 1; }
+
+  /* ---- Top-bar logo hides while the About page is open ----
+     The logo collapses to zero width (so Flight Store / Hangar slide left)
+     while a copy of it flies down to become the page's own title, and
+     flies back up when the About page is left. See the "logo flight"
+     script at the end of the page. */
+  .topbar-logo-btn {
+    overflow: hidden;
+    transition: max-width 0.7s cubic-bezier(.45, 0, .2, 1), margin-right 0.7s cubic-bezier(.45, 0, .2, 1), transform 0.15s ease, filter 0.15s ease;
+  }
+  .topbar-logo-btn.logo-instant { transition: none !important; }
+  .topbar-logo-flight {
+    position: fixed;
+    margin: 0;
+    z-index: 200;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .topbar-logo-btn { transition: none; }
+  }
+
+  /* ---- About / home page: one fixed screen, no scrolling (desktop) ----
+     While #view-about is showing, the page is locked to the viewport height
+     and the blocks stretch to fill the space between the top bar and the
+     bottom of the window. A small script at the end of the page
+     (fitAboutToScreen) scales the content up or down so it fills the screen
+     without ever scrolling. Phones keep their normal layout because the
+     sidebar sits in the page flow there. */
+  @media (min-width: 901px) {
+    html.about-open,
+    html.about-open body {
+      overflow: hidden !important;
+      overscroll-behavior: none;
+      height: 100%;
+    }
+    html.about-open .wrap {
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding-top: 84px;
+      padding-bottom: 16px;
+    }
+    html.about-open .wrap > #view-about.visible {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #view-about.visible > header { flex: 0 0 auto; margin-bottom: 0; }
+    #view-about.visible > .trivia-card,
+    #view-about.visible > .timer-info-note,
+    #view-about.visible > .info-links-box {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      margin: 0;
+    }
+    #view-about.visible > .trivia-card { flex-grow: 1; margin-top: 3%; }
+    #view-about.visible > .timer-info-note { flex-grow: 1.4; margin-top: 3%; }
+    #view-about.visible > .info-links-box {
+      flex-grow: 0.7;
+      margin-top: 3%;
+      flex-direction: row;
+      align-items: stretch;
+      gap: 10px;
+      padding: 6px;
+    }
+    #view-about.visible .info-links-item { flex: 1 1 0; justify-content: center; }
+    #view-about.visible > .legal-links { flex: 0 0 auto; margin: 2.5% 0 0; }
+    #view-about.visible > .trivia-card .trivia-next-btn { align-self: flex-start; }
+    #view-about.visible .timer-info-note.collapsed { flex-grow: 0; }
+    /* measuring pass: content at natural height, no stretching */
+    #view-about.fit-measuring > * { flex-grow: 0 !important; }
+  }
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js" defer></script>
@@ -43048,6 +43127,287 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
       if (signedIn()) { clearInterval(poll); start(); }
     }, 500);
   }
+})();
+</script>
+<script>
+/* About page: scale the content up or down so it fills the window exactly,
+   with no scrolling (desktop only, mirrors the CSS block near .info-links-box). */
+(function () {
+  var about = document.getElementById('view-about');
+  if (!about) return;
+  var mq = window.matchMedia('(min-width: 901px)');
+  var busy = false;
+  var MIN = 0.5, MAX = 1.6;
+  function fits(z) {
+    about.style.zoom = String(z);
+    return about.scrollHeight <= about.clientHeight + 1;
+  }
+  var lastKey = '';
+  function fitKey() {
+    var wrap = about.parentNode, tr = document.getElementById('trivia-text'), note = about.querySelector('.timer-info-note');
+    return [wrap.clientWidth, wrap.clientHeight, tr ? tr.textContent : '', note ? note.className : ''].join('|');
+  }
+  function fitAboutToScreen() {
+    if (busy) return;
+    document.documentElement.classList.toggle('about-open', about.classList.contains('visible'));
+    // Already fitted for exactly this window size and content: nothing to redo
+    // (avoids a second round of layout passes in the middle of the logo flight).
+    if (about.classList.contains('visible') && mq.matches && about.style.zoom && fitKey() === lastKey) {
+      window.dispatchEvent(new Event('about-fit'));
+      return;
+    }
+    busy = true;
+    try {
+      about.style.zoom = '';
+      about.classList.remove('fit-measuring');
+      if (!about.classList.contains('visible') || !mq.matches) return;
+      about.classList.add('fit-measuring');
+      var lo = MIN, hi = MAX;
+      if (fits(hi)) { lo = hi; }
+      else {
+        for (var i = 0; i < 7; i++) {
+          var mid = (lo + hi) / 2;
+          if (fits(mid)) lo = mid; else hi = mid;
+        }
+      }
+      about.style.zoom = String(lo);
+      about.classList.remove('fit-measuring');
+      lastKey = fitKey();
+    } finally { busy = false; }
+    window.dispatchEvent(new Event('about-fit'));
+  }
+  window.__fitAbout = fitAboutToScreen;
+  var raf = 0;
+  function queueFit() { cancelAnimationFrame(raf); raf = requestAnimationFrame(fitAboutToScreen); }
+  /* A plain class on <html> instead of html:has(#view-about.visible): :has()
+     makes the browser re-check the whole (huge) page every time any popup or
+     view changes, which causes a hitch right as the logo animation starts. */
+  var rootEl = document.documentElement;
+  function syncRootClass() { rootEl.classList.toggle('about-open', about.classList.contains('visible')); }
+  new MutationObserver(syncRootClass).observe(about, { attributes: true, attributeFilter: ['class'] });
+  syncRootClass();
+  new MutationObserver(queueFit).observe(about, { attributes: true, attributeFilter: ['class'] });
+  var trivia = document.getElementById('trivia-card');
+  if (trivia) new MutationObserver(queueFit).observe(trivia, { childList: true, subtree: true, characterData: true });
+  var note = about.querySelector('.timer-info-note');
+  if (note) new MutationObserver(queueFit).observe(note, { attributes: true, attributeFilter: ['class'] });
+  window.addEventListener('resize', queueFit);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(queueFit);
+  queueFit();
+})();
+</script>
+<script>
+/* ---- logo flight ----
+   Top-bar "aerodynadmics" logo <-> the About page's own title.
+   Opening About: the top-bar logo vanishes (Store / Hangar slide left) while a
+   copy flies down into the big title. Leaving About: the reverse.
+   The flight uses two fixed-size copies (one looking like the top-bar logo,
+   one like the page title) that are moved and scaled with GPU transforms and
+   cross-faded, so no text is re-laid-out while it moves. */
+(function () {
+  var about = document.getElementById('view-about');
+  var btn = document.getElementById('topbar-logo-btn');
+  if (!about || !btn) return;
+  var logo = btn.querySelector('.topbar-logo-text');
+  var title = about.querySelector('.site-title');
+  if (!logo || !title) return;
+
+  var DUR = 800;
+  var EASE = 'cubic-bezier(.45, 0, .15, 1)';
+  var GAP = 12; // .top-bar gap
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var cache = null, fl = null, away = null;
+
+  function px(n) { return n + 'px'; }
+  function rectOf(el) {
+    var r = el.getBoundingClientRect();
+    return { left: r.left, top: r.top, width: r.width, height: r.height };
+  }
+  function measure(el, z) {
+    z = z || 1;
+    var cs = getComputedStyle(el), m = rectOf(el);
+    m.fs = parseFloat(cs.fontSize) * z;
+    m.pad = [cs.paddingTop, cs.paddingRight, cs.paddingBottom, cs.paddingLeft].map(function (v) { return parseFloat(v) * z; });
+    m.bw = parseFloat(cs.borderTopWidth) * z;
+    m.sw = (parseFloat(cs.getPropertyValue('-webkit-text-stroke-width')) || 0) * z;
+    m.lh = parseFloat(cs.lineHeight) * z;
+    return m;
+  }
+  function snap() {
+    if (!about.classList.contains('visible')) return;
+    var r = title.getBoundingClientRect();
+    if (r.width < 2 || r.height < 2) return;
+    cache = measure(title, parseFloat(about.style.zoom) || 1);
+  }
+  function killFlight() {
+    if (!fl) return;
+    fl.els.forEach(function (e) { try { e.getAnimations().forEach(function (a) { a.cancel(); }); } catch (x) {} if (e.parentNode) e.parentNode.removeChild(e); });
+    fl = null;
+    title.style.visibility = '';
+  }
+  function setAway(on, instant) {
+    if (instant) btn.classList.add('logo-instant');
+    if (on) {
+      btn.style.maxWidth = '0px';
+      btn.style.marginRight = px(-GAP);
+      btn.style.opacity = '0';
+      btn.style.pointerEvents = 'none';
+      btn.tabIndex = -1;
+      btn.setAttribute('aria-hidden', 'true');
+    } else {
+      btn.style.maxWidth = '';
+      btn.style.marginRight = '';
+      btn.style.opacity = '';
+      btn.style.pointerEvents = '';
+      btn.tabIndex = 0;
+      btn.removeAttribute('aria-hidden');
+    }
+    if (instant) { void btn.offsetWidth; btn.classList.remove('logo-instant'); }
+  }
+  function tf(r, nat) {
+    return 'translate(' + r.left + 'px,' + r.top + 'px) scale(' + (r.width / nat.width) + ',' + (r.height / nat.height) + ')';
+  }
+  function layer(el, nat, m) {
+    el.removeAttribute('id');
+    el.classList.add('topbar-logo-flight');
+    var st = el.style;
+    st.left = '0'; st.top = '0';
+    st.width = px(nat.width); st.height = px(nat.height);
+    st.transformOrigin = '0 0';
+    st.animation = 'none';
+    st.willChange = 'transform, opacity';
+    st.visibility = 'visible'; // the title copy is cloned while the real title is hidden, so it would inherit visibility:hidden
+    st.margin = '0';
+    st.display = 'block';
+    if (m) {
+      st.fontSize = px(m.fs);
+      st.padding = m.pad.map(px).join(' ');
+      st.borderWidth = px(m.bw);
+      st.webkitTextStrokeWidth = px(m.sw);
+      st.lineHeight = px(m.lh);
+    }
+    return el;
+  }
+  // from / to: viewport rects. forward = logo -> title, otherwise title -> logo.
+  function fly(from, to, forward, done) {
+    killFlight();
+    var logoNat = rectOf(logo);
+    var logoM = measure(logo);
+    var A = layer(logo.cloneNode(true), logoNat, logoM);       // looks like the top-bar logo
+    var B = cache ? layer(title.cloneNode(true), cache, cache) : null; // looks like the page title
+    var els = B ? [A, B] : [A];
+    var bottom = forward ? A : B, top = forward ? B : A;
+    // Put every layer in its exact first-frame state up front (position, size
+    // and opacity). Web animations only start on the next frame, and without
+    // this the copies would sit at the top-left corner or be invisible for
+    // that one frame, which showed up as a brief flash / vanish.
+    A.style.transform = tf(from, logoNat);
+    if (B) B.style.transform = tf(from, cache);
+    bottom.style.opacity = '1';
+    if (top !== bottom && top) top.style.opacity = '0';
+    els.forEach(function (e) { document.body.appendChild(e); });
+    fl = { els: els };
+    var anims = [];
+    function go(el, nat) {
+      anims.push(el.animate(
+        [{ transform: tf(from, nat) }, { transform: tf(to, nat) }],
+        { duration: DUR, easing: EASE, fill: 'forwards' }
+      ));
+    }
+    go(A, logoNat);
+    if (B) go(B, cache);
+    // the layer that looks like where we start stays solid, the other fades in over it, then the first fades out
+    var fadeOut = [{ opacity: 1, offset: 0 }, { opacity: 1, offset: 0.3 }, { opacity: 0, offset: 0.6 }, { opacity: 0, offset: 1 }];
+    var fadeIn = [{ opacity: 0, offset: 0 }, { opacity: 0, offset: 0.3 }, { opacity: 1, offset: 0.6 }, { opacity: 1, offset: 1 }];
+    if (B) {
+      bottom.animate(fadeOut, { duration: DUR, easing: 'linear', fill: 'forwards' });
+      top.animate(fadeIn, { duration: DUR, easing: 'linear', fill: 'forwards' });
+    } else {
+      A.animate([{ opacity: 1 }, { opacity: 1 }], { duration: DUR, fill: 'forwards' });
+    }
+    anims[0].onfinish = function () {
+      killFlight();
+      done();
+    };
+  }
+
+  /* Store / Hangar / etc. slide with transforms (run on the GPU, so they stay
+     smooth even if the page is busy). The layout jumps to its final state at
+     once, then each element that moved is animated from where it used to be. */
+  var tbAnims = [];
+  function topbarItems() {
+    var bar = btn.parentNode;
+    return Array.prototype.slice.call(bar.querySelectorAll('*')).filter(function (e) {
+      return !btn.contains(e) && e.getClientRects().length;
+    }).map(function (e) { return { e: e, l: e.getBoundingClientRect().left }; });
+  }
+  function cancelSlide() {
+    tbAnims.forEach(function (a) { try { a.cancel(); } catch (x) {} });
+    tbAnims = [];
+  }
+  function slide(before) {
+    var bar = btn.parentNode, tot = new Map();
+    before.forEach(function (it) { tot.set(it.e, it.l - it.e.getBoundingClientRect().left); });
+    before.forEach(function (it) {
+      var e = it.e, t = tot.get(e), anc = 0, p = e.parentElement;
+      while (p && p !== bar) { if (tot.has(p)) { anc = tot.get(p); break; } p = p.parentElement; }
+      var own = t - anc;
+      if (Math.abs(own) < 0.5) return;
+      var prev = e.style.transform;
+      e.style.transform = 'translateX(' + own + 'px)';
+      e.style.willChange = 'transform';
+      var an = e.animate([{ transform: 'translateX(' + own + 'px)' }, { transform: 'translateX(0px)' }],
+        { duration: DUR, easing: EASE });
+      an.onfinish = an.oncancel = function () { e.style.transform = prev; e.style.willChange = ''; };
+      tbAnims.push(an);
+    });
+  }
+
+  function enterAbout() {
+    var from = fl ? rectOf(fl.els[fl.els.length - 1]) : rectOf(logo);
+    var before = topbarItems();
+    cancelSlide();
+    killFlight();
+    if (window.__fitAbout) window.__fitAbout();
+    snap();
+    setAway(true, true);               // final layout straight away
+    if (!reduce) slide(before);        // icons glide from their old spots
+    if (reduce || !cache) return;
+    title.style.visibility = 'hidden';
+    fly(from, cache, true, function () { title.style.visibility = ''; });
+  }
+
+  function leaveAbout() {
+    var from = fl ? rectOf(fl.els[fl.els.length - 1]) : (cache ? { left: cache.left, top: cache.top, width: cache.width, height: cache.height } : null);
+    var before = topbarItems();
+    cancelSlide();
+    killFlight();
+    // jump to the final layout (slot open again, real logo still invisible)
+    btn.classList.add('logo-instant');
+    btn.style.maxWidth = '';
+    btn.style.marginRight = '';
+    void btn.offsetWidth;
+    var to = rectOf(logo);
+    btn.classList.remove('logo-instant');
+    if (reduce || !from || !cache) { setAway(false, true); return; }
+    slide(before);
+    fly(from, to, false, function () { setAway(false, true); });
+  }
+
+  function sync() {
+    var on = about.classList.contains('visible');
+    if (on === away) return;
+    var first = away === null;
+    away = on;
+    if (first) { if (on) setAway(true, true); return; }
+    if (on) enterAbout(); else leaveAbout();
+  }
+
+  new MutationObserver(sync).observe(about, { attributes: true, attributeFilter: ['class'] });
+  window.addEventListener('about-fit', snap);
+  window.addEventListener('resize', function () { requestAnimationFrame(function () { requestAnimationFrame(snap); }); });
+  ['pointerdown', 'click', 'keydown'].forEach(function (ev) { document.addEventListener(ev, snap, true); });
+  sync();
 })();
 </script>
 </body>
