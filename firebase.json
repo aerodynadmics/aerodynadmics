@@ -4,13 +4,24 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "functions/**"
     ],
     "rewrites": [
+      {
+        "source": "/u/**",
+        "function": {
+          "functionId": "profilePreview",
+          "region": "asia-southeast1"
+        }
+      },
       {
         "source": "**",
         "destination": "/index.html"
       }
     ]
+  },
+  "functions": {
+    "source": "functions"
   }
 }

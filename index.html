@@ -27617,10 +27617,12 @@ Answer: C</pre>
         ['dm-setup-btn', 'dm-reset-btn', 'dm-userec-btn'].forEach((id) => { dmEl(id).style.display = 'none'; });
         err.textContent = ''; textEl.textContent = msg; dmProgress(true);
       };
-      const fail = (msg) => {
+      // popup=true shows the message in the site's own alert popup (it sits above the Crewmates
+      // panel and is clearly its own box) instead of as plain text on the panel background.
+      const fail = (msg, popup) => {
         err.classList.remove('info');
-        if (purpose === 'newkey') { err.textContent = ''; showWingsToast(msg); dmOpenThread(); }
-        else { dmShow(prevMode === 'wait' ? 'unlock' : prevMode); err.textContent = msg; }
+        if (purpose === 'newkey') { err.textContent = ''; if (popup) adminAlert(msg); else showWingsToast(msg); dmOpenThread(); }
+        else { dmShow(prevMode === 'wait' ? 'unlock' : prevMode); err.textContent = popup ? '' : msg; if (popup) adminAlert(msg); }
       };
       if (!mine || !nick) { fail('No Google account is linked to this Callsign.'); return; }
       note('Setting up\u2026');
@@ -27635,8 +27637,8 @@ Answer: C</pre>
       note('Waiting for Google\u2026');
       const g = await dmGoogleAuth();
       if (tok !== DM.resetTok) return;
-      if (!g) { fail('Google verification didn\u2019t complete. Please log in to the same browser where your Google account is signed in.'); return; }
-      if (g.email !== mine) { fail('That Google account isn\u2019t the one linked to this Callsign.'); return; }
+      if (!g) { fail('Google verification didn\u2019t complete. Please log in to the same browser where your Google account is signed in.', true); return; }
+      if (g.email !== mine) { fail('That Google account isn\u2019t the one linked to this Callsign.', true); return; }
       note('Setting up\u2026');
       const b = await dmTotpCall({ action: 'totpBegin', nickname: nick, gToken: g.token });
       if (tok !== DM.resetTok) return;
@@ -28433,7 +28435,16 @@ Answer: C</pre>
     // Split-screen layout switch (profile card left, sign-in card right).
     function setProfileSplit(on) { document.body.classList.toggle('profile-split', !!on); }
 
+    // Share links go through /u/<nickname>, a server-side page (see the
+    // profilePreview Cloud Function) that gives Messenger/Facebook a
+    // per-profile preview card, then sends real visitors on to the app at
+    // #/engineer/<nickname>. Chat apps ignore everything after the #, so a
+    // plain #/engineer/ link can only ever show the generic site preview.
+    // Set this to false to go back to plain #/engineer/ links (for example
+    // while the function is not deployed yet).
+    const PROFILE_SHARE_PREVIEW = true;
     function profileLinkFor(nickname) {
+      if (PROFILE_SHARE_PREVIEW) return 'https://aerodynadmics.com/u/' + encodeURIComponent(nickname);
       const base = /^https?:$/.test(location.protocol) ? (location.origin + location.pathname) : 'https://aerodynadmics.com/';
       return base + '#/engineer/' + encodeURIComponent(nickname);
     }
