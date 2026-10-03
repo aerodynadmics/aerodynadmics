@@ -28484,12 +28484,18 @@ Answer: C</pre>
     }
 
     // Looks the Callsign up in the public roster. Returns { nickname, avatar } or null.
+    function withTimeout(promise, ms) {
+      return new Promise((resolve, reject) => {
+        const t = setTimeout(() => reject(new Error('timeout')), ms);
+        promise.then((v) => { clearTimeout(t); resolve(v); }, (e) => { clearTimeout(t); reject(e); });
+      });
+    }
     async function lookupRosterEntry(raw) {
-      if (!ensureFirebaseApp()) return null;
+      if (typeof firebase === 'undefined' || !ensureFirebaseApp()) throw new Error('firebase unavailable');
       const tries = [raw];
       if (raw !== raw.toLowerCase()) tries.push(raw.toLowerCase());
       for (let i = 0; i < tries.length; i++) {
-        const v = (await nsRef('nicknames/' + presenceKey(tries[i])).once('value')).val();
+        const v = (await withTimeout(nsRef('nicknames/' + presenceKey(tries[i])).once('value'), 10000)).val();
         if (v) return { nickname: v.nickname || tries[i], avatar: v.avatar || null };
       }
       return null;
@@ -28525,10 +28531,10 @@ Answer: C</pre>
         if (!found) { renderProfileNotFound(); return; }
         const nick = found.nickname;
         const key = presenceKey(nick);
-        const [profSnap, presSnap] = await Promise.all([
+        const [profSnap, presSnap] = await withTimeout(Promise.all([
           profileRef(nick).once('value'),
           nsRef('presence/' + key).once('value')
-        ]);
+        ]), 10000);
         if (token !== profileLinkToken) return;
         const data = profSnap.val() || {};
         const presence = presSnap.val() || {};
@@ -28576,11 +28582,27 @@ Answer: C</pre>
       }, 200);
     }
 
+    // Keeps the signed-out public card in step with the address bar. It runs
+    // whenever the sign-in screen appears or the link changes, so it does not
+    // matter whether a saved login was being restored at page load or the
+    // visitor just signed out: if the sign-in screen is showing and the
+    // address is a profile link, that profile's card is shown.
+    function syncPublicProfile() {
+      const raw = profileNickFromHash();
+      if (!raw || signedInUi()) return;
+      const overlayOpen = document.getElementById('profile-card-overlay').classList.contains('visible');
+      if (profileCardPublic && overlayOpen && publicProfileShownFor === presenceKey(raw).toLowerCase()) return;
+      publicProfileShownFor = presenceKey(raw).toLowerCase();
+      openPublicProfile(raw);
+    }
+    let publicProfileShownFor = null;
+
     // Back / Forward / pasting another profile link while the site is open.
     window.addEventListener('hashchange', () => {
       const raw = profileNickFromHash();
       if (raw) {
         if (profileCardOpenFor && presenceKey(profileCardOpenFor) === presenceKey(raw)) return;
+        if (!signedInUi()) { syncPublicProfile(); return; }
         openProfileFromLink();
       } else if (document.getElementById('profile-card-overlay').classList.contains('visible')) {
         profileLinkPushed = false;
@@ -28592,8 +28614,18 @@ Answer: C</pre>
     // sign-in screen goes away, see start() in the router script.)
     (function bootProfileLink() {
       function go() {
-        if (!profileNickFromHash()) return;
-        setTimeout(() => { if (!signedInUi() && profileNickFromHash()) openProfileFromLink(); }, 400);
+        const gate = document.getElementById('signin-gate');
+        // Re-check every time the sign-in screen is shown or hidden.
+        if (gate) new MutationObserver(() => { setTimeout(syncPublicProfile, 0); })
+          .observe(gate, { attributes: true, attributeFilter: ['class', 'style'] });
+        // First check a moment after load, once a saved login (if any) has
+        // had its chance to hide the sign-in screen. Retried a few times in
+        // case the page is slow.
+        let n = 0;
+        const t = setInterval(() => {
+          syncPublicProfile();
+          if (++n >= 6 || !profileNickFromHash()) clearInterval(t);
+        }, 300);
       }
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', go); else go();
     })();
@@ -28849,6 +28881,7 @@ Answer: C</pre>
       profileCardReadOnly = false;
       profileCardPublic = false;
       setProfileSplit(false);
+      publicProfileShownFor = null;
       profileCardStack = [];
       profileLinkToken++;
       if (!keepUrl && wasOpen) clearProfileUrl();
