@@ -44019,5 +44019,27 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   sync();
 })();
 </script>
+<script>
+/* TEMP DIAGNOSTIC: shows why a 3D model failed to load. Remove once fixed. */
+(function () {
+  var shown = {};
+  document.addEventListener('error', function (e) {
+    var t = e.target;
+    if (!t || !t.tagName || t.tagName !== 'MODEL-VIEWER') return;
+    var d = e.detail || {};
+    var msg = (d.sourceError && (d.sourceError.message || String(d.sourceError))) || d.type || 'unknown error';
+    var src = t.getAttribute('src') || '';
+    var key = src + msg;
+    if (shown[key]) return; shown[key] = 1;
+    console.error('[model-viewer]', src, d);
+    var b = document.createElement('div');
+    b.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;z-index:99999;background:#7a0b0b;color:#fff;' +
+      'font:12px/1.4 monospace;padding:10px 12px;border-radius:8px;white-space:pre-wrap;word-break:break-all;';
+    b.textContent = 'MODEL LOAD FAILED\n' + src + '\n' + msg + '  (click to dismiss)';
+    b.onclick = function () { b.remove(); };
+    document.body.appendChild(b);
+  }, true);
+})();
+</script>
 </body>
 </html>
