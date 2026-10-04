@@ -22264,9 +22264,9 @@ Answer: C</pre>
         { id: 'moire', name: 'Moiré', priceWings: 200, cssClass: 'nick-moire', tier: 'Sonic' }
       ],
       models: [
-        { id: 'mig-21', name: 'MiG-21 Fishbed', priceWings: 1111, imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg/640px-Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg', tier: 'Supersonic', modelSrc: '/flight%20store/aircraft%20models/optimized/MiG_Project_1.42.glb' },
-        { id: 'f22', name: 'F-22 Raptor', priceWings: 1500, imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Lockheed_Martin_F-22A_Raptor_JSOH.jpg?width=640', tier: 'Supersonic', modelSrc: '/flight%20store/aircraft%20models/optimized/F22.glb' },
-        { id: 'b2-spirit', name: 'B-2 Spirit', priceWings: 1500, imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/B-2_Spirit_original.jpg?width=640', tier: 'Supersonic', modelSrc: '/flight%20store/aircraft%20models/optimized/B-2_Spirit_Stealth_Bomber.glb' }
+        { id: 'mig-21', name: 'MiG-21 Fishbed', priceWings: 1111, imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg/640px-Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg', tier: 'Supersonic', modelSrc: '/flight%20store/aircraft%20models/optimized/MiG21%20Fishbed.glb' },
+        { id: 'f22', name: 'F-22 Raptor', priceWings: 1500, imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Lockheed_Martin_F-22A_Raptor_JSOH.jpg?width=640', tier: 'Supersonic', modelSrc: '/flight%20store/aircraft%20models/optimized/F-22%20Raptor.glb' },
+        { id: 'b2-spirit', name: 'B-2 Spirit', priceWings: 1500, imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/B-2_Spirit_original.jpg?width=640', tier: 'Supersonic', modelSrc: '/flight%20store/aircraft%20models/optimized/B-2%20Spirit.glb' }
       ]
     };
 
@@ -37959,7 +37959,7 @@ Answer: C</pre>
       const titleEl = document.getElementById('mig-viewer-title');
       const item = (SHOP_ITEMS.models || []).find((i) => i.id === itemId);
       if (currentViewerItemId !== itemId) {
-        model.setAttribute('src', (item && item.modelSrc) || '/flight%20store/aircraft%20models/optimized/MiG_Project_1.42.glb');
+        model.setAttribute('src', (item && item.modelSrc) || '/flight%20store/aircraft%20models/optimized/MiG21%20Fishbed.glb');
         currentViewerItemId = itemId;
       }
       migModelLoaded = true;
@@ -43051,7 +43051,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
 </style>
 <script>
 (function () {
-  var TIMEOUT_MS = 20000;      // never keep a thumbnail hidden longer than this
+  var TIMEOUT_MS = 10000;      // never keep a thumbnail hidden longer than this
   var preloadPromise = null;
   var seen = new WeakSet();
   var revealQueue = [], revealScheduled = false;
@@ -43123,8 +43123,35 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     var ready = customElements.whenDefined('model-viewer').then(function () {
       return Promise.all([whenLoaded(mv), preloadAll()]);
     });
-    Promise.race([ready, safety]).then(function () { queueReveal(mv); },
-                                       function () { queueReveal(mv); });
+    Promise.race([ready, safety]).then(function () { finish(mv); },
+                                       function () { finish(mv); });
+  }
+
+  // If the 3D model never loaded (file not found at that address, the host
+  // answered with a web page instead of the .glb, or the viewer library was
+  // blocked), show the aircraft's photo instead of an empty box, and log the
+  // address that failed so it is easy to check in the browser console.
+  function photoFor(src) {
+    try {
+      var list = SHOP_ITEMS.models || [];
+      for (var i = 0; i < list.length; i++) if (list[i].modelSrc === src) return list[i].imageUrl || '';
+    } catch (e) {}
+    return '';
+  }
+  function finish(mv) {
+    if (mv.loaded) { queueReveal(mv); return; }
+    var src = mv.getAttribute('src') || '';
+    try { console.warn('Aircraft 3D model did not load, showing photo instead:', src); } catch (e) {}
+    var photo = photoFor(src);
+    var box = mv.parentNode;
+    if (photo && box && box.style) {
+      box.style.backgroundImage = "url('" + photo.replace(/'/g, '%27') + "')";
+      box.style.backgroundSize = 'cover';
+      box.style.backgroundPosition = 'center';
+      if (mv.parentNode) mv.parentNode.removeChild(mv);
+    } else {
+      queueReveal(mv);
+    }
   }
 
   function scan(root) {
