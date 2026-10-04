@@ -43060,7 +43060,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
 </style>
 <script>
 (function () {
-  var TIMEOUT_MS = 20000;      // never keep a thumbnail hidden longer than this
+  var TIMEOUT_MS = 10000;      // never keep a thumbnail hidden longer than this
   var preloadPromise = null;
   var seen = new WeakSet();
   var revealQueue = [], revealScheduled = false;
@@ -43132,8 +43132,35 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     var ready = customElements.whenDefined('model-viewer').then(function () {
       return Promise.all([whenLoaded(mv), preloadAll()]);
     });
-    Promise.race([ready, safety]).then(function () { queueReveal(mv); },
-                                       function () { queueReveal(mv); });
+    Promise.race([ready, safety]).then(function () { finish(mv); },
+                                       function () { finish(mv); });
+  }
+
+  // If the 3D model never loaded (file not found at that address, the host
+  // answered with a web page instead of the .glb, or the viewer library was
+  // blocked), show the aircraft's photo instead of an empty box, and log the
+  // address that failed so it is easy to check in the browser console.
+  function photoFor(src) {
+    try {
+      var list = SHOP_ITEMS.models || [];
+      for (var i = 0; i < list.length; i++) if (list[i].modelSrc === src) return list[i].imageUrl || '';
+    } catch (e) {}
+    return '';
+  }
+  function finish(mv) {
+    if (mv.loaded) { queueReveal(mv); return; }
+    var src = mv.getAttribute('src') || '';
+    try { console.warn('Aircraft 3D model did not load, showing photo instead:', src); } catch (e) {}
+    var photo = photoFor(src);
+    var box = mv.parentNode;
+    if (photo && box && box.style) {
+      box.style.backgroundImage = "url('" + photo.replace(/'/g, '%27') + "')";
+      box.style.backgroundSize = 'cover';
+      box.style.backgroundPosition = 'center';
+      if (mv.parentNode) mv.parentNode.removeChild(mv);
+    } else {
+      queueReveal(mv);
+    }
   }
 
   function scan(root) {
