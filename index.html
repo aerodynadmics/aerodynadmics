@@ -22049,7 +22049,7 @@ Answer: C</pre>
 // GitHub Pages CDN stop serving the old (or a cached 404) copy.
 // Root-absolute path (leading '/') because the site uses routes like /flight-store/aircraft-models,
 // where a relative path would resolve to /flight-store/flight%20store/... and 404.
-window.MODEL_VERSION = '4';
+window.MODEL_VERSION = '5';
 window.modelUrl = function (file) {
   return '/flight%20store/aircraft%20models/optimized/' + encodeURIComponent(file) + '?v=' + window.MODEL_VERSION;
 };
