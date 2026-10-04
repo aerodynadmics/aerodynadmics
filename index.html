@@ -22047,10 +22047,11 @@ Answer: C</pre>
 // ---- Aircraft model URLs ----
 // Bump MODEL_VERSION whenever you replace/re-upload any .glb so browsers & the
 // GitHub Pages CDN stop serving the old (or a cached 404) copy.
-// Relative path (no leading '/') so it works at the domain root AND under /repo-name/.
-window.MODEL_VERSION = '3';
+// Root-absolute path (leading '/') because the site uses routes like /flight-store/aircraft-models,
+// where a relative path would resolve to /flight-store/flight%20store/... and 404.
+window.MODEL_VERSION = '4';
 window.modelUrl = function (file) {
-  return 'flight%20store/aircraft%20models/optimized/' + encodeURIComponent(file) + '?v=' + window.MODEL_VERSION;
+  return '/flight%20store/aircraft%20models/optimized/' + encodeURIComponent(file) + '?v=' + window.MODEL_VERSION;
 };
     const SHOP_ITEMS = {
       borders: [
