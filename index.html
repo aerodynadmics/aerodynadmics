@@ -22044,6 +22044,14 @@ Answer: C</pre>
     // Pricing follows tier: Subsonic cosmetics are cheap Wings buys, Sonic
     // cosmetics cost more Wings, and Supersonic (legendary) cosmetics are
     // cash-only, priced in PHP instead of Wings.
+// ---- Aircraft model URLs ----
+// Bump MODEL_VERSION whenever you replace/re-upload any .glb so browsers & the
+// GitHub Pages CDN stop serving the old (or a cached 404) copy.
+// Relative path (no leading '/') so it works at the domain root AND under /repo-name/.
+window.MODEL_VERSION = '3';
+window.modelUrl = function (file) {
+  return 'flight%20store/aircraft%20models/optimized/' + encodeURIComponent(file) + '?v=' + window.MODEL_VERSION;
+};
     const SHOP_ITEMS = {
       borders: [
         { id: 'hugh', name: 'Hugh the Rainbow', priceWings: 500, cssClass: 'border-hugh', tier: 'Supersonic' },
@@ -22264,9 +22272,9 @@ Answer: C</pre>
         { id: 'moire', name: 'Moiré', priceWings: 200, cssClass: 'nick-moire', tier: 'Sonic' }
       ],
       models: [
-        { id: 'mig-21', name: 'MiG-21 Fishbed', priceWings: 1111, imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg/640px-Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg', tier: 'Supersonic', modelSrc: '/flight%20store/aircraft%20models/optimized/MiG21%20Fishbed.glb?v=2' },
-        { id: 'f22', name: 'F-22 Raptor', priceWings: 1500, imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Lockheed_Martin_F-22A_Raptor_JSOH.jpg?width=640', tier: 'Supersonic', modelSrc: '/flight%20store/aircraft%20models/optimized/F-22%20Raptor.glb?v=2' },
-        { id: 'b2-spirit', name: 'B-2 Spirit', priceWings: 1500, imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/B-2_Spirit_original.jpg?width=640', tier: 'Supersonic', modelSrc: '/flight%20store/aircraft%20models/optimized/B-2%20Spirit.glb?v=2' }
+        { id: 'mig-21', name: 'MiG-21 Fishbed', priceWings: 1111, imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg/640px-Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg', tier: 'Supersonic', modelSrc: modelUrl('MiG21 Fishbed.glb') },
+        { id: 'f22', name: 'F-22 Raptor', priceWings: 1500, imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Lockheed_Martin_F-22A_Raptor_JSOH.jpg?width=640', tier: 'Supersonic', modelSrc: modelUrl('F-22 Raptor.glb') },
+        { id: 'b2-spirit', name: 'B-2 Spirit', priceWings: 1500, imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/B-2_Spirit_original.jpg?width=640', tier: 'Supersonic', modelSrc: modelUrl('B-2 Spirit.glb') }
       ]
     };
 
@@ -37959,7 +37967,7 @@ Answer: C</pre>
       const titleEl = document.getElementById('mig-viewer-title');
       const item = (SHOP_ITEMS.models || []).find((i) => i.id === itemId);
       if (currentViewerItemId !== itemId) {
-        model.setAttribute('src', (item && item.modelSrc) || '/flight%20store/aircraft%20models/optimized/MiG21%20Fishbed.glb?v=2');
+        model.setAttribute('src', (item && item.modelSrc) || modelUrl('MiG21 Fishbed.glb'));
         currentViewerItemId = itemId;
       }
       migModelLoaded = true;
