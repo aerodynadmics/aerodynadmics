@@ -88,6 +88,43 @@
   setTimeout(flush, 8000);
 })();
 </script>
+<script>
+/* Clean addresses: pages live in the path (aerodynadmics.com/mock-exam, /engineer/<callsign>)
+   instead of after a "#". This needs the host to serve index.html for every path
+   (a "single page app" rewrite). On file:// (no server) the old "#/" form is kept.
+   Old "#/page" links still work: they are rewritten to the clean form on load.
+   The flight invite key ("#k=...") stays after "#" on purpose: it is never sent to the server.
+   routeHash() gives the current page as "#/page/sub" in both modes, so the router code
+   reads one format. routeUrl(h) turns that into the address to put in the bar. */
+(function () {
+  var PATH = /^https?:$/.test(location.protocol);
+  window.PATH_ROUTING = PATH;
+  window.routeHash = function () {
+    if (!PATH) return location.hash || '';
+    var p = location.pathname || '/';
+    if (p !== '/' && p !== '/index.html') return '#' + p.replace(/\/+$/, '');
+    return location.hash || '';
+  };
+  window.routeUrl = function (h) {
+    if (!PATH) return h ? h : (location.pathname + location.search);
+    return (h ? h.slice(1) : '/') + location.search;
+  };
+  window.siteBase = function () {
+    return PATH ? (location.origin + '/') : 'https://aerodynadmics.com/';
+  };
+  if (PATH) {
+    try {
+      var p0 = location.pathname;
+      if ((p0 === '/' || p0 === '/index.html') && /^#\/[A-Za-z]/.test(location.hash)) {
+        history.replaceState(null, '', location.hash.slice(1) + location.search);
+      }
+    } catch (e) {}
+    // Back / Forward between clean addresses fires "popstate", not "hashchange".
+    // The page's address listeners are written for "hashchange", so forward it.
+    window.addEventListener('popstate', function () { window.dispatchEvent(new Event('hashchange')); });
+  }
+})();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=720, user-scalable=no">
 <script>
@@ -21330,7 +21367,7 @@ Answer: C</pre>
       return out;
     }
     function flightInviteUrl(id, code) {
-      const base = /^https?:$/.test(location.protocol) ? (location.origin + location.pathname) : 'https://aerodynadmics.com/';
+      const base = PATH_ROUTING ? siteBase() : (/^https?:$/.test(location.protocol) ? (location.origin + location.pathname) : 'https://aerodynadmics.com/');
       const k = e2eeGetRaw(id);
       return base + '?join=' + encodeURIComponent(id + '.' + code) + (k ? '#k=' + k : '');
     }
@@ -28865,11 +28902,12 @@ Answer: C</pre>
     const PROFILE_SHARE_PREVIEW = true;
     function profileLinkFor(nickname) {
       if (PROFILE_SHARE_PREVIEW) return 'https://aerodynadmics.com/engineer/' + encodeURIComponent(nickname);
+      if (PATH_ROUTING) return siteBase() + 'engineer/' + encodeURIComponent(nickname);
       const base = /^https?:$/.test(location.protocol) ? (location.origin + location.pathname) : 'https://aerodynadmics.com/';
       return base + '#/engineer/' + encodeURIComponent(nickname);
     }
     function profileNickFromHash() {
-      const m = PROFILE_LINK_RE.exec(location.hash || '');
+      const m = PROFILE_LINK_RE.exec(routeHash());
       if (!m) return null;
       try { return decodeURIComponent(m[1]); } catch (e) { return null; }
     }
@@ -28882,11 +28920,11 @@ Answer: C</pre>
     function setProfileUrl(nickname) {
       try {
         const want = '#/engineer/' + encodeURIComponent(nickname);
-        if (location.hash === want) return;
+        if (routeHash() === want) return;
         if (profileNickFromHash() !== null) {
-          history.replaceState(null, '', location.pathname + location.search + want);   // switching profile: no extra history entry
+          history.replaceState(null, '', PATH_ROUTING ? routeUrl(want) : location.pathname + location.search + want);   // switching profile: no extra history entry
         } else {
-          history.pushState(null, '', location.pathname + location.search + want);       // first card: Back closes it
+          history.pushState(null, '', PATH_ROUTING ? routeUrl(want) : location.pathname + location.search + want);       // first card: Back closes it
           profileLinkPushed = true;
         }
       } catch (e) {}
@@ -28899,7 +28937,7 @@ Answer: C</pre>
           profileLinkPushed = false;
           history.back();
         } else {
-          history.replaceState(null, '', location.pathname + location.search);          // opened straight from a link
+          history.replaceState(null, '', routeUrl(''));          // opened straight from a link
         }
       } catch (e) { profileLinkPushed = false; }
     }
@@ -43144,7 +43182,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
 
   // { route, sub } from the address bar, or null.
   function parseHash() {
-    var m = /^#\/([a-z-]+)(?:\/([A-Za-z0-9_-]+))?(?:\/([A-Za-z0-9_-]+))?\/?$/.exec(location.hash || '');
+    var m = /^#\/([a-z-]+)(?:\/([A-Za-z0-9_-]+))?(?:\/([A-Za-z0-9_-]+))?\/?$/.exec(routeHash());
     if (!m) return null;
     var route = routeOfSlug(m[1]);
     if (VIEW_ROUTE_VALUES.indexOf(route) === -1) return null;
@@ -43342,11 +43380,11 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     var want = pathOf(cur), have = parseHash();
     var url;
     if (want === 'home') {
-      if (!location.hash) return;                 // already the plain address
-      url = location.pathname + location.search;
+      if (!routeHash()) return;                   // already the plain address
+      url = routeUrl('');
     } else {
-      if (location.hash === '#/' + want) return;
-      url = '#/' + want;
+      if (routeHash() === '#/' + want) return;
+      url = routeUrl('#/' + want);
     }
     try {
       history[replace ? 'replaceState' : 'pushState'](null, '', url);
@@ -43357,8 +43395,9 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   // link or a flight invite key) shows a "Page not found" popup instead of
   // silently landing on the homepage.
   function hashIsUnknown() {
-    var h = location.hash || '';
+    var h = routeHash();
     if (!h || h === '#' || h === '#/') return false;
+    if (PATH_ROUTING && location.hash && /^#k=/.test(location.hash) && (location.pathname === '/' || location.pathname === '/index.html')) h = location.hash;
     if (/^#k=[A-Za-z0-9_-]{40,50}$/.test(h)) return false;
     try { if (typeof profileNickFromHash === 'function' && profileNickFromHash() !== null) return false; } catch (e) {}
     var m = /^#\/([a-z-]+)(?:\/([A-Za-z0-9_-]+))?(?:\/([A-Za-z0-9_-]+))?\/?$/.exec(h);
@@ -43392,14 +43431,14 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     var ov = document.getElementById('bad-link-overlay');
     if (ov) ov.classList.remove('visible');
     document.documentElement.classList.remove('bad-link-gate');
-    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+    try { history.replaceState(null, '', routeUrl('')); } catch (e) {}
     if (ready) { try { openFromLink({ route: 'home', sub: null, item: null }); } catch (e) {} }
   };
   checkBadLink();
   window.addEventListener('hashchange', checkBadLink);
   try {
     var _badGate = document.getElementById('signin-gate');
-    if (_badGate) new MutationObserver(function () { if (window.__badLink || (location.hash && hashIsUnknown())) checkBadLink(); })
+    if (_badGate) new MutationObserver(function () { if (window.__badLink || (routeHash() && hashIsUnknown())) checkBadLink(); })
       .observe(_badGate, { attributes: true, attributeFilter: ['class'] });
   } catch (e) {}
   // Called right after sign-in: the admin check can only be made then.
@@ -43413,7 +43452,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   window.addEventListener('hashchange', function () {
     if (!ready) return;
     var target = parseHash();
-    if (!target && !location.hash) target = { route: 'home', sub: null }; // plain address = homepage
+    if (!target && !routeHash()) target = { route: 'home', sub: null }; // plain address = homepage
     var cur = currentPath();
     if (!target || (cur && pathOf(target) === pathOf(cur))) return;
     openFromLink(target);
