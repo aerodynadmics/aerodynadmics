@@ -22264,9 +22264,9 @@ Answer: C</pre>
         { id: 'moire', name: 'Moiré', priceWings: 200, cssClass: 'nick-moire', tier: 'Sonic' }
       ],
       models: [
-        { id: 'mig-21', name: 'MiG-21 Fishbed', priceWings: 1111, imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg/640px-Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg', tier: 'Supersonic', modelSrc: 'flight%20store/aircraft%20models/optimized/MiG_Project_1.42.glb' },
-        { id: 'f22', name: 'F-22 Raptor', priceWings: 1500, imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Lockheed_Martin_F-22A_Raptor_JSOH.jpg?width=640', tier: 'Supersonic', modelSrc: 'flight%20store/aircraft%20models/optimized/F22.glb' },
-        { id: 'b2-spirit', name: 'B-2 Spirit', priceWings: 1500, imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/B-2_Spirit_original.jpg?width=640', tier: 'Supersonic', modelSrc: 'flight%20store/aircraft%20models/optimized/B-2_Spirit_Stealth_Bomber.glb' }
+        { id: 'mig-21', name: 'MiG-21 Fishbed', priceWings: 1111, imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg/640px-Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg', tier: 'Supersonic', modelSrc: '/flight%20store/aircraft%20models/optimized/MiG_Project_1.42.glb' },
+        { id: 'f22', name: 'F-22 Raptor', priceWings: 1500, imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Lockheed_Martin_F-22A_Raptor_JSOH.jpg?width=640', tier: 'Supersonic', modelSrc: '/flight%20store/aircraft%20models/optimized/F22.glb' },
+        { id: 'b2-spirit', name: 'B-2 Spirit', priceWings: 1500, imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/B-2_Spirit_original.jpg?width=640', tier: 'Supersonic', modelSrc: '/flight%20store/aircraft%20models/optimized/B-2_Spirit_Stealth_Bomber.glb' }
       ]
     };
 
@@ -37959,7 +37959,7 @@ Answer: C</pre>
       const titleEl = document.getElementById('mig-viewer-title');
       const item = (SHOP_ITEMS.models || []).find((i) => i.id === itemId);
       if (currentViewerItemId !== itemId) {
-        model.setAttribute('src', (item && item.modelSrc) || 'flight%20store/aircraft%20models/optimized/MiG_Project_1.42.glb');
+        model.setAttribute('src', (item && item.modelSrc) || '/flight%20store/aircraft%20models/optimized/MiG_Project_1.42.glb');
         currentViewerItemId = itemId;
       }
       migModelLoaded = true;
