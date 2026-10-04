@@ -6222,6 +6222,10 @@
     padding: 20px;
   }
   .banned-list-overlay.visible { display: flex; }
+  /* Signed out on a bad link: the sign-in screen stays hidden behind the
+     popup until the visitor chooses to go there. */
+  html.bad-link-gate #signin-gate { visibility: hidden !important; }
+  html.bad-link-gate #bad-link-overlay { background: #041424; }
   .banned-list-card {
     position: relative;
     max-width: 460px;
@@ -14136,7 +14140,7 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
       <h3 style="margin:0 0 10px; font-size:20px;">&#9888;&#65039; Page not found</h3>
       <p style="margin:0; font-size:14px; line-height:1.5; color:var(--rivet);">This link does not lead anywhere. The address may be mistyped or the page no longer exists.</p>
       <div class="mockadmin-editor-actions">
-        <button type="button" class="mockadmin-save-btn" onclick="dismissBadLink()">GO TO HOMEPAGE</button>
+        <button type="button" class="mockadmin-save-btn" id="bad-link-btn" onclick="dismissBadLink()">GO TO HOMEPAGE</button>
       </div>
     </div>
   </div>
@@ -16775,6 +16779,7 @@ Answer: C</pre>
       updateSidebarVisibility();
       progSyncOnSignIn(user); // pull this account's saved progress from Firebase
       syncLastFlightFromAccount(user.nickname); // reopen the flight they left off on, even from another device
+      try { if (window.recheckBadLink) window.recheckBadLink(); } catch (e) {}
     }
 
     function openBannedListModal() {
@@ -43360,6 +43365,11 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     if (!m) return true;
     var route = routeOfSlug(m[1]);
     if (VIEW_ROUTE_VALUES.indexOf(route) === -1) return true;
+    // Admin Settings only exists for the admin. Signed out, or signed in as
+    // anyone else, the link is not found.
+    if (route === 'admin') {
+      try { if (!(currentChatUser && isAdminUser(currentChatUser))) return true; } catch (e) { return true; }
+    }
     if (m[2] && !validSub(route, m[2])) return true;
     if (m[3] && !(route === 'quiz' || route === 'exam')) return true;
     return false;
@@ -43369,17 +43379,35 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     window.__badLink = bad;
     var ov = document.getElementById('bad-link-overlay');
     if (ov) ov.classList.toggle('visible', bad);
+    var g = document.getElementById('signin-gate');
+    var out = !!g && !g.classList.contains('hidden');
+    document.documentElement.classList.toggle('bad-link-gate', bad && out);
+    var btn = document.getElementById('bad-link-btn');
+    if (btn) btn.textContent = out ? 'GO TO SIGN IN PAGE' : 'GO TO HOMEPAGE';
     return bad;
   }
   window.dismissBadLink = function () {
     window.__badLink = false;
+    initialPath = null;   // the link that was shown as not found must not open after sign-in
     var ov = document.getElementById('bad-link-overlay');
     if (ov) ov.classList.remove('visible');
+    document.documentElement.classList.remove('bad-link-gate');
     try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
     if (ready) { try { openFromLink({ route: 'home', sub: null, item: null }); } catch (e) {} }
   };
   checkBadLink();
   window.addEventListener('hashchange', checkBadLink);
+  try {
+    var _badGate = document.getElementById('signin-gate');
+    if (_badGate) new MutationObserver(function () { if (window.__badLink || (location.hash && hashIsUnknown())) checkBadLink(); })
+      .observe(_badGate, { attributes: true, attributeFilter: ['class'] });
+  } catch (e) {}
+  // Called right after sign-in: the admin check can only be made then.
+  window.recheckBadLink = function () {
+    var was = !!window.__badLink;
+    var bad = checkBadLink();
+    if (was && !bad && ready) { var t = parseHash(); if (t) { try { openFromLink(t); } catch (e) {} } }
+  };
 
   // Back / Forward / edited address -> open that page.
   window.addEventListener('hashchange', function () {
@@ -43450,6 +43478,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     if (ready) return;
     ready = true;
     watchViews();
+    if (checkBadLink()) return;   // e.g. the Admin Settings link opened by someone who is not the admin
     var cur = currentPath();
     // A profile link (#/engineer/callsign) is not a page: keep it in the
     // address bar and open that person's profile card on top of the home page.
