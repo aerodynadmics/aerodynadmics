@@ -1,11 +1,13 @@
 const { onRequest } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 const crypto = require("crypto");
+const { defineSecret } = require("firebase-functions/params");
 const sharp = require("sharp");
 
 admin.initializeApp({
   databaseURL: "https://aele-mock-exam-hub-default-rtdb.asia-southeast1.firebasedatabase.app",
 });
+const db = admin.database();
 
 const NS = "aerodynadmics-aele";
 const SITE = "https://aerodynadmics.com";
@@ -166,5 +168,224 @@ exports.profilePreview = onRequest(
 <meta http-equiv="refresh" content="0;url=${esc(appUrl)}">
 </head><body><script>location.replace(${JSON.stringify(appUrl).replace(/</g, "\\u003c")});</script>
 <a href="${esc(appUrl)}">Open profile</a></body></html>`);
+  }
+);
+
+
+// =====================================================================
+// Wings checkout (PayMongo). Both functions stay in us-central1 (the default
+// region) so their URLs do not change.
+// =====================================================================
+const PAYMONGO_SECRET_KEY = defineSecret("PAYMONGO_SECRET_KEY");
+const PAYMONGO_WEBHOOK_SECRET = defineSecret("PAYMONGO_WEBHOOK_SECRET");
+
+// Everything the app stores lives under NS (same as nsRef() in the page), so
+// pending purchases, wallets and transactions must be read/written there too.
+const nsRef = (path) => db.ref(NS + "/" + path);
+
+// Mirror of WINGS_PACKS in the page, kept server-side on purpose: never trust
+// a price sent up from the browser. Update both if you change a pack.
+const WINGS_PACKS = {
+  pack1: { wings: 100, price: 39 },
+  pack2: { wings: 200, price: 59 },
+  pack3: { wings: 500, price: 109 },
+  pack4: { wings: 1000, price: 199 },
+  pack5: { wings: 5000, price: 899 },
+};
+
+const ALLOWED_ORIGINS = ["https://aerodynadmics.com"];
+
+// v2 is tried first (PayMongo documents both). If it ever answers with a
+// non-JSON page, v1 is tried before giving up.
+const PAYMONGO_CHECKOUT_URLS = [
+  "https://api.paymongo.com/v2/checkout_sessions",
+  "https://api.paymongo.com/v1/checkout_sessions",
+];
+
+function setCors(req, res) {
+  const origin = req.get("origin");
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    res.set("Access-Control-Allow-Origin", origin);
+  }
+  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "Content-Type");
+}
+
+const createWingsCheckoutHandler = async (req, res) => {
+    setCors(req, res);
+    if (req.method === "OPTIONS") { res.status(204).send(""); return; }
+    if (req.method !== "POST") { res.status(405).json({ error: "Method not allowed" }); return; }
+
+    const origin = req.get("origin") || req.get("referer") || "";
+    if (!ALLOWED_ORIGINS.some((allowed) => origin.startsWith(allowed))) {
+      res.status(403).json({ error: "Origin not allowed" });
+      return;
+    }
+
+    const { nickname, packId } = req.body || {};
+    const pack = WINGS_PACKS[packId];
+    if (!nickname || typeof nickname !== "string" || !pack) {
+      res.status(400).json({ error: "Invalid nickname or packId" });
+      return;
+    }
+
+    try {
+      // Unique token = PayMongo reference_number; the webhook uses it to find
+      // who to credit without trusting the browser.
+      const pendingRef = nsRef("pendingWingsPurchases").push();
+      const token = pendingRef.key;
+
+      const payload = JSON.stringify({
+        data: {
+          attributes: {
+            line_items: [
+              {
+                name: pack.wings.toLocaleString("en-US") + " Wings top-up",
+                amount: pack.price * 100, // centavos
+                currency: "PHP",
+                quantity: 1,
+              },
+            ],
+            payment_method_types: ["gcash", "card", "paymaya", "qrph"],
+            success_url: origin,
+            cancel_url: origin,
+            reference_number: token,
+            description: pack.wings + " Wings for " + nickname,
+          },
+        },
+      });
+      const headers = {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "User-Agent": "aerodynadmics-wings/1.0",
+        Authorization: "Basic " + Buffer.from(PAYMONGO_SECRET_KEY.value().trim() + ":").toString("base64"),
+      };
+
+      let paymongoRes = null;
+      let paymongoData = null;
+      for (const url of PAYMONGO_CHECKOUT_URLS) {
+        const r = await fetch(url, { method: "POST", headers, body: payload });
+        const raw = await r.text();
+        try {
+          paymongoData = JSON.parse(raw);
+          paymongoRes = r;
+          break;
+        } catch (e) {
+          // This is the line to read in the logs if checkout fails again.
+          console.error("PayMongo non-JSON response", url, r.status, raw.slice(0, 2000));
+        }
+      }
+
+      if (!paymongoRes) {
+        res.status(502).json({ error: "Payment provider unavailable" });
+        return;
+      }
+      if (!paymongoRes.ok) {
+        console.error("PayMongo checkout session error:", paymongoRes.status, JSON.stringify(paymongoData));
+        res.status(502).json({ error: "Could not create checkout session" });
+        return;
+      }
+
+      const session = paymongoData.data;
+      await pendingRef.set({
+        nickname,
+        packId,
+        wings: pack.wings,
+        price: pack.price,
+        status: "pending",
+        checkoutSessionId: session.id,
+        createdAt: admin.database.ServerValue.TIMESTAMP,
+      });
+
+      res.status(200).json({ checkoutUrl: session.attributes.checkout_url, token });
+    } catch (err) {
+      console.error("createWingsCheckout error:", err);
+      res.status(500).json({ error: "Internal error" });
+    }
+};
+
+// Original (us-central1) and a second copy in Singapore. PayMongo's CDN blocks
+// some Google Cloud addresses; the Singapore copy uses different ones.
+exports.createWingsCheckout = onRequest({ secrets: [PAYMONGO_SECRET_KEY] }, createWingsCheckoutHandler);
+exports.createWingsCheckoutSG = onRequest(
+  { region: "asia-southeast1", secrets: [PAYMONGO_SECRET_KEY] },
+  createWingsCheckoutHandler
+);
+
+// PayMongo webhook (event: checkout_session.payment.paid). Needs the RAW body
+// for signature checking. Protected by the HMAC signature, not by origin.
+exports.paymongoWebhook = onRequest(
+  { secrets: [PAYMONGO_WEBHOOK_SECRET] },
+  async (req, res) => {
+    const signatureHeader = req.get("Paymongo-Signature") || "";
+    const rawBody = req.rawBody ? req.rawBody.toString("utf8") : "";
+
+    // t=<timestamp>,te=<test signature>,li=<live signature>
+    const parts = {};
+    signatureHeader.split(",").forEach((kv) => {
+      const [k, v] = kv.split("=");
+      if (k && v) parts[k.trim()] = v.trim();
+    });
+
+    if (!parts.t || (!parts.te && !parts.li)) {
+      res.status(400).send("Missing signature");
+      return;
+    }
+
+    const expected = crypto
+      .createHmac("sha256", PAYMONGO_WEBHOOK_SECRET.value().trim())
+      .update(parts.t + "." + rawBody)
+      .digest("hex");
+
+    const candidate = parts.li || parts.te;
+    const isValid =
+      candidate &&
+      candidate.length === expected.length &&
+      crypto.timingSafeEqual(Buffer.from(candidate), Buffer.from(expected));
+
+    if (!isValid) {
+      console.warn("PayMongo webhook signature mismatch");
+      res.status(400).send("Invalid signature");
+      return;
+    }
+
+    let event;
+    try {
+      event = JSON.parse(rawBody);
+    } catch (err) {
+      res.status(400).send("Bad JSON");
+      return;
+    }
+
+    const evAttrs = event && event.data && event.data.attributes;
+    const eventType = evAttrs && evAttrs.type;
+    const sessionAttrs = (evAttrs && evAttrs.data && evAttrs.data.attributes) || evAttrs;
+    const referenceNumber = sessionAttrs && sessionAttrs.reference_number;
+
+    if (eventType === "checkout_session.payment.paid" && referenceNumber) {
+      try {
+        const pendingRef = nsRef("pendingWingsPurchases/" + referenceNumber);
+        const pending = (await pendingRef.once("value")).val();
+
+        // Guards against double-crediting if PayMongo retries the event.
+        if (pending && pending.status === "pending") {
+          await nsRef("wallets/" + keyFor(pending.nickname) + "/wings")
+            .transaction((current) => (current || 0) + pending.wings);
+          await pendingRef.update({ status: "paid", paidAt: admin.database.ServerValue.TIMESTAMP });
+
+          await nsRef("transactions/" + keyFor(pending.nickname)).push({
+            note: "Bought " + pending.wings.toLocaleString("en-US") + " Wings pack (\u20b1" + pending.price + ")",
+            amount: pending.wings,
+            ts: admin.database.ServerValue.TIMESTAMP,
+          });
+        }
+      } catch (err) {
+        console.error("Error crediting wings from webhook:", err);
+        res.status(500).send("Error processing event");
+        return;
+      }
+    }
+
+    res.status(200).json({ received: true });
   }
 );
