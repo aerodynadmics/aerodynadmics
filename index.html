@@ -3120,13 +3120,13 @@
     position: absolute;
     top: 8px;
     right: 8px;
-    width: 26px;
-    height: 26px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     border: none;
     background: rgba(4, 18, 32, 0.55);
     color: var(--paper);
-    font-size: 15px;
+    font-size: 13px;
     line-height: 1;
     cursor: pointer;
     display: flex;
@@ -3186,10 +3186,10 @@
      card (own, other people's, and the signed-out public view). */
   .profile-card-link-btn {
     position: absolute;
-    top: 8px;
-    right: 40px;
-    width: 26px;
-    height: 26px;
+    top: 12px;
+    right: 12px;
+    width: 20px;
+    height: 20px;
     padding: 0;
     border-radius: 50%;
     border: none;
@@ -3200,8 +3200,8 @@
     align-items: center;
     justify-content: center;
   }
-  .profile-card-link-btn svg { width: 14px; height: 14px; display: block; }
-  @media (hover: hover) { .profile-card-link-btn:hover { background: rgba(4, 18, 32, 0.85); color: var(--accent); } }
+  .profile-card-link-btn svg { width: 11px; height: 11px; display: block; }
+  @media (hover: hover) { .profile-card-link-btn:hover { color: var(--accent); } }
   /* Signed-out visitor on a profile link: split screen. The profile card
      sits in the LEFT half and the sign-in card in the RIGHT half. This only
      applies while the sign-in screen is showing; once they sign in, the
@@ -4153,6 +4153,7 @@
     color: var(--rivet);
   }
   .profile-card-body {
+    position: relative;
     padding: 68px 26px 26px;
   }
   .profile-card-nickname {
@@ -5702,6 +5703,12 @@
   } }
   .chat-panel-peek:focus-visible { outline: none; }
   .chat-peek-icon { font-size: 20px; line-height: 1; }
+  /* The strip shows the current flight's own rail tile (number circle, or the
+     private flight's picture / letter + lock) instead of a chat emoji. */
+  .chat-peek-icon { display: flex; align-items: center; justify-content: center; }
+  .chat-peek-icon .flight-tile { width: 30px; height: 30px; font-size: 15px; pointer-events: none; }
+  .chat-title-tile { display: inline-flex; vertical-align: middle; margin-right: 8px; }
+  .chat-title-tile .flight-tile { width: 24px; height: 24px; font-size: 12px; pointer-events: none; }
   .chat-peek-label {
     writing-mode: vertical-rl;
     font-family: 'IBM Plex Mono', monospace;
@@ -12655,7 +12662,7 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
   </div>
 
   <div class="chat-panel-peek" id="chat-panel-peek" role="button" tabindex="0" aria-label="Open Black Box" onclick="toggleChatPanel()" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleChatPanel(); }">
-    <span class="chat-peek-icon">💬</span>
+    <span class="chat-peek-icon" id="chat-peek-icon">💬</span>
     <span class="chat-unread-badge" id="chat-unread-badge" style="display:none;">0</span>
     <span class="chat-peek-label">Black Box</span>
     <div class="chat-peek-briefing" id="chat-peek-briefing">
@@ -14121,6 +14128,16 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
       </ul>
       <p class="chat-guidelines-warning">&#9888;&#65039; Warning: Any account found engaging in serious or repeated disrespectful behavior may be banned from the website. A banned Google account may also be permanently prevented from creating or accessing another account on the website.</p>
       <p>Use this space to learn, help, and grow together. Respect makes the discussion better for everyone.</p>
+    </div>
+  </div>
+
+  <div class="banned-list-overlay" id="bad-link-overlay" style="z-index:100000;">
+    <div class="mockadmin-card" style="max-width:380px;">
+      <h3 style="margin:0 0 10px; font-size:20px;">&#9888;&#65039; Page not found</h3>
+      <p style="margin:0; font-size:14px; line-height:1.5; color:var(--rivet);">This link does not lead anywhere. The address may be mistyped or the page no longer exists.</p>
+      <div class="mockadmin-editor-actions">
+        <button type="button" class="mockadmin-save-btn" onclick="dismissBadLink()">GO TO HOMEPAGE</button>
+      </div>
     </div>
   </div>
 
@@ -16757,6 +16774,7 @@ Answer: C</pre>
       applyMainFlightFromRoster();   // roster may already be loaded from an earlier sign-in in this tab
       updateSidebarVisibility();
       progSyncOnSignIn(user); // pull this account's saved progress from Firebase
+      syncLastFlightFromAccount(user.nickname); // reopen the flight they left off on, even from another device
     }
 
     function openBannedListModal() {
@@ -20110,6 +20128,35 @@ Answer: C</pre>
       add.addEventListener('click', createFlight);
       railFixed.appendChild(add);
       flightsScroll.scrollTop = prevScrollTop;
+      updatePeekFlightIcon();
+    }
+    // Black Box strip icon: same tile the rail shows for the flight that's open.
+    function makeCurrentFlightTile() {
+      const t = document.createElement('span');
+      if (privateFlightActive()) {
+        const f = flightsCache[currentFlightId];
+        if (!f) return null;
+        t.className = 'flight-tile private';
+        if (f.image) {
+          t.classList.add('has-image');
+          t.style.backgroundImage = 'url("' + String(f.image).replace(/"/g, '%22') + '")';
+        } else {
+          t.textContent = String(f.name).trim().charAt(0).toUpperCase() || '?';
+        }
+      } else {
+        const rf = FLIGHT_SERVERS.find((x) => x.id === activeFlightServerId) || FLIGHT_SERVERS[0];
+        t.className = 'flight-tile';
+        t.textContent = rf.icon;
+      }
+      return t;
+    }
+    function updatePeekFlightIcon() {
+      const host = document.getElementById('chat-peek-icon');
+      if (!host) return;
+      const t = makeCurrentFlightTile();
+      if (!t) return;
+      host.innerHTML = '';
+      host.appendChild(t);
     }
     // ---- Radar: the airspace popup. Shows every public flight (rail) and every
     // private flight as a blip, plus a list with souls aboard / online counts. ----
@@ -20807,6 +20854,7 @@ Answer: C</pre>
     function updateChatTitle() {
       const el = document.getElementById('chat-panel-title');
       if (!el) return;
+      try { updatePeekFlightIcon(); } catch (e) {}
       const fl = document.getElementById('chat-panel-flight');
       const rf = currentFlightId && FLIGHT_SERVERS.find((x) => x.id === currentFlightId);
       const tab = document.getElementById('chat-tab-blackbox');
@@ -20832,6 +20880,19 @@ Answer: C</pre>
         setTab(currentFlightId ? '' : 'Flight 2026');
       }
       if (crewTitle) { el.textContent = '\uD83D\uDD12 Crewmates Black Box'; if (fl) fl.textContent = ''; }
+      else {
+        // swap the leading chat emoji for the open flight's rail tile
+        const txt = (el.textContent || '').replace(/^\uD83D\uDCAC\s*/, '');
+        const tile = makeCurrentFlightTile();
+        if (tile) {
+          const wrap = document.createElement('span');
+          wrap.className = 'chat-title-tile';
+          wrap.appendChild(tile);
+          el.textContent = '';
+          el.appendChild(wrap);
+          el.appendChild(document.createTextNode(txt));
+        }
+      }
     }
 
     function canDeleteFlight(f) {
@@ -20935,9 +20996,63 @@ Answer: C</pre>
       switchFlight(fb && fb !== MAIN_FLIGHT_SERVER_ID ? fb : null);
     }
     function lastFlightStorageKey(nick) { return 'lastFlight:' + String(nick || ''); }
+    var lastFlightRemoteReady = false;  // true once this sign-in has read the account's saved flight
+    var flightSwitchSeq = 0;            // bumps on every switchFlight, so a late remote read can tell if the soul already moved
     function saveLastFlight(id) {
       if (!currentChatUser || !currentChatUser.nickname) return;
       try { localStorage.setItem(lastFlightStorageKey(currentChatUser.nickname), id || MAIN_FLIGHT_SERVER_ID); } catch (err) {}
+      saveLastFlightRemote(id);
+    }
+    // The last flight also lives on the account (nicknames/<callsign>/lastFlight)
+    // so signing in on another device lands the soul where they left off.
+    // Writes wait until the account's value has been read at sign-in, so a
+    // device's stale local value can't overwrite it on the way in.
+    function saveLastFlightRemote(id) {
+      if (!lastFlightRemoteReady || !currentChatUser || !currentChatUser.nickname) return;
+      try {
+        ensureFirebaseApp();
+        nsRef('nicknames/' + presenceKey(currentChatUser.nickname) + '/lastFlight').set(id || MAIN_FLIGHT_SERVER_ID);
+      } catch (err) {}
+    }
+    function syncLastFlightFromAccount(nick) {
+      lastFlightRemoteReady = false;
+      const seq = flightSwitchSeq;
+      const finish = (remoteId) => {
+        if (!currentChatUser || currentChatUser.nickname !== nick) return;
+        lastFlightRemoteReady = true;
+        if (flightSwitchSeq !== seq) { saveLastFlightRemote(currentFlightId); return; } // soul already moved: their pick wins
+        if (!remoteId) { saveLastFlightRemote(currentFlightId); return; }               // nothing saved yet: seed from this device
+        try { localStorage.setItem(lastFlightStorageKey(nick), remoteId); } catch (err) {}
+        mainFlightApplied = true;   // the account's saved flight beats landing on the main flight
+        applyAccountLastFlight(remoteId, seq, 0);
+      };
+      try {
+        if (!chatConfigIsFilledIn()) { lastFlightRemoteReady = true; return; }
+        ensureFirebaseApp();
+        let done = false;
+        const t = setTimeout(() => { if (!done) { done = true; lastFlightRemoteReady = true; } }, 8000);
+        nsRef('nicknames/' + presenceKey(nick) + '/lastFlight').once('value').then((snap) => {
+          if (done) return; done = true; clearTimeout(t);
+          const v = snap.val();
+          finish(typeof v === 'string' && v ? v : null);
+        }).catch(() => { if (!done) { done = true; clearTimeout(t); lastFlightRemoteReady = true; } });
+      } catch (err) { lastFlightRemoteReady = true; }
+    }
+    function applyAccountLastFlight(id, seq, tries) {
+      if (flightSwitchSeq !== seq || !currentChatUser) return;
+      if (isRailFlightId(id)) {
+        const cur = privateFlightActive() ? null : activeFlightServerId;
+        if (id !== cur) switchFlight(id === MAIN_FLIGHT_SERVER_ID ? null : id);
+        return;
+      }
+      if (currentFlightId === id && !flightRestoring) return;
+      const f = flightsCache[id];
+      if (!flightRestoring && f && f.name) {
+        if (canEnterFlight(f)) switchFlight(id);
+        else { saveLastFlightRemote(currentFlightId); }   // no longer aboard: stay put and save where they are
+        return;
+      }
+      if (tries < 25) setTimeout(() => applyAccountLastFlight(id, seq, tries + 1), 400);
     }
     function loadLastFlight(nick) {
       try { return localStorage.getItem(lastFlightStorageKey(nick)) || null; } catch (err) { return null; }
@@ -20950,12 +21065,13 @@ Answer: C</pre>
     function preferredRailFlightId(nick, mainFlight) {
       const main = (mainFlight && isRailFlightId(mainFlight)) ? mainFlight : null;
       const last = loadLastFlight(nick);
-      if (last && isRailFlightId(last) && last === (main || MAIN_FLIGHT_SERVER_ID)) return last;
+      if (last && isRailFlightId(last)) return last;
       return main;
     }
 
     function switchFlight(id) {
       id = id || null;
+      flightSwitchSeq++;
       // Crewmates is its own separate view: picking a flight leaves it.
       { const cp = document.getElementById('chat-panel'); if (cp && cp.classList.contains('crew-mode')) setChatMode('blackbox'); }
       if (id && !isRailFlightId(id) && !canEnterFlight(flightsCache[id])) return;
@@ -26431,7 +26547,9 @@ Answer: C</pre>
       const me = lastNicknameListData.find((it) => rosterItemNick(it) === currentChatUser.nickname);
       const mf = preferredRailFlightId(currentChatUser.nickname, me && typeof me === 'object' && me.mainFlight);
       if (mf && isRailFlightId(mf) && mf !== activeFlightServerId && !privateFlightActive()) {
+        const _seq = flightSwitchSeq;   // automatic landing, not a choice by the soul
         switchFlight(mf === MAIN_FLIGHT_SERVER_ID ? null : mf);
+        flightSwitchSeq = _seq;
       }
     }
 
@@ -29181,7 +29299,6 @@ Answer: C</pre>
         <div class="profile-card-banner" style="background:${bannerCss};">
           ${profileCardStack.length ? '<button class="profile-card-back" onclick="goBackProfileCard()" aria-label="Back">&lsaquo;</button>' : ''}
           ${showEditUi ? '<button type="button" class="profile-card-bg-edit-btn" onclick="openEditBackground()" aria-label="Edit background">&#9998;</button>' : ''}
-          ${PROFILE_LINK_BTN_HTML}
           <button class="profile-card-close" onclick="closeUserProfile()">&times;</button>
           <div class="profile-card-avatar-wrap">
             ${showEditUi ? `
@@ -29198,6 +29315,7 @@ Answer: C</pre>
           </div>
         </div>
         <div class="profile-card-body">
+          ${PROFILE_LINK_BTN_HTML}
           <div class="profile-card-nickname-row">
             <div class="profile-card-nickname ${animClass}" data-text="${escapeHtml(nickname)}">${escapeHtml(nickname)}</div>
           </div>
@@ -43203,6 +43321,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   // seconds). Cleared after 20 s or as soon as the person clicks / types.
   var profileLinkPending = false;
   function syncUrl(replace) {
+    if (window.__badLink) return;   // an unknown link is on screen: leave the address bar alone
     // While a profile card is open it owns the address bar
     // (#/engineer/<callsign>). Opening a card makes the page redraw, which
     // used to make this function put the plain address straight back, so
@@ -43228,6 +43347,39 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
       history[replace ? 'replaceState' : 'pushState'](null, '', url);
     } catch (e) {}
   }
+
+  // Unknown link (anything after the address that is not a page, a profile
+  // link or a flight invite key) shows a "Page not found" popup instead of
+  // silently landing on the homepage.
+  function hashIsUnknown() {
+    var h = location.hash || '';
+    if (!h || h === '#' || h === '#/') return false;
+    if (/^#k=[A-Za-z0-9_-]{40,50}$/.test(h)) return false;
+    try { if (typeof profileNickFromHash === 'function' && profileNickFromHash() !== null) return false; } catch (e) {}
+    var m = /^#\/([a-z-]+)(?:\/([A-Za-z0-9_-]+))?(?:\/([A-Za-z0-9_-]+))?\/?$/.exec(h);
+    if (!m) return true;
+    var route = routeOfSlug(m[1]);
+    if (VIEW_ROUTE_VALUES.indexOf(route) === -1) return true;
+    if (m[2] && !validSub(route, m[2])) return true;
+    if (m[3] && !(route === 'quiz' || route === 'exam')) return true;
+    return false;
+  }
+  function checkBadLink() {
+    var bad = hashIsUnknown();
+    window.__badLink = bad;
+    var ov = document.getElementById('bad-link-overlay');
+    if (ov) ov.classList.toggle('visible', bad);
+    return bad;
+  }
+  window.dismissBadLink = function () {
+    window.__badLink = false;
+    var ov = document.getElementById('bad-link-overlay');
+    if (ov) ov.classList.remove('visible');
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+    if (ready) { try { openFromLink({ route: 'home', sub: null, item: null }); } catch (e) {} }
+  };
+  checkBadLink();
+  window.addEventListener('hashchange', checkBadLink);
 
   // Back / Forward / edited address -> open that page.
   window.addEventListener('hashchange', function () {
