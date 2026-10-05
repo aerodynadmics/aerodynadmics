@@ -62,6 +62,41 @@
 <style id="load-gate-css">html.data-loading .empty-note { display: none !important; }</style>
 <script>document.documentElement.classList.add('data-loading');</script>
 <script>
+/* Image warm-up: avatars and flight icons are CSS background-images (or data: URLs),
+   so on a reload the browser only starts fetching/decoding them when the element is
+   created, and every re-render of a list rebuilds the element. That is the short blank
+   or default-icon moment before the real picture shows. Here every picture the device
+   already knows (own avatar, everyone's cached avatar, flight icons) is decoded NOW,
+   while the 2.5 MB page is still parsing, and kept in memory, so by the time an avatar
+   or flight tile is drawn its picture is ready and paints instantly. */
+(function () {
+  var keep = window.__keptImgs = {};
+  function isImg(s) { return typeof s === 'string' && /^(data:image|https?:\/\/)/.test(s); }
+  window.__keepImage = function (src) {
+    try {
+      if (!isImg(src) || keep[src]) return;
+      var im = new Image();
+      im.decoding = 'async';
+      im.src = src;
+      keep[src] = im;
+      if (im.decode) im.decode().catch(function () {});
+    } catch (e) {}
+  };
+  function read(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } }
+  var u = read('aeleHubUser');
+  if (u && u.avatar) window.__keepImage(u.avatar);
+  var p = read('presenceLookCache') || {};
+  Object.keys(p).forEach(function (k) { if (p[k] && p[k].avatar) window.__keepImage(p[k].avatar); });
+  var a = read('presenceAvatarCache') || {};
+  Object.keys(a).forEach(function (k) { if (a[k] && a[k].a) window.__keepImage(a[k].a); });
+  var sbi = read('sidebarMeBorderImg'); if (sbi) window.__keepImage(sbi);
+  var fi = read('flightImageCache') || {};
+  Object.keys(fi).forEach(function (k) { window.__keepImage(fi[k]); });
+  var fl = read('flightListCache') || {};
+  Object.keys(fl).forEach(function (k) { if (fl[k] && fl[k].image) window.__keepImage(fl[k].image); });
+})();
+</script>
+<script>
 /* __afterLoad(fn): runs fn right AFTER the window 'load' event, i.e. after
    the browser tab's loading spinner has already stopped.
    Why this exists: the tab spinner keeps going until every script / iframe /
@@ -2332,7 +2367,6 @@
   .chat-emoji-grid,
   .shop-pay-box,
   .wings-store-box,
-  .daily-rewards-box,
   .reviewees-sidebar-body,
   .ai-note-body {
     scrollbar-width: none;
@@ -2349,7 +2383,6 @@
   .chat-emoji-grid::-webkit-scrollbar,
   .shop-pay-box::-webkit-scrollbar,
   .wings-store-box::-webkit-scrollbar,
-  .daily-rewards-box::-webkit-scrollbar,
   .reviewees-sidebar-body::-webkit-scrollbar,
   .ai-note-body::-webkit-scrollbar {
     display: none;
@@ -7762,19 +7795,6 @@
     flex-shrink: 0;
   }
   @media (hover: hover) { .account-wings-badge:hover { color: var(--accent); } }
-  .daily-claim-btn {
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    font-size: 12px;
-    color: var(--blueprint-dark);
-    background: var(--accent);
-    border: none;
-    border-radius: 999px;
-    padding: 4px 12px;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  @media (hover: hover) { .daily-claim-btn:hover { filter: brightness(1.08); } }
   .topbar-nav-btn {
     font-family: 'Space Grotesk', sans-serif;
     font-weight: 600;
@@ -7866,7 +7886,6 @@
   #account-avatar-btn { order: 1; }
   .account-badge .account-name-stack { order: 2; }
   #account-wings-badge { order: 3; display: none !important; } /* Wings icon removed from the top bar */
-  #daily-claim-btn { order: 4; }
   #topbar-more-btn { order: 5; }
   #topbar-flight-store-btn { order: 6; }
   #topbar-hangar-btn { order: 7; }
@@ -9550,125 +9569,6 @@
     color: var(--rivet);
   }
 
-  /* daily wings rewards popup */
-  .daily-rewards-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.65);
-    z-index: 98;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-  }
-  .daily-rewards-overlay.visible { display: flex; }
-  .daily-rewards-box {
-    background: var(--blueprint-dark);
-    
-    border-radius: 10px;
-    padding: 24px;
-    width: 620px;
-    max-width: calc(100vw - 32px);
-    max-height: calc(100vh - 32px);
-    overflow-y: auto;
-    text-align: center;
-  }
-  .daily-rewards-box h3 {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 18px;
-    margin: 0 0 4px;
-  }
-  .daily-rewards-sub {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    color: var(--rivet);
-    margin: 0 0 18px;
-  }
-  .daily-rewards-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 10px;
-    margin-bottom: 16px;
-  }
-  html.pw-480 .daily-rewards-grid { grid-template-columns: repeat(4, 1fr); }
-  .daily-reward-card {
-    position: relative;
-    background: transparent;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 14px 4px 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-  }
-  .daily-reward-card .day-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.03em;
-    color: var(--rivet);
-  }
-  .daily-reward-card .day-wings {
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    font-size: 15px;
-  }
-  .daily-reward-card.claimed {
-    border-color: var(--green);
-    background: rgba(79, 209, 160, 0.1);
-  }
-  .daily-reward-card.claimed .day-wings { color: var(--green); }
-  .daily-reward-card.claimed::after {
-    content: '\2713';
-    position: absolute;
-    top: -8px;
-    right: -6px;
-    background: var(--green);
-    color: var(--blueprint-dark);
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    font-size: 11px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-  }
-  .daily-reward-card.today {
-    border-color: var(--accent);
-    background: rgba(255, 177, 0, 0.14);
-  }
-  .daily-reward-card.today .day-wings { color: var(--accent); }
-  .daily-reward-card.locked { opacity: 0.4; }
-  .daily-reward-card .day-claim-btn {
-    margin-top: 2px;
-    background: var(--accent);
-    border: none;
-    color: var(--blueprint-dark);
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    font-size: 10px;
-    padding: 4px 9px;
-    border-radius: 999px;
-    cursor: pointer;
-  }
-  @media (hover: hover) { .daily-reward-card .day-claim-btn:hover { filter: brightness(1.08); } }
-  .daily-rewards-note {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    color: var(--rivet);
-    line-height: 1.6;
-    margin: 0 0 16px;
-  }
-  .daily-rewards-close {
-    background: none;
-    border: none;
-    color: var(--rivet);
-    font-size: 12px;
-    cursor: pointer;
-    text-decoration: underline;
-  }
-  @media (hover: hover) { .daily-rewards-close:hover { color: var(--accent); } }
 /* ============ IN-APP MOCK EXAM (site theme, now an in-page view, not a popup) ============ */
 .gform-overlay {
   /* This used to be a fixed, floating side-panel (position:fixed, its own
@@ -11387,6 +11287,47 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
   }
   @media (prefers-reduced-motion: reduce) { .fs-btn { transition: none; } }
 </style>
+<style id="scrollbar-inset-fix">
+/* scrollbar-inset-fix: popup scrollbars stay a few px inside the popup's top and
+   bottom edges instead of running into its border / rounded corners. */
+
+/* 1) Terms + Privacy (approved look): the scroll box itself is shortened, so the
+      scrollbar can't reach the popup edges in any browser. */
+:is(#terms-overlay, #privacy-overlay) .terms-modal { overflow: hidden; }
+:is(#terms-overlay, #privacy-overlay) .terms-body {
+  margin: 3px 0 4px;
+  padding-top: 0 !important;
+  padding-bottom: 2px !important;
+}
+
+/* 2) Popups whose inner scroll area is its own element: same method, same 3px / 4px. */
+#mainflight-picker-overlay .mf-list,
+html body .dm-setup,
+html body .pfc-body { margin-top: 3px; margin-bottom: 4px; }
+
+/* 3) Popups that scroll on the rounded box itself (can't be shortened without
+      changing their layout): inset the scrollbar track instead. */
+.mockadmin-card::-webkit-scrollbar-track,
+.math-toolbox::-webkit-scrollbar-track,
+.fs-modal::-webkit-scrollbar-track,
+.pfr-modal::-webkit-scrollbar-track,
+.qs-box-chooser::-webkit-scrollbar-track,
+.qimg-preview-scroll::-webkit-scrollbar-track { background: transparent; margin: 4px 0 5px; }
+.mockadmin-card::-webkit-scrollbar-button,
+.math-toolbox::-webkit-scrollbar-button,
+.fs-modal::-webkit-scrollbar-button,
+.pfr-modal::-webkit-scrollbar-button,
+.qs-box-chooser::-webkit-scrollbar-button,
+.qimg-preview-scroll::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+/* Chrome 121+ ignores ::-webkit-scrollbar rules on elements that set scrollbar-width /
+   scrollbar-color, so those are reset here (only on popups that already show a scrollbar). */
+@supports selector(::-webkit-scrollbar) {
+  .mockadmin-card, .math-toolbox, .fs-modal, .pfr-modal, .qs-box-chooser, .qimg-preview-scroll {
+    scrollbar-color: auto;
+  }
+  .mockadmin-card:not([style*="scrollbar-width"]) { scrollbar-width: auto; }
+}
+</style>
 </head>
 <body class="gate-active">
 
@@ -11506,7 +11447,7 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
 
       <div id="forgot-flightcode-step">
         <div class="forgot-stage visible" id="forgot-stage-callsign">
-          <p class="forgot-stage-hint">Enter your Callsign and we'll send a verification code to the email on file for your account.</p>
+          <p class="forgot-stage-hint">Enter your Callsign and aerodynadmics will send a verification code to the email on file for your account.</p>
           <input type="search" id="forgot-callsign-input" placeholder="Enter your Callsign" maxlength="13" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly');">
           <div class="nick-error" id="forgot-callsign-error"></div>
           <button type="button" class="forgot-stage-submit" id="forgot-callsign-submit" onclick="submitForgotCallsign()">SEND CODE</button>
@@ -11560,8 +11501,8 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
         <button type="button" class="ai-note-modal-close" onclick="document.getElementById('ai-note-overlay').classList.remove('visible')">&times;</button>
       </div>
       <div class="ai-note-body">
-        <p>This site was built with the help of Artificial Intelligence. I'm an Aeronautical Engineering graduate, not a coder, and AI helped me turn an idea into something usable for fellow Aeronautical Engineering students/graduates.</p>
-        <p>I know AI use isn't environmentally free, and I don't want to brush past that. But I believe how and why we use a tool matters as much as whether we use it at all. Here, it went toward making review materials easier to access and organize.</p>
+        <p>This site was built with the help of Artificial Intelligence. aerodynadmics is built by an Aeronautical Engineering graduate, not a coder, and AI helped turn an idea into something usable for fellow Aeronautical Engineering students/graduates.</p>
+        <p>aerodynadmics knows AI use isn't environmentally free and doesn't want to brush past that. But aerodynadmics believes how and why we use a tool matters as much as whether we use it at all. Here, it went toward making review materials easier to access and organize.</p>
         <p style="font-style: italic; color: var(--accent);">&ldquo;Maybe it's less about AI being good or bad, and more about the purpose we choose to use it for, while still acknowledging its impact on our environment and starting the change with ourselves to help protect it.&rdquo;<br><span style="display: inline-block; margin-top: 8px; color: var(--paper);">- aerodynadmics</span></p>
       </div>
     </div>
@@ -11592,17 +11533,17 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
   <div class="ai-note-overlay" id="bg-fee-note-overlay">
     <div class="ai-note-modal" style="max-width: 760px;">
       <div class="ai-note-modal-head" style="gap: 16px;">
-        <h3>Why do I charge Wings for custom profile background but not for avatars?</h3>
+        <h3>Why does aerodynadmics charge Wings for custom profile background but not for avatars?</h3>
         <button type="button" class="ai-note-modal-close" onclick="closeBgFeeNoteModal()">&times;</button>
       </div>
       <div class="ai-note-body">
-        <p>I know some of you might wonder why I charge a small amount of Wings when you upload a custom profile background or GIF, while profile avatars remain completely free.</p>
-        <p>The simple answer is that I want avatars to remain a free and basic part of aerodynadmics. I don't want someone to feel like they have to spend Wings just to have a profile picture. It's one of those small things that I believe everyone should be able to enjoy without worrying about a cost.</p>
-        <p>Custom backgrounds and GIFs are a little different. When you upload them, I have to store those files on aerodynadmics' cloud storage and keep them hosted so they can continue to appear on your profile. Larger and more numerous files mean more storage and hosting costs for me as I continue running the platform.</p>
-        <p>The Wings fee isn't meant to punish anyone for uploading an image, and it's not a charge for the image itself. It's simply my way of helping cover some of the ongoing costs of providing that extra customization feature.</p>
-        <p>I could make everything paid, but I don't want to. I'd rather keep the basic features, like avatars, freely available and only charge for optional features that require additional resources to maintain.</p>
-        <p>I'm building aerodynadmics on my own, and every part of the platform comes with real costs behind the scenes. I want to be honest about that rather than pretending these features are completely free to operate.</p>
-        <p>Thank you for understanding and for supporting what I'm building with aerodynadmics. Every bit of support helps me keep the platform running and continue improving<span style="white-space: nowrap;">&nbsp;it 🫶🌸!</span></p>
+        <p>Some of you might wonder why aerodynadmics charges a small amount of Wings when you upload a custom profile background or GIF, while profile avatars remain completely free.</p>
+        <p>The simple answer is that aerodynadmics wants avatars to remain a free and basic part of the platform. aerodynadmics doesn't want someone to feel like they have to spend Wings just to have a profile picture. It's one of those small things that aerodynadmics believes everyone should be able to enjoy without worrying about a cost.</p>
+        <p>Custom backgrounds and GIFs are a little different. When you upload them, aerodynadmics has to store those files on its cloud storage and keep them hosted so they can continue to appear on your profile. Larger and more numerous files mean more storage and hosting costs for aerodynadmics as it continues running the platform.</p>
+        <p>The Wings fee isn't meant to punish anyone for uploading an image, and it's not a charge for the image itself. It's simply aerodynadmics' way of helping cover some of the ongoing costs of providing that extra customization feature.</p>
+        <p>aerodynadmics could make everything paid, but doesn't want to. It would rather keep the basic features, like avatars, freely available and only charge for optional features that require additional resources to maintain.</p>
+        <p>aerodynadmics is being built independently, and every part of the platform comes with real costs behind the scenes. aerodynadmics wants to be honest about that rather than pretending these features are completely free to operate.</p>
+        <p>Thank you for understanding and for supporting what aerodynadmics is building. Every bit of support helps keep the platform running and continue improving<span style="white-space: nowrap;">&nbsp;it 🫶🌸!</span></p>
       </div>
     </div>
   </div>
@@ -11648,13 +11589,13 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
         <p>aerodynadmics is being developed into a more comprehensive platform for the Aeronautical Engineering community, with structured lessons, detailed explanations, and interactive animations to help make difficult concepts, especially in Aerodynamics, easier to understand and visualize.</p>
         <p>For students, the goal is to provide a place where you can strengthen your understanding of subjects throughout your studies, explore concepts beyond the classroom, and gradually build a stronger foundation for the AELE. For AELE reviewees, the platform aims to provide accessible resources that can support your continued review and preparation for the licensure examination.</p>
         <p>Beyond being a review and learning platform, aerodynadmics is also being developed as an online space for group study and collaboration. The idea is to give Aeronautical Engineering students and AELE reviewees an online space where they can study, exchange knowledge, discuss difficult topics, and share useful materials with others. Through an accessible online platform, studying can become more connected and less isolated.</p>
-        <p>The platform is also meant to help AELE reviewees become more comfortable with answering exams in a computerized environment. Since the AELE is conducted through a Computer-Based Licensure Examination (CBLE) setup, I hope that practicing in a similar format can make the experience a little less unfamiliar when the actual examination day comes.</p>
+        <p>The platform is also meant to help AELE reviewees become more comfortable with answering exams in a computerized environment. Since the AELE is conducted through a Computer-Based Licensure Examination (CBLE) setup, aerodynadmics hopes that practicing in a similar format can make the experience a little less unfamiliar when the actual examination day comes.</p>
         <p>Everything provided for learning and review on aerodynadmics is completely free and accessible to everyone. There is no need to pay to access lessons, explanations, study resources, exams, or practice materials.</p>
         <p>However, if you find aerodynadmics helpful and would like to support the project, you can make an optional donation by purchasing an item from the Flight Store. These purchases are not required to access any of the learning or review resources. They are simply a way for those who wish to support the platform to contribute to its continued development and maintenance.</p>
-        <p>I would genuinely appreciate any support. Your contribution helps me keep the platform running, improve its features, and create more learning and review resources for Aeronautical Engineering students and AELE reviewees.</p>
+        <p>aerodynadmics would genuinely appreciate any support. Your contribution helps keep the platform running, improve its features, and create more learning and review resources for Aeronautical Engineering students and AELE reviewees.</p>
         <p>There is absolutely no obligation to purchase anything. Whether you choose to donate through the Flight Store or simply use and share aerodynadmics, your support already means a lot.</p>
-        <p>If you have your own review materials or exams that you would be willing to share, I would also be grateful to have them become part of this growing collection. Feel free to <a href="https://forms.gle/GRHoKWEkkoHpCbwM8" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline; text-underline-offset:3px;">contribute a file</a>, and I’ll work on getting it published. The goal is to build a place where Aeronautical Engineering students and AELE reviewees can find exams and review materials from different sources, so no one has to feel like they are preparing alone or searching everywhere for something to practice with.</p>
-        <p>Thank you for taking the time to use this platform, for supporting it in whatever way you can, and for being part of its journey. I hope it can be even a small help as you work toward your goals in Aeronautical Engineering, whether you are still studying or preparing for the AELE.</p>
+        <p>If you have your own review materials or exams that you would be willing to share, aerodynadmics would also be grateful to have them become part of this growing collection. Feel free to <a href="https://forms.gle/GRHoKWEkkoHpCbwM8" target="_blank" rel="noopener" style="color:inherit; text-decoration:underline; text-underline-offset:3px;">contribute a file</a>, and aerodynadmics will work on getting it published. The goal is to build a place where Aeronautical Engineering students and AELE reviewees can find exams and review materials from different sources, so no one has to feel like they are preparing alone or searching everywhere for something to practice with.</p>
+        <p>Thank you for taking the time to use this platform, for supporting it in whatever way you can, and for being part of its journey. aerodynadmics hopes it can be even a small help as you work toward your goals in Aeronautical Engineering, whether you are still studying or preparing for the AELE.</p>
                 <p class="thanks">Thank you, and best of luck to all future Aeronautical Engineers ✈️!</p>
         </div>
     </div>
@@ -11669,9 +11610,9 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
       <div class="ai-note-body">
         <p>If you recognize an exam, question, file, or other material that you believe belongs to you or your institution, please note that this platform may contain materials gathered from publicly accessible online sources, as well as files voluntarily submitted by users through the &quot;Contribute a File&quot; form.</p>
         <p>These materials are currently being made available for educational and review purposes during the beta development of the platform. The materials shared at this stage are intended to be temporary and are not necessarily part of the platform&rsquo;s permanent content. As the platform continues to develop, these materials may be reviewed, replaced, or removed.</p>
-        <p>I do not claim ownership of materials created by other individuals, schools, organizations, or other copyright holders, nor do I intend to infringe upon any copyright or other intellectual property rights.</p>
-        <p>As the platform progresses beyond its beta stage, I intend to develop and provide original examinations and review materials created specifically for this website, with the goal of building a more organized and comprehensive review experience for future Aeronautical Engineering licensure examinees.</p>
-        <p>If you are the copyright owner or otherwise authorized to request the removal of material appearing on this platform, please raise a concern through the <a href="javascript:void(0)" onclick="closeInfoPopup('mock-notice-overlay'); openCopyrightConcerns();">Copyright / Concerns form</a>. Upon receiving a removal request, I will review the material and take appropriate action, including removing it when warranted.</p>
+        <p>aerodynadmics does not claim ownership of materials created by other individuals, schools, organizations, or other copyright holders, nor does it intend to infringe upon any copyright or other intellectual property rights.</p>
+        <p>As the platform progresses beyond its beta stage, aerodynadmics intends to develop and provide original examinations and review materials created specifically for this website, with the goal of building a more organized and comprehensive review experience for future Aeronautical Engineering licensure examinees.</p>
+        <p>If you are the copyright owner or otherwise authorized to request the removal of material appearing on this platform, please raise a concern through the <a href="javascript:void(0)" onclick="closeInfoPopup('mock-notice-overlay'); openCopyrightConcerns();">Copyright / Concerns form</a>. Upon receiving a removal request, aerodynadmics will review the material and take appropriate action, including removing it when warranted.</p>
         <p>Thank you for your understanding and for helping maintain a respectful learning environment for everyone.</p>
         </div>
     </div>
@@ -12081,7 +12022,7 @@ aerodynadmics is an educational platform for Aeronautical Engineering students a
 By using aerodynadmics, you acknowledge that you have read and understood this Privacy Policy.
 
 
-2. INFORMATION WE COLLECT
+2. INFORMATION AERODYNADMINS COLLECTS
 
 aerodynadmics is designed to keep the information it collects limited to what is needed to run the platform.
 
@@ -12874,7 +12815,6 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         <div class="account-name-stack">
           <span id="account-name" class="account-name-line" style="display:none;"></span>
         </div>
-        <button class="daily-claim-btn" id="daily-claim-btn" onclick="openDailyRewardsModal()" style="display:none;">🎁 CLAIM</button>
         <button type="button" class="topbar-more-btn" id="topbar-more-btn" onclick="toggleTopbarMore()" aria-label="More options" aria-expanded="false" aria-controls="topbar-more-menu" title="More">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
         <span class="admin-notif-badge" id="topbar-more-badge" aria-hidden="true"></span></button>
@@ -14152,16 +14092,6 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
 
   </div>
 
-  <div class="daily-rewards-overlay" id="daily-rewards-overlay">
-    <div class="daily-rewards-box">
-      <h3>🎁 Daily Wings Rewards</h3>
-      <p class="daily-rewards-sub">Sign in every day to climb the streak.</p>
-      <div class="daily-rewards-grid" id="daily-rewards-grid"></div>
-      <p class="daily-rewards-note" id="daily-rewards-note">-</p>
-      <button class="daily-rewards-close" onclick="closeDailyRewardsModal()">Close</button>
-    </div>
-  </div>
-
   <div class="shop-pay-overlay" id="shop-pay-overlay">
     <div class="shop-pay-box">
       <button class="shop-pay-x" onclick="closeShopPayModal()" aria-label="Close">&times;</button>
@@ -14370,7 +14300,7 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
   <div class="banned-list-overlay" id="copyright-concerns-overlay">
     <div class="mockadmin-card" style="max-width:420px;" onclick="event.stopPropagation();">
       <h3>Copyright / Concerns</h3>
-      <p style="margin:0 0 18px; font-size:12.5px; color:var(--rivet); line-height:1.5;">If you're the copyright owner of material on this platform and would like it reviewed, or you have another concern about the platform, let us know below.</p>
+      <p style="margin:0 0 18px; font-size:12.5px; color:var(--rivet); line-height:1.5;">If you're the copyright owner of material on this platform and would like it reviewed, or you have another concern about the platform, let aerodynadmics know below.</p>
 
       <label class="mockadmin-field-label">TYPE</label>
       <div class="gift-wings-mode-toggle" style="margin-bottom:18px;">
@@ -14380,12 +14310,12 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
 
       <label class="mockadmin-field-label">EMAIL FOR UPDATES</label>
       <input type="email" id="cc-email-input" class="mockadmin-input" placeholder="you@example.com" autocomplete="email" autocapitalize="off" spellcheck="false">
-      <p style="margin:6px 0 18px; font-size:11px; color:var(--rivet); line-height:1.4;">We'll send updates about this submission to this address.</p>
+      <p style="margin:6px 0 18px; font-size:11px; color:var(--rivet); line-height:1.4;">aerodynadmics will send updates about this submission to this address.</p>
 
       <label class="mockadmin-field-label">YOUR CALLSIGN</label>
       <input type="text" id="cc-callsign-input" class="mockadmin-input" placeholder="Callsign" maxlength="13" autocomplete="off" autocapitalize="off" spellcheck="false" readonly style="opacity:0.7; cursor:not-allowed;">
 
-      <label class="mockadmin-field-label" id="cc-message-label">TELL US ABOUT IT</label>
+      <label class="mockadmin-field-label" id="cc-message-label">TELL AERODYNADMICS ABOUT IT</label>
       <textarea id="cc-message-input" class="mockadmin-input mockadmin-textarea" style="min-height:130px;" placeholder="Describe the copyright material in question, or your concern, in as much detail as you'd like&hellip;"></textarea>
 
       <div id="cc-submit-error" style="display:none; font-size:11.5px; color:#e67a7a; margin:-4px 0 4px;"></div>
@@ -15233,6 +15163,7 @@ Answer: C</pre>
     // into an .avatar-circle span's opening tag, sets a cover background
     // for an image avatar, or nothing for an emoji avatar.
     function avatarStyleAttr(avatar) {
+      if (isImageAvatar(avatar) && window.__keepImage) window.__keepImage(avatar);
       return isImageAvatar(avatar)
         ? ` style="background-image:url('${avatar.replace(/'/g, "%27")}');background-size:cover;background-position:center;"`
         : '';
@@ -15242,6 +15173,7 @@ Answer: C</pre>
     // the same image-vs-emoji logic in one place.
     function setAvatarElContent(el, avatar) {
       if (!el) return;
+      if (isImageAvatar(avatar) && window.__keepImage) window.__keepImage(avatar);
       if (isImageAvatar(avatar)) {
         el.style.backgroundImage = `url('${avatar.replace(/'/g, "%27")}')`;
         el.style.backgroundSize = 'cover';
@@ -16190,7 +16122,7 @@ Answer: C</pre>
           btn.disabled = false;
           btn.textContent = 'CREATE FLIGHT CODE';
           document.getElementById('flight-alert-skip').style.display = flightAlertStepFromInApp ? '' : 'none';
-          showFlightAlertError("We couldn't confirm your Flight Code was saved. Please check your connection and try again.");
+          showFlightAlertError("aerodynadmics couldn't confirm your Flight Code was saved. Please check your connection and try again.");
         });
       }
 
@@ -16854,6 +16786,11 @@ Answer: C</pre>
           setTimeout(() => { if (flightRestoring) abortFlightRestore(); }, 8000);
         }
       }
+      // Paint every private flight's icon from this device's cache right away, not only
+      // the remembered one; the live flight list replaces it a moment later.
+      if (!flightListRef && !Object.keys(flightsCache || {}).length) {
+        try { flightsCache = loadFlightListCache(); } catch (err) {}
+      }
       renderFlightsRail();
       updateSidebarFlightHeader();
       updateChatTitle();
@@ -17034,7 +16971,7 @@ Answer: C</pre>
       if (copyBtn) copyBtn.classList.toggle('active', ccSelectedType === 'copyright');
       if (concernBtn) concernBtn.classList.toggle('active', ccSelectedType === 'concern');
       const label = document.getElementById('cc-message-label');
-      if (label) label.textContent = ccSelectedType === 'copyright' ? 'DESCRIBE THE COPYRIGHT ISSUE' : 'TELL US ABOUT YOUR CONCERN';
+      if (label) label.textContent = ccSelectedType === 'copyright' ? 'DESCRIBE THE COPYRIGHT ISSUE' : 'TELL AERODYNADMICS ABOUT YOUR CONCERN';
     }
 
     function openCopyrightConcernsModal() {
@@ -17603,8 +17540,8 @@ Answer: C</pre>
       const ref = 'your report on the ' + word + (snip ? ' "' + snip + '"' : '');
       const title = approved ? 'Report Approved' : 'Report Not Approved';
       const message = approved
-        ? 'Thank you for helping keep the community safe. We reviewed ' + ref + ' and it does violate our community guidelines. We are now taking action against the reported ' + word + '.'
-        : 'Thank you for your report. We reviewed ' + ref + ' and it does not violate our community guidelines, so no action will be taken. We appreciate you looking out for the community.';
+        ? 'Thank you for helping keep the community safe. aerodynadmics reviewed ' + ref + ' and it does violate aerodynadmics\' community guidelines. aerodynadmics is now taking action against the reported ' + word + '.'
+        : 'Thank you for your report. aerodynadmics reviewed ' + ref + ' and it does not violate aerodynadmics\' community guidelines, so no action will be taken. aerodynadmics appreciates you looking out for the community.';
       closePrFeedback();
       try {
         await pushModAlert(e.reporterNickname, approved ? 'report-approved' : 'report-disapproved', title, message);
@@ -20189,6 +20126,7 @@ Answer: C</pre>
         const canEnter = canEnterFlight(f);
         b.className = 'flight-tile private' + (currentFlightId === id ? ' active' : '') + (canEnter ? '' : ' locked');
         if (f.image) {
+          if (window.__keepImage) window.__keepImage(f.image);
           b.classList.add('has-image');
           b.style.backgroundImage = 'url("' + String(f.image).replace(/"/g, '%22') + '")';
         } else {
@@ -20243,6 +20181,7 @@ Answer: C</pre>
         if (!f) return null;
         t.className = 'flight-tile private';
         if (f.image) {
+          if (window.__keepImage) window.__keepImage(f.image);
           t.classList.add('has-image');
           t.style.backgroundImage = 'url("' + String(f.image).replace(/"/g, '%22') + '")';
         } else {
@@ -21088,9 +21027,26 @@ Answer: C</pre>
         });
         localStorage.setItem('flightListCache', JSON.stringify(slim));
       } catch (err) {}
+      // Flight icon pictures are too big for the list cache above, so keep
+      // them in their own entry. Without this a reload first paints the
+      // letter tile and only swaps to the real picture once Firebase answers.
+      try {
+        const imgs = {};
+        Object.keys(flightsCache || {}).forEach((id) => {
+          const f = flightsCache[id];
+          if (f && f.name && typeof f.image === 'string' && f.image.length <= 400000) imgs[id] = f.image;
+        });
+        localStorage.setItem('flightImageCache', JSON.stringify(imgs));
+      } catch (err) {}
     }
     function loadFlightListCache() {
-      try { return JSON.parse(localStorage.getItem('flightListCache') || 'null') || {}; } catch (err) { return {}; }
+      let list = {};
+      try { list = JSON.parse(localStorage.getItem('flightListCache') || 'null') || {}; } catch (err) { list = {}; }
+      try {
+        const imgs = JSON.parse(localStorage.getItem('flightImageCache') || 'null') || {};
+        Object.keys(list).forEach((id) => { if (!list[id].image && imgs[id]) list[id].image = imgs[id]; });
+      } catch (err) {}
+      return list;
     }
     function abortFlightRestore() {
       if (!flightRestoring) return;
@@ -21777,7 +21733,67 @@ Answer: C</pre>
     // ---- presence (online/offline green dot) ----
     let presenceInitialized = false;
     let onlineNicknames = new Set();
-    let latestPresenceData = {};
+    let latestPresenceData = loadPresenceCache();
+    let presenceLiveLoaded = false;   // true once the real Firebase presence snapshot has arrived
+    // Avatars, borders and callsign animations come from live presence, which
+    // only arrives after the page has already drawn. Keep the last snapshot on
+    // this device and start from it, so a reload paints each soul's real look
+    // right away instead of the default plane and then swapping. online and
+    // lastSeen are deliberately not kept, so nobody shows as online from it.
+    function loadPresenceCache() {
+      let out = {};
+      try {
+        const raw = JSON.parse(localStorage.getItem('presenceLookCache') || 'null');
+        out = (raw && typeof raw === 'object') ? raw : {};
+      } catch (err) { out = {}; }
+      try {
+        const avs = JSON.parse(localStorage.getItem('presenceAvatarCache') || 'null') || {};
+        Object.keys(avs).forEach((k) => {
+          const v = avs[k];
+          if (!v || !v.a) return;
+          if (!out[k]) out[k] = { nickname: v.n || k };
+          if (!out[k].avatar) out[k].avatar = v.a;
+        });
+      } catch (err) {}
+      return out;
+    }
+    function savePresenceCache(data) {
+      try {
+        const out = {};
+        Object.keys(data || {}).forEach((k) => {
+          const e = data[k];
+          if (!e || !e.nickname) return;
+          const look = {
+            nickname: e.nickname,
+            equippedBorder: e.equippedBorder || null,
+            equippedAnimation: e.equippedAnimation || null,
+            equippedModels: e.equippedModels || [],
+            modelOrder: e.modelOrder || [],
+            ownedModels: e.ownedModels || {}
+          };
+          if (typeof e.avatar === 'string' && e.avatar.length <= 200000) look.avatar = e.avatar;
+          out[k] = look;
+        });
+        // Avatars get their own entry (and a roomier size limit) so they survive even when
+        // the bigger look cache below is too large for the browser's storage quota.
+        try {
+          const avs = {};
+          Object.keys(data || {}).forEach((k) => {
+            const e = data[k];
+            if (e && e.nickname && typeof e.avatar === 'string' && e.avatar.length <= 400000) avs[k] = { n: e.nickname, a: e.avatar };
+          });
+          localStorage.setItem('presenceAvatarCache', JSON.stringify(avs));
+        } catch (errA) {}
+        try {
+          localStorage.setItem('presenceLookCache', JSON.stringify(out));
+        } catch (errB) {
+          try {
+            Object.keys(out).forEach((k) => { delete out[k].avatar; delete out[k].ownedModels; delete out[k].modelOrder; delete out[k].equippedModels; });
+            localStorage.setItem('presenceLookCache', JSON.stringify(out));
+          } catch (errC) {}
+        }
+      } catch (err) {}
+    }
     // Local mirror of whatever section we last broadcast to Firebase, kept
     // in sync by updatePresenceSection() below. Two things read this:
     // 1) initPresence()'s reconnect handler, so a brief network drop
@@ -21966,6 +21982,8 @@ Answer: C</pre>
 
         nsRef('presence').on('value', (snap) => {
           latestPresenceData = snap.val() || {};
+          presenceLiveLoaded = true;
+          savePresenceCache(latestPresenceData);
           // The sidebar roster (lastNicknameListData) is only fetched once,
           // from a one-shot backend call, at sign-in time (showNicknameList()).
           // Presence, unlike that roster, is realtime, so a brand-new
@@ -22274,8 +22292,8 @@ window.modelUrl = function (file) {
       ],
       models: [
         { id: 'mig-21', name: 'MiG-21 Fishbed', priceWings: 1111, imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg/640px-Mikoyan-Gurevich_MiG-21MF_-_Letecke_muzeum_Kbely_%28cropped%29.jpg', tier: 'Supersonic', modelSrc: modelUrl('MiG21 Fishbed.glb') },
-        { id: 'f22', name: 'F-22 Raptor', priceWings: 1500, imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/Lockheed_Martin_F-22A_Raptor_JSOH.jpg?width=640', tier: 'Supersonic', modelSrc: modelUrl('F-22 Raptor.glb') },
-        { id: 'b2-spirit', name: 'B-2 Spirit', priceWings: 1500, imageUrl: 'https://commons.wikimedia.org/wiki/Special:FilePath/B-2_Spirit_original.jpg?width=640', tier: 'Supersonic', modelSrc: modelUrl('B-2 Spirit.glb') }
+        { id: 'f22', name: 'F-22 Raptor', priceWings: 1500, tier: 'Supersonic', modelSrc: modelUrl('F-22 Raptor.glb') },
+        { id: 'b2-spirit', name: 'B-2 Spirit', priceWings: 1500, tier: 'Supersonic', modelSrc: modelUrl('B-2 Spirit.glb') }
       ]
     };
 
@@ -23132,16 +23150,6 @@ window.modelUrl = function (file) {
       toast._hideTimer = setTimeout(() => toast.classList.remove('visible'), 3200);
     }
 
-    let pendingDailyClaim = null;
-    let dailyRewardsAutoShown = false;
-
-    function dailyWingsForStreak(streak) {
-      // 1 wing on day 1, growing by 1 each day up to 7 🪽 on day 7. The
-      // reward cycles: the day after Day 7 is Day 1 again (1 🪽).
-      const s = Math.max(streak, 1);
-      return ((s - 1) % 7) + 1;
-    }
-
     // Calendar-day string in the visitor's own local time zone, so the
     // claim boundary lines up with their actual midnight, not UTC.
     function localDateStr(d) {
@@ -23305,7 +23313,10 @@ window.modelUrl = function (file) {
 
           userWallet = wallet;
           walletLoaded = true;
-          checkDailyClaimAvailability();
+          // checkDailyClaimAvailability() isn't defined anywhere; calling it threw a
+          // ReferenceError that aborted the rest of this listener, so the sidebar
+          // card never received the equipped border / name animation.
+          if (typeof checkDailyClaimAvailability === 'function') { try { checkDailyClaimAvailability(); } catch (e) { console.error(e); } }
           applyEquippedCosmeticsToPresence();
           applyEquippedBackground();
           updateShopWingsBalanceDisplay();
@@ -23322,59 +23333,6 @@ window.modelUrl = function (file) {
       } catch (err) {
         console.error('Wallet init error:', err);
       }
-    }
-
-    function checkDailyClaimAvailability() {
-      const today = localDateStr(new Date());
-      if (userWallet.lastLoginDate === today) {
-        pendingDailyClaim = null;
-        updateDailyClaimButton();
-        renderDailyRewardsGrid();
-        return;
-      }
-      const yesterday = localDateStr(new Date(Date.now() - 86400000));
-      // Continuous (claimed yesterday) -> streak continues. Any gap, including
-      // never having claimed before, restarts the streak at Day 1.
-      // After Day 7 the cycle wraps back to Day 1 (older accounts may have a
-      // stored streak above 7, so it's folded into the 1-7 cycle first).
-      const prevCycleDay = userWallet.loginStreak > 0 ? ((userWallet.loginStreak - 1) % 7) + 1 : 0;
-      const nextStreak = (userWallet.lastLoginDate === yesterday) ? (prevCycleDay % 7) + 1 : 1;
-      pendingDailyClaim = { streak: nextStreak, reward: dailyWingsForStreak(nextStreak) };
-      updateDailyClaimButton();
-      renderDailyRewardsGrid();
-      if (!dailyRewardsAutoShown && currentChatUser) {
-        dailyRewardsAutoShown = true;
-        openDailyRewardsModal();
-      }
-    }
-
-    function updateDailyClaimButton() {
-      const btn = document.getElementById('daily-claim-btn');
-      if (!btn) return;
-      if (pendingDailyClaim && currentChatUser) {
-        btn.style.display = '';
-        btn.textContent = `🎁 CLAIM DAY ${pendingDailyClaim.streak} (+${pendingDailyClaim.reward} 🪽)`;
-      } else {
-        btn.style.display = 'none';
-      }
-    }
-
-    function claimDailyWings() {
-      if (!pendingDailyClaim || !walletLoaded) return;
-      const today = localDateStr(new Date());
-      const { streak, reward } = pendingDailyClaim;
-      userWallet.loginStreak = streak;
-      userWallet.wings += reward;
-      userWallet.lastLoginDate = today;
-      suppressAutoWingsToast = true;
-      saveWallet();
-      logWingsTransaction(currentChatUser.nickname, `Daily login streak (Day ${streak})`, reward);
-      showWingsToast(`🔥 Day ${streak} streak! +${reward} 🪽 claimed!`);
-      launchConfetti();
-      pendingDailyClaim = null;
-      updateShopWingsBalanceDisplay();
-      updateDailyClaimButton();
-      renderDailyRewardsGrid();
     }
 
     // Wings pickup from the Flappy Plane game (called by the game iframe via
@@ -23902,6 +23860,34 @@ window.modelUrl = function (file) {
         BORDER_CLASSES.forEach(c => el.classList.remove(c));
         if (borderClass) el.classList.add(borderClass);
       });
+      // Sidebar avatar only: before the wallet loads, show the border remembered on this device.
+      try {
+        let meNick = currentChatUser && currentChatUser.nickname;
+        // first sidebar render happens before currentChatUser is set, so read the saved login (read-only)
+        if (!meNick) { const su = JSON.parse(localStorage.getItem('aeleHubUser') || 'null'); meNick = su && su.nickname; }
+        if (sidebarAvatarEl && meNick) {
+          const store = JSON.parse(localStorage.getItem('sidebarMeBorderCache') || 'null') || {};
+          if (walletLoaded) {
+            const id = userWallet.equippedBorder || null;
+            if ((store[meNick] || null) !== id) {
+              if (id) store[meNick] = id; else delete store[meNick];
+              localStorage.setItem('sidebarMeBorderCache', JSON.stringify(store));
+            }
+            // remember the border's overlay picture so the page can pre-load it next refresh
+            let imgUrl = '';
+            if (id) {
+              ['::after', '::before'].forEach(pe => {
+                const m = /url\(["']?([^"')]+)["']?\)/.exec(getComputedStyle(sidebarAvatarEl, pe).backgroundImage || '');
+                if (m && !imgUrl) imgUrl = m[1];
+              });
+            }
+            localStorage.setItem('sidebarMeBorderImg', JSON.stringify(imgUrl));
+          } else if (store[meNick]) {
+            const c = borderClassFor(store[meNick]);
+            if (c) sidebarAvatarEl.classList.add(c);
+          }
+        }
+      } catch (e) {}
       [nameEl, sidebarNameEl].forEach(el => {
         if (!el) return;
         NICK_ANIM_CLASSES.forEach(c => el.classList.remove(c));
@@ -24934,6 +24920,7 @@ window.modelUrl = function (file) {
       document.querySelectorAll('.chat-msg-avatar[data-nickname]').forEach(el => {
         const nick = el.getAttribute('data-nickname');
         const avatar = getLiveAvatar(nick);
+        if (avatar && isImageAvatar(avatar) && window.__keepImage) window.__keepImage(avatar);
         if (avatar && el.__liveAv !== avatar) {
           el.__liveAv = avatar;
           // Image avatars (uploaded photos) must be applied as a CSS
@@ -27978,11 +27965,11 @@ window.modelUrl = function (file) {
       dmEl('dm-setup-err').textContent = ''; dmEl('dm-setup-err').classList.remove('info');
       dmEl('dm-code').textContent = '';
       const t = dmEl('dm-setup-text');
-      if (mode === 'setup') t.textContent = 'Messages are end-to-end encrypted, so only you and your crewmate can read them. Choose a Messages PIN. It protects the backup of your key so you can read your messages on another device. We can\u2019t recover it if you forget it.';
+      if (mode === 'setup') t.textContent = 'Messages are end-to-end encrypted, so only you and your crewmate can read them. Choose a Messages PIN. It protects the backup of your key so you can read your messages on another device. aerodynadmics can\u2019t recover it if you forget it.';
       else if (mode === 'totp') t.textContent = 'Open Google Authenticator and enter the 6-digit code for your account.';
       else if (mode === 'enroll') t.textContent = 'Google verified. Now link Google Authenticator: scan the QR code (or enter the key), then type the 6-digit code it shows. You\u2019ll use it any time you forget your PIN.';
       else if (mode === 'unlock') t.textContent = 'Enter your Messages PIN to unlock your encrypted messages on this device.';
-      else if (mode === 'reckey') t.textContent = 'Save this recovery key somewhere safe (a password manager or written down). If you forget your PIN, it restores all your messages. Anyone with this key and your account can read them, and we can\u2019t show it again or recover it for you.';
+      else if (mode === 'reckey') t.textContent = 'Save this recovery key somewhere safe (a password manager or written down). If you forget your PIN, it restores all your messages. Anyone with this key and your account can read them, and aerodynadmics can\u2019t show it again or recover it for you.';
       else if (mode === 'userec') t.textContent = 'Enter your recovery key and choose a new Messages PIN. Your old messages will be restored.';
       else if (mode === 'wait') t.textContent = DM.peer + ' hasn\u2019t turned on encrypted messages yet. Once they open Messages for the first time, tap check again.';
       dmSyncBackLook();
@@ -28216,7 +28203,7 @@ window.modelUrl = function (file) {
       try { localStorage.removeItem('dmPriv:' + dmMe()); } catch (e) {}
       dmEl('dm-totp').value = '';
       dmShow('setup');
-      dmEl('dm-setup-text').textContent = 'Verified. Choose a new Messages PIN. It protects the backup of your new key. We can\u2019t recover it if you forget it again.';
+      dmEl('dm-setup-text').textContent = 'Verified. Choose a new Messages PIN. It protects the backup of your new key. aerodynadmics can\u2019t recover it if you forget it again.';
     }
     async function dmOpenThread() {
       if (DM.gate) { dmGateDone(); return; }
@@ -29208,7 +29195,7 @@ window.modelUrl = function (file) {
         if (token !== profileLinkToken || profileNickFromHash() !== raw) { clearInterval(wait); return; }
         // Wait for the sign-in to finish and the live presence data to arrive
         // (avatar, border, equipped aircraft), up to ~8 seconds.
-        if (!(currentChatUser && Object.keys(latestPresenceData).length > 0) && ++tries < 40) return;
+        if (!(currentChatUser && presenceLiveLoaded && Object.keys(latestPresenceData).length > 0) && ++tries < 40) return;
         clearInterval(wait);
         profileCardPublic = false;
         setProfileSplit(false);
@@ -35283,7 +35270,7 @@ window.modelUrl = function (file) {
         submitBtn.disabled = false;
       } else if (reason === 'other') {
         extra.innerHTML = `
-          <p class="qreport-extra-label">Tell us what's wrong with this question.</p>
+          <p class="qreport-extra-label">Tell aerodynadmics what's wrong with this question.</p>
           <textarea class="qreport-textarea" id="qreport-text-input" placeholder="Describe the issue..." oninput="updateReportSubmitState()"></textarea>
         `;
         submitBtn.disabled = true;
@@ -39456,7 +39443,6 @@ window.modelUrl = function (file) {
         ['avatar-picker-overlay', () => closeAvatarPicker()],
         ['mainflight-picker-overlay', () => closeMainFlightPicker()],
         ['wings-history-overlay', null],
-        ['daily-rewards-overlay', null],
         ['wings-store-overlay', null],
         ['wings-thankyou-overlay', null],
         ['shop-ack-overlay', () => closeShopAckModal()],
@@ -41299,7 +41285,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   (function () {
     var POPUP_OVERLAY_SELECTOR = [
       '.ai-note-overlay', '.banned-list-overlay', '.chat-guidelines-overlay',
-      '.daily-rewards-overlay', '.form-popup-overlay', '.gift-wings-overlay',
+      '.form-popup-overlay', '.gift-wings-overlay',
       '.hours-info-overlay', '.image-lightbox-overlay', '.nick-modal-overlay',
       '.profile-card-overlay', '.shop-pay-overlay', '.store-popup-overlay',
       '.taxi-out-overlay', '.wings-store-overlay', '.wings-thankyou-overlay',
@@ -42421,7 +42407,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     o.innerHTML = '<div class="pfr-modal" role="dialog" aria-modal="true">' +
       '<h3 class="pfr-title">Report this ' + type + '</h3>' +
       '<div class="qreport-reasons pfr-reasons">' + list.map((r) => '<button type="button" class="qreport-reason-btn" data-r="' + r[0] + '">' + r[1] + '</button>').join('') + '</div>' +
-      '<textarea class="pfr-note" maxlength="300" placeholder="Tell us what\u2019s wrong\u2026"></textarea>' +
+      '<textarea class="pfr-note" maxlength="300" placeholder="Tell aerodynadmics what\u2019s wrong\u2026"></textarea>' +
       '<div class="pfr-err"></div>' +
       '<div class="pfr-actions"><button type="button" class="qreport-btn cancel pfr-cancel">Cancel</button><button type="button" class="qreport-btn submit pfr-submit" disabled>Submit report</button></div></div>';
     document.body.appendChild(o);
