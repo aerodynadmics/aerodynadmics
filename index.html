@@ -64,12 +64,23 @@
 <!-- If this device has a saved login, keep the sign-in screen hidden from the
      very first paint so it never flashes on reload. It is un-hidden as soon as
      the saved session is restored, rejected, or after a short safety timeout. -->
-<style id="has-session-css">html.has-session #signin-gate { visibility: hidden !important; }</style>
+<style id="has-session-css">
+html.has-session #signin-gate { visibility: hidden !important; }
+/* Plain dark cover so neither the sign-in screen nor the half-styled app shows
+   while the page is still loading its styles. */
+html.has-session::before {
+  content: ''; position: fixed; inset: 0; z-index: 2147483647;
+  background: radial-gradient(ellipse at 50% 50%, rgb(8, 45, 82), rgb(2, 12, 24) 70%);
+}
+html.has-session { background: rgb(2, 12, 24); }
+</style>
 <script>
 try {
   if (localStorage.getItem('aeleHubUser')) {
     document.documentElement.classList.add('has-session');
-    setTimeout(function () { document.documentElement.classList.remove('has-session'); }, 6000);
+    var dropCover = function () { document.documentElement.classList.remove('has-session'); };
+    setTimeout(dropCover, 6000);
+    document.addEventListener('DOMContentLoaded', function () { requestAnimationFrame(function () { requestAnimationFrame(dropCover); }); });
   }
 } catch (e) {}
 </script>
@@ -16748,7 +16759,6 @@ Answer: C</pre>
     }
 
     function showSignedInUI(user) {
-      document.documentElement.classList.remove('has-session');
       document.getElementById('signin-gate').classList.add('hidden');
       document.body.classList.remove('gate-active');
       const badge = document.getElementById('account-badge');
