@@ -30141,8 +30141,17 @@ window.modelUrl = function (file) {
           // continueSignIn() only runs during a fresh Google sign-in,
           // not when a cached session is restored like this).
           jsonpRequest({ action: 'lookupNickname', email: storedUser.email }, (data) => {
+            // Only treat the account as deleted when the server gives a clean
+            // answer (no error / rateLimited flag), and confirm it twice
+            // before signing out. Throttled, empty or odd replies keep the
+            // saved session instead of logging the person out.
             if (data && !data.nickname) {
-              signOutUser();
+              if (data.error || data.rateLimited) return;
+              setTimeout(() => {
+                jsonpRequest({ action: 'lookupNickname', email: storedUser.email }, (d2) => {
+                  if (d2 && !d2.error && !d2.rateLimited && !d2.nickname) signOutUser();
+                });
+              }, 2000);
               return;
             }
             // Re-check Flight Code status too, so an existing account
