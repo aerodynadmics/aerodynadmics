@@ -74,6 +74,16 @@ html.has-session::before {
 }
 html.has-session { background: rgb(2, 12, 24); }
 </style>
+<style id="profile-avatar-click-fix">
+/* The avatar hangs down into the profile card body, and the body (a later,
+   positioned element) was painting on top of its lower half, so the Add
+   Crewmate / Co-Pilot / edit-avatar buttons could not be hovered or clicked.
+   Lifting the avatar above the body fixes that. */
+.profile-card-avatar-wrap { z-index: 5; }
+.profile-card-avatar-wrap .crewmate-btn,
+.profile-card-avatar-wrap .copilot-btn,
+.profile-card-avatar-wrap .avatar-edit-pencil { z-index: 6; pointer-events: auto; }
+</style>
 <script>
 try {
   if (localStorage.getItem('aeleHubUser')) {
