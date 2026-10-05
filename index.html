@@ -12770,8 +12770,8 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
     <span class="chat-unread-badge" id="chat-unread-badge" style="display:none;">0</span>
     <span class="chat-peek-label">Black Box</span>
     <div class="chat-peek-briefing" id="chat-peek-briefing">
-      <span class="chat-peek-call" id="chat-peek-call" title="Flight Briefing" aria-label="Flight Briefing"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg></span>
-      <div class="chat-peek-people" id="chat-peek-people"></div>
+      <span class="chat-peek-call" id="chat-peek-call" title="Join Flight Briefing" aria-label="Join Flight Briefing" onclick="vcPeekGo(event, true)"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg></span>
+      <div class="chat-peek-people" id="chat-peek-people" onclick="vcPeekGo(event, false)"></div>
     </div>
   </div>
   <div class="chat-panel" id="chat-panel">
@@ -25645,6 +25645,28 @@ window.modelUrl = function (file) {
           }).join('') + (keys.length > MAX ? '<span class="chat-peek-more" title="' + (keys.length - MAX) + ' more">+' + (keys.length - MAX) + '</span>' : '')
         : '';
       if (box.__sig !== html) { box.innerHTML = html; box.__sig = html; }
+      // Tooltip on the green camera icon: "Join" until I'm in the briefing, then "Open".
+      const callEl = document.getElementById('chat-peek-call');
+      if (callEl) {
+        const tip = VC.inCall ? 'Open Flight Briefing' : 'Join Flight Briefing';
+        if (callEl.getAttribute('data-app-tip') !== tip) callEl.setAttribute('data-app-tip', tip);
+        if (callEl.getAttribute('aria-label') !== tip) callEl.setAttribute('aria-label', tip);
+      }
+    }
+    // Click on the collapsed strip's camera icon (join = true) or on any avatar in it (join = false):
+    // open the Black Box straight on the Flight Briefing tab. The camera icon also joins the call
+    // automatically. vcJoin() runs synchronously inside the click so the mic prompt still counts as a user gesture.
+    function vcPeekGo(ev, join) {
+      if (ev) { ev.stopPropagation(); ev.preventDefault(); }   // don't let the strip's own click open the Black Box tab
+      if (!vcInPrivateFlight()) return;
+      const panel = document.getElementById('chat-panel');
+      if (!panel) return;
+      if (!panel.classList.contains('visible')) {
+        if (chatBlockedForActiveFlight()) return;
+        toggleChatPanel();
+      }
+      setChatMode('video');
+      if (join && !VC.inCall && !VC.joining) vcJoin();
     }
     function vcLeave(keepRemote) {        // keepRemote = true when another tab of mine took over the call (don't delete its records)
       // Flip these FIRST: myRef.remove() below fires my own participants listener synchronously, and with
