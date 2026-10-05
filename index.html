@@ -61,6 +61,18 @@
      router script at the bottom of the page removes this class. -->
 <style id="load-gate-css">html.data-loading .empty-note { display: none !important; }</style>
 <script>document.documentElement.classList.add('data-loading');</script>
+<!-- If this device has a saved login, keep the sign-in screen hidden from the
+     very first paint so it never flashes on reload. It is un-hidden as soon as
+     the saved session is restored, rejected, or after a short safety timeout. -->
+<style id="has-session-css">html.has-session #signin-gate { visibility: hidden !important; }</style>
+<script>
+try {
+  if (localStorage.getItem('aeleHubUser')) {
+    document.documentElement.classList.add('has-session');
+    setTimeout(function () { document.documentElement.classList.remove('has-session'); }, 6000);
+  }
+} catch (e) {}
+</script>
 <script>
 /* Image warm-up: avatars and flight icons are CSS background-images (or data: URLs),
    so on a reload the browser only starts fetching/decoding them when the element is
@@ -15869,6 +15881,7 @@ Answer: C</pre>
     }
 
     function showBannedScreen() {
+      document.documentElement.classList.remove('has-session');
       localStorage.removeItem(AUTH_STORAGE_KEY);
       document.getElementById('signin-gate').classList.remove('hidden');
       document.body.classList.add('gate-active');
@@ -16735,6 +16748,7 @@ Answer: C</pre>
     }
 
     function showSignedInUI(user) {
+      document.documentElement.classList.remove('has-session');
       document.getElementById('signin-gate').classList.add('hidden');
       document.body.classList.remove('gate-active');
       const badge = document.getElementById('account-badge');
@@ -18314,6 +18328,7 @@ Answer: C</pre>
     }
 
     function performActualSignOut() {
+      document.documentElement.classList.remove('has-session');
       try { if (typeof VC !== 'undefined' && VC.inCall) vcLeave(); } catch (e) {}   // STEP 5
       try { if (typeof VC !== 'undefined') { clearInterval(VC.watchRetry); vcUnwatch(); } } catch (e) {}
       localStorage.removeItem(AUTH_STORAGE_KEY);
@@ -30175,7 +30190,7 @@ window.modelUrl = function (file) {
             }
           });
         }
-      } catch (e) {}
+      } catch (e) { document.documentElement.classList.remove('has-session'); }
     }
 
     // Only the "Sign in with Google" button genuinely needs to wait for
