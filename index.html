@@ -2593,7 +2593,7 @@ try {
     background: transparent;
     flex-shrink: 0;
   }
-  .nick-list li > span[data-text] {
+  .nick-list li span[data-text] {
     /* No explicit color here, inherits var(--paper) from .nick-list li
        by default, but leaving it unset lets equipped animated nameplate
        classes (e.g. .nick-legend, which needs color:transparent for its
@@ -2607,12 +2607,38 @@ try {
      plain .nick-nabladepth/.nick-breathe class selector, so without these
      it always won and silently forced Space Grotesk back on, leaving the
      weight/depth keyframes with no variable font to actually animate. */
-  .nick-list li > span[data-text].nick-nabladepth {
+  .nick-list li span[data-text].nick-nabladepth {
     font-family: 'Nabla', 'Space Grotesk', sans-serif;
   }
-  .nick-list li > span[data-text].nick-breathe {
+  .nick-list li span[data-text].nick-breathe {
     font-family: 'NickBreatheFont', 'Space Grotesk', sans-serif;
   }
+
+  /* Per-row "now playing" line under each member's name in the sidebar
+     list: green music note + song title, shown for anyone whose Spotify is
+     playing (read from their presence entry, same as the profile card). */
+  .nick-list li > .nick-col {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    flex: 1 1 auto;
+    gap: 2px;
+  }
+  .nick-list li .row-spotify { display: none; }
+  .nick-list li .row-spotify.listening {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    line-height: 1.2;
+    color: var(--paper);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.85);
+  }
+  .nick-list li .row-spotify .sidebar-me-note { width: 11px; height: 11px; flex: 0 0 auto; display: block; color: #1db954; }
+  .nick-list li .row-spotify .sidebar-me-song { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   /* ---- persistent reviewees sidebar (always visible, Discord-style) ---- */
   /* ---- Flights rail: thin server-style bar left of "Souls on Board" ---- */
@@ -3084,6 +3110,28 @@ try {
   .reviewees-sidebar-me.has-cover .sidebar-me-name,
   .reviewees-sidebar-me.has-cover .sidebar-me-status {
     text-shadow: 0 1px 3px rgba(0,0,0,0.85);
+  }
+  /* Discord-style "now playing" line: replaces the plain "online" text with
+     a green music note + the song title while the owner's Spotify is playing. */
+  .sidebar-me-status.listening {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    color: var(--paper);
+  }
+  .sidebar-me-status .sidebar-me-note {
+    width: 11px;
+    height: 11px;
+    flex: 0 0 auto;
+    display: block;
+    color: #1db954;
+  }
+  .sidebar-me-status .sidebar-me-song {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   @media (min-width: 901px) {
     body.sidebar-active { padding-left: 326px; padding-right: 282px; }
@@ -4448,7 +4496,7 @@ try {
     transform: scaleX(-1);
   }
   @media (hover: hover) { .profile-card-bio-edit-btn:hover { color: var(--accent); } }
-  .profile-spotify-link-row { margin-top: 12px; text-align: left; }
+  .profile-spotify-link-row { margin: 0; text-align: left; }
   .profile-spotify-link-btn {
     background: none;
     border: 1px solid var(--line);
@@ -4460,8 +4508,21 @@ try {
     padding: 6px 10px;
     cursor: pointer;
   }
+  @media (min-width: 900px) and (hover: hover) {
+    .profile-card { zoom: 0.85; }
+  }
+  @media (max-height: 860px) {
+    .profile-card-overlay { padding: 12px; }
+    .profile-card-banner { aspect-ratio: 3 / 1; }
+    .profile-card-body { padding-bottom: 16px; }
+    .profile-card-body .profile-card-divider { margin: 9px 0; }
+  }
+  .profile-spotify-diag { margin-top: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; line-height: 1.5; color: var(--rivet); }
   .profile-spotify-link-btn.linked { color: #1db954; border-color: #1db954; }
   @media (hover: hover) { .profile-spotify-link-btn:hover { color: var(--accent); border-color: var(--accent); } }
+  .spotify-link-note { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; line-height: 1.5; color: var(--paper); margin: 0 0 8px; text-align: left; }
+  .spotify-link-invite { display: block; box-sizing: border-box; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.04em; color: #1db954; border: 1px solid #1db954; border-radius: 4px; padding: 8px 10px; margin-bottom: 8px; text-decoration: none; }
+  @media (hover: hover) { .spotify-link-invite:hover { color: var(--accent); border-color: var(--accent); } }
   .spotify-link-steps {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11.5px;
@@ -4560,7 +4621,7 @@ try {
     background: rgba(2, 12, 24, 0.55);
     border: 1px solid var(--line);
     border-radius: 8px;
-    padding: 12px;
+    padding: 8px 10px;
   }
   .profile-spotify-head {
     display: flex;
@@ -4568,16 +4629,18 @@ try {
     gap: 6px;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
-    font-weight: 600;
+    font-weight: 400;
     letter-spacing: 0.04em;
     color: var(--paper);
-    margin-bottom: 10px;
+    margin-bottom: 6px;
   }
-  .profile-spotify-head svg { width: 14px; height: 14px; display: block; flex: 0 0 auto; }
-  .profile-spotify-row { display: flex; align-items: center; gap: 12px; }
+  .profile-spotify-edit-btn { margin-left: auto; background: none; border: none; color: var(--rivet); font-size: 13px; line-height: 1; padding: 0; cursor: pointer; transform: scaleX(-1); }
+  @media (hover: hover) { .profile-spotify-edit-btn:hover { color: var(--accent); } }
+  .profile-spotify-head svg { width: 12px; height: 12px; display: block; flex: 0 0 auto; }
+  .profile-spotify-row { display: flex; align-items: center; gap: 10px; }
   .profile-spotify-art {
-    width: 64px;
-    height: 64px;
+    width: 46px;
+    height: 46px;
     flex: 0 0 auto;
     border-radius: 4px;
     background: #0b1c2e center / cover no-repeat;
@@ -4591,13 +4654,13 @@ try {
   }
   .profile-spotify-song {
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
+    font-size: 13.5px;
+    font-weight: 400;
     color: var(--paper);
   }
   .profile-spotify-artist {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 12.5px;
+    font-size: 11.5px;
     color: var(--rivet);
     margin-top: 1px;
   }
@@ -4605,9 +4668,9 @@ try {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-top: 8px;
+    margin-top: 5px;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
+    font-size: 10px;
     color: var(--rivet);
   }
   .profile-spotify-bar {
@@ -12803,11 +12866,13 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
       <div class="nick-modal-body">
         <div style="padding: 4px 16px 16px;">
           <p class="profile-edit-label">Show what you are listening to on your profile</p>
+          <p class="spotify-link-note">Required: your Discord account must join the Lanyard server, or your song cannot be detected.</p>
+          <a class="spotify-link-invite" href="https://discord.gg/lanyard" target="_blank" rel="noopener noreferrer">JOIN LANYARD SERVER (discord.gg/lanyard)</a>
           <ol class="spotify-link-steps">
-            <li>Join the Discord server discord.gg/lanyard</li>
-            <li>In Discord settings, find Connections (use the search box if you cannot see it), open Spotify and turn on "Display Spotify as your status"</li>
+            <li>Tap the button above and accept the invite with the Discord account you use for Spotify</li>
+            <li>In Discord, go to Settings > Connections, connect Spotify, and turn on "Display Spotify as your status"</li>
             <li>Do not set your Discord status to Invisible</li>
-            <li>Turn on Developer Mode in Discord settings (called Developer or Advanced), right-click your profile, Copy User ID, paste it below</li>
+            <li>Turn on Developer Mode in Discord settings (under Advanced), right-click your own profile, choose Copy User ID, and paste it below</li>
           </ol>
           <input type="text" id="spotify-link-input" class="mockadmin-input" inputmode="numeric" maxlength="25" autocomplete="off" placeholder="Your Discord user ID">
           <div class="spotify-link-actions">
@@ -16795,6 +16860,7 @@ Answer: C</pre>
       setAvatarElContent(document.getElementById('sidebar-me-avatar'), user.avatar || '✈️');
       document.getElementById('sidebar-me-name').textContent = user.nickname || user.name || '';
       bar.style.display = 'flex';
+      try { updateSidebarMeSpotify(true); } catch (e) {}
       applyOwnCosmeticsToBadge();
       // Whichever cover the user has equipped may already be loaded (e.g.
       // re-showing the signed-in UI without a fresh profile fetch), apply
@@ -27116,7 +27182,7 @@ window.modelUrl = function (file) {
           ${coverImgHtml}
           ${coverOverlayHtml}
           <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span></span>
-          <span class="${animClass}" data-text="${escapeHtml(nick)}" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; padding:0 8px; margin:0 -8px;">${escapeHtml(nick)}</span>
+          <span class="nick-col"><span class="${animClass}" data-text="${escapeHtml(nick)}" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; padding:0 8px; margin:0 -8px;">${escapeHtml(nick)}</span>${rowSpotifyHtml(nick)}</span>
         </li>
       `;
       };
@@ -27174,7 +27240,7 @@ window.modelUrl = function (file) {
           ${coverImgHtml}
           ${coverOverlayHtml}
           <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span></span>
-          <span class="${animClass}" data-text="${escapeHtml(nick)}" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; padding:0 8px; margin:0 -8px;">${escapeHtml(nick)}</span>
+          <span class="nick-col"><span class="${animClass}" data-text="${escapeHtml(nick)}" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; padding:0 8px; margin:0 -8px;">${escapeHtml(nick)}</span>${rowSpotifyHtml(nick)}</span>
         </li>
       `;
         };
@@ -27282,7 +27348,7 @@ window.modelUrl = function (file) {
           ${coverImgHtml}
           ${coverOverlayHtml}
           <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span></span>
-          <span class="${animClass}" data-text="${escapeHtml(nick)}" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; padding:0 8px; margin:0 -8px;">${escapeHtml(nick)}</span>
+          <span class="nick-col"><span class="${animClass}" data-text="${escapeHtml(nick)}" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; padding:0 8px; margin:0 -8px;">${escapeHtml(nick)}</span>${rowSpotifyHtml(nick)}</span>
         </li>
       `;
       }).join('');
@@ -29762,6 +29828,7 @@ window.modelUrl = function (file) {
           <div class="profile-card-status-row"><span class="nick-status-tag ${statusClass}">${statusLabel}</span></div>
           ${profileCardPublic ? '' : copilotLineHtml}
           ${relationsRowHtml}
+          <div id="profile-spotify-slot"></div>
           <div class="profile-card-divider"></div>
           <p class="profile-card-section-label">Achievements</p>
           <span class="hours-chip" data-tooltip="Flight Hours" onclick="openFlightHoursInfo()">
@@ -29779,11 +29846,10 @@ window.modelUrl = function (file) {
             ${showEditUi ? '<button type="button" class="profile-card-bio-edit-btn" onclick="openEditBio()" aria-label="Edit bio">&#9998;</button>' : ''}
           </div>
           <div class="profile-card-bio${bio ? '' : ' empty'}">${bio || (isOwn ? 'You haven\u2019t added a bio yet.' : '')}</div>
-          <div id="profile-spotify-slot"></div>
-          ${showEditUi ? `<div class="profile-spotify-link-row"><button type="button" class="profile-spotify-link-btn${getMySpotifyDiscordId() ? ' linked' : ''}" onclick="openSpotifyLink()">&#9835; ${getMySpotifyDiscordId() ? 'SPOTIFY LINKED' : 'LINK SPOTIFY'}</button></div>` : ''}
         </div>
       `;
       refreshProfileSpotifySection();
+      updateSpotifyDiag();
       // Keep the on-screen number visibly ticking upward every second
       // while this person is online, instead of only jumping every ~15s
       // when the underlying value actually syncs. It's purely a display
@@ -29810,6 +29876,8 @@ window.modelUrl = function (file) {
     // no longer the song in the data, so ordinary presence updates never
     // cause a flicker or restart the progress bar.
     function syncProfileSpotifyIfChanged() {
+      try { updateSidebarMeSpotify(); } catch (e) {}
+      try { updateListRowsSpotify(); } catch (e) {}
       if (!profileCardOpenFor || !document.getElementById('profile-spotify-slot')) return;
       if (spotifySig(getSpotifyNowPlaying(profileCardOpenFor)) !== profileSpotifyShownSig) refreshProfileSpotifySection();
     }
@@ -29855,7 +29923,14 @@ window.modelUrl = function (file) {
 
     function renderProfileSpotifyHtml(nickname) {
       const t = getSpotifyNowPlaying(nickname);
-      if (!t) return '';
+      const canEdit = !!(currentChatUser && nickname === currentChatUser.nickname && !profileCardReadOnly);
+      if (!t) {
+        if (!canEdit || getMySpotifyDiscordId()) return '';
+        return `
+        <div class="profile-card-divider"></div>
+        <div class="profile-spotify-link-row"><button type="button" class="profile-spotify-link-btn" onclick="openSpotifyLink()">&#9835; LINK SPOTIFY</button></div>
+      `;
+      }
       const art = /^https:\/\//.test(t.art || '') ? t.art : '';
       const artStyle = art ? ` style="background-image:url('${escapeHtml(art)}')"` : '';
       return `
@@ -29864,6 +29939,7 @@ window.modelUrl = function (file) {
           <div class="profile-spotify-head">
             <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#1db954"/><path d="M5.5 9.2c4.3-1.2 9.3-.9 13 1.3M6.3 12.5c3.6-1 7.7-.7 10.8 1.1M7.1 15.5c2.9-.8 6-.5 8.5.9" fill="none" stroke="#082744" stroke-width="1.6" stroke-linecap="round"/></svg>
             Listening to Spotify
+            ${canEdit ? '<button type="button" class="profile-spotify-edit-btn" onclick="openSpotifyLink()" aria-label="Spotify settings">&#9998;</button>' : ''}
           </div>
           <div class="profile-spotify-row">
             <div class="profile-spotify-art"${artStyle}></div>
@@ -29923,6 +29999,68 @@ window.modelUrl = function (file) {
       refreshProfileSpotifySection();
     }
 
+    // ===== SIDEBAR LIST: per-row now playing (everyone, not just "me") =====
+    function rowSpotifyInner(nick) {
+      let t = null;
+      try { t = getSpotifyNowPlaying(nick); } catch (e) {}
+      if (!t || !t.song) return null;
+      return { t: t, html: '<svg class="sidebar-me-note" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 3v11.3A4 4 0 1 0 11 18V8h6V3z"/></svg><span class="sidebar-me-song">' + escapeHtml(t.song) + '</span>' };
+    }
+    function rowSpotifyHtml(nick) {
+      const r = rowSpotifyInner(nick);
+      if (!r) return '<span class="row-spotify"></span>';
+      return '<span class="row-spotify listening" title="' + escapeHtml(r.t.song + (r.t.artist ? ' by ' + r.t.artist : '')) + '">' + r.html + '</span>';
+    }
+    // Patches the song line of every visible row in place (no re-render, so
+    // covers/animations never flicker). Called on presence changes + a timer.
+    function updateListRowsSpotify() {
+      document.querySelectorAll('.nick-list li[data-nickname] .row-spotify').forEach(function (el) {
+        const li = el.closest('li');
+        const nick = li && li.getAttribute('data-nickname');
+        if (!nick) return;
+        const r = rowSpotifyInner(nick);
+        const sig = r ? spotifySig(r.t) : '';
+        if (el.__sig === sig) return;
+        el.__sig = sig;
+        if (r) {
+          el.classList.add('listening');
+          el.setAttribute('title', r.t.song + (r.t.artist ? ' by ' + r.t.artist : ''));
+          el.innerHTML = r.html;
+        } else {
+          el.classList.remove('listening');
+          el.removeAttribute('title');
+          el.innerHTML = '';
+        }
+      });
+    }
+    setInterval(function () { try { updateListRowsSpotify(); } catch (e) {} }, 4000);
+
+    // ===== SIDEBAR NOW PLAYING (signed-in user's own card) =====
+    // Swaps the "online" text under the name for a green music note + the song
+    // title while a track is playing, and back to "online" when it stops.
+    // Only touches the DOM when the song actually changes (pass force = true
+    // to redraw regardless, e.g. when the signed-in user changes).
+    function updateSidebarMeSpotify(force) {
+      const el = document.getElementById('sidebar-me-status');
+      if (!el || !currentChatUser || !currentChatUser.nickname) return;
+      const t = getSpotifyNowPlaying(currentChatUser.nickname);
+      const sig = spotifySig(t);
+      if (!force && sig === updateSidebarMeSpotify._sig) return;
+      updateSidebarMeSpotify._sig = sig;
+      if (t && t.song) {
+        el.classList.add('listening');
+        el.setAttribute('title', t.song + (t.artist ? ' by ' + t.artist : ''));
+        el.innerHTML = '<svg class="sidebar-me-note" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 3v11.3A4 4 0 1 0 11 18V8h6V3z"/></svg>'
+          + '<span class="sidebar-me-song">' + escapeHtml(t.song) + '</span>';
+      } else {
+        el.classList.remove('listening');
+        el.removeAttribute('title');
+        el.textContent = 'online';
+      }
+    }
+    // Catches a song ending between polls (the data expires on its own).
+    setInterval(function () { try { updateSidebarMeSpotify(); } catch (e) {} }, 4000);
+
     // ===== SPOTIFY DETECTION (Lanyard, every user, opt-in) =====
     // Each signed-in user links their OWN numeric Discord user ID (a public id,
     // not a secret). It is kept only in that user's own browser (localStorage),
@@ -29957,8 +30095,10 @@ window.modelUrl = function (file) {
         spotifyOwnerLive = null;
         publishSpotifyPresence(null);
         refreshProfileSpotifySection();
+        try { updateSidebarMeSpotify(); } catch (e) {}
       } else {
         pollSpotifyOwner();
+        try { ensureSpotifyWs(); } catch (e) {}
       }
       return true;
     }
@@ -29978,6 +30118,41 @@ window.modelUrl = function (file) {
       };
     }
 
+    let spotifyDiagMsg = '';
+    function setSpotifyDiag(msg) { spotifyDiagMsg = msg; updateSpotifyDiag(); }
+    function updateSpotifyDiag() {
+      const el = document.getElementById('profile-spotify-diag');
+      if (el) el.textContent = /^Spotify detected/.test(spotifyDiagMsg) ? '' : spotifyDiagMsg;
+      const ov = document.getElementById('spotify-link-overlay');
+      if (ov && ov.classList.contains('visible') && spotifyDiagMsg) showSpotifyLinkStatus(spotifyDiagMsg, false);
+    }
+
+    function applyOwnerLanyard(d, me) {
+        const track = mapLanyardSpotify(d);
+        const sig = track ? (track.song + '|' + track.start) : '';
+        if (track) {
+          setSpotifyDiag('Spotify detected: ' + track.song);
+        } else if (d.discord_status === 'offline') {
+          setSpotifyDiag('Lanyard sees you as offline. Set Discord to Online, Idle or DND (not Invisible).');
+        } else {
+          setSpotifyDiag('Connected to Lanyard (' + (d.discord_status || 'ok') + '), but no Spotify activity. Turn on Discord > Connections > Spotify > Display Spotify as your status, then play a song.');
+        }
+        if (sig !== spotifyOwnerSig) {
+          spotifyOwnerSig = sig;
+          spotifyOwnerLive = track;
+          try { updateSidebarMeSpotify(); } catch (e) {}
+          if (profileCardOpenFor === me) refreshProfileSpotifySection();
+          publishSpotifyPresence(track);
+        }
+        // Self-heal: if what Firebase holds differs from what is playing
+        // (first run, reconnect rewrote presence, etc.), publish again.
+        // Skipped for 5 s after a write so the listener can catch up.
+        if (Date.now() - spotifyLastPublishAt > 1000) {
+          const mine = latestPresenceData[presenceKey(me)];
+          if (spotifySig(mine && mine.spotify) !== sig) publishSpotifyPresence(track);
+        }
+    }
+
     async function pollSpotifyOwner() {
       if (document.hidden) return;
       if (!currentChatUser || !currentChatUser.nickname) return;
@@ -29986,26 +30161,68 @@ window.modelUrl = function (file) {
       const me = currentChatUser.nickname;
       try {
         const res = await fetch('https://api.lanyard.rest/v1/users/' + encodeURIComponent(discordId));
-        if (!res.ok) return;
-        const json = await res.json();
-        if (!json || !json.success) return;
+        let json = null;
+        try { json = await res.json(); } catch (e) { json = null; }
         if (!currentChatUser || currentChatUser.nickname !== me) return;
-        const track = mapLanyardSpotify(json.data);
-        const sig = track ? (track.song + '|' + track.start) : '';
-        if (sig !== spotifyOwnerSig) {
-          spotifyOwnerSig = sig;
-          spotifyOwnerLive = track;
-          if (profileCardOpenFor === me) refreshProfileSpotifySection();
+        if (!json || !json.success) {
+          const code = json && json.error && json.error.code;
+          if (code === 'user_not_monitored') {
+            setSpotifyDiag('Lanyard cannot see this ID. Join discord.gg/lanyard with the same Discord account, and make sure the number is your USER ID (not a server ID).');
+          } else {
+            setSpotifyDiag('Lanyard error (' + (code || res.status) + '). Check the ID and try again.');
+          }
+          return;
         }
-        // Self-heal: if what Firebase holds differs from what is playing
-        // (first run, reconnect rewrote presence, etc.), publish again.
-        // Skipped for 5 s after a write so the listener can catch up.
-        if (Date.now() - spotifyLastPublishAt > 5000) {
-          const mine = latestPresenceData[presenceKey(me)];
-          if (spotifySig(mine && mine.spotify) !== sig) publishSpotifyPresence(track);
-        }
-      } catch (e) { /* offline or blocked, try again next poll */ }
+        applyOwnerLanyard(json.data || {}, me);
+      } catch (e) {
+        setSpotifyDiag('Could not reach Lanyard (network, adblock or firewall may be blocking api.lanyard.rest).');
+      }
     }
+
+    // Instant updates: Lanyard pushes a presence change over a websocket the
+    // moment Discord/Spotify changes, so the song shows up right away. The
+    // 12 s REST poll above stays as a fallback if the socket is blocked.
+    let spotifyWs = null, spotifyWsBeat = null, spotifyWsId = '', spotifyWsRetry = 0;
+    function closeSpotifyWs() {
+      if (spotifyWsBeat) { clearInterval(spotifyWsBeat); spotifyWsBeat = null; }
+      if (spotifyWs) { try { spotifyWs.onclose = null; spotifyWs.close(); } catch (e) {} spotifyWs = null; }
+      spotifyWsId = '';
+    }
+    function ensureSpotifyWs() {
+      if (document.hidden || !currentChatUser || !currentChatUser.nickname) return;
+      const id = getMySpotifyDiscordId();
+      if (!id) { closeSpotifyWs(); return; }
+      if (spotifyWs && spotifyWsId === id && spotifyWs.readyState <= 1) return;
+      closeSpotifyWs();
+      const me = currentChatUser.nickname;
+      try {
+        const ws = new WebSocket('wss://api.lanyard.rest/socket');
+        spotifyWs = ws; spotifyWsId = id;
+        ws.onmessage = function (ev) {
+          let m = null;
+          try { m = JSON.parse(ev.data); } catch (e) { return; }
+          if (!m) return;
+          if (m.op === 1) {
+            const iv = (m.d && m.d.heartbeat_interval) || 30000;
+            ws.send(JSON.stringify({ op: 2, d: { subscribe_to_id: id } }));
+            spotifyWsBeat = setInterval(function () { try { ws.send(JSON.stringify({ op: 3 })); } catch (e) {} }, iv);
+          } else if (m.op === 0 && m.d && (m.t === 'INIT_STATE' || m.t === 'PRESENCE_UPDATE')) {
+            if (!currentChatUser || currentChatUser.nickname !== me) return;
+            spotifyWsRetry = 0;
+            applyOwnerLanyard(m.d, me);
+          }
+        };
+        ws.onclose = function () {
+          if (spotifyWs === ws) { spotifyWs = null; if (spotifyWsBeat) { clearInterval(spotifyWsBeat); spotifyWsBeat = null; } }
+          spotifyWsRetry = Math.min(spotifyWsRetry + 1, 6);
+          setTimeout(ensureSpotifyWs, 2000 * spotifyWsRetry);
+        };
+        ws.onerror = function () { try { ws.close(); } catch (e) {} };
+      } catch (e) {}
+    }
+    setInterval(ensureSpotifyWs, 15000);
+    setTimeout(ensureSpotifyWs, 2000);
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) { ensureSpotifyWs(); pollSpotifyOwner(); } });
 
     setInterval(pollSpotifyOwner, SPOTIFY_POLL_MS);
     setTimeout(pollSpotifyOwner, 3000);
@@ -30150,7 +30367,7 @@ window.modelUrl = function (file) {
           ${coverImgHtml}
           ${coverOverlayHtml}
           <span class="avatar-circle${borderClass ? ' ' + borderClass : ''}"${avatarStyleAttr(avatar)}>${avatarGlyph(avatar)}<span class="status-dot ${isOnline ? 'online' : 'offline'}"></span></span>
-          <span class="${animClass}" data-text="${escapeHtml(nick)}" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; padding:0 8px; margin:0 -8px;">${escapeHtml(nick)}</span>
+          <span class="nick-col"><span class="${animClass}" data-text="${escapeHtml(nick)}" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; padding:0 8px; margin:0 -8px;">${escapeHtml(nick)}</span>${rowSpotifyHtml(nick)}</span>
         </li>
       `;
       };
