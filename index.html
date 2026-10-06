@@ -4448,6 +4448,31 @@ try {
     transform: scaleX(-1);
   }
   @media (hover: hover) { .profile-card-bio-edit-btn:hover { color: var(--accent); } }
+  .profile-spotify-link-row { margin-top: 12px; text-align: left; }
+  .profile-spotify-link-btn {
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    color: var(--rivet);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+  .profile-spotify-link-btn.linked { color: #1db954; border-color: #1db954; }
+  @media (hover: hover) { .profile-spotify-link-btn:hover { color: var(--accent); border-color: var(--accent); } }
+  .spotify-link-steps {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: var(--paper);
+    text-align: left;
+    margin: 0 0 12px;
+    padding-left: 18px;
+  }
+  .spotify-link-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .spotify-link-actions button { flex: 1; }
   .profile-aircraft-grid {
     display: flex;
     flex-wrap: wrap;
@@ -4528,6 +4553,75 @@ try {
        regardless of where it happens to fall vertically.
     */
     transform: scaleY(0.5);
+  }
+  /* SPOTIFY NOW PLAYING (profile card). Discord-style "Listening to Spotify"
+     section, only rendered while a track is actually playing. */
+  .profile-spotify {
+    background: rgba(2, 12, 24, 0.55);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px;
+  }
+  .profile-spotify-head {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--paper);
+    margin-bottom: 10px;
+  }
+  .profile-spotify-head svg { width: 14px; height: 14px; display: block; flex: 0 0 auto; }
+  .profile-spotify-row { display: flex; align-items: center; gap: 12px; }
+  .profile-spotify-art {
+    width: 64px;
+    height: 64px;
+    flex: 0 0 auto;
+    border-radius: 4px;
+    background: #0b1c2e center / cover no-repeat;
+  }
+  .profile-spotify-info { flex: 1 1 auto; min-width: 0; }
+  .profile-spotify-song,
+  .profile-spotify-artist {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .profile-spotify-song {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--paper);
+  }
+  .profile-spotify-artist {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    color: var(--rivet);
+    margin-top: 1px;
+  }
+  .profile-spotify-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--rivet);
+  }
+  .profile-spotify-bar {
+    flex: 1 1 auto;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(127, 168, 201, 0.3);
+    overflow: hidden;
+  }
+  .profile-spotify-bar-fill {
+    height: 100%;
+    width: 0;
+    background: var(--paper);
+    border-radius: 2px;
   }
   .profile-card-bio {
     font-family: 'IBM Plex Mono', monospace;
@@ -12694,6 +12788,33 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
 
           <button type="button" class="profile-edit-save-btn" id="profile-edit-bio-save-btn" onclick="saveProfileBio()">SAVE BIO</button>
           <div class="profile-edit-status" id="profile-edit-bio-status"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---- link Spotify modal (closes only with its X button) ---- -->
+  <div class="nick-modal-overlay" id="spotify-link-overlay">
+    <div class="nick-modal" style="max-width: 360px;">
+      <div class="nick-modal-head">
+        <h3>Spotify</h3>
+        <button class="nick-modal-back" onclick="closeSpotifyLink()" aria-label="Close">&times;</button>
+      </div>
+      <div class="nick-modal-body">
+        <div style="padding: 4px 16px 16px;">
+          <p class="profile-edit-label">Show what you are listening to on your profile</p>
+          <ol class="spotify-link-steps">
+            <li>Join the Discord server discord.gg/lanyard</li>
+            <li>In Discord settings, find Connections (use the search box if you cannot see it), open Spotify and turn on "Display Spotify as your status"</li>
+            <li>Do not set your Discord status to Invisible</li>
+            <li>Turn on Developer Mode in Discord settings (called Developer or Advanced), right-click your profile, Copy User ID, paste it below</li>
+          </ol>
+          <input type="text" id="spotify-link-input" class="mockadmin-input" inputmode="numeric" maxlength="25" autocomplete="off" placeholder="Your Discord user ID">
+          <div class="spotify-link-actions">
+            <button type="button" class="mockadmin-save-btn" id="spotify-link-unlink-btn" onclick="unlinkSpotify()">UNLINK</button>
+            <button type="button" class="mockadmin-publish-btn" id="spotify-link-save-btn" onclick="saveSpotifyLink()">SAVE</button>
+          </div>
+          <div class="profile-edit-status" id="spotify-link-status"></div>
         </div>
       </div>
     </div>
@@ -22026,6 +22147,7 @@ Answer: C</pre>
           // up live, same as the black box already does.
           mergeNewPresenceNicknamesIntoList();
           recomputeOnlinePresence();
+          try { syncProfileSpotifyIfChanged(); } catch (e) {}
           refreshAllChatAvatarsInDom();
           try { vcSyncPeek(); vcRenderLobby(); } catch (e) {}
         });
@@ -29657,8 +29779,11 @@ window.modelUrl = function (file) {
             ${showEditUi ? '<button type="button" class="profile-card-bio-edit-btn" onclick="openEditBio()" aria-label="Edit bio">&#9998;</button>' : ''}
           </div>
           <div class="profile-card-bio${bio ? '' : ' empty'}">${bio || (isOwn ? 'You haven\u2019t added a bio yet.' : '')}</div>
+          <div id="profile-spotify-slot"></div>
+          ${showEditUi ? `<div class="profile-spotify-link-row"><button type="button" class="profile-spotify-link-btn${getMySpotifyDiscordId() ? ' linked' : ''}" onclick="openSpotifyLink()">&#9835; ${getMySpotifyDiscordId() ? 'SPOTIFY LINKED' : 'LINK SPOTIFY'}</button></div>` : ''}
         </div>
       `;
+      refreshProfileSpotifySection();
       // Keep the on-screen number visibly ticking upward every second
       // while this person is online, instead of only jumping every ~15s
       // when the underlying value actually syncs. It's purely a display
@@ -29670,6 +29795,220 @@ window.modelUrl = function (file) {
         stopProfileCardHoursTicker();
       }
     }
+
+    // ===== SPOTIFY NOW PLAYING (profile card) =====
+    // Track shape used everywhere: { song, artist, album, art, start, end }
+    // where start/end are epoch milliseconds (end - start = track length).
+    // Real data arrives in a later step via presence (entry.spotify).
+    let spotifyMockForTest = null;
+    let profileSpotifyTickInterval = null;
+    let profileSpotifyShownSig = '';
+
+    function spotifySig(t) { return t ? (t.song + '|' + t.start) : ''; }
+
+    // Called when presence changes. Only redraws if the song on screen is
+    // no longer the song in the data, so ordinary presence updates never
+    // cause a flicker or restart the progress bar.
+    function syncProfileSpotifyIfChanged() {
+      if (!profileCardOpenFor || !document.getElementById('profile-spotify-slot')) return;
+      if (spotifySig(getSpotifyNowPlaying(profileCardOpenFor)) !== profileSpotifyShownSig) refreshProfileSpotifySection();
+    }
+
+    // STEP 3: publish the owner's track to Firebase presence (field `spotify`),
+    // or remove it. onDisconnect clears it when the app is closed.
+    let spotifyLastPublishAt = 0;
+    function publishSpotifyPresence(track) {
+      if (!currentChatUser || !currentChatUser.nickname) return;
+      try {
+        ensureFirebaseApp();
+        const ref = nsRef('presence/' + presenceKey(currentChatUser.nickname) + '/spotify');
+        spotifyLastPublishAt = Date.now();
+        if (track) {
+          ref.onDisconnect().remove();
+          ref.set({
+            song: String(track.song || '').slice(0, 200),
+            artist: String(track.artist || '').slice(0, 200),
+            album: String(track.album || '').slice(0, 200),
+            art: String(track.art || '').slice(0, 500),
+            start: Number(track.start) || 0,
+            end: Number(track.end) || 0
+          });
+        } else {
+          ref.remove();
+        }
+      } catch (e) { /* try again next poll */ }
+    }
+
+    function getSpotifyNowPlaying(nickname) {
+      if (spotifyMockForTest && spotifyMockForTest.nickname === nickname) return spotifyMockForTest.track;
+      if (currentChatUser && nickname === currentChatUser.nickname && spotifyOwnerLive) return spotifyOwnerLive;
+      const entry = latestPresenceData[presenceKey(nickname)];
+      const sp = entry && entry.spotify;
+      if (sp && sp.end && Date.now() < sp.end + 5000) return sp;
+      return null;
+    }
+
+    function fmtSpotifyTime(ms) {
+      const t = Math.max(0, Math.floor(ms / 1000));
+      return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0');
+    }
+
+    function renderProfileSpotifyHtml(nickname) {
+      const t = getSpotifyNowPlaying(nickname);
+      if (!t) return '';
+      const art = /^https:\/\//.test(t.art || '') ? t.art : '';
+      const artStyle = art ? ` style="background-image:url('${escapeHtml(art)}')"` : '';
+      return `
+        <div class="profile-card-divider"></div>
+        <div class="profile-spotify">
+          <div class="profile-spotify-head">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#1db954"/><path d="M5.5 9.2c4.3-1.2 9.3-.9 13 1.3M6.3 12.5c3.6-1 7.7-.7 10.8 1.1M7.1 15.5c2.9-.8 6-.5 8.5.9" fill="none" stroke="#082744" stroke-width="1.6" stroke-linecap="round"/></svg>
+            Listening to Spotify
+          </div>
+          <div class="profile-spotify-row">
+            <div class="profile-spotify-art"${artStyle}></div>
+            <div class="profile-spotify-info">
+              <div class="profile-spotify-song">${escapeHtml(t.song || '')}</div>
+              <div class="profile-spotify-artist">${escapeHtml(t.artist || '')}</div>
+              <div class="profile-spotify-progress">
+                <span id="profile-spotify-elapsed">00:00</span>
+                <div class="profile-spotify-bar"><div class="profile-spotify-bar-fill" id="profile-spotify-fill"></div></div>
+                <span>${fmtSpotifyTime(t.end - t.start)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function tickProfileSpotify() {
+      const fill = document.getElementById('profile-spotify-fill');
+      const elapsedEl = document.getElementById('profile-spotify-elapsed');
+      if (!fill || !elapsedEl || !profileCardOpenFor) { stopProfileSpotifyTicker(); return; }
+      const t = getSpotifyNowPlaying(profileCardOpenFor);
+      if (!t) { refreshProfileSpotifySection(); return; }
+      const total = t.end - t.start;
+      const done = Math.min(total, Math.max(0, Date.now() - t.start));
+      fill.style.width = (total > 0 ? (done / total) * 100 : 0) + '%';
+      elapsedEl.textContent = fmtSpotifyTime(done);
+    }
+
+    function stopProfileSpotifyTicker() {
+      if (profileSpotifyTickInterval) { clearInterval(profileSpotifyTickInterval); profileSpotifyTickInterval = null; }
+    }
+
+    // Re-draws only the Spotify section of the open profile card (no full
+    // re-render). Later steps call this whenever presence data changes.
+    function refreshProfileSpotifySection() {
+      stopProfileSpotifyTicker();
+      const slot = document.getElementById('profile-spotify-slot');
+      if (!slot || !profileCardOpenFor) return;
+      slot.innerHTML = renderProfileSpotifyHtml(profileCardOpenFor);
+      profileSpotifyShownSig = spotifySig(getSpotifyNowPlaying(profileCardOpenFor));
+      if (slot.firstElementChild) {
+        tickProfileSpotify();
+        profileSpotifyTickInterval = setInterval(tickProfileSpotify, 1000);
+      }
+    }
+
+    // Console test: open any profile card, then run testSpotifyCard()
+    // to preview the section. testSpotifyCard(false) removes it again.
+    function testSpotifyCard(on) {
+      if (on === false) { spotifyMockForTest = null; refreshProfileSpotifySection(); return; }
+      const now = Date.now();
+      spotifyMockForTest = {
+        nickname: profileCardOpenFor,
+        track: { song: 'Sila', artist: 'SUD', album: 'Sila', art: '', start: now - 66000, end: now - 66000 + 326000 }
+      };
+      refreshProfileSpotifySection();
+    }
+
+    // ===== SPOTIFY DETECTION (Lanyard, every user, opt-in) =====
+    // Each signed-in user links their OWN numeric Discord user ID (a public id,
+    // not a secret). It is kept only in that user's own browser (localStorage),
+    // never written to Firebase, so no one else's ID is ever stored or seen.
+    // Their browser polls Lanyard and publishes the track to their presence,
+    // which everyone else already reads. No ID linked means nothing happens.
+    const SPOTIFY_POLL_MS = 12000;
+    let spotifyOwnerLive = null;      // latest mapped track for the signed-in user, or null
+    let spotifyOwnerSig = '';         // change detector: song + start time
+
+    function spotifyDiscordKey() {
+      return currentChatUser && currentChatUser.nickname ? 'aele_spotify_discord_' + presenceKey(currentChatUser.nickname) : null;
+    }
+
+    function getMySpotifyDiscordId() {
+      const k = spotifyDiscordKey();
+      if (!k) return '';
+      try { return localStorage.getItem(k) || ''; } catch (e) { return ''; }
+    }
+
+    // Returns true if saved. Pass '' to unlink.
+    function setMySpotifyDiscordId(id) {
+      const k = spotifyDiscordKey();
+      if (!k) return false;
+      const clean = String(id || '').trim();
+      if (clean && !/^\d{15,25}$/.test(clean)) return false;
+      try {
+        if (clean) localStorage.setItem(k, clean); else localStorage.removeItem(k);
+      } catch (e) { return false; }
+      spotifyOwnerSig = '';
+      if (!clean) {
+        spotifyOwnerLive = null;
+        publishSpotifyPresence(null);
+        refreshProfileSpotifySection();
+      } else {
+        pollSpotifyOwner();
+      }
+      return true;
+    }
+
+    function mapLanyardSpotify(data) {
+      if (!data || !data.listening_to_spotify || !data.spotify) return null;
+      const sp = data.spotify;
+      const ts = sp.timestamps || {};
+      if (!ts.start || !ts.end) return null;
+      return {
+        song: sp.song || '',
+        artist: sp.artist || '',
+        album: sp.album || '',
+        art: sp.album_art_url || '',
+        start: ts.start,
+        end: ts.end
+      };
+    }
+
+    async function pollSpotifyOwner() {
+      if (document.hidden) return;
+      if (!currentChatUser || !currentChatUser.nickname) return;
+      const discordId = getMySpotifyDiscordId();
+      if (!discordId) return;
+      const me = currentChatUser.nickname;
+      try {
+        const res = await fetch('https://api.lanyard.rest/v1/users/' + encodeURIComponent(discordId));
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!json || !json.success) return;
+        if (!currentChatUser || currentChatUser.nickname !== me) return;
+        const track = mapLanyardSpotify(json.data);
+        const sig = track ? (track.song + '|' + track.start) : '';
+        if (sig !== spotifyOwnerSig) {
+          spotifyOwnerSig = sig;
+          spotifyOwnerLive = track;
+          if (profileCardOpenFor === me) refreshProfileSpotifySection();
+        }
+        // Self-heal: if what Firebase holds differs from what is playing
+        // (first run, reconnect rewrote presence, etc.), publish again.
+        // Skipped for 5 s after a write so the listener can catch up.
+        if (Date.now() - spotifyLastPublishAt > 5000) {
+          const mine = latestPresenceData[presenceKey(me)];
+          if (spotifySig(mine && mine.spotify) !== sig) publishSpotifyPresence(track);
+        }
+      } catch (e) { /* offline or blocked, try again next poll */ }
+    }
+
+    setInterval(pollSpotifyOwner, SPOTIFY_POLL_MS);
+    setTimeout(pollSpotifyOwner, 3000);
 
     let profileCardTickInterval = null;
     let profileCardTickNickname = null;
@@ -29699,6 +30038,7 @@ window.modelUrl = function (file) {
     }
 
     function closeUserProfile(keepUrl) {
+      stopProfileSpotifyTicker();
       const wasOpen = document.getElementById('profile-card-overlay').classList.contains('visible');
       profileCardOpenFor = null;
       profileCardReadOnly = false;
@@ -29895,6 +30235,48 @@ window.modelUrl = function (file) {
       if (wasVisible && currentChatUser && currentChatUser.nickname) {
         openUserProfile(currentChatUser.nickname);
       }
+    }
+
+    // ---- link Spotify modal ----
+    function openSpotifyLink() {
+      if (!currentChatUser) return;
+      document.getElementById('profile-card-overlay').classList.remove('visible');
+      document.getElementById('spotify-link-input').value = getMySpotifyDiscordId();
+      const status = document.getElementById('spotify-link-status');
+      status.classList.remove('visible', 'error');
+      status.textContent = '';
+      document.getElementById('spotify-link-overlay').classList.add('visible');
+    }
+
+    function closeSpotifyLink() {
+      const overlay = document.getElementById('spotify-link-overlay');
+      const wasVisible = overlay.classList.contains('visible');
+      overlay.classList.remove('visible');
+      if (wasVisible && currentChatUser && currentChatUser.nickname) {
+        openUserProfile(currentChatUser.nickname);
+      }
+    }
+
+    function showSpotifyLinkStatus(msg, isError) {
+      const status = document.getElementById('spotify-link-status');
+      status.textContent = msg;
+      status.classList.add('visible');
+      status.classList.toggle('error', !!isError);
+    }
+
+    function saveSpotifyLink() {
+      const value = document.getElementById('spotify-link-input').value.trim();
+      if (!value || !setMySpotifyDiscordId(value)) {
+        showSpotifyLinkStatus('Enter the numeric ID (15 to 25 digits).', true);
+        return;
+      }
+      showSpotifyLinkStatus('Saved. Play a song on Spotify and it will show within about 12 seconds.', false);
+    }
+
+    function unlinkSpotify() {
+      setMySpotifyDiscordId('');
+      document.getElementById('spotify-link-input').value = '';
+      showSpotifyLinkStatus('Unlinked.', false);
     }
 
     function updateProfileBioCharCount() {
@@ -39636,6 +40018,7 @@ window.modelUrl = function (file) {
         ['crew-list-overlay', () => closeCrewList()],
         ['mig-viewer-overlay', () => closeMigViewer()],
         ['shop-item-preview-overlay', () => closeShopItemPreview()],
+        ['spotify-link-overlay', () => closeSpotifyLink()],
         ['profile-edit-bio-overlay', () => closeEditBio()],
         ['profile-edit-bg-overlay', () => closeEditBackground()],
         ['profile-card-overlay', () => { if (profileCardStack && profileCardStack.length) goBackProfileCard(); else closeUserProfile(); }],
