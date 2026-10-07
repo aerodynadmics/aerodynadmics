@@ -2621,10 +2621,14 @@ try {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    align-items: flex-start;
     min-width: 0;
-    flex: 1 1 auto;
+    flex: 0 1 auto;
+    max-width: 100%;
     gap: 2px;
   }
+  .nick-list li > .nick-col > span[data-text] { max-width: 100%; box-sizing: content-box; }
+  .nick-list li > .nick-col > .row-spotify.listening { max-width: 100%; }
   .nick-list li .row-spotify { display: none; }
   .nick-list li .row-spotify.listening {
     display: flex;
@@ -4519,10 +4523,13 @@ try {
   }
   .profile-spotify-diag { margin-top: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; line-height: 1.5; color: var(--rivet); }
   .profile-spotify-link-btn.linked { color: #1db954; border-color: #1db954; }
-  .profile-spotify-link-btn:hover, .profile-spotify-link-btn:active, .profile-spotify-link-btn:focus, .profile-spotify-link-btn:focus-visible { color: var(--accent); outline: none; }
+  .profile-spotify-link-btn, .spotify-link-invite, #spotify-link-unlink-btn { transition: background 0.12s ease, color 0.12s ease; }
+  .profile-spotify-link-btn:hover, .profile-spotify-link-btn:active, .profile-spotify-link-btn:focus, .profile-spotify-link-btn:focus-visible,
+  .spotify-link-invite:hover, .spotify-link-invite:active, .spotify-link-invite:focus, .spotify-link-invite:focus-visible,
+  #spotify-link-unlink-btn:hover, #spotify-link-unlink-btn:active, #spotify-link-unlink-btn:focus-visible { background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); outline: none; }
   .spotify-link-note { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; line-height: 1.5; color: var(--paper); margin: 0 0 8px; text-align: left; }
   .spotify-link-invite { display: block; box-sizing: border-box; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.04em; color: #1db954; border: 1px solid #1db954; border-radius: 4px; padding: 8px 10px; margin-bottom: 8px; text-decoration: none; }
-  .spotify-link-invite:hover, .spotify-link-invite:active, .spotify-link-invite:focus, .spotify-link-invite:focus-visible { color: var(--accent); outline: none; }
+
   .spotify-link-steps {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11.5px;
