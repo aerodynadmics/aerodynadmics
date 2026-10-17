@@ -33626,6 +33626,10 @@ window.modelUrl = function (file) {
     // question whose choices changed, so callers can remap saved answers.
     function liveMatchForItem(liveQuestions, item) {
       let live = findLiveQuestionMatch(liveQuestions, item);
+      if (!live && item && !Number.isInteger(item._qi) && Array.isArray(window.__livePrevQuestions)) {
+        const pi = window.__livePrevQuestions.indexOf(findLiveQuestionMatch(window.__livePrevQuestions, item));
+        if (pi >= 0) item._qi = pi;
+      }
       if (!live && item && Number.isInteger(item._qi) && Array.isArray(liveQuestions)) live = liveQuestions[item._qi] || null;
       return live;
     }
@@ -33692,12 +33696,12 @@ window.modelUrl = function (file) {
         const set = LIVE_MOCK_EXAM_CACHE[subjectKey] && LIVE_MOCK_EXAM_CACHE[subjectKey][setId];
         if (!set || !Array.isArray(set.questions)) return;
         const stored = loadQuizProgress(subjectKey, setId);
-        if (!stored || !Array.isArray(stored.questions)) return;
 
         // This quiz is open on screen right now: fix the in-memory copy
         // (otherwise its next autosave would overwrite the fix) and redraw.
         const isOpen = currentQuizExamRef && currentQuizExamRef.subjectKey === subjectKey &&
           currentQuizExamRef.setId === setId && Array.isArray(quizQuestions) && quizQuestions.length;
+        if (!isOpen && (!stored || !Array.isArray(stored.questions))) return;
         const renames = [];
         if (isOpen) {
           if (!applyAnswerKeyFixes(quizQuestions, set.questions, renames)) return;
@@ -33705,7 +33709,7 @@ window.modelUrl = function (file) {
           quizScore = computeQuizScoreFromState(quizQuestions, quizItemChoices, quizUserAnswers);
           const pill = document.getElementById('quiz-score-pill');
           if (pill) pill.textContent = `Score: ${quizScore}`;
-          saveQuizProgress(!!stored.finished);
+          saveQuizProgress(quizFinished || !!(stored && stored.finished));
           const pa = document.getElementById('quiz-play-area');
           if (!quizFinished && pa && pa.style.display !== 'none') renderQuizQuestion();
           return;
@@ -38388,7 +38392,8 @@ window.modelUrl = function (file) {
           const examId = 'live:' + subjectKey + ':' + setId;
           remapSavedExamAnswers(examId, false, ps.questions, ns.questions);
           remapSavedExamAnswers(examId, true, ps.questions, ns.questions);
-          reconcileQuizProgress(subjectKey, setId);
+          window.__livePrevQuestions = ps.questions;
+          try { reconcileQuizProgress(subjectKey, setId); } finally { window.__livePrevQuestions = null; }
           if (currentExamId === examId) liveRefreshOpenMockExam(examId);
         });
         if (anyContentChange && currentExamId === 'boardmix:' + subjectKey) liveRefreshOpenMockExam(currentExamId);
