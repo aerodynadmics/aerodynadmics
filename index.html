@@ -13785,6 +13785,14 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
             </label>
             <p style="margin:6px 0 0; font-size:11px; color:var(--rivet); line-height:1.5;">When off, each question's choices appear in the same order the admin entered them in.</p>
           </div>
+
+          <div class="qs-box-chooser-row" id="mock-settings-box-row-timer">
+            <label class="mockadmin-publish-toggle" style="margin-top:18px; font-size:12.5px;">
+              <input type="checkbox" id="mock-exam-setting-timer">
+              TIMER
+            </label>
+            <p style="margin:6px 0 0; font-size:11px; color:var(--rivet); line-height:1.5;">When off, exams show no countdown and are never auto-submitted when time runs out. On by default. Mock Board exams are always timed.</p>
+          </div>
         </div>
 
         <div class="mockadmin-editor-actions" style="margin-top:20px;">
@@ -13819,6 +13827,14 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
               RANDOMIZE ANSWER CHOICES
             </label>
             <p style="margin:6px 0 0; font-size:11px; color:var(--rivet); line-height:1.5;">When off, each question's choices appear in the same order the admin entered them in.</p>
+          </div>
+
+          <div class="qs-box-chooser-row" id="qs-box-row-timer">
+            <label class="mockadmin-publish-toggle" style="font-size:12.5px;">
+              <input type="checkbox" id="quiz-setting-timer">
+              TIMER
+            </label>
+            <p style="margin:6px 0 0; font-size:11px; color:var(--rivet); line-height:1.5;">When on, a countdown shows beside your score and the quiz ends when time runs out. Off by default.</p>
           </div>
         </div>
 
@@ -14094,7 +14110,10 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
             <span class="quiz-progress" id="quiz-progress">Question 1 of 50</span>
             <button type="button" class="gform-report-btn gform-report-btn-icon gform-report-btn-borderless" id="quiz-report-btn" onclick="openQuizQuestionReport()" title="Report" aria-label="Report"><span class="gform-report-flag" aria-hidden="true">🚩</span></button>
           </span>
-          <span class="quiz-score-pill" id="quiz-score-pill">Score: 0</span>
+          <span class="quiz-score-wrap" style="display:flex; align-items:center; justify-self:center; gap:8px;">
+            <span class="quiz-score-pill" id="quiz-score-pill">Score: 0</span>
+            <span class="quiz-score-pill" id="quiz-timer-pill" style="display:none; font-variant-numeric:tabular-nums;"></span>
+          </span>
           <button class="quiz-settings-btn" id="quiz-settings-btn" onclick="openQuizSettings()" aria-label="Quiz timer settings" title="Quiz timer settings">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           </button>
@@ -19514,7 +19533,14 @@ Answer: C</pre>
         raw.indexOf('gformProgress_') === 0 ||
         raw.indexOf('quizProgress_') === 0 ||
         raw === 'flightSchedule' ||
-        raw === 'flightSchedule_hidden';
+        raw === 'flightSchedule_hidden' ||
+        // Exam / Quiz settings (randomize + timer toggles) follow the account
+        raw === 'examRandomizeQuestions' ||
+        raw === 'examRandomizeChoices' ||
+        raw === 'examTimerEnabled' ||
+        raw === 'quizRandomizeQuestions' ||
+        raw === 'quizRandomizeChoices' ||
+        raw === 'quizTimerEnabled';
     }
 
     function progSyncEmail() {
@@ -31495,6 +31521,14 @@ window.modelUrl = function (file) {
       }
       timerEl.classList.remove('scored');
 
+      if (!isBoardCard && !examTimerOn()) {
+        // Timer turned off in Exam Settings: no countdown on the row.
+        card.classList.add('exam-timer-idle');
+        timerEl.textContent = '';
+        timerEl.classList.remove('running', 'expired');
+        return;
+      }
+
       const key = userScopedKey(TIMER_STORAGE_PREFIX + examKey(card));
       const duration = getExamDuration(card);
       const startStr = localStorage.getItem(key);
@@ -33263,7 +33297,7 @@ window.modelUrl = function (file) {
         // from (_boardOriginSetId), otherwise a report filed against
         // this synthetic mixed paper has no editable exam to point back
         // to. See submitQuestionReport() / locateReportedQuestion().
-        idxs.forEach(k => questions.push(Object.assign({}, set.questions[k], { _boardOriginSetId: setId })));
+        idxs.forEach(k => questions.push(Object.assign({}, set.questions[k], { _boardOriginSetId: setId, _qi: k })));
       });
       const examData = { title: `${subjectName} (Mixed Random Questions)`, titleMain: subjectName, titleSuffix: 'Mixed Random Questions', questions };
       BOARD_MIX_CACHE[subjectKey] = examData;
@@ -33355,7 +33389,10 @@ window.modelUrl = function (file) {
       if (liveMockExamListenerKeys[subjectKey]) { render(); return; }
       liveMockExamListenerKeys[subjectKey] = true;
       const handler = (snap) => {
+        const prevSets = LIVE_MOCK_EXAM_CACHE[subjectKey];
         LIVE_MOCK_EXAM_CACHE[subjectKey] = snap.val() || {};
+        reconcileBoardAnswerKeys(subjectKey);
+        onLiveMockSetsChanged(subjectKey, prevSets);
         render();
       };
       liveMockExamListenerHandlers[subjectKey] = handler;
@@ -33391,7 +33428,10 @@ window.modelUrl = function (file) {
       if (mockExamCachePrimedKeys[subjectKey]) return;
       mockExamCachePrimedKeys[subjectKey] = true;
       nsRef('mockExamSets/' + subjectKey).on('value', (snap) => {
+        const prevSets = LIVE_MOCK_EXAM_CACHE[subjectKey];
         LIVE_MOCK_EXAM_CACHE[subjectKey] = snap.val() || {};
+        reconcileBoardAnswerKeys(subjectKey);
+        onLiveMockSetsChanged(subjectKey, prevSets);
       });
     }
     if (document.readyState === 'loading') {
@@ -33516,6 +33556,7 @@ window.modelUrl = function (file) {
       // filled badge with either "Question X of Y" or the final score,
       // plus a RESET button beside it that wipes that saved progress,
       // mirrors the Mock Exam list's timer/score + RESET badge.
+      reconcileQuizProgress(subjectKey, id);
       const saved = loadQuizProgress(subjectKey, id);
       let badgeHtml = '';
       if (saved && Array.isArray(saved.questions) && saved.questions.length) {
@@ -33553,6 +33594,130 @@ window.modelUrl = function (file) {
     function clearQuizProgress(subjectKey, setId) {
       try { localStorage.removeItem(quizProgressKey(subjectKey, setId)); } catch (e) {}
     }
+    // ---- Answer-key corrections -> students' saved scores ----
+    // When an admin fixes a wrong answer key (e.g. after a QUESTION REPORT),
+    // every student's finished/in-progress attempt must be re-graded
+    // against the corrected key. Regular Mock Exams already do this (their
+    // score is recomputed from the saved answers + the live key every time,
+    // see computeSavedExamScore). Quizzes and the Mock Board keep a frozen
+    // copy of the questions and a stored score, so they are re-synced here.
+    // Questions are matched by their text (plus the option list when the
+    // same text appears more than once), the same way the report Locate
+    // button does, so shuffling never matters.
+    function findLiveQuestionMatch(liveQuestions, item) {
+      if (!Array.isArray(liveQuestions) || !item) return null;
+      const sameText = liveQuestions.filter(q => q && (q.q || '') === (item.q || ''));
+      if (!sameText.length) return null;
+      if (sameText.length > 1 && Array.isArray(item.options)) {
+        const refined = sameText.filter(q => {
+          const o = q.options || [];
+          return o.length === item.options.length && o.every((x, k) => x === item.options[k]);
+        });
+        if (refined.length) return refined[0];
+      }
+      return sameText[0];
+    }
+
+    // Copies the LIVE question (text, image, choices, answer key...) onto a
+    // saved/frozen question list. Matches by text first (handles reordering),
+    // then falls back to the question's original position (_qi) so a question
+    // whose TEXT was just edited still finds itself. Returns true if anything
+    // changed. If `renames` is given, {item, oldOptions} is pushed for every
+    // question whose choices changed, so callers can remap saved answers.
+    function liveMatchForItem(liveQuestions, item) {
+      let live = findLiveQuestionMatch(liveQuestions, item);
+      if (!live && item && Number.isInteger(item._qi) && Array.isArray(liveQuestions)) live = liveQuestions[item._qi] || null;
+      return live;
+    }
+    function questionContentSig(o) {
+      const r = {};
+      Object.keys(o || {}).filter(k => k.charAt(0) !== '_').sort().forEach(k => { r[k] = o[k]; });
+      return JSON.stringify(r);
+    }
+    function applyAnswerKeyFixes(savedQuestions, liveQuestions, renames) {
+      let changed = false;
+      (savedQuestions || []).forEach(item => {
+        const live = liveMatchForItem(liveQuestions, item);
+        if (!live || !live.correct || !Array.isArray(live.options) || !live.options.includes(live.correct)) return;
+        const li = liveQuestions.indexOf(live);
+        if (li >= 0) item._qi = li;
+        if (questionContentSig(item) === questionContentSig(live)) return;
+        const oldOptions = (item.options || []).slice();
+        Object.keys(item).forEach(k => { if (k.charAt(0) !== '_') delete item[k]; });
+        Object.keys(live).forEach(k => { if (k.charAt(0) !== '_') item[k] = live[k]; });
+        if (renames) renames.push({ item, oldOptions });
+        changed = true;
+      });
+      return changed;
+    }
+
+    // Remaps ONE quiz question's shown choices + chosen answer after its
+    // options were edited (same position = same choice).
+    function remapQuizChoices(item, oldOptions, choices, answers, i) {
+      const oldChoices = choices[i] || [];
+      const chosenOld = (answers && answers[i] != null) ? oldChoices[answers[i]] : undefined;
+      const sameLen = oldOptions.length === item.options.length;
+      const mapOpt = (o) => {
+        const p = oldOptions.indexOf(o);
+        if (sameLen && p >= 0) return item.options[p];
+        return item.options.includes(o) ? o : null;
+      };
+      let nc = oldChoices.map(mapOpt).filter(x => x !== null && x !== undefined);
+      nc = nc.filter((x, k) => nc.indexOf(x) === k);
+      if (!nc.includes(item.correct)) nc.push(item.correct);
+      const want = Math.min(4, item.options.length);
+      item.options.forEach(o => { if (nc.length < want && !nc.includes(o)) nc.push(o); });
+      while (nc.length > 4) { const k = nc.findIndex(x => x !== item.correct); nc.splice(k, 1); }
+      choices[i] = nc;
+      if (answers && answers[i] != null) {
+        const mapped = chosenOld === undefined ? null : mapOpt(chosenOld);
+        const ni = mapped === null ? -1 : nc.indexOf(mapped);
+        answers[i] = ni >= 0 ? ni : null;
+      }
+    }
+
+    function computeQuizScoreFromState(questions, choices, answers) {
+      let score = 0;
+      (questions || []).forEach((item, i) => {
+        const idx = answers ? answers[i] : null;
+        if (idx === null || idx === undefined) return;
+        const chosen = ((choices || [])[i] || [])[idx];
+        if (chosen !== undefined && chosen === item.correct) score++;
+      });
+      return score;
+    }
+
+    function reconcileQuizProgress(subjectKey, setId) {
+      try {
+        const set = LIVE_MOCK_EXAM_CACHE[subjectKey] && LIVE_MOCK_EXAM_CACHE[subjectKey][setId];
+        if (!set || !Array.isArray(set.questions)) return;
+        const stored = loadQuizProgress(subjectKey, setId);
+        if (!stored || !Array.isArray(stored.questions)) return;
+
+        // This quiz is open on screen right now: fix the in-memory copy
+        // (otherwise its next autosave would overwrite the fix) and redraw.
+        const isOpen = currentQuizExamRef && currentQuizExamRef.subjectKey === subjectKey &&
+          currentQuizExamRef.setId === setId && Array.isArray(quizQuestions) && quizQuestions.length;
+        const renames = [];
+        if (isOpen) {
+          if (!applyAnswerKeyFixes(quizQuestions, set.questions, renames)) return;
+          renames.forEach(r => remapQuizChoices(r.item, r.oldOptions, quizItemChoices, quizUserAnswers, quizQuestions.indexOf(r.item)));
+          quizScore = computeQuizScoreFromState(quizQuestions, quizItemChoices, quizUserAnswers);
+          const pill = document.getElementById('quiz-score-pill');
+          if (pill) pill.textContent = `Score: ${quizScore}`;
+          saveQuizProgress(!!stored.finished);
+          const pa = document.getElementById('quiz-play-area');
+          if (!quizFinished && pa && pa.style.display !== 'none') renderQuizQuestion();
+          return;
+        }
+
+        if (!applyAnswerKeyFixes(stored.questions, set.questions, renames)) return;
+        renames.forEach(r => remapQuizChoices(r.item, r.oldOptions, stored.choices || (stored.choices = []), stored.answers || (stored.answers = []), stored.questions.indexOf(r.item)));
+        stored.score = computeQuizScoreFromState(stored.questions, stored.choices, stored.answers);
+        localStorage.setItem(quizProgressKey(subjectKey, setId), JSON.stringify(stored));
+      } catch (e) { console.error('reconcileQuizProgress error:', e); }
+    }
+
     // Saves the full in-progress state (shuffled questions, per-question
     // choice layout, answers so far, current position, running score) so
     // it can be reconstructed exactly on return. Pass true once the quiz
@@ -33568,6 +33733,7 @@ window.modelUrl = function (file) {
             answers: quizUserAnswers,
             index: quizIndex,
             score: quizScore,
+            timerStart: quizTimerStart,
             finished: !!finished
           })
         );
@@ -33632,6 +33798,7 @@ window.modelUrl = function (file) {
 
     function backToQuizSubjects() {
       clearQuizAutoAdvance();
+      stopQuizTimer();
       document.getElementById('quiz-header-title').textContent = 'Quiz';
       document.getElementById('quiz-exam-list-panel').style.display = 'none';
       document.getElementById('quiz-play-area').style.display = 'none';
@@ -33646,6 +33813,7 @@ window.modelUrl = function (file) {
 
     function backToQuizExamList() {
       clearQuizAutoAdvance();
+      stopQuizTimer();
       document.getElementById('quiz-results-card').style.display = 'none';
       document.getElementById('quiz-play-area').style.display = 'none';
       document.getElementById('quiz-header-title').textContent = (subjects.find(x => x.key === currentQuizSubjectKey) || {}).name || 'Quiz';
@@ -33681,6 +33849,8 @@ window.modelUrl = function (file) {
     let quizUserAnswers = []; // chosen choice-index per question, or null if unanswered yet
     let quizIndex = 0;
     let quizScore = 0;
+    let quizTimerStart = null;       // ms epoch the quiz countdown began (null = none running)
+    let quizTimerStopFn = null;      // cancel fn from createAlignedTicker
     let quizFinished = false; // true once results are showing for the current attempt
     let currentQuizExamRef = null; // { subjectKey, setId }, so Retake can reload the same exam
     let quizAutoAdvanceTimer = null; // pending auto-next timeout after answering
@@ -33834,6 +34004,7 @@ window.modelUrl = function (file) {
 
       // Resume a saved attempt (in-progress or finished) instead of
       // reshuffling and wiping it, unless this is an explicit retake.
+      if (!forceNew) reconcileQuizProgress(subjectKey, setId);
       const saved = !forceNew ? loadQuizProgress(subjectKey, setId) : null;
       if (saved && Array.isArray(saved.questions) && saved.questions.length) {
         quizQuestions = saved.questions;
@@ -33841,6 +34012,8 @@ window.modelUrl = function (file) {
         quizUserAnswers = saved.answers;
         quizIndex = Math.min(saved.index || 0, quizQuestions.length - 1);
         quizScore = saved.score || 0;
+        quizFinished = false;
+        quizTimerStart = saved.timerStart || null;
 
         document.getElementById('quiz-header-title').textContent = set.title || 'Quiz';
         document.getElementById('quiz-exam-list-panel').style.display = 'none';
@@ -33854,6 +34027,7 @@ window.modelUrl = function (file) {
           document.getElementById('quiz-play-area').style.display = '';
           renderQuizQuestion();
         }
+        syncQuizTimer(); // no-op when finished or TIMER is off
         refreshTopbarTabIcons();
         return;
       }
@@ -33861,12 +34035,13 @@ window.modelUrl = function (file) {
       // Respects Quiz's own Randomization Settings toggle (separate from
       // Mock Exam's), OFF shows the quiz's questions in the order the
       // admin authored them.
-      quizQuestions = quizRandomizeQuestionsOn() ? shuffle(set.questions.slice()) : set.questions.slice();
+      { const tagged = set.questions.map((q, qi) => Object.assign({}, q, { _qi: qi })); quizQuestions = quizRandomizeQuestionsOn() ? shuffle(tagged) : tagged; }
       quizItemChoices = quizQuestions.map(buildQuizChoicesForItem);
       quizUserAnswers = new Array(quizQuestions.length).fill(null);
       quizIndex = 0;
       quizScore = 0;
       quizFinished = false;
+      quizTimerStart = null;
 
       document.getElementById('quiz-header-title').textContent = set.title || 'Quiz';
       document.getElementById('quiz-exam-list-panel').style.display = 'none';
@@ -33874,6 +34049,7 @@ window.modelUrl = function (file) {
       document.getElementById('quiz-play-area').style.display = '';
       window.scrollTo(0, 0);
       renderQuizQuestion();
+      syncQuizTimer();
       refreshTopbarTabIcons();
     }
 
@@ -33966,6 +34142,53 @@ window.modelUrl = function (file) {
       renderQuizQuestion();
     }
 
+    // ---- Quiz countdown (only when TIMER is on in Quiz Settings) ----
+    // Uses the exam's own duration (set.durationSec, or the subject's
+    // default). Wall-clock based and saved with the quiz progress, so
+    // leaving and coming back keeps counting, like the Mock Exam timer.
+    // When it hits zero the quiz ends and unanswered questions count wrong.
+    function getQuizDurationSec() {
+      const ref = currentQuizExamRef;
+      const set = ref && LIVE_MOCK_EXAM_CACHE[ref.subjectKey] && LIVE_MOCK_EXAM_CACHE[ref.subjectKey][ref.setId];
+      if (set && Number(set.durationSec) > 0) return Number(set.durationSec);
+      return (ref ? getDefaultMockExamMinutes(ref.subjectKey) : 240) * 60;
+    }
+
+    function stopQuizTimer() {
+      if (quizTimerStopFn) quizTimerStopFn();
+      quizTimerStopFn = null;
+      const pill = document.getElementById('quiz-timer-pill');
+      if (pill) { pill.style.display = 'none'; pill.textContent = ''; pill.style.color = ''; }
+    }
+
+    // (Re)starts or hides the countdown to match the TIMER setting and the
+    // current attempt. Safe to call any time.
+    function syncQuizTimer() {
+      if (quizTimerStopFn) { quizTimerStopFn(); quizTimerStopFn = null; }
+      const pill = document.getElementById('quiz-timer-pill');
+      if (!pill) return;
+      if (!quizTimerOn() || quizFinished || !currentQuizExamRef) {
+        pill.style.display = 'none'; pill.textContent = '';
+        return;
+      }
+      if (!quizTimerStart) { quizTimerStart = Date.now(); saveQuizProgress(false); }
+      const duration = getQuizDurationSec();
+      pill.style.display = '';
+      pill.style.color = '';
+      quizTimerStopFn = createAlignedTicker(() => {
+        const remaining = duration - (Date.now() - quizTimerStart) / 1000;
+        if (remaining <= 0) {
+          pill.textContent = "00:00:00 TIME'S UP";
+          pill.style.color = '#ff6b6b';
+          if (quizTimerStopFn) { quizTimerStopFn(); quizTimerStopFn = null; }
+          clearQuizAutoAdvance();
+          showQuizResults();
+        } else {
+          pill.textContent = formatHMS(remaining);
+        }
+      });
+    }
+
     function selectQuizAnswer(idx) {
       if (quizUserAnswers[quizIndex] !== null && quizUserAnswers[quizIndex] !== undefined) return; // already locked in
       quizUserAnswers[quizIndex] = idx;
@@ -34030,6 +34253,7 @@ window.modelUrl = function (file) {
       // Score screen only, the question view (and its BACK/NEXT buttons)
       // is hidden here; reviewQuizAnswers() is the only way back to it.
       quizFinished = true;
+      stopQuizTimer();
       document.getElementById('quiz-play-area').style.display = 'none';
       const total = quizQuestions.length;
       const pct = total > 0 ? Math.round((quizScore / total) * 100) : 0;
@@ -35431,6 +35655,13 @@ window.modelUrl = function (file) {
     // separate modal, changing one never touches the other.
     const EXAM_RANDOMIZE_QUESTIONS_KEY = 'examRandomizeQuestions';
     const EXAM_RANDOMIZE_CHOICES_KEY = 'examRandomizeChoices';
+    // Exam timer on/off. Defaults to ON (the countdown has always run).
+    // Only governs regular Mock Exams; Mock Board exams stay timed.
+    const EXAM_TIMER_KEY = 'examTimerEnabled';
+    function examTimerOn() {
+      const v = localStorage.getItem(userScopedKey(EXAM_TIMER_KEY));
+      return v === null ? true : v === '1';
+    }
 
     function examRandomizeQuestionsOn() {
       const v = localStorage.getItem(userScopedKey(EXAM_RANDOMIZE_QUESTIONS_KEY));
@@ -35453,6 +35684,7 @@ window.modelUrl = function (file) {
     function openMockExamSettingsModal() {
       document.getElementById('mock-exam-setting-randomize-questions').checked = examRandomizeQuestionsOn();
       document.getElementById('mock-exam-setting-randomize-choices').checked = examRandomizeChoicesOn();
+      document.getElementById('mock-exam-setting-timer').checked = examTimerOn();
       document.getElementById('mock-exam-settings-overlay').classList.add('visible');
       window.__mockSettingsPopupFocus.zone = 'box';
       window.__mockSettingsPopupFocus.boxIndex = 0;
@@ -35474,7 +35706,9 @@ window.modelUrl = function (file) {
       try {
         localStorage.setItem(userScopedKey(EXAM_RANDOMIZE_QUESTIONS_KEY), randomizeQuestions ? '1' : '0');
         localStorage.setItem(userScopedKey(EXAM_RANDOMIZE_CHOICES_KEY), randomizeChoices ? '1' : '0');
+        localStorage.setItem(userScopedKey(EXAM_TIMER_KEY), document.getElementById('mock-exam-setting-timer').checked ? '1' : '0');
       } catch (e) {}
+      tickAllExamTimers(); // list badges show/hide the countdown right away
       closeMockExamSettingsModal();
     }
 
@@ -35484,6 +35718,12 @@ window.modelUrl = function (file) {
     // to ON for both (matches Quiz's original always-shuffle behavior).
     const QUIZ_RANDOMIZE_QUESTIONS_KEY = 'quizRandomizeQuestions';
     const QUIZ_RANDOMIZE_CHOICES_KEY = 'quizRandomizeChoices';
+    // Quiz timer on/off. Defaults to OFF (unlike Exam's, which defaults on).
+    const QUIZ_TIMER_KEY = 'quizTimerEnabled';
+    function quizTimerOn() {
+      const v = localStorage.getItem(userScopedKey(QUIZ_TIMER_KEY));
+      return v === '1';
+    }
 
     function quizRandomizeQuestionsOn() {
       const v = localStorage.getItem(userScopedKey(QUIZ_RANDOMIZE_QUESTIONS_KEY));
@@ -35504,6 +35744,7 @@ window.modelUrl = function (file) {
     function openQuizRandomizeSettingsModal() {
       document.getElementById('quiz-setting-randomize-questions').checked = quizRandomizeQuestionsOn();
       document.getElementById('quiz-setting-randomize-choices').checked = quizRandomizeChoicesOn();
+      document.getElementById('quiz-setting-timer').checked = quizTimerOn();
       document.getElementById('quiz-randomize-settings-overlay').classList.add('visible');
       window.__qsPopupFocus.zone = 'box';
       window.__qsPopupFocus.boxIndex = 0;
@@ -35523,6 +35764,12 @@ window.modelUrl = function (file) {
       try {
         localStorage.setItem(userScopedKey(QUIZ_RANDOMIZE_QUESTIONS_KEY), randomizeQuestions ? '1' : '0');
         localStorage.setItem(userScopedKey(QUIZ_RANDOMIZE_CHOICES_KEY), randomizeChoices ? '1' : '0');
+        localStorage.setItem(userScopedKey(QUIZ_TIMER_KEY), document.getElementById('quiz-setting-timer').checked ? '1' : '0');
+      } catch (e) {}
+      // If a quiz is open (the gear is reachable mid-quiz), apply right away.
+      try {
+        const pa = document.getElementById('quiz-play-area');
+        if (currentQuizExamRef && !quizFinished && pa && pa.style.display !== 'none') syncQuizTimer();
       } catch (e) {}
       closeQuizRandomizeSettingsModal();
     }
@@ -35743,6 +35990,39 @@ window.modelUrl = function (file) {
     // window.__qsPopupFocus/__mockSettingsPopupFocus above.
     window.__examChoiceFocus = { index: 0, holdDir: 0, holdFrames: 0 };
 
+    function gformCardHtml(examId, item, i, total, choicesForItem) {
+      return `
+        <div class="gform-card" id="gform-card-${i}" data-qindex="${i}">
+          <div class="gform-qhead">
+            <div class="gform-qnum-wrap">
+              <p class="gform-qnum">Question ${i + 1} of ${total}</p>
+              <button type="button" class="gform-report-btn gform-report-btn-icon gform-report-btn-borderless" id="gform-report-${i}" onclick="openQuestionReport(${i})" title="Report" aria-label="Report"><span class="gform-report-flag" aria-hidden="true">🚩</span></button>
+            </div>
+            <div class="gform-qhead-actions">
+              <button type="button" class="gform-pin-btn" id="gform-pin-${i}" aria-pressed="false" onclick="togglePinQuestion(${i})">&#128204; Pin</button>
+            </div>
+          </div>
+          <p class="gform-qtext">${renderMathText(item.q)}</p>
+          ${item.image ? `<img class="gform-question-image" src="${item.image}" alt="Question ${i + 1} image" onload="sizeQuestionImage(this)" onclick="openQuestionImagePreview(this)">` : ''}
+          ${(choicesForItem || item.options).map((opt, j) => {
+            const optionHtml = `
+            <label class="gform-option">
+              <input type="radio" name="gform-q-${i}" value="${escapeHtml(opt)}" onchange="document.getElementById('gform-card-${i}').classList.add('answered'); saveExamProgress('${examId}')">
+              <span>${renderMathText(opt)}</span>
+            </label>`;
+            // Clear selection sits on the right, on the same line as the last choice.
+            if (j !== (choicesForItem || item.options).length - 1) return optionHtml;
+            return `<div class="gform-option-row">${optionHtml}
+              <div class="gform-option-row-actions">
+                <button type="button" class="gform-clear-btn" id="gform-clear-${i}" onclick="clearSelection(${i})">Clear selection</button>
+              </div>
+            </div>`;
+          }).join('')}
+          <div class="gform-feedback" id="gform-feedback-${i}" style="display:none;"></div>
+        </div>
+      `;
+    }
+
     function openInAppMockExam(examId, examCard) {
       // Mock Board exams on a finished day can't be opened any more, unless
       // the whole 3-day set is done, in which case "board-reviewable" is
@@ -35765,36 +36045,7 @@ window.modelUrl = function (file) {
       overlay.className = 'gform-overlay view visible';
       overlay.id = 'gform-overlay';
 
-      const qCardsHtml = orderedQuestions.map((item, i) => `
-        <div class="gform-card" id="gform-card-${i}" data-qindex="${i}">
-          <div class="gform-qhead">
-            <div class="gform-qnum-wrap">
-              <p class="gform-qnum">Question ${i + 1} of ${orderedQuestions.length}</p>
-              <button type="button" class="gform-report-btn gform-report-btn-icon gform-report-btn-borderless" id="gform-report-${i}" onclick="openQuestionReport(${i})" title="Report" aria-label="Report"><span class="gform-report-flag" aria-hidden="true">🚩</span></button>
-            </div>
-            <div class="gform-qhead-actions">
-              <button type="button" class="gform-pin-btn" id="gform-pin-${i}" aria-pressed="false" onclick="togglePinQuestion(${i})">&#128204; Pin</button>
-            </div>
-          </div>
-          <p class="gform-qtext">${renderMathText(item.q)}</p>
-          ${item.image ? `<img class="gform-question-image" src="${item.image}" alt="Question ${i + 1} image" onload="sizeQuestionImage(this)" onclick="openQuestionImagePreview(this)">` : ''}
-          ${(ordered.choices[i] || item.options).map((opt, j) => {
-            const optionHtml = `
-            <label class="gform-option">
-              <input type="radio" name="gform-q-${i}" value="${escapeHtml(opt)}" onchange="document.getElementById('gform-card-${i}').classList.add('answered'); saveExamProgress('${examId}')">
-              <span>${renderMathText(opt)}</span>
-            </label>`;
-            // Clear selection sits on the right, on the same line as the last choice.
-            if (j !== (ordered.choices[i] || item.options).length - 1) return optionHtml;
-            return `<div class="gform-option-row">${optionHtml}
-              <div class="gform-option-row-actions">
-                <button type="button" class="gform-clear-btn" id="gform-clear-${i}" onclick="clearSelection(${i})">Clear selection</button>
-              </div>
-            </div>`;
-          }).join('')}
-          <div class="gform-feedback" id="gform-feedback-${i}" style="display:none;"></div>
-        </div>
-      `).join('');
+      const qCardsHtml = orderedQuestions.map((item, i) => gformCardHtml(examId, item, i, orderedQuestions.length, ordered.choices[i])).join('');
 
       overlay.innerHTML = `
         <div class="gform-modal">
@@ -35871,7 +36122,7 @@ window.modelUrl = function (file) {
       // now") should keep showing no timer, not start a brand new one.
       const savedProgress = loadExamProgress(examId);
       const alreadyFinished = !!(savedProgress && savedProgress.submitted);
-      if (examCard && !alreadyFinished) {
+      if (examCard && !alreadyFinished && (gformIsBoard || examTimerOn())) {
         const key = userScopedKey(TIMER_STORAGE_PREFIX + examKey(examCard));
         if (!localStorage.getItem(key)) {
           localStorage.setItem(key, String(Date.now()));
@@ -36952,7 +37203,7 @@ window.modelUrl = function (file) {
     // Called when the Mock Board Exam page is opened. Restores a still-valid
     // (< 3 days old) generated set instead of showing a blank page.
     function restoreBoardSetIfAny() {
-      if (loadBoardState()) renderBoardSet();
+      if (loadBoardState()) { reconcileBoardAnswerKeys(); renderBoardSet(); }
     }
 
     // ---- 3-day countdown for the current board set ----
@@ -38022,6 +38273,174 @@ window.modelUrl = function (file) {
           el.textContent = '';
         }
       });
+    }
+
+    // ---- LIVE EDIT SYNC for Mock Exams (incl. ones being taken right now) ----
+    // Remaps saved answers (stored as option TEXT, per on-screen position)
+    // when an admin edits the choice text of a question.
+    function remapSavedExamAnswers(examId, board, oldQuestions, newQuestions) {
+      try {
+        const saved = loadExamProgress(examId, board);
+        if (!saved || !saved.answers || !Array.isArray(saved.order)) return false;
+        let ch = false;
+        Object.keys(saved.answers).forEach(pos => {
+          const qi = saved.order[pos];
+          const oq = oldQuestions[qi], nq = newQuestions[qi];
+          if (!oq || !nq) return;
+          const oo = oq.options || [], no = nq.options || [];
+          const val = saved.answers[pos];
+          if (no.includes(val)) return;
+          const k = oo.indexOf(val);
+          if (k >= 0 && oo.length === no.length && no[k] !== undefined) saved.answers[pos] = no[k];
+          else delete saved.answers[pos];
+          ch = true;
+        });
+        if (ch) localStorage.setItem(examProgressKey(examId, board), JSON.stringify(saved));
+        return ch;
+      } catch (e) { return false; }
+    }
+
+    // Redraws the question cards of the exam that's open on screen from the
+    // latest data, keeping answers, pins and graded state.
+    function liveRefreshOpenMockExam(examId) {
+      const overlay = document.getElementById('gform-overlay');
+      const body = document.getElementById('gform-questions');
+      if (!overlay || !body || currentExamId !== examId) return;
+      const exam = getMockExam(examId);
+      if (!exam || !Array.isArray(exam.questions)) return;
+      const newLen = exam.questions.length;
+      // Question count changed: keep the attempt's order/choice order for the
+      // questions that still exist and append new ones at the end.
+      const curOrder = examQuestionOrders[examId] || ((loadExamProgress(examId) || {}).order);
+      if (Array.isArray(curOrder) && curOrder.length !== newLen) {
+        const saved = loadExamProgress(examId) || {};
+        const oldChoice = examChoiceOrders[examId] || saved.choiceOrder || [];
+        const posMap = {}, newOrder = [], newChoice = [];
+        curOrder.forEach((idx, p) => {
+          if (idx < newLen) { posMap[p] = newOrder.length; newOrder.push(idx); newChoice.push(oldChoice[p]); }
+        });
+        for (let i = 0; i < newLen; i++) if (!newOrder.includes(i)) { newOrder.push(i); newChoice.push(null); }
+        const remapObj = (o) => { const r = {}; Object.keys(o || {}).forEach(p => { if (posMap[p] !== undefined) r[posMap[p]] = o[p]; }); return r; };
+        saved.answers = remapObj(saved.answers);
+        saved.pinned = (saved.pinned || []).filter(p => posMap[p] !== undefined).map(p => String(posMap[p]));
+        saved.order = newOrder;
+        examQuestionOrders[examId] = newOrder;
+        examChoiceOrders[examId] = newChoice.map((c, p) => {
+          const n = ((exam.questions[newOrder[p]] || {}).options || []).length;
+          if (Array.isArray(c) && c.length === n) return c;
+          const idn = Array.from({ length: n }, (_, k) => k);
+          return examRandomizeChoicesOn() ? shuffle(idn) : idn;
+        });
+        saved.choiceOrder = examChoiceOrders[examId];
+        try { localStorage.setItem(examProgressKey(examId), JSON.stringify(saved)); } catch (e) {}
+      }
+      // Any question whose option count changed gets a fresh choice order.
+      {
+        const ord = getExamQuestionOrder(examId, exam);
+        const co = examChoiceOrders[examId];
+        if (Array.isArray(co)) {
+          let fixed = false;
+          ord.forEach((qi, p) => {
+            const n = ((exam.questions[qi] || {}).options || []).length;
+            if (!Array.isArray(co[p]) || co[p].length !== n) {
+              const idn = Array.from({ length: n }, (_, k) => k);
+              co[p] = examRandomizeChoicesOn() ? shuffle(idn) : idn; fixed = true;
+            }
+          });
+          if (fixed) { const sv = loadExamProgress(examId); if (sv) { sv.choiceOrder = co; try { localStorage.setItem(examProgressKey(examId), JSON.stringify(sv)); } catch (e) {} } }
+        }
+      }
+      const ordered = getOrderedExamQuestions(examId);
+      if (!ordered) return;
+      const focusIdx = Array.from(body.querySelectorAll('.gform-option')).findIndex(el => el.classList.contains('gc-focused'));
+      const html = ordered.questions.map((item, i) => gformCardHtml(examId, item, i, ordered.questions.length, ordered.choices[i])).join('');
+      body.querySelectorAll('.gform-card').forEach(c => c.remove());
+      const submitArea = document.getElementById('gform-submit-area');
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html;
+      while (tmp.firstChild) body.insertBefore(tmp.firstChild, submitArea);
+      const h1 = overlay.querySelector('#gform-header h1');
+      if (h1) h1.textContent = exam.titleMain || exam.title || '';
+      // Back to a fresh (ungraded) look, then restore answers/pins and
+      // re-grade if it was already submitted, same path as reopening it.
+      delete body.dataset.submitted;
+      if (submitArea) submitArea.style.display = '';
+      const resEl = document.getElementById('gform-result');
+      if (resEl) { resEl.style.display = 'none'; resEl.innerHTML = ''; }
+      restoreExamProgress(examId);
+      saveExamProgress(examId);
+      if (focusIdx >= 0) {
+        const opts = body.querySelectorAll('.gform-option');
+        if (opts[focusIdx]) opts[focusIdx].classList.add('gc-focused');
+      }
+    }
+
+    // Called by both live listeners whenever a subject's mockExamSets change.
+    function onLiveMockSetsChanged(subjectKey, prevSets) {
+      try {
+        const sets = LIVE_MOCK_EXAM_CACHE[subjectKey] || {};
+        let anyContentChange = false;
+        Object.keys(sets).forEach(setId => {
+          const ns = sets[setId], ps = prevSets && prevSets[setId];
+          if (!ns || !ps || !Array.isArray(ns.questions) || !Array.isArray(ps.questions)) return;
+          if (JSON.stringify(ns.questions) === JSON.stringify(ps.questions)) return;
+          anyContentChange = true;
+          const examId = 'live:' + subjectKey + ':' + setId;
+          remapSavedExamAnswers(examId, false, ps.questions, ns.questions);
+          remapSavedExamAnswers(examId, true, ps.questions, ns.questions);
+          reconcileQuizProgress(subjectKey, setId);
+          if (currentExamId === examId) liveRefreshOpenMockExam(examId);
+        });
+        if (anyContentChange && currentExamId === 'boardmix:' + subjectKey) liveRefreshOpenMockExam(currentExamId);
+      } catch (e) { console.error('onLiveMockSetsChanged error:', e); }
+    }
+
+    // Mock Board papers are a frozen mix of questions copied from the real
+    // Mock Exam sets (each tagged with _boardOriginSetId), and the score per
+    // subject is stored. When an admin corrects an answer key in the origin
+    // set, update the frozen copy, re-grade the saved answers, refresh the
+    // shown scores and, if the whole board is already finished, the overall
+    // result too.
+    function reconcileBoardAnswerKeys(onlySubjectKey) {
+      try {
+        let anyChanged = false;
+        subjects.forEach(s => {
+          if (onlySubjectKey && s.key !== onlySubjectKey) return;
+          const mix = BOARD_MIX_CACHE[s.key];
+          if (!mix || !Array.isArray(mix.questions)) return;
+          const cache = LIVE_MOCK_EXAM_CACHE[s.key] || {};
+          let changed = false;
+          const renames = [];
+          mix.questions.forEach(item => {
+            const set = item && item._boardOriginSetId ? cache[item._boardOriginSetId] : null;
+            if (!set || !Array.isArray(set.questions)) return;
+            if (applyAnswerKeyFixes([item], set.questions, renames)) changed = true;
+          });
+          if (!changed) return;
+          anyChanged = true;
+          if (renames.length) {
+            const oldArr = mix.questions.slice();
+            renames.forEach(r => { oldArr[mix.questions.indexOf(r.item)] = { options: r.oldOptions }; });
+            remapSavedExamAnswers('boardmix:' + s.key, true, oldArr, mix.questions);
+          }
+          if (!boardScores[s.key]) return;
+          const saved = loadExamProgress('boardmix:' + s.key, true);
+          if (!saved || !saved.submitted || !saved.answers) return;
+          const total = mix.questions.length;
+          const order = (Array.isArray(saved.order) && saved.order.length === total)
+            ? saved.order : mix.questions.map((_, i) => i);
+          let score = 0;
+          order.forEach((qIdx, i) => {
+            const item = mix.questions[qIdx];
+            if (item && saved.answers[i] !== undefined && saved.answers[i] === item.correct) score++;
+          });
+          boardScores[s.key] = { score, total, percent: total > 0 ? (score / total) * 100 : 0 };
+        });
+        if (!anyChanged) return;
+        saveBoardState();
+        updateBoardScoreDisplays();
+        if (boardSetCompleted) calculateBoardResult();
+      } catch (e) { console.error('reconcileBoardAnswerKeys error:', e); }
     }
 
     // Called when an exam is graded. If it is one of the exams in the
