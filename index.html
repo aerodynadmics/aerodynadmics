@@ -33631,6 +33631,19 @@ window.modelUrl = function (file) {
         if (pi >= 0) item._qi = pi;
       }
       if (!live && item && Number.isInteger(item._qi) && Array.isArray(liveQuestions)) live = liveQuestions[item._qi] || null;
+      if (!live && item && Array.isArray(liveQuestions) && Array.isArray(item.options)) {
+        // Older saved attempts have no position tag and the text was edited:
+        // match by overlapping choices / same answer / same image instead.
+        let best = null, bestScore = 0, tie = false;
+        liveQuestions.forEach(q => {
+          if (!q || !Array.isArray(q.options)) return;
+          let sc = q.options.filter(o => item.options.includes(o)).length;
+          if (q.correct && q.correct === item.correct) sc += 1;
+          if (q.image && q.image === item.image) sc += 1;
+          if (sc > bestScore) { best = q; bestScore = sc; tie = false; } else if (sc === bestScore && sc > 0) tie = true;
+        });
+        if (best && !tie && bestScore >= Math.max(2, Math.ceil(item.options.length / 2))) live = best;
+      }
       return live;
     }
     function questionContentSig(o) {
@@ -34009,6 +34022,7 @@ window.modelUrl = function (file) {
       // Resume a saved attempt (in-progress or finished) instead of
       // reshuffling and wiping it, unless this is an explicit retake.
       if (!forceNew) reconcileQuizProgress(subjectKey, setId);
+      setTimeout(pullLatestOpenSet, 0);
       const saved = !forceNew ? loadQuizProgress(subjectKey, setId) : null;
       if (saved && Array.isArray(saved.questions) && saved.questions.length) {
         quizQuestions = saved.questions;
@@ -38378,6 +38392,32 @@ window.modelUrl = function (file) {
         if (opts[focusIdx]) opts[focusIdx].classList.add('gc-focused');
       }
     }
+
+    // Direct re-fetch of the set the person is in right now (quiz or mock
+    // exam), independent of the live listeners, then runs the same sync.
+    function pullLatestOpenSet() {
+      try {
+        let sub = null, id = null;
+        const pa = document.getElementById('quiz-play-area');
+        if (currentQuizExamRef && !quizFinished && pa && pa.style.display !== 'none') {
+          sub = currentQuizExamRef.subjectKey; id = currentQuizExamRef.setId;
+        } else if (currentExamId && String(currentExamId).indexOf('live:') === 0 && document.getElementById('gform-overlay')) {
+          const parts = String(currentExamId).split(':'); sub = parts[1]; id = parts.slice(2).join(':');
+        }
+        if (!sub || !id || !ensureFirebaseApp()) return;
+        nsRef(`mockExamSets/${sub}/${id}`).once('value').then((snap) => {
+          const v = snap.val();
+          if (!v || !Array.isArray(v.questions)) return;
+          const cache = LIVE_MOCK_EXAM_CACHE[sub] || (LIVE_MOCK_EXAM_CACHE[sub] = {});
+          const prevAll = Object.assign({}, cache);
+          cache[id] = v;
+          onLiveMockSetsChanged(sub, prevAll);
+        }).catch(() => {});
+      } catch (e) {}
+    }
+    setInterval(pullLatestOpenSet, 3000);
+    window.addEventListener('focus', pullLatestOpenSet);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) pullLatestOpenSet(); });
 
     // Called by both live listeners whenever a subject's mockExamSets change.
     function onLiveMockSetsChanged(subjectKey, prevSets) {
