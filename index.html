@@ -34018,6 +34018,8 @@ window.modelUrl = function (file) {
       quizExamListScrollY = window.scrollY;
       currentQuizExamRef = { subjectKey: subjectKey, setId: setId };
       clearQuizAutoAdvance();
+      // Drop the previous quiz's in-memory state so it can never be treated as (or saved into) this one.
+      quizQuestions = []; quizItemChoices = []; quizUserAnswers = []; quizIndex = 0; quizScore = 0;
 
       // Resume a saved attempt (in-progress or finished) instead of
       // reshuffling and wiping it, unless this is an explicit retake.
