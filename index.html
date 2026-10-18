@@ -11525,6 +11525,116 @@ html body .pfc-body { margin-top: 3px; margin-bottom: 4px; }
   .mockadmin-card:not([style*="scrollbar-width"]) { scrollbar-width: auto; }
 }
 </style>
+<style id="duel-css">
+/* ============ 1V1 QUIZ DUEL ============
+   Full-screen overlay opened from the Quiz tab. Re-uses the site's own
+   quiz question card, answer buttons and the two standard popup buttons
+   (.mockadmin-save-btn / .mockadmin-publish-btn). */
+#duel-overlay {
+  position: fixed; inset: 0; z-index: 1700;
+  display: none; flex-direction: column;
+  background: radial-gradient(ellipse at 50% 20%, rgb(8, 45, 82), rgb(2, 12, 24) 75%);
+  color: var(--paper);
+  font-family: 'Space Grotesk', sans-serif;
+  overflow-y: auto; overscroll-behavior: contain;
+}
+#duel-overlay.visible { display: flex; }
+.duel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px; border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; background: rgba(2, 12, 24, 0.92); z-index: 2;
+}
+.duel-head h3 { margin: 0; font-size: 14px; letter-spacing: 0.06em; color: #fff; }
+.duel-body { flex: 1; width: 100%; max-width: 720px; margin: 0 auto; padding: 20px 16px 48px; box-sizing: border-box; }
+.duel-screen { display: none; }
+.duel-screen.active { display: block; }
+.duel-card { border: 1px solid var(--line); border-radius: 6px; padding: 22px 20px; background: rgba(8, 39, 68, 0.55); }
+.duel-center { text-align: center; }
+.duel-kicker { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; letter-spacing: 0.12em; color: var(--accent); margin: 0; }
+.duel-title { margin: 6px 0 10px; font-size: 26px; color: #fff; line-height: 1.2; }
+.duel-text { margin: 0 0 14px; font-size: 13.5px; line-height: 1.55; color: var(--rivet); }
+.duel-rules { margin: 0 0 14px; padding-left: 18px; font-size: 13px; line-height: 1.6; color: var(--paper); }
+.duel-msg { display: none; margin: 0 0 12px; font-size: 12.5px; color: #ff6b6b; }
+.duel-msg.visible { display: block; }
+.duel-card .mockadmin-editor-actions { margin-top: 16px; }
+
+.duel-spinner {
+  width: 46px; height: 46px; margin: 4px auto 16px; border-radius: 50%;
+  border: 3px solid var(--line); border-top-color: var(--accent);
+  animation: duel-spin 0.9s linear infinite;
+}
+@keyframes duel-spin { to { transform: rotate(360deg); } }
+
+/* player bar */
+#duel-vs { display: none; align-items: stretch; gap: 10px; margin-bottom: 16px; }
+.duel-player {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px;
+  border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; background: rgba(8, 39, 68, 0.55);
+}
+.duel-player.opp { flex-direction: row-reverse; text-align: right; }
+.duel-avatar {
+  width: 40px; height: 40px; flex: none; border-radius: 50%;
+  border: 1px solid var(--line); display: flex; align-items: center; justify-content: center;
+  font-size: 22px; background-color: rgba(2, 12, 24, 0.6);
+}
+.duel-pinfo { min-width: 0; }
+.duel-pname { font-size: 14px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.duel-pstat { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--rivet); margin-top: 2px; }
+.duel-vs-mid { align-self: center; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent); }
+
+.duel-phase-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.duel-timer {
+  font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #fff;
+  border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; min-width: 24px; text-align: center;
+}
+.duel-timer.low { color: #ff6b6b; border-color: #ff6b6b; }
+
+/* subject chips */
+.duel-subj-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 14px; }
+.duel-subj {
+  position: relative; text-align: left; font: inherit; color: inherit;
+  border: 1px solid var(--line); border-radius: 4px; padding: 14px 14px 12px; background: transparent;
+  cursor: pointer; display: flex; flex-direction: column; gap: 6px; min-height: 84px;
+  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+.duel-subj .pct { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--accent); }
+.duel-subj .nm { font-size: 14px; font-weight: 500; color: #fff; line-height: 1.3; }
+.duel-subj .tag { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.06em; color: var(--rivet); margin-top: auto; min-height: 12px; }
+@media (hover: hover) { .duel-subj.can:hover { border-color: var(--accent); } }
+.duel-subj.sel { border-color: #ff6b6b; background: rgba(255, 107, 107, 0.12); }
+.duel-subj.sel .tag { color: #ff6b6b; }
+.duel-subj.banned { opacity: 0.4; }
+.duel-subj.banned .nm { text-decoration: line-through; }
+.duel-subj.noq { opacity: 0.35; cursor: default; }
+.duel-subj.locked { cursor: default; }
+.duel-subj.spin { border-color: var(--accent); background: rgba(255, 177, 0, 0.14); }
+.duel-subj.picked { border-color: var(--accent); background: var(--accent); }
+.duel-subj.picked .nm, .duel-subj.picked .pct, .duel-subj.picked .tag { color: var(--blueprint-dark); }
+.duel-reveal-msg { text-align: center; font-size: 14px; color: var(--paper); margin: 6px 0 0; min-height: 40px; line-height: 1.5; }
+.duel-count { text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 64px; color: var(--accent); line-height: 1.2; min-height: 78px; }
+
+/* play */
+.duel-timebar { height: 5px; border-radius: 999px; background: rgba(127, 168, 201, 0.25); overflow: hidden; margin-bottom: 14px; }
+#duel-timebar-fill { height: 100%; width: 100%; background: var(--accent); transition: width 0.25s linear; }
+#duel-timebar-fill.low { background: #ff6b6b; }
+
+/* result */
+.duel-result-title { margin: 6px 0 6px; font-size: 38px; letter-spacing: 0.04em; color: #fff; }
+.duel-result-title.win { color: var(--green); }
+.duel-result-title.lose { color: #ff6b6b; }
+.duel-result-title.draw { color: var(--accent); }
+.duel-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 14px 0 4px; text-align: left; }
+.duel-stat { border: 1px solid var(--line); border-radius: 4px; padding: 12px; }
+.duel-stat .who { font-size: 12px; color: var(--rivet); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.duel-stat .big { font-size: 26px; font-weight: 600; color: #fff; margin: 4px 0 2px; }
+.duel-stat .sm { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--rivet); }
+@media (max-width: 520px) {
+  .duel-subj-grid { grid-template-columns: 1fr; }
+  .duel-title { font-size: 22px; }
+  .duel-player { padding: 8px 10px; gap: 8px; }
+  .duel-avatar { width: 34px; height: 34px; font-size: 18px; }
+}
+</style>
 </head>
 <body class="gate-active">
 
@@ -14095,6 +14205,20 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
       </header>
 
       <div id="quiz-subjects-panel">
+        <p class="group-label">1V1 DUEL</p>
+        <ul class="subject-list" style="margin-bottom: 26px;">
+          <li>
+            <div class="subject-card active" id="duel-entry-card" tabindex="0" role="button"
+                 onclick="openDuel()"
+                 onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openDuel()}">
+              <div class="subject-row">
+                <span class="subject-pct">1V1</span>
+                <span class="subject-name">Quiz Duel <span style="display:block; font-size:12px; font-weight:400; color:var(--rivet); margin-top:3px;">Queue up, ban subjects, then race 20 questions against another student.</span></span>
+                <span class="subject-status">FIND MATCH <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg></span>
+              </div>
+            </div>
+          </li>
+        </ul>
         <p class="group-label">SUBJECTS</p>
         <ul class="subject-list" id="quiz-subject-list"></ul>
       </div>
@@ -14154,6 +14278,92 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
         </div>
       </div>
     </section>
+
+    <!-- ============ 1V1 QUIZ DUEL OVERLAY ============ -->
+    <div id="duel-overlay" role="dialog" aria-modal="true" aria-label="1v1 Quiz Duel">
+      <div class="duel-head">
+        <h3>1V1 QUIZ DUEL</h3>
+        <button type="button" class="nick-modal-close" onclick="duelRequestClose()" aria-label="Close">&times;</button>
+      </div>
+      <div class="duel-body">
+        <div id="duel-vs"></div>
+
+        <div class="duel-screen" id="duel-s-lobby">
+          <div class="duel-card">
+            <p class="duel-kicker">1V1</p>
+            <h2 class="duel-title">Quiz Duel</h2>
+            <p class="duel-text">Join the queue and get matched with another student who is also searching for a duel.</p>
+            <ul class="duel-rules">
+              <li>Each player bans up to 3 of the 6 subjects.</li>
+              <li>If every subject ends up banned, one is picked at random from all six. Otherwise one of the remaining subjects is picked at random.</li>
+              <li>Both of you answer the same 20 questions. Most correct answers wins, and ties go to the faster player.</li>
+            </ul>
+            <p class="duel-msg" id="duel-lobby-msg"></p>
+            <div class="mockadmin-editor-actions">
+              <button type="button" class="mockadmin-save-btn" onclick="duelRequestClose()">CLOSE</button>
+              <button type="button" class="mockadmin-publish-btn" id="duel-find-btn" onclick="duelStartSearch()">FIND OPPONENT</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="duel-screen" id="duel-s-search">
+          <div class="duel-card duel-center">
+            <div class="duel-spinner"></div>
+            <h2 class="duel-title" id="duel-search-title">Searching for an opponent</h2>
+            <p class="duel-text" id="duel-search-sub">0:00</p>
+            <div class="mockadmin-editor-actions">
+              <button type="button" class="mockadmin-save-btn" onclick="duelCancelSearch()">CANCEL</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="duel-screen" id="duel-s-ban">
+          <div class="duel-phase-row">
+            <span class="duel-kicker">BAN PHASE</span>
+            <span class="duel-timer" id="duel-ban-timer">25</span>
+          </div>
+          <p class="duel-text">Tap up to 3 subjects to ban, then lock in. Both players lock in before the subject is revealed.</p>
+          <div class="duel-subj-grid" id="duel-ban-grid"></div>
+          <p class="duel-text" id="duel-ban-status"></p>
+          <div class="mockadmin-editor-actions">
+            <button type="button" class="mockadmin-publish-btn" id="duel-lock-btn" onclick="duelLockBans()">LOCK IN BANS</button>
+          </div>
+        </div>
+
+        <div class="duel-screen" id="duel-s-reveal">
+          <div class="duel-phase-row"><span class="duel-kicker">SUBJECT</span></div>
+          <div class="duel-subj-grid" id="duel-reveal-grid"></div>
+          <p class="duel-reveal-msg" id="duel-reveal-msg"></p>
+          <div class="duel-count" id="duel-count"></div>
+        </div>
+
+        <div class="duel-screen" id="duel-s-play">
+          <div class="duel-phase-row">
+            <span class="duel-kicker" id="duel-q-label">QUESTION 1 OF 20</span>
+            <span class="duel-timer" id="duel-q-timer">20</span>
+          </div>
+          <div class="duel-timebar"><div id="duel-timebar-fill"></div></div>
+          <div class="quiz-question-card">
+            <p class="quiz-question-text" id="duel-q-text"></p>
+            <img class="gform-question-image" id="duel-q-image" style="display:none;" onload="sizeQuestionImage(this)" onclick="openQuestionImagePreview(this)">
+            <div class="quiz-choices-grid" id="duel-choices"></div>
+          </div>
+        </div>
+
+        <div class="duel-screen" id="duel-s-result">
+          <div class="duel-card duel-center">
+            <p class="duel-kicker" id="duel-res-kicker"></p>
+            <h2 class="duel-result-title" id="duel-res-title"></h2>
+            <p class="duel-text" id="duel-res-sub"></p>
+            <div class="duel-stats" id="duel-res-stats"></div>
+            <div class="mockadmin-editor-actions">
+              <button type="button" class="mockadmin-save-btn" onclick="duelRequestClose()">CLOSE</button>
+              <button type="button" class="mockadmin-publish-btn" id="duel-again-btn" onclick="duelPlayAgain()">PLAY AGAIN</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- ============ AIRCRAFT POWERPLANT VIEW ============ -->
     <section id="view-powerplant" class="view">
@@ -45328,6 +45538,692 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   new MutationObserver(sync).observe(about, { attributes: true, attributeFilter: ['class'] });
   // (animation is off, so no title snapshots are needed on every click / resize)
   sync();
+})();
+</script>
+<script id="duel-js">
+/* ============================================================================
+   1V1 QUIZ DUEL
+   ----------------------------------------------------------------------------
+   Flow: lobby -> queue -> match found -> ban phase -> subject reveal -> race
+   through 20 questions -> result.
+
+   Everything runs on the existing Firebase Realtime Database (no new backend):
+
+     <namespace>/duelQueue/<callsignKey>   one entry per searching player
+        { nick, avatar, status: 'waiting' | 'claimed' | 'matched', matchId, ts, hb }
+     <namespace>/duels/<matchId>           one node per match
+        { host, guest, players{key:{nick,avatar,hb,left}}, banEnd,
+          bans{key:{list,locked}}, setup{subjectKey,mode,pool,banned,questions,startAt},
+          progress{key:{n,s,t,done}}, forfeit, abort }
+
+   Matchmaking: only the OLDEST waiting player ever claims someone, so two
+   players can never claim each other. A claim is a transaction on the other
+   player's own queue entry (waiting -> claimed), then on the claimer's own
+   entry (waiting -> matched). If the second step fails the first is undone.
+
+   Fairness: the host (the player who made the match) picks the subject and
+   the 20 questions and writes them once, inside a transaction, so both
+   players always get the exact same questions in the same order. If the host
+   disappears, the guest does the same thing after a short delay.
+
+   REQUIRED DATABASE RULES (add inside the app namespace in the Firebase
+   console, see the notes that came with this feature):
+     duelQueue: read for signed-in users, per-entry write for signed-in users
+     duels:     read and write for signed-in users
+   ============================================================================ */
+(function () {
+  'use strict';
+
+  var N_Q = 20;              // questions per duel
+  var Q_MS = 20000;          // time allowed per question
+  var BAN_MS = 25000;        // length of the ban phase
+  var SPIN_MS = 3000;        // subject roulette
+  var COUNT_MS = 3000;       // 3-2-1 before question 1
+  var REVEAL_MS = 6000;      // roulette + result text, before the countdown
+  var FEEDBACK_MS = 1100;    // how long the right answer shows before the next question
+  var HB_MS = 4000;          // heartbeat interval
+  var QUEUE_STALE_MS = 20000;
+  var STALE_MS = 25000;      // opponent counted as gone after this long without a heartbeat
+  var SUBJECT_KEYS_FALLBACK = ['aero', 'structures', 'powerplant', 'construction', 'econ', 'math'];
+
+  var S = null;              // the live session, or null
+  var screen = 'lobby';
+  var duelOff = 0, offAttached = false;
+
+  function $(id) { return document.getElementById(id); }
+  function snow() { return Date.now() + duelOff; }
+  function TS() { return firebase.database.ServerValue.TIMESTAMP; }
+  function curUser() { try { return currentChatUser || null; } catch (e) { return null; } }
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function subjectList() { try { return subjects; } catch (e) { return []; } }
+  function subjectKeys() { var l = subjectList(); return l.length ? l.map(function (s) { return s.key; }) : SUBJECT_KEYS_FALLBACK.slice(); }
+  function subjectObj(key) { var l = subjectList(); for (var i = 0; i < l.length; i++) if (l[i].key === key) return l[i]; return { key: key, name: key, pct: '' }; }
+
+  function attachClock() {
+    if (offAttached) return;
+    try {
+      firebase.database().ref('.info/serverTimeOffset').on('value', function (s) { var o = Number(s.val()); if (isFinite(o)) duelOff = o; });
+      offAttached = true;
+    } catch (e) {}
+  }
+
+  /* ---------------- questions ---------------- */
+  // Published questions of one subject, pooled from every published set.
+  function poolQuestions(key) {
+    var sets = {};
+    try { sets = LIVE_MOCK_EXAM_CACHE[key] || {}; } catch (e) {}
+    var seen = {}, out = [];
+    Object.keys(sets).forEach(function (id) {
+      var set = sets[id];
+      if (!set || !set.published || !Array.isArray(set.questions)) return;
+      set.questions.forEach(function (q) {
+        if (!q || typeof q.q !== 'string' || !q.q.trim()) return;
+        if (!Array.isArray(q.options) || q.options.length < 2 || q.options.indexOf(q.correct) === -1) return;
+        if (q.image && !/^https?:\/\//.test(q.image)) return; // inline images are too big to sync
+        if (seen[q.q]) return;
+        seen[q.q] = 1;
+        out.push(q);
+      });
+    });
+    return out;
+  }
+  function subjectHasQuestions(key) { return poolQuestions(key).length > 0; }
+
+  function buildQuestions(key) {
+    var picked = shuffle(poolQuestions(key).slice()).slice(0, N_Q);
+    return picked.map(function (q) {
+      var opts = q.options.slice();
+      if (opts.length > 4) {
+        var others = shuffle(opts.filter(function (o) { return o !== q.correct; })).slice(0, 3);
+        opts = [q.correct].concat(others);
+      }
+      opts = shuffle(opts);
+      return { q: q.q, o: opts, a: opts.indexOf(q.correct), im: q.image || '' };
+    });
+  }
+
+  /* ---------------- screens ---------------- */
+  function show(name) {
+    screen = name;
+    ['lobby', 'search', 'ban', 'reveal', 'play', 'result'].forEach(function (n) {
+      var el = $('duel-s-' + n); if (el) el.classList.toggle('active', n === name);
+    });
+    var vs = $('duel-vs');
+    if (vs) vs.style.display = (name === 'lobby' || name === 'search') ? 'none' : 'flex';
+  }
+  function lobbyMsg(text) {
+    var el = $('duel-lobby-msg'); if (!el) return;
+    el.textContent = text || ''; el.classList.toggle('visible', !!text);
+  }
+  function avatarFor(nick, stored) {
+    var live = null;
+    try { live = getLiveAvatar(nick); } catch (e) {}
+    return live || stored || (typeof DEFAULT_AVATAR !== 'undefined' ? DEFAULT_AVATAR : '');
+  }
+  function fmtTime(ms) { return (ms / 1000).toFixed(1) + 's'; }
+
+  function updateVs() {
+    var vs = $('duel-vs'); if (!vs || !S || !S.m) return;
+    var m = S.m, p = m.progress || {};
+    var me = (m.players && m.players[S.myKey]) || {}, op = (m.players && m.players[S.oppKey]) || {};
+    var mp = p[S.myKey] || {}, opp = p[S.oppKey] || {};
+    var showStats = !!m.setup && S.started;
+    function stat(pr) { return showStats ? ((pr.s || 0) + ' correct | ' + (pr.n || 0) + '/' + N_Qs() + ' answered') : ''; }
+    vs.innerHTML =
+      '<div class="duel-player"><span class="duel-avatar" id="duel-av-me"></span><div class="duel-pinfo"><div class="duel-pname">' + esc(me.nick || 'You') + ' (you)</div><div class="duel-pstat">' + esc(stat(mp)) + '</div></div></div>' +
+      '<div class="duel-vs-mid">VS</div>' +
+      '<div class="duel-player opp"><span class="duel-avatar" id="duel-av-opp"></span><div class="duel-pinfo"><div class="duel-pname">' + esc(op.nick || 'Opponent') + '</div><div class="duel-pstat">' + esc(stat(opp)) + '</div></div></div>';
+    var u = curUser();
+    try { setAvatarElContent($('duel-av-me'), (u && u.avatar) || avatarFor(me.nick, me.avatar)); } catch (e) {}
+    try { setAvatarElContent($('duel-av-opp'), avatarFor(op.nick, op.avatar)); } catch (e) {}
+  }
+  function N_Qs() { return (S && S.m && S.m.setup && S.m.setup.questions) ? S.m.setup.questions.length : N_Q; }
+
+  /* ---------------- open / close ---------------- */
+  window.openDuel = function () {
+    var ov = $('duel-overlay'); if (!ov) return;
+    ov.classList.add('visible');
+    ov.scrollTop = 0;
+    cleanup();
+    lobbyMsg('');
+    show('lobby');
+    var u = curUser();
+    if (!u || !u.nickname) lobbyMsg('Sign in to play 1v1 duels.');
+  };
+  function closeOverlay() {
+    cleanup();
+    var ov = $('duel-overlay'); if (ov) ov.classList.remove('visible');
+  }
+  window.duelRequestClose = function () {
+    if (!S) { closeOverlay(); return; }
+    if (S.matchId && S.m && !isFinal() && !S.finishedMine) {
+      openConfirmDialog('Leave this duel? You will forfeit the match.', function () { leaveMatch(); closeOverlay(); }, 'Leave', 'danger');
+      return;
+    }
+    closeOverlay();
+  };
+  document.addEventListener('keydown', function (e) {
+    var ov = $('duel-overlay');
+    if (!ov || !ov.classList.contains('visible')) return;
+    if (e.key === 'Escape') {
+      if (document.getElementById('confirm-dialog-overlay')) return;
+      e.preventDefault(); window.duelRequestClose(); return;
+    }
+    if (screen === 'play' && S && S.started && !S.answered) {
+      var map = { '1': 0, '2': 1, '3': 2, '4': 3, 'a': 0, 'b': 1, 'c': 2, 'd': 3 };
+      var k = String(e.key).toLowerCase();
+      if (map.hasOwnProperty(k)) { var cur = S.m.setup.questions[S.i]; if (cur && map[k] < cur.o.length) pick(map[k]); }
+    }
+  });
+
+  /* ---------------- session bookkeeping ---------------- */
+  function newSession() {
+    return {
+      dead: false, myKey: null, oppKey: null, isHost: false,
+      qRef: null, qListenRef: null, qHandler: null, inQueue: false, claiming: false,
+      hbTimer: null, tick: null, spinTimer: null, elapsedTimer: null, advTimer: null, joinTimer: null,
+      searchStart: 0, retries: 0,
+      matchId: null, mRef: null, mHandler: null, m: null, mGone: false, joinedAt: 0,
+      connRef: null, connHandler: null, leftRef: null, connected: false,
+      myBans: [], locked: false, setupTried: false, banGridBuilt: false,
+      setupSeen: false, started: false, landed: false, revealStart: 0,
+      i: 0, nAnswered: 0, score: 0, totalMs: 0, qStart: 0, qEnd: 0, answered: false, finishedMine: false,
+      endHandled: false, canDelete: false
+    };
+  }
+  function cleanup() {
+    var s = S; if (!s) return;
+    s.dead = true;
+    clearInterval(s.hbTimer); clearInterval(s.tick); clearInterval(s.spinTimer); clearInterval(s.elapsedTimer);
+    clearTimeout(s.advTimer); clearTimeout(s.joinTimer);
+    try { if (s.qListenRef && s.qHandler) s.qListenRef.off('value', s.qHandler); } catch (e) {}
+    try { if (s.qRef) { s.qRef.onDisconnect().cancel(); if (s.inQueue) s.qRef.remove(); } } catch (e) {}
+    try { if (s.mRef && s.mHandler) s.mRef.off('value', s.mHandler); } catch (e) {}
+    try { if (s.connRef && s.connHandler) s.connRef.off('value', s.connHandler); } catch (e) {}
+    try { if (s.leftRef) s.leftRef.onDisconnect().cancel(); } catch (e) {}
+    // A finished match is deleted a little later so the other player can still see the final result.
+    if (s.mRef && s.canDelete) { var ref = s.mRef; setTimeout(function () { try { ref.remove(); } catch (e) {} }, 10000); }
+    S = null;
+  }
+
+  /* ---------------- queue ---------------- */
+  window.duelStartSearch = function () {
+    var u = curUser();
+    if (!u || !u.nickname) { lobbyMsg('Sign in to play 1v1 duels.'); return; }
+    var ok = false;
+    try { ok = ensureFirebaseApp(); } catch (e) {}
+    if (!ok) { lobbyMsg('Online play is not available right now.'); return; }
+    lobbyMsg('');
+    cleanup();
+    attachClock();
+    ['aero', 'structures', 'powerplant', 'construction', 'econ', 'math'].forEach(function (k) { try { primeMockExamCache(k); } catch (e) {} });
+    var s = S = newSession();
+    s.myKey = avatarUploadKey(u.nickname);
+    s.searchStart = Date.now();
+    $('duel-search-title').textContent = 'Searching for an opponent';
+    show('search');
+    tickElapsed();
+    s.elapsedTimer = setInterval(tickElapsed, 1000);
+    waitForFirebaseUidMatching(u.nickname, 4000).then(function () { if (S === s && !s.dead) enqueue(s, u); });
+  };
+  function tickElapsed() {
+    if (!S || screen !== 'search') return;
+    var sec = Math.floor((Date.now() - S.searchStart) / 1000);
+    var t = Math.floor(sec / 60) + ':' + ('0' + (sec % 60)).slice(-2);
+    var extra = sec > 60 ? '  |  Nobody else is in the queue yet. Keep waiting or try again later.' : '';
+    var el = $('duel-search-sub'); if (el) el.textContent = t + extra;
+  }
+  function enqueue(s, u) {
+    var qRef = s.qRef = nsRef('duelQueue/' + s.myKey);
+    var emoji = (typeof isImageAvatar === 'function' && isImageAvatar(u.avatar)) ? '' : (u.avatar || '');
+    qRef.set({ nick: u.nickname, avatar: emoji, status: 'waiting', ts: TS(), hb: TS() }).then(function () {
+      if (S !== s || s.dead) { qRef.remove(); return; }
+      s.inQueue = true;
+      qRef.onDisconnect().remove();
+      s.hbTimer = setInterval(function () { if (s.inQueue && !s.dead) qRef.child('hb').set(TS()).catch(function () {}); }, HB_MS);
+      s.qListenRef = nsRef('duelQueue');
+      s.qHandler = s.qListenRef.on('value', function (snap) { onQueue(s, snap); }, function (err) { searchError(s, err); });
+    }).catch(function (err) { searchError(s, err); });
+  }
+  function searchError(s, err) {
+    if (S !== s) return;
+    var msg = 'Could not join the queue. Check your connection and try again.';
+    if (err && /permission/i.test(String(err.message || err.code || err))) msg = 'Duels are not enabled on the database yet (permission denied).';
+    cleanup();
+    show('lobby');
+    lobbyMsg(msg);
+  }
+  function onQueue(s, snap) {
+    if (S !== s || s.dead || s.matchId) return;
+    var all = snap.val() || {};
+    var now = snow();
+    var me = all[s.myKey];
+    if (me && (me.status === 'matched' || me.status === 'claimed') && me.matchId) { joinMatch(s, me.matchId); return; }
+    var waiting = Object.keys(all).filter(function (k) {
+      var e = all[k];
+      return e && e.nick && e.status === 'waiting' && e.ts && (now - (e.hb || e.ts)) < QUEUE_STALE_MS;
+    }).sort(function (a, b) { return (all[a].ts - all[b].ts) || (a < b ? -1 : 1); });
+    // Only the oldest waiting player makes the match.
+    if (waiting.length > 1 && waiting[0] === s.myKey && !s.claiming) tryClaim(s, waiting[1]);
+  }
+  function tryClaim(s, peerKey) {
+    s.claiming = true;
+    var matchId = nsRef('duels').push().key;
+    nsRef('duelQueue/' + peerKey).transaction(function (cur) {
+      if (!cur || cur.status !== 'waiting') return;           // abort: someone else got them first
+      cur.status = 'claimed'; cur.matchId = matchId; cur.by = s.myKey;
+      return cur;
+    }, function (err, committed, snap) {
+      if (S !== s || s.dead) { if (committed) releasePeer(peerKey, s.myKey); return; }
+      if (err || !committed) { setTimeout(function () { s.claiming = false; }, 600); return; }
+      var peer = snap.val() || {};
+      nsRef('duelQueue/' + s.myKey).transaction(function (cur) {
+        if (!cur || cur.status !== 'waiting') return;
+        cur.status = 'matched'; cur.matchId = matchId;
+        return cur;
+      }, function (err2, ok2) {
+        if (err2 || !ok2) { releasePeer(peerKey, s.myKey); setTimeout(function () { s.claiming = false; }, 600); return; }
+        if (S !== s || s.dead) return;
+        createMatch(s, matchId, peerKey, peer);
+      }, false);
+    }, false);
+  }
+  function releasePeer(peerKey, myKey) {
+    nsRef('duelQueue/' + peerKey).transaction(function (cur) {
+      if (cur && cur.status === 'claimed' && cur.by === myKey) { cur.status = 'waiting'; delete cur.matchId; delete cur.by; return cur; }
+    }, function () {}, false);
+  }
+  function createMatch(s, matchId, peerKey, peer) {
+    var u = curUser() || {};
+    var players = {};
+    players[s.myKey] = { nick: u.nickname, avatar: (typeof isImageAvatar === 'function' && isImageAvatar(u.avatar)) ? '' : (u.avatar || ''), hb: TS(), left: false };
+    players[peerKey] = { nick: peer.nick, avatar: peer.avatar || '', hb: TS(), left: false };
+    nsRef('duels/' + matchId).set({
+      createdAt: TS(), host: s.myKey, guest: peerKey, players: players, banEnd: snow() + BAN_MS + 1500
+    }).then(function () { joinMatch(s, matchId); }).catch(function (err) { searchError(s, err); });
+  }
+  function cancelSearch() {
+    cleanup();
+    show('lobby');
+  }
+  window.duelCancelSearch = cancelSearch;
+
+  /* ---------------- match ---------------- */
+  function joinMatch(s, id) {
+    if (S !== s || s.dead || s.matchId) return;
+    s.matchId = id; s.joinedAt = Date.now();
+    // leave the queue
+    clearInterval(s.hbTimer);
+    try { if (s.qListenRef && s.qHandler) s.qListenRef.off('value', s.qHandler); } catch (e) {}
+    try { s.qRef.onDisconnect().cancel(); s.qRef.remove(); } catch (e) {}
+    s.inQueue = false;
+    clearInterval(s.elapsedTimer);
+    $('duel-search-title').textContent = 'Match found! Connecting...';
+    $('duel-search-sub').textContent = '';
+    s.mRef = nsRef('duels/' + id);
+    s.leftRef = s.mRef.child('players/' + s.myKey + '/left');
+    s.joinTimer = setTimeout(function () {
+      if (S !== s || s.m) return;
+      // The other player's side of the match never appeared. Quietly search again.
+      cleanup();
+      if (screen === 'search' || screen === 'lobby') { window.duelStartSearch(); }
+    }, 15000);
+    s.mHandler = s.mRef.on('value', function (snap) { onMatch(s, snap); }, function (err) { searchError(s, err); });
+    // keep "left" accurate across reconnects
+    s.connRef = firebase.database().ref('.info/connected');
+    s.connHandler = s.connRef.on('value', function (c) { s.connected = (c.val() === true); armLeft(s); });
+    s.hbTimer = setInterval(function () {
+      if (S !== s || !s.m || s.mGone || s.endHandled) return;
+      s.mRef.child('players/' + s.myKey + '/hb').set(TS()).catch(function () {});
+    }, HB_MS);
+    s.tick = setInterval(function () { tick(s); }, 250);
+  }
+
+  // "left" is set by the server when this connection drops, and reset after a reconnect.
+  function armLeft(s) {
+    if (S !== s || !s.connected || !s.m || s.mGone || s.endHandled || !s.leftRef) return;
+    try { s.leftRef.onDisconnect().set(true); s.leftRef.set(false); } catch (e) {}
+  }
+
+  function onMatch(s, snap) {
+    if (S !== s || s.dead) return;
+    var m = snap.val();
+    if (!m) { if (s.m) s.mGone = true; return; }
+    if (!m.players || !m.players[s.myKey]) return;
+    var first = !s.m;
+    if (first) {
+      clearTimeout(s.joinTimer);
+      s.oppKey = m.host === s.myKey ? m.guest : m.host;
+      s.isHost = m.host === s.myKey;
+      s.joinedAt = Date.now();
+    }
+    s.m = m;
+    if (first) armLeft(s);
+    render(s);
+  }
+
+  function isFinal() {
+    if (!S || !S.m) return false;
+    var m = S.m, p = m.progress || {};
+    if (m.abort || m.forfeit) return true;
+    return !!(p[S.myKey] && p[S.myKey].done && p[S.oppKey] && p[S.oppKey].done);
+  }
+
+  function render(s) {
+    var m = s.m;
+    updateVs();
+    if (m.abort) { showEnd(s, 'abort'); return; }
+    if (m.forfeit) { showEnd(s, 'result'); return; }
+    if (!m.setup) {
+      if (screen !== 'ban') showBan(s);
+      updateBanUi(s);
+      return;
+    }
+    if (!s.setupSeen) beginReveal(s);
+    if (s.finishedMine) showEnd(s, 'result');
+  }
+
+  /* ---------------- ban phase ---------------- */
+  function showBan(s) {
+    show('ban');
+    var grid = $('duel-ban-grid');
+    grid.innerHTML = subjectList().map(function (sub) {
+      var has = subjectHasQuestions(sub.key);
+      return '<button type="button" class="duel-subj ' + (has ? 'can' : 'noq') + '" data-key="' + esc(sub.key) + '"' + (has ? '' : ' disabled') + '>' +
+        '<span class="pct">' + esc(sub.pct) + '%</span><span class="nm">' + esc(sub.name) + '</span><span class="tag">' + (has ? '' : 'NO QUESTIONS YET') + '</span></button>';
+    }).join('');
+    Array.prototype.forEach.call(grid.querySelectorAll('.duel-subj.can'), function (b) {
+      b.addEventListener('click', function () { toggleBan(s, b.getAttribute('data-key')); });
+    });
+    s.banGridBuilt = true;
+    $('duel-lock-btn').disabled = false;
+    $('duel-lock-btn').style.opacity = '';
+  }
+  function toggleBan(s, key) {
+    if (S !== s || s.locked) return;
+    var i = s.myBans.indexOf(key);
+    if (i !== -1) s.myBans.splice(i, 1);
+    else if (s.myBans.length < 3) s.myBans.push(key);
+    else return;
+    paintBans(s);
+    updateBanUi(s);
+  }
+  function paintBans(s) {
+    Array.prototype.forEach.call($('duel-ban-grid').querySelectorAll('.duel-subj'), function (b) {
+      var on = s.myBans.indexOf(b.getAttribute('data-key')) !== -1;
+      b.classList.toggle('sel', on);
+      b.classList.toggle('locked', s.locked);
+      var tag = b.querySelector('.tag');
+      if (tag && !b.classList.contains('noq')) tag.textContent = on ? 'BANNED BY YOU' : '';
+    });
+  }
+  function updateBanUi(s) {
+    if (screen !== 'ban') return;
+    var m = s.m, bans = m.bans || {};
+    var oppLocked = !!(bans[s.oppKey] && bans[s.oppKey].locked);
+    var op = (m.players && m.players[s.oppKey]) || {};
+    var st = $('duel-ban-status');
+    if (s.locked) st.textContent = oppLocked ? 'Both players are locked in. Revealing the subject...' : 'Locked in. Waiting for ' + (op.nick || 'your opponent') + '...';
+    else st.textContent = 'You have banned ' + s.myBans.length + ' of 3.' + (oppLocked ? ' ' + (op.nick || 'Your opponent') + ' is already locked in.' : '');
+    var btn = $('duel-lock-btn');
+    btn.disabled = s.locked; btn.style.opacity = s.locked ? '0.5' : '';
+    btn.textContent = s.locked ? 'LOCKED IN' : 'LOCK IN BANS';
+  }
+  function lockBans(s) {
+    if (S !== s || s.locked || !s.m || s.m.setup) return;
+    s.locked = true;
+    paintBans(s);
+    var data = { list: s.myBans.slice(), locked: true };
+    s.mRef.child('bans/' + s.myKey).set(data).catch(function () {});
+    updateBanUi(s);
+  }
+  window.duelLockBans = function () { if (S) lockBans(S); };
+
+  // The host (or, as a fallback, the guest) works out the subject and writes the questions once.
+  function trySetup(s) {
+    var m = s.m, bans = m.bans || {}, all = subjectKeys(), banned = {};
+    [m.host, m.guest].forEach(function (k) {
+      var b = bans[k];
+      ((b && b.list) || []).slice(0, 3).forEach(function (key) { if (all.indexOf(key) !== -1) banned[key] = true; });
+    });
+    var bannedList = all.filter(function (k) { return banned[k]; });
+    var remaining = all.filter(function (k) { return !banned[k]; });
+    var mode = 'remaining';
+    var cand = remaining.filter(subjectHasQuestions);
+    if (!cand.length) { mode = 'all'; cand = all.filter(subjectHasQuestions); }   // everything banned: random from all six
+    if (!cand.length) { s.mRef.child('abort').set('noquestions'); return; }
+    var pickKey = cand[Math.floor(Math.random() * cand.length)];
+    var setup = {
+      subjectKey: pickKey, mode: mode, pool: cand, banned: bannedList,
+      questions: buildQuestions(pickKey), startAt: snow() + REVEAL_MS + COUNT_MS
+    };
+    s.mRef.child('setup').transaction(function (cur) { return cur ? undefined : setup; }, function () {}, false);
+  }
+
+  /* ---------------- reveal ---------------- */
+  function beginReveal(s) {
+    s.setupSeen = true;
+    var su = s.m.setup, bans = s.m.bans || {};
+    show('reveal');
+    var mine = ((bans[s.myKey] && bans[s.myKey].list) || []), theirs = ((bans[s.oppKey] && bans[s.oppKey].list) || []);
+    var pool = su.pool || [];
+    $('duel-reveal-grid').innerHTML = subjectList().map(function (sub) {
+      var byMe = mine.indexOf(sub.key) !== -1, byOpp = theirs.indexOf(sub.key) !== -1;
+      var isBanned = (su.banned || []).indexOf(sub.key) !== -1;
+      var tag = isBanned ? ('BANNED' + (byMe && byOpp ? ' BY BOTH' : byMe ? ' BY YOU' : ' BY OPPONENT')) : (pool.indexOf(sub.key) === -1 ? 'NO QUESTIONS YET' : '');
+      return '<div class="duel-subj' + (isBanned ? ' banned' : '') + '" data-key="' + esc(sub.key) + '"><span class="pct">' + esc(sub.pct) + '%</span><span class="nm">' + esc(sub.name) + '</span><span class="tag">' + tag + '</span></div>';
+    }).join('');
+    $('duel-reveal-msg').textContent = '';
+    $('duel-count').textContent = '';
+    s.revealStart = snow();
+    var late = (su.startAt - snow()) <= COUNT_MS + 600;   // joined late: skip the roulette
+    if (late) { land(s); return; }
+    var chips = pool.map(function (k) { return document.querySelector('#duel-reveal-grid .duel-subj[data-key="' + k + '"]'); }).filter(Boolean);
+    var n = 0;
+    s.spinTimer = setInterval(function () {
+      chips.forEach(function (c) { c.classList.remove('spin'); });
+      if (chips.length) chips[n++ % chips.length].classList.add('spin');
+    }, 110);
+  }
+  function land(s) {
+    if (s.landed) return;
+    s.landed = true;
+    clearInterval(s.spinTimer);
+    var su = s.m.setup;
+    Array.prototype.forEach.call(document.querySelectorAll('#duel-reveal-grid .duel-subj'), function (c) {
+      c.classList.remove('spin');
+      if (c.getAttribute('data-key') === su.subjectKey) c.classList.add('picked');
+    });
+    var nm = subjectObj(su.subjectKey).name;
+    $('duel-reveal-msg').textContent = (su.mode === 'all'
+      ? 'Every subject was banned, so one was picked at random from all six: '
+      : (su.pool.length === 1 ? 'Only one subject was left: ' : 'Picked at random from the ' + su.pool.length + ' remaining subjects: ')) + nm + '.';
+  }
+
+  /* ---------------- ticking ---------------- */
+  function tick(s) {
+    if (S !== s || s.dead || !s.m) return;
+    var m = s.m, now = snow();
+    checkOpponent(s, now);
+    if (s.endHandled) return;
+    if (!m.setup) {
+      var left = m.banEnd - now;
+      var t = $('duel-ban-timer');
+      if (t) { t.textContent = Math.max(0, Math.ceil(left / 1000)); t.classList.toggle('low', left < 6000); }
+      if (left <= 0 && !s.locked) lockBans(s);
+      var bans = m.bans || {};
+      var both = !!(bans[m.host] && bans[m.host].locked && bans[m.guest] && bans[m.guest].locked);
+      if (s.isHost && !s.setupTried && (both || now >= m.banEnd + 2000)) { s.setupTried = true; trySetup(s); }
+      if (!s.isHost && !s.setupTried && now >= m.banEnd + 9000) { s.setupTried = true; trySetup(s); }
+      return;
+    }
+    var su = m.setup, toGo = su.startAt - now;
+    if (!s.started) {
+      if (!s.setupSeen) return;
+      if (toGo <= 0) { startPlay(s); return; }
+      if (!s.landed && (now - s.revealStart >= SPIN_MS || toGo <= COUNT_MS)) land(s);
+      var c = $('duel-count');
+      if (c) c.textContent = (s.landed && toGo <= COUNT_MS) ? Math.ceil(toGo / 1000) : '';
+      return;
+    }
+    if (!s.finishedMine) {
+      var rem = s.qEnd - now;
+      var tm = $('duel-q-timer'), fill = $('duel-timebar-fill');
+      var low = rem < 6000;
+      if (tm) { tm.textContent = Math.max(0, Math.ceil(rem / 1000)); tm.classList.toggle('low', low); }
+      if (fill) { fill.style.width = Math.max(0, Math.min(100, (rem / Q_MS) * 100)) + '%'; fill.classList.toggle('low', low); }
+      if (!s.answered && rem <= 0) onTimeout(s);
+    }
+  }
+
+  // Opponent gone? Before the questions are set the match is cancelled, afterwards they forfeit.
+  function checkOpponent(s, now) {
+    if (s.endHandled) return;
+    var m = s.m;
+    if (m.abort || m.forfeit) return;
+    var prog = m.progress && m.progress[s.oppKey];
+    if (prog && prog.done) return;
+    if (Date.now() - s.joinedAt < 6000) return;
+    var op = m.players && m.players[s.oppKey];
+    if (!op) return;
+    var age = op.hb ? (now - op.hb) : 0;
+    var gone = (op.left === true && age > 10000) || age > STALE_MS;
+    if (!gone) return;
+    if (!m.setup) s.mRef.child('abort').set('oppleft');
+    else s.mRef.child('forfeit').transaction(function (cur) { return cur ? undefined : s.oppKey; }, function () {}, false);
+  }
+
+  /* ---------------- playing ---------------- */
+  function startPlay(s) {
+    s.started = true;
+    clearInterval(s.spinTimer);
+    show('play');
+    s.i = 0; s.nAnswered = 0; s.score = 0; s.totalMs = 0;
+    renderQuestion(s);
+    pushProgress(s, false);
+    updateVs();
+  }
+  function renderQuestion(s) {
+    var q = s.m.setup.questions[s.i];
+    var total = s.m.setup.questions.length;
+    $('duel-q-label').textContent = 'QUESTION ' + (s.i + 1) + ' OF ' + total;
+    $('duel-q-text').innerHTML = renderMathText(q.q);
+    var img = $('duel-q-image');
+    if (q.im) { img.src = q.im; img.alt = 'Question ' + (s.i + 1) + ' image'; img.style.display = ''; }
+    else { img.style.display = 'none'; img.removeAttribute('src'); }
+    var grid = $('duel-choices');
+    grid.innerHTML = q.o.map(function (opt, i) {
+      return '<button type="button" class="quiz-choice-btn" data-idx="' + i + '"><span class="quiz-choice-text">' + renderMathText(opt) + '</span></button>';
+    }).join('');
+    Array.prototype.forEach.call(grid.querySelectorAll('.quiz-choice-btn'), function (b) {
+      b.addEventListener('click', function () { pick(parseInt(b.getAttribute('data-idx'), 10)); });
+    });
+    s.answered = false;
+    s.qStart = snow(); s.qEnd = s.qStart + Q_MS;
+    $('duel-q-timer').textContent = Math.ceil(Q_MS / 1000);
+    var fill = $('duel-timebar-fill'); if (fill) { fill.style.width = '100%'; fill.classList.remove('low'); }
+  }
+  function lockChoices(s, chosen) {
+    var q = s.m.setup.questions[s.i];
+    Array.prototype.forEach.call($('duel-choices').querySelectorAll('.quiz-choice-btn'), function (b, i) {
+      b.disabled = true;
+      if (i === q.a) b.classList.add('correct');
+      else if (i === chosen) b.classList.add('wrong');
+      else b.classList.add('dim');
+    });
+  }
+  function pick(idx) {
+    var s = S; if (!s || !s.started || s.answered || s.finishedMine) return;
+    s.answered = true;
+    var q = s.m.setup.questions[s.i];
+    s.totalMs += Math.min(Q_MS, Math.max(0, snow() - s.qStart));
+    if (idx === q.a) s.score++;
+    s.nAnswered++;
+    lockChoices(s, idx);
+    pushProgress(s, false);
+    updateVs();
+    s.advTimer = setTimeout(function () { nextQuestion(s); }, FEEDBACK_MS);
+  }
+  function onTimeout(s) {
+    s.answered = true;
+    s.totalMs += Q_MS;
+    s.nAnswered++;
+    lockChoices(s, -1);
+    pushProgress(s, false);
+    updateVs();
+    s.advTimer = setTimeout(function () { nextQuestion(s); }, FEEDBACK_MS);
+  }
+  function nextQuestion(s) {
+    if (S !== s || s.dead || s.finishedMine) return;
+    s.i++;
+    if (s.i >= s.m.setup.questions.length) { finishMine(s); return; }
+    renderQuestion(s);
+  }
+  function pushProgress(s, done) {
+    if (!s.mRef) return;
+    s.mRef.child('progress/' + s.myKey).set({ n: s.nAnswered, s: s.score, t: Math.round(s.totalMs), done: !!done }).catch(function () {});
+  }
+  function finishMine(s) {
+    s.finishedMine = true;
+    pushProgress(s, true);
+    // optimistic local copy so the result screen does not wait for the round trip
+    s.m.progress = s.m.progress || {};
+    s.m.progress[s.myKey] = { n: s.nAnswered, s: s.score, t: Math.round(s.totalMs), done: true };
+    updateVs();
+    showEnd(s, 'result');
+  }
+
+  /* ---------------- result ---------------- */
+  function outcome(s) {
+    var m = s.m, p = m.progress || {}, mine = p[s.myKey] || {}, theirs = p[s.oppKey] || {};
+    if (m.forfeit === s.oppKey) return { kind: 'win', why: 'Your opponent left the match.' };
+    if (m.forfeit === s.myKey) return { kind: 'lose', why: 'You left the match.' };
+    if (!(mine.done && theirs.done)) return { kind: 'wait' };
+    if (mine.s !== theirs.s) return { kind: mine.s > theirs.s ? 'win' : 'lose', why: '' };
+    if (mine.t !== theirs.t) return { kind: mine.t < theirs.t ? 'win' : 'lose', why: 'Tied on correct answers, so total answer time decided it.' };
+    return { kind: 'draw', why: 'Same score and same total time.' };
+  }
+  function showEnd(s, mode) {
+    if (S !== s) return;
+    var wasEnd = screen === 'result';
+    show('result');
+    clearTimeout(s.advTimer); clearInterval(s.spinTimer);
+    var kick = $('duel-res-kicker'), title = $('duel-res-title'), sub = $('duel-res-sub'), stats = $('duel-res-stats');
+    title.className = 'duel-result-title';
+    if (mode === 'abort') {
+      s.endHandled = true; s.canDelete = true;
+      kick.textContent = 'NO CONTEST';
+      title.textContent = 'Match cancelled';
+      sub.textContent = s.m.abort === 'noquestions' ? 'There are no quiz questions available yet for the duel subjects.' : 'Your opponent left before the quiz started.';
+      stats.innerHTML = '';
+      return;
+    }
+    var o = outcome(s), m = s.m, p = m.progress || {}, mine = p[s.myKey] || {}, theirs = p[s.oppKey] || {};
+    var su = m.setup, subj = su ? subjectObj(su.subjectKey).name : '';
+    kick.textContent = subj ? subj.toUpperCase() : 'RESULT';
+    var total = su && su.questions ? su.questions.length : N_Q;
+    if (o.kind === 'wait') {
+      title.textContent = 'Finished!';
+      sub.textContent = 'Waiting for ' + (((m.players || {})[s.oppKey] || {}).nick || 'your opponent') + ' to finish (' + (theirs.n || 0) + '/' + total + ' answered)...';
+    } else {
+      s.endHandled = true; s.canDelete = true;
+      title.textContent = o.kind === 'win' ? 'VICTORY' : o.kind === 'lose' ? 'DEFEAT' : 'DRAW';
+      title.classList.add(o.kind);
+      sub.textContent = o.why || '';
+    }
+    function card(label, pr) { return '<div class="duel-stat"><div class="who">' + esc(label) + '</div><div class="big">' + (pr.s || 0) + ' / ' + total + '</div><div class="sm">' + (pr.n || 0) + ' answered' + (pr.done ? ' | ' + fmtTime(pr.t || 0) : '') + '</div></div>'; }
+    var meNick = ((m.players || {})[s.myKey] || {}).nick || 'You', opNick = ((m.players || {})[s.oppKey] || {}).nick || 'Opponent';
+    stats.innerHTML = card(meNick + ' (you)', mine) + card(opNick, theirs);
+    $('duel-again-btn').style.display = (o.kind === 'wait') ? 'none' : '';
+    if (!wasEnd) { try { $('duel-s-result').scrollIntoView({ block: 'nearest' }); } catch (e) {} }
+  }
+  window.duelPlayAgain = function () { cleanup(); window.duelStartSearch(); };
+
+  function leaveMatch() {
+    var s = S; if (!s || !s.m || !s.mRef) return;
+    if (!s.m.setup) s.mRef.child('abort').set('oppleft');
+    else s.mRef.child('forfeit').transaction(function (cur) { return cur ? undefined : s.myKey; }, function () {}, false);
+  }
 })();
 </script>
 </body>
