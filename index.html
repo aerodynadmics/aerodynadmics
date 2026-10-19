@@ -9543,9 +9543,9 @@ try {
      row, which is what crashed the tab. Same fixes, applied to every
      touch-first device. ---- */
   html.lite [class*="nick-"] { animation: none !important; }
-  /* Nabla Depth keeps its real animation in lite mode (iPad/phones). */
-  @media (max-width: 900px) { .nick-nabladepth { animation: nickNablaDepth 1s ease-in-out alternate infinite !important; } }
-  html.lite .nick-nabladepth { animation: nickNablaDepth 1s ease-in-out alternate infinite !important; }
+  /* Nabla Depth on lite devices: no movement (like the others, to avoid crashes), but frozen at a mid depth so the real Nabla 3D look shows. */
+  @media (max-width: 900px) { .nick-nabladepth { font-variation-settings: 'EDPT' 100 !important; transform: none !important; } }
+  html.lite .nick-nabladepth { font-variation-settings: 'EDPT' 100 !important; transform: none !important; }
   html.lite .nick-frost, html.lite .nick-moire, html.lite .nick-shimmer,
   html.lite .nick-rainbow, html.lite .nick-rainbowswing, html.lite .nick-lumamesh,
   html.lite .nick-duotone, html.lite .nick-dotmatrix, html.lite .nick-prismcut,
