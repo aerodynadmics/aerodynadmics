@@ -61,6 +61,25 @@
      router script at the bottom of the page removes this class. -->
 <style id="load-gate-css">html.data-loading .empty-note { display: none !important; }</style>
 <script>document.documentElement.classList.add('data-loading');</script>
+<script>
+/* Lite mode: phones, tablets and any touch-first device. Turns off the
+   heavy "always running" visuals (animated nameplates, animated avatar rings,
+   per-user cover images in the sidebar) that were exhausting memory/GPU on
+   mobile Safari/Chrome and crashing the tab. Desktop is untouched.
+   Escape hatch for testing: localStorage.setItem('forceFullFx','1') */
+(function () {
+  try {
+    var w = window, ua = navigator.userAgent || '';
+    var mm = function (q) { return !!(w.matchMedia && w.matchMedia(q).matches); };
+    var iPadAsMac = /Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1;
+    var lite = mm('(pointer: coarse)') || mm('(hover: none)') || iPadAsMac ||
+               /Android|iPhone|iPad|iPod|Mobile|Tablet/i.test(ua) || w.innerWidth <= 900;
+    try { if (localStorage.getItem('forceFullFx') === '1') lite = false; } catch (e) {}
+    w.__liteMode = lite;
+    if (lite) document.documentElement.classList.add('lite');
+  } catch (e) {}
+})();
+</script>
 <!-- If this device has a saved login, keep the sign-in screen hidden from the
      very first paint so it never flashes on reload. It is un-hidden as soon as
      the saved session is restored, rejected, or after a short safety timeout. -->
@@ -9516,6 +9535,32 @@ try {
       background-attachment: scroll;
     }
   }
+
+  /* ---- lite mode (html.lite, set in <head>): the <=900px rule above only
+     covered phones, so tablets (iPad / Android tablets, anything wider than
+     900px) still ran every sidebar animation AND loaded a full-size cover
+     image (many are animated GIFs / multi-MB wallpapers) for every reviewee
+     row, which is what crashed the tab. Same fixes, applied to every
+     touch-first device. ---- */
+  html.lite [class*="nick-"] { animation: none !important; }
+  html.lite .nick-frost, html.lite .nick-moire, html.lite .nick-shimmer,
+  html.lite .nick-rainbow, html.lite .nick-rainbowswing, html.lite .nick-lumamesh,
+  html.lite .nick-duotone, html.lite .nick-dotmatrix, html.lite .nick-prismcut,
+  html.lite .nick-topographic, html.lite .nick-legend {
+    background-position: 50% 50% !important;
+  }
+  /* animated rainbow avatar ring (mask-composite + infinite background sweep) */
+  html.lite .avatar-circle.border-legend::before,
+  html.lite .chat-msg-avatar.border-legend::before,
+  html.lite .chat-msg-reply-avatar.border-legend::before,
+  html.lite .shop-item-preview.border-legend::before { animation: none !important; }
+  /* per-row cover images in the sidebar list (backstop; JS also stops
+     creating them in lite mode so they are never downloaded or decoded) */
+  html.lite .nick-list li > .list-item-cover-img { display: none !important; }
+  /* only lay out / paint rows that are actually on screen */
+  html.lite .nick-list li { content-visibility: auto; contain-intrinsic-size: auto 48px; }
+  html.lite .reviewees-sidebar { box-shadow: none; }
+  html.lite * { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 
   /* generic small toast */
   .wings-toast {
@@ -27804,7 +27849,7 @@ window.modelUrl = function (file) {
           : profileCache[nick];
         const cover = rowProfile ? resolveProfileCover(rowProfile.background) : null;
 
-        const coverImgHtml = cover && cover.type === 'image'
+        const coverImgHtml = cover && cover.type === 'image' && !window.__liteMode
           ? `<img class="list-item-cover-img" src="${escapeHtml(cover.value)}" alt="" aria-hidden="true">`
           : '';
         const coverOverlayHtml = cover ? '<div class="list-item-cover-overlay"></div>' : '';
@@ -27863,7 +27908,7 @@ window.modelUrl = function (file) {
             ? (myProfileLoaded ? myProfile : null)
             : profileCache[nick];
           const cover = rowProfile ? resolveProfileCover(rowProfile.background) : null;
-          const coverImgHtml = cover && cover.type === 'image'
+          const coverImgHtml = cover && cover.type === 'image' && !window.__liteMode
             ? `<img class="list-item-cover-img" src="${escapeHtml(cover.value)}" alt="" aria-hidden="true">`
             : '';
           const coverOverlayHtml = cover ? '<div class="list-item-cover-overlay"></div>' : '';
@@ -27969,7 +28014,7 @@ window.modelUrl = function (file) {
           : profileCache[nick];
         const cover = rowProfile ? resolveProfileCover(rowProfile.background) : null;
 
-        const coverImgHtml = cover && cover.type === 'image'
+        const coverImgHtml = cover && cover.type === 'image' && !window.__liteMode
           ? `<img class="list-item-cover-img" src="${escapeHtml(cover.value)}" alt="" aria-hidden="true">`
           : '';
         const coverOverlayHtml = cover ? '<div class="list-item-cover-overlay"></div>' : '';
@@ -30989,7 +31034,7 @@ window.modelUrl = function (file) {
           : profileCache[nick];
         const cover = rowProfile ? resolveProfileCover(rowProfile.background) : null;
 
-        const coverImgHtml = cover && cover.type === 'image'
+        const coverImgHtml = cover && cover.type === 'image' && !window.__liteMode
           ? `<img class="list-item-cover-img" src="${escapeHtml(cover.value)}" alt="" aria-hidden="true">`
           : '';
         const coverOverlayHtml = cover ? '<div class="list-item-cover-overlay"></div>' : '';
