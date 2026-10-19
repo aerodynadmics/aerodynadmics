@@ -12051,6 +12051,9 @@ html.lite * { scrollbar-width: none !important; -ms-overflow-style: none !import
 html.lite *::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
 html.lite #app-scrollbar-track, html.lite #app-scrollbar-thumb { display: none !important; }
 </style>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body class="gate-active">
 
@@ -47446,8 +47449,21 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
       function close(){ box.classList.remove('show'); try{sessionStorage.setItem('fsAsked','1');}catch(e){} }
       box.querySelector('.fs-no').onclick=close;
       box.querySelector('.fs-yes').onclick=function(){
-        try{ var p=req.call(el); if(p&&p.catch)p.catch(function(){}); }catch(e){}
-        close();
+        function isFs(){return !!(document.fullscreenElement||document.webkitFullscreenElement);}
+        function tryFs(t){ try{ var r=t.requestFullscreen||t.webkitRequestFullscreen; if(r){ var p=r.call(t); if(p&&p.catch)p.catch(function(){}); } }catch(e){} }
+        tryFs(el);
+        setTimeout(function(){
+          if(isFs()){ close(); return; }
+          tryFs(document.body);
+          setTimeout(function(){
+            if(isFs()){ close(); return; }
+            /* Browser blocks fullscreen (iPad Safari): show the home-screen way */
+            box.querySelector('h3').textContent='Not allowed by this browser';
+            box.querySelector('p').innerHTML='Your browser blocks full screen for websites.<br><br>Tap <b>Share</b> &rarr; <b>Add to Home Screen</b>, then open the site from the Home Screen icon for true full screen.';
+            box.querySelector('.fs-yes').style.display='none';
+            box.querySelector('.fs-no').textContent='OK';
+          },500);
+        },400);
       };
       setTimeout(function(){ box.classList.add('show'); },1200);
     }catch(e){}
