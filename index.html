@@ -2626,10 +2626,8 @@ try {
      plain .nick-nabladepth/.nick-breathe class selector, so without these
      it always won and silently forced Space Grotesk back on, leaving the
      weight/depth keyframes with no variable font to actually animate. */
-  @supports font-tech(color-COLRv1) {
-    .nick-list li span[data-text].nick-nabladepth {
-      font-family: 'Nabla', 'Space Grotesk', sans-serif;
-    }
+  .nick-list li span[data-text].nick-nabladepth {
+    font-family: 'Nabla', 'Space Grotesk', sans-serif;
   }
   .nick-list li span[data-text].nick-breathe {
     font-family: 'NickBreatheFont', 'Space Grotesk', sans-serif;
@@ -2982,7 +2980,7 @@ try {
     font-family: 'Space Grotesk', sans-serif; font-weight: 500; font-size: 13px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; padding: 0 8px; margin: 0 -8px;
   }
-  @supports font-tech(color-COLRv1) { #flight-members-list .flight-member-name.nick-nabladepth { font-family: 'Nabla', 'Space Grotesk', sans-serif; } }
+  #flight-members-list .flight-member-name.nick-nabladepth { font-family: 'Nabla', 'Space Grotesk', sans-serif; }
   #flight-members-list .flight-member-name.nick-breathe { font-family: 'NickBreatheFont', 'Space Grotesk', sans-serif; }
 
   #flight-settings-invite-reset:disabled, #flight-invite-copy-btn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -9157,39 +9155,16 @@ try {
     font-family: Nabla;
     base-palette: 2;
   }
-  /* Nabla is a COLRv1 colour font. iPad/iPhone Safari (WebKit) can't render
-     COLRv1, so there the glyphs came out blank and the callsign vanished.
-     Default = a layered chromatic "depth" extrusion on a normal font that
-     works everywhere; the real Nabla font is only used where the browser
-     reports COLRv1 support (@supports font-tech below). */
-  @keyframes nickNablaDepthFallback {
-    0%   { text-shadow: 1px 1px 0 #07bccc, 2px 2px 0 #e601c0, 3px 3px 0 #ff9d4d, 4px 4px 0 #482896; }
-    100% { text-shadow: 2px 2px 0 #07bccc, 4px 4px 0 #e601c0, 6px 6px 0 #ff9d4d, 8px 8px 1px #482896; }
+  @keyframes nickNablaDepth {
+    0% { transform: translate(0, 0); font-variation-settings: 'EDPT' 30; }
+    100% { transform: translate(0.08em, 0.06em); font-variation-settings: 'EDPT' 150; }
   }
   .nick-nabladepth {
     display: inline-block;
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    color: #fff;
-    animation: nickNablaDepthFallback 1s ease-in-out alternate infinite;
-  }
-  @supports font-tech(color-COLRv1) {
-    @font-palette-values --NicknameNabla {
-      font-family: Nabla;
-      base-palette: 2;
-    }
-    @keyframes nickNablaDepth {
-      0% { transform: translate(0, 0); font-variation-settings: 'EDPT' 30; }
-      100% { transform: translate(0.08em, 0.06em); font-variation-settings: 'EDPT' 150; }
-    }
-    .nick-nabladepth {
-      font-family: 'Nabla', 'Space Grotesk', sans-serif;
-      font-weight: 400;
-      color: inherit;
-      font-palette: --NicknameNabla;
-      font-variation-settings: 'EDPT' 30;
-      animation: nickNablaDepth 1s ease-in-out alternate infinite;
-    }
+    font-family: 'Nabla', 'Space Grotesk', sans-serif;
+    font-palette: --NicknameNabla;
+    font-variation-settings: 'EDPT' 30;
+    animation: nickNablaDepth 1s ease-in-out alternate infinite;
   }
 
   /* ---- Neon Stack: layered neon shadow with a thin outline stroke (shop cosmetic) ---- */
@@ -9568,16 +9543,9 @@ try {
      row, which is what crashed the tab. Same fixes, applied to every
      touch-first device. ---- */
   html.lite [class*="nick-"] { animation: none !important; }
-  /* Nabla Depth is the one callsign animation kept running in lite mode
-     (iPad/phones): it's a single small element, and frozen it was just
-     plain text. Non-COLRv1 browsers (iOS Safari) get the shadow-depth
-     fallback animation; COLRv1 browsers keep the real Nabla animation. */
-  @media (max-width: 900px) { .nick-nabladepth { animation: nickNablaDepthFallback 1s ease-in-out alternate infinite !important; } }
-  html.lite .nick-nabladepth { animation: nickNablaDepthFallback 1s ease-in-out alternate infinite !important; }
-  @supports font-tech(color-COLRv1) {
-    @media (max-width: 900px) { .nick-nabladepth { animation: nickNablaDepth 1s ease-in-out alternate infinite !important; } }
-    html.lite .nick-nabladepth { animation: nickNablaDepth 1s ease-in-out alternate infinite !important; }
-  }
+  /* Nabla Depth keeps its real animation in lite mode (iPad/phones). */
+  @media (max-width: 900px) { .nick-nabladepth { animation: nickNablaDepth 1s ease-in-out alternate infinite !important; } }
+  html.lite .nick-nabladepth { animation: nickNablaDepth 1s ease-in-out alternate infinite !important; }
   html.lite .nick-frost, html.lite .nick-moire, html.lite .nick-shimmer,
   html.lite .nick-rainbow, html.lite .nick-rainbowswing, html.lite .nick-lumamesh,
   html.lite .nick-duotone, html.lite .nick-dotmatrix, html.lite .nick-prismcut,
