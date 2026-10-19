@@ -47328,10 +47328,61 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   var io = ('IntersectionObserver' in window) ? new IntersectionObserver(function (entries) {
     entries.forEach(function (e) { if (e.isIntersecting) { io.unobserve(e.target); enqueue(e.target); } });
   }, { rootMargin: '150px' }) : null;
+  /* Live GIFs: just like the profile card at the bottom of the sidebar, rows
+     whose cover is a GIF get a real animated <img> -- but only while the row
+     is actually on screen and only for MAX_LIVE rows at a time, so memory
+     stays bounded. Scrolled away / drawer closed => the animated copy is
+     removed and the still thumbnail remains. */
+  var MAX_LIVE = 6, live = new Set(), gifMap = new Map();
+  function sniffGif(url) {
+    if (gifMap.has(url)) return gifMap.get(url);
+    var guess = /\.gif(\?|#|$)|giphy|tenor/i.test(url);
+    var p;
+    try {
+      var ctl = new AbortController();
+      p = fetch(url, { signal: ctl.signal }).then(function (res) {
+        return res.body.getReader().read().then(function (r) {
+          ctl.abort();
+          var b = r.value || [];
+          return b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x38; /* "GIF8" */
+        });
+      }).catch(function () { return guess; });
+    } catch (e) { p = Promise.resolve(guess); }
+    gifMap.set(url, p);
+    return p;
+  }
+  function liveCount() {
+    live.forEach(function (im) { if (!im.isConnected) live.delete(im); });
+    return live.size;
+  }
+  function goLive(canvas) {
+    canvas.__vis = true;
+    if (canvas.__live || !canvas.isConnected) return;
+    var url = canvas.getAttribute('data-cover-src');
+    sniffGif(url).then(function (isGif) {
+      if (!isGif || !canvas.__vis || canvas.__live || !canvas.isConnected) return;
+      if (liveCount() >= MAX_LIVE) return;
+      var im = document.createElement('img');
+      im.className = 'list-item-cover-img';
+      im.alt = ''; im.setAttribute('aria-hidden', 'true');
+      im.src = url;
+      canvas.parentNode.insertBefore(im, canvas.nextSibling);
+      canvas.__live = im; live.add(im);
+    });
+  }
+  function goStatic(canvas) {
+    canvas.__vis = false;
+    if (canvas.__live) { canvas.__live.remove(); live.delete(canvas.__live); canvas.__live = null; }
+  }
+  var ioLive = ('IntersectionObserver' in window) ? new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) { if (e.isIntersecting) goLive(e.target); else goStatic(e.target); });
+  }, { threshold: 0.05 }) : null;
+
   function watch(canvas) {
     if (canvas.__liteSeen) return;
     canvas.__liteSeen = true;
     if (io) io.observe(canvas); else enqueue(canvas);
+    if (ioLive) ioLive.observe(canvas);
   }
   function scan(root) {
     if (root.nodeType !== 1) return;
