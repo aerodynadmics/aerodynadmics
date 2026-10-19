@@ -12053,7 +12053,19 @@ html.lite #app-scrollbar-track, html.lite #app-scrollbar-thumb { display: none !
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#02101e">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<style id="touch-no-overscroll">
+html{background-color:#02101e}
+@media (pointer: coarse), (hover: none) {
+  html, body { overscroll-behavior: none; background-color: #02101e; }
+}
+</style>
+<style id="topbar-wings-overlap-fix">
+/* The wings balance slot could collapse to 0 width and its number then drew over the neighbouring icons. */
+.topbar-wings-balance { flex: 0 0 auto !important; min-width: max-content !important; margin: 0 8px; }
+.topbar-wings-balance-inner { padding: 6px 8px; }
+</style>
 </head>
 <body class="gate-active">
 
@@ -47469,6 +47481,25 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     }catch(e){}
   }
   if(document.body) init(); else document.addEventListener('DOMContentLoaded',init);
+})();
+</script>
+<script>
+/* Touch: if the page has nothing to scroll, stop the rubber-band that shows white below. */
+(function(){
+  if(!(window.matchMedia&&(matchMedia('(pointer: coarse)').matches||matchMedia('(hover: none)').matches))) return;
+  function canScroll(n){
+    while(n&&n!==document.documentElement&&n.nodeType===1){
+      var cs=getComputedStyle(n), oy=cs.overflowY;
+      if((oy==='auto'||oy==='scroll')&&n.scrollHeight>n.clientHeight+1) return true;
+      n=n.parentNode;
+    }
+    var de=document.documentElement;
+    return de.scrollHeight>de.clientHeight+1;
+  }
+  document.addEventListener('touchmove',function(e){
+    if(e.touches.length>1) return;
+    if(!canScroll(e.target)) e.preventDefault();
+  },{passive:false});
 })();
 </script>
 </body>
