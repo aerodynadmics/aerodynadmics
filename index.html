@@ -47333,7 +47333,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
      is actually on screen and only for MAX_LIVE rows at a time, so memory
      stays bounded. Scrolled away / drawer closed => the animated copy is
      removed and the still thumbnail remains. */
-  var MAX_LIVE = 6, live = new Set(), gifMap = new Map();
+  var MAX_LIVE = 12, live = new Set(), gifMap = new Map();
   function sniffGif(url) {
     if (gifMap.has(url)) return gifMap.get(url);
     var guess = /\.gif(\?|#|$)|giphy|tenor/i.test(url);
@@ -47344,10 +47344,14 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
         return res.body.getReader().read().then(function (r) {
           ctl.abort();
           var b = r.value || [];
-          return b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x38; /* "GIF8" */
+          /* GIF8, or RIFF (animated WebP), or PNG (APNG) */
+          return (b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x38) ||
+                 (b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46) ||
+                 (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47);
         });
-      }).catch(function () { return guess; });
-    } catch (e) { p = Promise.resolve(guess); }
+      /* cross-origin hosts block the byte check: just try the live copy (bounded by MAX_LIVE) */
+      }).catch(function () { return true; });
+    } catch (e) { p = Promise.resolve(true); }
     gifMap.set(url, p);
     return p;
   }
