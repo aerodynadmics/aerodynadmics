@@ -9568,6 +9568,16 @@ try {
      row, which is what crashed the tab. Same fixes, applied to every
      touch-first device. ---- */
   html.lite [class*="nick-"] { animation: none !important; }
+  /* Nabla Depth is the one callsign animation kept running in lite mode
+     (iPad/phones): it's a single small element, and frozen it was just
+     plain text. Non-COLRv1 browsers (iOS Safari) get the shadow-depth
+     fallback animation; COLRv1 browsers keep the real Nabla animation. */
+  @media (max-width: 900px) { .nick-nabladepth { animation: nickNablaDepthFallback 1s ease-in-out alternate infinite !important; } }
+  html.lite .nick-nabladepth { animation: nickNablaDepthFallback 1s ease-in-out alternate infinite !important; }
+  @supports font-tech(color-COLRv1) {
+    @media (max-width: 900px) { .nick-nabladepth { animation: nickNablaDepth 1s ease-in-out alternate infinite !important; } }
+    html.lite .nick-nabladepth { animation: nickNablaDepth 1s ease-in-out alternate infinite !important; }
+  }
   html.lite .nick-frost, html.lite .nick-moire, html.lite .nick-shimmer,
   html.lite .nick-rainbow, html.lite .nick-rainbowswing, html.lite .nick-lumamesh,
   html.lite .nick-duotone, html.lite .nick-dotmatrix, html.lite .nick-prismcut,
