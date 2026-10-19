@@ -12061,10 +12061,25 @@ html{background-color:#02101e}
   html, body { overscroll-behavior: none; background-color: #02101e; }
 }
 </style>
-<style id="topbar-wings-overlap-fix">
-/* The wings balance slot could collapse to 0 width and its number then drew over the neighbouring icons. */
-.topbar-wings-balance { flex: 0 0 auto !important; min-width: max-content !important; margin: 0 8px; }
-.topbar-wings-balance-inner { padding: 6px 8px; }
+<style id="topbar-nav-scroll-tablet">
+/* Tablets (touch, wider than 900px): the section icons (Airspace ... Flappy Plane)
+   show 5 at a time and scroll sideways for the rest. */
+@media (pointer: coarse) and (min-width: 901px), (hover: none) and (min-width: 901px) {
+  .topbar-icon-nav {
+    box-sizing: content-box;
+    flex: 0 0 auto;
+    width: calc(5 * 46px + 4 * 4px);
+    max-width: calc(5 * 46px + 4 * 4px);
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .topbar-icon-nav::-webkit-scrollbar { display: none; }
+  .topbar-icon-nav > .topbar-icon-btn { flex: 0 0 auto; scroll-snap-align: start; }
+}
 </style>
 </head>
 <body class="gate-active">
