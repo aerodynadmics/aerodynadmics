@@ -47432,21 +47432,27 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
 })();
 </script>
 <script>
-/* Touch: if the page has nothing to scroll, stop the rubber-band that shows white below. */
+/* Touch: if the page has nothing to scroll, stop the rubber-band that shows white below.
+   Sideways swipes inside horizontally scrollable areas (top bar icons, etc.) are left alone. */
 (function(){
   if(!(window.matchMedia&&(matchMedia('(pointer: coarse)').matches||matchMedia('(hover: none)').matches))) return;
-  function canScroll(n){
+  var sx=0, sy=0;
+  function scrollableOn(n, horiz){
     while(n&&n!==document.documentElement&&n.nodeType===1){
-      var cs=getComputedStyle(n), oy=cs.overflowY;
-      if((oy==='auto'||oy==='scroll')&&n.scrollHeight>n.clientHeight+1) return true;
+      var cs=getComputedStyle(n), o=horiz?cs.overflowX:cs.overflowY;
+      if((o==='auto'||o==='scroll')&&(horiz? n.scrollWidth>n.clientWidth+1 : n.scrollHeight>n.clientHeight+1)) return true;
       n=n.parentNode;
     }
+    if(horiz) return false;
     var de=document.documentElement;
     return de.scrollHeight>de.clientHeight+1;
   }
+  document.addEventListener('touchstart',function(e){ if(e.touches.length===1){sx=e.touches[0].clientX; sy=e.touches[0].clientY;} },{passive:true});
   document.addEventListener('touchmove',function(e){
     if(e.touches.length>1) return;
-    if(!canScroll(e.target)) e.preventDefault();
+    var dx=Math.abs(e.touches[0].clientX-sx), dy=Math.abs(e.touches[0].clientY-sy);
+    var horiz=dx>dy;
+    if(!scrollableOn(e.target,horiz)) e.preventDefault();
   },{passive:false});
 })();
 </script>
