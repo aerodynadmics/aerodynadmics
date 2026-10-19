@@ -9554,9 +9554,7 @@ try {
   html.lite .chat-msg-avatar.border-legend::before,
   html.lite .chat-msg-reply-avatar.border-legend::before,
   html.lite .shop-item-preview.border-legend::before { animation: none !important; }
-  /* per-row cover images in the sidebar list (backstop; JS also stops
-     creating them in lite mode so they are never downloaded or decoded) */
-  html.lite .nick-list li > .list-item-cover-img { display: none !important; }
+  /* per-row sidebar covers are drawn as tiny static canvases in lite mode (see liteCovers script) */
   /* only lay out / paint rows that are actually on screen */
   html.lite .nick-list li { content-visibility: auto; contain-intrinsic-size: auto 48px; }
   html.lite .reviewees-sidebar { box-shadow: none; }
@@ -27849,8 +27847,8 @@ window.modelUrl = function (file) {
           : profileCache[nick];
         const cover = rowProfile ? resolveProfileCover(rowProfile.background) : null;
 
-        const coverImgHtml = cover && cover.type === 'image' && !window.__liteMode
-          ? `<img class="list-item-cover-img" src="${escapeHtml(cover.value)}" alt="" aria-hidden="true">`
+        const coverImgHtml = cover && cover.type === 'image'
+          ? (window.__liteMode ? `<canvas class="list-item-cover-img" data-cover-src="${escapeHtml(cover.value)}" aria-hidden="true"></canvas>` : `<img class="list-item-cover-img" src="${escapeHtml(cover.value)}" alt="" aria-hidden="true">`)
           : '';
         const coverOverlayHtml = cover ? '<div class="list-item-cover-overlay"></div>' : '';
         const liInlineStyle = cover && cover.type === 'gradient'
@@ -27908,8 +27906,8 @@ window.modelUrl = function (file) {
             ? (myProfileLoaded ? myProfile : null)
             : profileCache[nick];
           const cover = rowProfile ? resolveProfileCover(rowProfile.background) : null;
-          const coverImgHtml = cover && cover.type === 'image' && !window.__liteMode
-            ? `<img class="list-item-cover-img" src="${escapeHtml(cover.value)}" alt="" aria-hidden="true">`
+          const coverImgHtml = cover && cover.type === 'image'
+            ? (window.__liteMode ? `<canvas class="list-item-cover-img" data-cover-src="${escapeHtml(cover.value)}" aria-hidden="true"></canvas>` : `<img class="list-item-cover-img" src="${escapeHtml(cover.value)}" alt="" aria-hidden="true">`)
             : '';
           const coverOverlayHtml = cover ? '<div class="list-item-cover-overlay"></div>' : '';
           const liInlineStyle = cover && cover.type === 'gradient'
@@ -28014,8 +28012,8 @@ window.modelUrl = function (file) {
           : profileCache[nick];
         const cover = rowProfile ? resolveProfileCover(rowProfile.background) : null;
 
-        const coverImgHtml = cover && cover.type === 'image' && !window.__liteMode
-          ? `<img class="list-item-cover-img" src="${escapeHtml(cover.value)}" alt="" aria-hidden="true">`
+        const coverImgHtml = cover && cover.type === 'image'
+          ? (window.__liteMode ? `<canvas class="list-item-cover-img" data-cover-src="${escapeHtml(cover.value)}" aria-hidden="true"></canvas>` : `<img class="list-item-cover-img" src="${escapeHtml(cover.value)}" alt="" aria-hidden="true">`)
           : '';
         const coverOverlayHtml = cover ? '<div class="list-item-cover-overlay"></div>' : '';
         const liInlineStyle = cover && cover.type === 'gradient'
@@ -31034,8 +31032,8 @@ window.modelUrl = function (file) {
           : profileCache[nick];
         const cover = rowProfile ? resolveProfileCover(rowProfile.background) : null;
 
-        const coverImgHtml = cover && cover.type === 'image' && !window.__liteMode
-          ? `<img class="list-item-cover-img" src="${escapeHtml(cover.value)}" alt="" aria-hidden="true">`
+        const coverImgHtml = cover && cover.type === 'image'
+          ? (window.__liteMode ? `<canvas class="list-item-cover-img" data-cover-src="${escapeHtml(cover.value)}" aria-hidden="true"></canvas>` : `<img class="list-item-cover-img" src="${escapeHtml(cover.value)}" alt="" aria-hidden="true">`)
           : '';
         const coverOverlayHtml = cover ? '<div class="list-item-cover-overlay"></div>' : '';
         const liInlineStyle = cover && cover.type === 'gradient'
@@ -47270,6 +47268,85 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
       s.mRef.child('forfeit').transaction(function (cur) { return cur ? undefined : s.myKey; }, function () {}, false);
     }
   }
+})();
+</script>
+<script>
+/* liteCovers: on phones/tablets the sidebar rows get a <canvas data-cover-src>
+   instead of a full <img>. We load each cover ONE AT A TIME, draw it once at
+   thumbnail size (first frame only for GIFs), then release the big image, so
+   memory stays tiny and nothing animates. Only rows that are on screen load. */
+(function () {
+  if (!window.__liteMode) return;
+  var W = 400, H = 80, MAX_CACHE = 150;
+  var cache = new Map(), queue = [], active = 0, MAX_ACTIVE = 1;
+
+  function paint(canvas, thumb) {
+    try {
+      canvas.width = W; canvas.height = H;
+      canvas.getContext('2d').drawImage(thumb, 0, 0);
+    } catch (e) {}
+  }
+  function next() {
+    while (active < MAX_ACTIVE && queue.length) {
+      var canvas = queue.shift();
+      if (!canvas.isConnected) continue;
+      var url = canvas.getAttribute('data-cover-src');
+      if (cache.has(url)) { paint(canvas, cache.get(url)); continue; }
+      active++;
+      load(canvas, url);
+    }
+  }
+  function load(canvas, url) {
+    var img = new Image();
+    var done = function () { img.onload = img.onerror = null; img.src = ''; img = null; active--; next(); };
+    img.onload = function () {
+      try {
+        var iw = img.naturalWidth, ih = img.naturalHeight;
+        if (iw && ih) {
+          var thumb = document.createElement('canvas');
+          thumb.width = W; thumb.height = H;
+          var sc = Math.max(W / iw, H / ih), dw = iw * sc, dh = ih * sc;
+          thumb.getContext('2d').drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+          if (cache.size >= MAX_CACHE) cache.delete(cache.keys().next().value);
+          cache.set(url, thumb);
+          if (canvas.isConnected) paint(canvas, thumb);
+        }
+      } catch (e) {}
+      done();
+    };
+    img.onerror = done;
+    img.decoding = 'async';
+    img.src = url;
+  }
+  function enqueue(canvas) {
+    var url = canvas.getAttribute('data-cover-src');
+    if (!url || canvas.__liteDone) return;
+    canvas.__liteDone = true;
+    if (cache.has(url)) { paint(canvas, cache.get(url)); return; }
+    queue.push(canvas); next();
+  }
+  var io = ('IntersectionObserver' in window) ? new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) { if (e.isIntersecting) { io.unobserve(e.target); enqueue(e.target); } });
+  }, { rootMargin: '150px' }) : null;
+  function watch(canvas) {
+    if (canvas.__liteSeen) return;
+    canvas.__liteSeen = true;
+    if (io) io.observe(canvas); else enqueue(canvas);
+  }
+  function scan(root) {
+    if (root.nodeType !== 1) return;
+    if (root.matches && root.matches('canvas[data-cover-src]')) watch(root);
+    var list = root.querySelectorAll ? root.querySelectorAll('canvas[data-cover-src]') : [];
+    for (var i = 0; i < list.length; i++) watch(list[i]);
+  }
+  function start() {
+    scan(document.body);
+    new MutationObserver(function (muts) {
+      for (var i = 0; i < muts.length; i++)
+        for (var j = 0; j < muts[i].addedNodes.length; j++) scan(muts[i].addedNodes[j]);
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
 })();
 </script>
 </body>
