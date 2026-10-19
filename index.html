@@ -12040,6 +12040,17 @@ html body .pfc-body { margin-top: 3px; margin-bottom: 4px; }
   #duel-s-play .quiz-question-card { padding: 16px; }
 }
 </style>
+<style id="touch-no-scrollbars">
+/* Touch screens (phones/tablets): no scrollbars anywhere. Scrolling still works. */
+@media (pointer: coarse), (hover: none) {
+  * { scrollbar-width: none !important; -ms-overflow-style: none !important; }
+  *::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
+  #app-scrollbar-track, #app-scrollbar-thumb { display: none !important; }
+}
+html.lite * { scrollbar-width: none !important; -ms-overflow-style: none !important; }
+html.lite *::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
+html.lite #app-scrollbar-track, html.lite #app-scrollbar-thumb { display: none !important; }
+</style>
 </head>
 <body class="gate-active">
 
@@ -47402,6 +47413,46 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     }).observe(document.body, { childList: true, subtree: true });
   }
   if (document.body) start(); else document.addEventListener('DOMContentLoaded', start);
+})();
+</script>
+<style id="fs-prompt-css">
+#fs-prompt{position:fixed;inset:0;z-index:2147483646;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);padding:16px}
+#fs-prompt.show{display:flex}
+#fs-prompt .fs-card{max-width:320px;width:100%;background:#0b2a4a;color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:20px;text-align:center;font-family:inherit;box-shadow:0 12px 40px rgba(0,0,0,.6)}
+#fs-prompt h3{margin:0 0 8px;font-size:18px}
+#fs-prompt p{margin:0 0 16px;font-size:14px;opacity:.85}
+#fs-prompt .fs-row{display:flex;gap:10px}
+#fs-prompt button{flex:1;padding:12px;border-radius:10px;border:0;font-size:15px;font-weight:700;cursor:pointer}
+#fs-prompt .fs-yes{background:#4fd1c5;color:#06223d}
+#fs-prompt .fs-no{background:rgba(255,255,255,.15);color:#fff}
+</style>
+<script>
+/* Touch devices only: ask once per session whether to enter fullscreen. */
+(function(){
+  function init(){
+    try{
+      var touch=window.matchMedia&&(matchMedia('(pointer: coarse)').matches||matchMedia('(hover: none)').matches)||(navigator.maxTouchPoints>0&&/Android|iPhone|iPad|iPod|Mobile|Tablet|Macintosh/i.test(navigator.userAgent));
+      if(!touch) return;
+      var el=document.documentElement;
+      var req=el.requestFullscreen||el.webkitRequestFullscreen||el.msRequestFullscreen;
+      if(!req) return;
+      if(document.fullscreenElement||document.webkitFullscreenElement) return;
+      if(matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches) return;
+      try{ if(sessionStorage.getItem('fsAsked')) return; }catch(e){}
+      var box=document.createElement('div');
+      box.id='fs-prompt';
+      box.innerHTML='<div class="fs-card"><h3>Full screen?</h3><p>Enter full screen view for a better experience.</p><div class="fs-row"><button class="fs-no" type="button">No</button><button class="fs-yes" type="button">Yes</button></div></div>';
+      document.body.appendChild(box);
+      function close(){ box.classList.remove('show'); try{sessionStorage.setItem('fsAsked','1');}catch(e){} }
+      box.querySelector('.fs-no').onclick=close;
+      box.querySelector('.fs-yes').onclick=function(){
+        try{ var p=req.call(el); if(p&&p.catch)p.catch(function(){}); }catch(e){}
+        close();
+      };
+      setTimeout(function(){ box.classList.add('show'); },1200);
+    }catch(e){}
+  }
+  if(document.body) init(); else document.addEventListener('DOMContentLoaded',init);
 })();
 </script>
 </body>
