@@ -213,7 +213,7 @@ try {
 })();
 </script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=720, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <script>
   /* Phones: the viewport tag above lays the page out at a wider "virtual"
      width (720 CSS px) and the browser scales it down to fit the screen, so
@@ -222,7 +222,7 @@ try {
      number = larger text (change it in the tag above AND PHONE_LAYOUT_WIDTH
      below). Tablets / large screens get the normal responsive viewport back. */
   (function () {
-    var PHONE_LAYOUT_WIDTH = 720;
+    var PHONE_LAYOUT_WIDTH = 0; /* 0 = never use the shrunk virtual width; phones use the real width */
     try {
       var sw = screen.width, sh = screen.height;
       var landscape = window.matchMedia && window.matchMedia('(orientation: landscape)').matches;
@@ -12082,32 +12082,6 @@ html{background-color:#02101e}
   }
   .topbar-icon-nav::-webkit-scrollbar { display: none; }
   .topbar-icon-nav > .topbar-icon-btn { flex: 0 0 auto; scroll-snap-align: start; }
-}
-</style>
-<style id="mobile-touch-targets">
-/* Phones are laid out at 720px virtual width and scaled to ~50%, so CSS sizes
-   must be roughly 2x bigger to feel like a 44-48px touch target on screen. */
-html.pw-600 button, html.pw-600 [role="button"], html.pw-600 input[type="button"],
-html.pw-600 input[type="submit"], html.pw-600 select, html.pw-600 summary {
-  min-height: 64px; min-width: 64px; touch-action: manipulation;
-  -webkit-tap-highlight-color: rgba(255,255,255,.12);
-}
-html.pw-600 button, html.pw-600 [role="button"], html.pw-600 input[type="button"], html.pw-600 input[type="submit"] {
-  padding-top: 14px; padding-bottom: 14px; padding-left: max(18px, 1em); padding-right: max(18px, 1em);
-  font-size: max(1em, 18px);
-}
-html.pw-600 input:not([type="checkbox"]):not([type="radio"]), html.pw-600 textarea, html.pw-600 select {
-  min-height: 64px; font-size: 18px;
-}
-html.pw-600 input[type="checkbox"], html.pw-600 input[type="radio"] { width: 32px; height: 32px; }
-html.pw-600 a, html.pw-600 label { touch-action: manipulation; }
-html.pw-600 button:active, html.pw-600 [role="button"]:active { transform: scale(.96); filter: brightness(1.15); transition: transform .08s; }
-html.pw-600 .pw-toggle-btn, html.pw-600 .avatar-option { min-width: 64px; min-height: 64px; }
-html.pw-600 .exam-go { display: none !important; }
-html.pw-600 .exam-card .exam-timer-reset { margin-left: auto; }
-@media (pointer: coarse), (hover: none) {
-  .exam-go { display: none !important; }
-  .exam-card .exam-timer-reset { margin-left: auto; }
 }
 </style>
 </head>
@@ -47579,34 +47553,17 @@ html.pw-600 .account-badge:has(#account-avatar-btn[style*="none"]):has(#account-
   #quiz-prev-btn:active, #quiz-next-btn:active, .back-btn:active { outline: none !important; -webkit-tap-highlight-color: transparent !important; filter: none !important; }
 }
 </style>
-<style id="real-scale-touch">
-/* On phones the page is laid out at 720px and shrunk (~0.54x on an iPhone), so
-   --ts (set below = layout width / real screen width) converts a real-world
-   48pt finger target into the layout pixels needed. */
-html.pw-600 button, html.pw-600 [role="button"], html.pw-600 input[type="button"], html.pw-600 input[type="submit"], html.pw-600 select {
-  min-height: calc(46px * var(--ts, 1)); min-width: calc(40px * var(--ts, 1));
+<style id="native-touch-targets">
+@media (pointer: coarse) {
+  button, [role="button"], input[type="button"], input[type="submit"], select, summary { min-height: 44px; min-width: 44px; touch-action: manipulation; }
+  button, [role="button"], input[type="button"], input[type="submit"] { padding-top: 10px; padding-bottom: 10px; }
+  input:not([type="checkbox"]):not([type="radio"]), textarea, select { min-height: 44px; font-size: 16px; }
+  input[type="checkbox"], input[type="radio"] { width: 24px; height: 24px; }
+  .exam-row, .subject-row { min-height: 44px; align-items: center; }
+  .topbar-icon-btn { width: 46px; height: 46px; }
+  .topbar-more-btn { min-width: 44px; height: 46px; }
+  button:active, [role="button"]:active { transform: scale(.97); }
 }
-html.pw-600 input:not([type="checkbox"]):not([type="radio"]), html.pw-600 textarea, html.pw-600 select { min-height: calc(46px * var(--ts, 1)); font-size: max(16px, calc(14px * var(--ts, 1))); }
-html.pw-600 .exam-row, html.pw-600 .subject-row { min-height: calc(40px * var(--ts, 1)); align-items: center; }
-html.pw-600 .exam-card, html.pw-600 .subject-card { padding-top: calc(6px * var(--ts, 1)); padding-bottom: calc(6px * var(--ts, 1)); }
-html.pw-600 .topbar-icon-btn { width: calc(44px * var(--ts, 1)); height: calc(44px * var(--ts, 1)); }
-html.pw-600 .topbar-icon-btn svg { width: calc(22px * var(--ts, 1) * .7); height: calc(22px * var(--ts, 1) * .7); }
-html.pw-600 .topbar-more-btn { width: calc(40px * var(--ts, 1)); height: calc(44px * var(--ts, 1)); }
-html.pw-600 .topbar-more-btn svg { width: calc(18px * var(--ts, 1) * .8); height: calc(18px * var(--ts, 1) * .8); }
-html.pw-600 .topbar-nav-btn.icon-only, html.pw-600 .signout-icon-btn { min-width: calc(40px * var(--ts, 1)); }
 </style>
-<script>
-(function () {
-  try {
-    var sw = screen.width, sh = screen.height;
-    var land = window.matchMedia && window.matchMedia('(orientation: landscape)').matches;
-    var deviceW = land ? Math.max(sw, sh) : Math.min(sw, sh);
-    var layoutW = document.documentElement.clientWidth || window.innerWidth;
-    if (document.documentElement.classList.contains('pw-600') && deviceW && layoutW > deviceW) {
-      document.documentElement.style.setProperty('--ts', (layoutW / deviceW).toFixed(3));
-    }
-  } catch (e) {}
-})();
-</script>
 </body>
 </html>
