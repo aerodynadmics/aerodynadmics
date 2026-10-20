@@ -338,7 +338,7 @@ try {
 })();
 </script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=720, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <script>
   /* Phones: the viewport tag above lays the page out at a wider "virtual"
      width (720 CSS px) and the browser scales it down to fit the screen, so
@@ -347,7 +347,7 @@ try {
      number = larger text (change it in the tag above AND PHONE_LAYOUT_WIDTH
      below). Tablets / large screens get the normal responsive viewport back. */
   (function () {
-    var PHONE_LAYOUT_WIDTH = 720;
+    var PHONE_LAYOUT_WIDTH = 0; /* 0 = phones lay out at their real width (same as the DevTools phone view) instead of the old 720px virtual width */
     try {
       var sw = screen.width, sh = screen.height;
       var landscape = window.matchMedia && window.matchMedia('(orientation: landscape)').matches;
