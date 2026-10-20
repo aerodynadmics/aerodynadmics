@@ -12084,6 +12084,32 @@ html{background-color:#02101e}
   .topbar-icon-nav > .topbar-icon-btn { flex: 0 0 auto; scroll-snap-align: start; }
 }
 </style>
+<style id="mobile-touch-targets">
+/* Phones are laid out at 720px virtual width and scaled to ~50%, so CSS sizes
+   must be roughly 2x bigger to feel like a 44-48px touch target on screen. */
+html.pw-600 button, html.pw-600 [role="button"], html.pw-600 input[type="button"],
+html.pw-600 input[type="submit"], html.pw-600 select, html.pw-600 summary {
+  min-height: 64px; min-width: 64px; touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(255,255,255,.12);
+}
+html.pw-600 button, html.pw-600 [role="button"], html.pw-600 input[type="button"], html.pw-600 input[type="submit"] {
+  padding-top: 14px; padding-bottom: 14px; padding-left: max(18px, 1em); padding-right: max(18px, 1em);
+  font-size: max(1em, 18px);
+}
+html.pw-600 input:not([type="checkbox"]):not([type="radio"]), html.pw-600 textarea, html.pw-600 select {
+  min-height: 64px; font-size: 18px;
+}
+html.pw-600 input[type="checkbox"], html.pw-600 input[type="radio"] { width: 32px; height: 32px; }
+html.pw-600 a, html.pw-600 label { touch-action: manipulation; }
+html.pw-600 button:active, html.pw-600 [role="button"]:active { transform: scale(.96); filter: brightness(1.15); transition: transform .08s; }
+html.pw-600 .pw-toggle-btn, html.pw-600 .avatar-option { min-width: 64px; min-height: 64px; }
+html.pw-600 .exam-go { display: none !important; }
+html.pw-600 .exam-card .exam-timer-reset { margin-left: auto; }
+@media (pointer: coarse), (hover: none) {
+  .exam-go { display: none !important; }
+  .exam-card .exam-timer-reset { margin-left: auto; }
+}
+</style>
 </head>
 <body class="gate-active">
 
@@ -44926,7 +44952,13 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     try { return document.execCommand('copy'); } catch (e) { return false; }
   }
 
+  // Touchscreens: no automatic copy (people select text there to read/scroll).
+  function isTouchScreen() {
+    try { return (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || ('ontouchstart' in window) || navigator.maxTouchPoints > 0; } catch (e) { return false; }
+  }
+
   function copySelection() {
+    if (isTouchScreen()) return;
     var sel = window.getSelection();
     if (!sel || sel.isCollapsed) return;
     if (!selectionIsInCopyZone(sel)) return;
@@ -47459,5 +47491,93 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   },{passive:false});
 })();
 </script>
+<style id="quiz-touch-slide-css">
+  @media (pointer: coarse) {
+    #quiz-choices-grid .quiz-choice-btn { transition: none !important; -webkit-tap-highlight-color: transparent !important; }
+    html.pw-600 #quiz-choices-grid .quiz-choice-btn:active:not(.touch-hover) { transform: none; filter: none; }
+    #quiz-choices-grid .quiz-choice-btn.touch-hover:not(:disabled) { transform: scale(1.02) !important; filter: none !important; opacity: 1 !important; background: var(--accent) !important; color: #1a1200 !important; }
+    .exam-card .exam-name, .exam-card .exam-go, .exam-card .exam-timer,
+    .subject-card.active .subject-name, .subject-card.active .subject-status { touch-action: none; }
+    #quiz-choices-grid .quiz-choice-btn.touch-hover:not(:disabled) { transform: scale(1.02); background: var(--accent); color: #1a1200; }
+    .subject-card.touch-hover, .exam-card.touch-hover {
+      background: var(--accent) !important; border-color: var(--accent) !important; color: var(--blueprint-dark) !important;
+    }
+    .touch-hover .subject-pct, .touch-hover .subject-name, .touch-hover .subject-status, .touch-hover .subject-status svg,
+    .touch-hover .exam-idx, .touch-hover .exam-name, .touch-hover .exam-name .board-mix-suffix,
+    .touch-hover .exam-go, .touch-hover .exam-go svg, .touch-hover .exam-timer-reset { color: var(--blueprint-dark) !important; }
+    .touch-hover .exam-timer.scored, .touch-hover .exam-timer.running { background: var(--blueprint-dark); color: var(--accent); border-color: var(--blueprint-dark); }
+    .touch-hover .exam-timer-reset { border-color: var(--blueprint-dark); }
+  }
+</style>
+<script>
+/* Touch slide = hover (yellow fill), answer/open only when the finger lifts.
+   - Quiz choices: highlight follows the finger immediately.
+   - Subject / exam / quiz cards (scrollable lists): press and HOLD ~0.25s
+     without moving to enter hover mode, then slide to move the highlight;
+     lift to open the one under the finger, or slide off all cards and lift
+     to cancel. A quick swipe still just scrolls the list. */
+(function () {
+  var CHOICE = '#quiz-choices-grid .quiz-choice-btn';
+  var CARD = '.exam-card, .subject-card.active';
+  var cur = null, mode = null, holdTimer = 0, sx = 0, sy = 0;
+  function pick(t, sel) {
+    var el = document.elementFromPoint(t.clientX, t.clientY);
+    var b = el && el.closest && el.closest(sel);
+    return (b && !b.disabled) ? b : null;
+  }
+  function set(b) {
+    if (b === cur) return;
+    if (cur) cur.classList.remove('touch-hover');
+    cur = b;
+    if (cur) cur.classList.add('touch-hover');
+  }
+  function reset() { clearTimeout(holdTimer); mode = null; set(null); }
+  document.addEventListener('touchstart', function (e) {
+    reset();
+    var t = e.touches[0], tg = e.target;
+    if (!tg.closest) return;
+    if (tg.closest('.topbar-icon-nav, #topbar-icon-nav, .topbar-more-menu')) return; // bottom bar keeps its own sideways scrolling
+    var pa = document.getElementById('quiz-play-area');
+    if (pa && pa.getClientRects().length && document.querySelector(CHOICE)) { mode = 'choice'; set(pick(t, CHOICE)); return; }
+    if (tg.closest('button, input, select, textarea') ) return;
+    var card = tg.closest(CARD);
+    if (card && tg.closest('.exam-name, .exam-go, .exam-timer, .subject-name, .subject-status')) {
+      mode = 'card'; set(card);
+    }
+  }, { passive: true });
+  document.addEventListener('touchmove', function (e) {
+    var t = e.touches[0];
+    if (mode === 'choice') set(pick(t, CHOICE));
+    else if (mode === 'card') set(pick(t, CARD));
+    else return;
+    if (e.cancelable) e.preventDefault();
+  }, { passive: false });
+  document.addEventListener('touchend', function (e) {
+    var b = cur, m = mode;
+    reset();
+    if (b && (m === 'choice' || m === 'card') && e.cancelable) { e.preventDefault(); b.click(); }
+  }, { passive: false });
+  document.addEventListener('touchcancel', reset, { passive: true });
+  document.addEventListener('contextmenu', function (e) { if (mode) e.preventDefault(); });
+})();
+</script>
+<style id="topbar-arrow-center">
+@media (max-width: 900px) and (pointer: coarse), (max-width: 900px) and (hover: none) {
+  .account-badge:has(#account-avatar-btn[style*="none"]):has(#account-name[style*="none"]) { justify-content: center; }
+  .account-badge:has(#account-avatar-btn[style*="none"]):has(#account-name[style*="none"]) .topbar-more-btn { margin-left: 0; margin-right: 0; }
+}
+html.pw-600 .account-badge:has(#account-avatar-btn[style*="none"]):has(#account-name[style*="none"]) { justify-content: center; }
+html.pw-600 .account-badge:has(#account-avatar-btn[style*="none"]):has(#account-name[style*="none"]) .topbar-more-btn { margin-left: 0; margin-right: 0; }
+</style>
+<style id="no-tap-box">
+@media (pointer: coarse), (hover: none) {
+  html, body, button, a, [role="button"], input, select, textarea, label, summary, .exam-card, .subject-card {
+    -webkit-tap-highlight-color: transparent !important;
+  }
+  button:focus:not(:focus-visible), a:focus:not(:focus-visible), [role="button"]:focus:not(:focus-visible) { outline: none !important; box-shadow: none; }
+  #quiz-prev-btn, #quiz-next-btn, .back-btn, #quiz-prev-btn:focus, #quiz-next-btn:focus, .back-btn:focus,
+  #quiz-prev-btn:active, #quiz-next-btn:active, .back-btn:active { outline: none !important; -webkit-tap-highlight-color: transparent !important; filter: none !important; }
+}
+</style>
 </body>
 </html>
