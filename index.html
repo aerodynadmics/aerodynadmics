@@ -105,7 +105,7 @@
       var layoutW = w.innerWidth || root.clientWidth || deviceW;
       var k = deviceW && layoutW ? deviceW / layoutW : 1;   /* real px per CSS px */
       if (!(k >= 0.25 && k <= 1.6)) k = 1;
-      var tap = Math.min(96, Math.max(44, Math.round(44 / k)));
+      var tap = 44; /* layout is at real phone width now (no virtual scaling), so a fixed 44px target is right; the old 44/k calc blew up to 96px in the home-screen app, where innerWidth is wrong at page start */
       root.style.setProperty('--tap', tap + 'px');                       /* ~44px on screen */
       root.style.setProperty('--tap-sm', Math.round(tap * 0.82) + 'px'); /* ~36px on screen */
       root.style.setProperty('--tap-badge', Math.round(tap * 0.68) + 'px'); /* ~30px on screen */
@@ -47623,7 +47623,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
    When adding a new button, add its class to the matching group below.
    ============================================================================ */
 html.touch-ui {
-  --tap: 82px; --tap-sm: 67px; --tap-badge: 56px;   /* fallbacks, script sets real values */
+  --tap: 44px; --tap-sm: 36px; --tap-badge: 30px;   /* fallbacks, script sets real values */
   --rail-w: calc(var(--tap-sm) + 10px);
 }
 
