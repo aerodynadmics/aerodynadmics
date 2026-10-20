@@ -48123,6 +48123,10 @@ html.touch-ui .quiz-nav-btn.quiz-prev-btn.touch-held { color: var(--accent); }
    touch including a quick tap (the touch-hold script holds the click back
    ~180ms so it is actually seen). */
 html.touch-ui .quiz-nav-btn.quiz-next-btn.touch-held { filter: brightness(1.08); }
+/* BACK / NEXT: keep the same compact pill shape as PC on touch screens
+   (the generic 44px tap-height rule made them look like big rounded blobs). */
+html.touch-ui .quiz-nav-btn.quiz-prev-btn,
+html.touch-ui .quiz-nav-btn.quiz-next-btn { min-height: 0 !important; min-width: 0 !important; border-radius: 999px; }
 </style>
 </body>
 </html>
