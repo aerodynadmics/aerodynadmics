@@ -47579,5 +47579,34 @@ html.pw-600 .account-badge:has(#account-avatar-btn[style*="none"]):has(#account-
   #quiz-prev-btn:active, #quiz-next-btn:active, .back-btn:active { outline: none !important; -webkit-tap-highlight-color: transparent !important; filter: none !important; }
 }
 </style>
+<style id="real-scale-touch">
+/* On phones the page is laid out at 720px and shrunk (~0.54x on an iPhone), so
+   --ts (set below = layout width / real screen width) converts a real-world
+   48pt finger target into the layout pixels needed. */
+html.pw-600 button, html.pw-600 [role="button"], html.pw-600 input[type="button"], html.pw-600 input[type="submit"], html.pw-600 select {
+  min-height: calc(46px * var(--ts, 1)); min-width: calc(40px * var(--ts, 1));
+}
+html.pw-600 input:not([type="checkbox"]):not([type="radio"]), html.pw-600 textarea, html.pw-600 select { min-height: calc(46px * var(--ts, 1)); font-size: max(16px, calc(14px * var(--ts, 1))); }
+html.pw-600 .exam-row, html.pw-600 .subject-row { min-height: calc(40px * var(--ts, 1)); align-items: center; }
+html.pw-600 .exam-card, html.pw-600 .subject-card { padding-top: calc(6px * var(--ts, 1)); padding-bottom: calc(6px * var(--ts, 1)); }
+html.pw-600 .topbar-icon-btn { width: calc(44px * var(--ts, 1)); height: calc(44px * var(--ts, 1)); }
+html.pw-600 .topbar-icon-btn svg { width: calc(22px * var(--ts, 1) * .7); height: calc(22px * var(--ts, 1) * .7); }
+html.pw-600 .topbar-more-btn { width: calc(40px * var(--ts, 1)); height: calc(44px * var(--ts, 1)); }
+html.pw-600 .topbar-more-btn svg { width: calc(18px * var(--ts, 1) * .8); height: calc(18px * var(--ts, 1) * .8); }
+html.pw-600 .topbar-nav-btn.icon-only, html.pw-600 .signout-icon-btn { min-width: calc(40px * var(--ts, 1)); }
+</style>
+<script>
+(function () {
+  try {
+    var sw = screen.width, sh = screen.height;
+    var land = window.matchMedia && window.matchMedia('(orientation: landscape)').matches;
+    var deviceW = land ? Math.max(sw, sh) : Math.min(sw, sh);
+    var layoutW = document.documentElement.clientWidth || window.innerWidth;
+    if (document.documentElement.classList.contains('pw-600') && deviceW && layoutW > deviceW) {
+      document.documentElement.style.setProperty('--ts', (layoutW / deviceW).toFixed(3));
+    }
+  } catch (e) {}
+})();
+</script>
 </body>
 </html>
