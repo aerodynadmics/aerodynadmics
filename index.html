@@ -11135,7 +11135,7 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
       margin: 0;
       left: 10px;
       right: 10px;
-      bottom: 10px;
+      bottom: calc(24px + env(safe-area-inset-bottom, 0px)); /* floats above the iPhone home-indicator edge */
       top: auto;
       z-index: 500;
       gap: 20px;
@@ -11144,7 +11144,7 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
        content (it's fixed now, out of normal flow), instead it needs
        clearance at the BOTTOM so the last bit of page content doesn't end
        up hidden underneath the now-fixed bottom bar. */
-    .wrap { padding-bottom: 110px; }
+    .wrap { padding-bottom: calc(124px + env(safe-area-inset-bottom, 0px)); }
     .top-bar::after {
       content: '';
       position: absolute;
