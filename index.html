@@ -113,8 +113,77 @@
     } catch (e) {}
   }
   apply();
+  /* iOS Safari only shows :active styles when a touch listener exists on the page */
+  document.addEventListener('touchstart', function () {}, { passive: true, capture: true });
   w.addEventListener('resize', apply);
   w.addEventListener('orientationchange', function () { setTimeout(apply, 250); });
+})();
+</script>
+<script id="touch-hold-js">
+/* Yellow press look on subject / exam / quiz cards. Stays on for the whole
+   touch (the browser drops :active on a long press) and, for a quick tap, is
+   kept visible for a short moment: the tap's click is held back ~MIN ms from
+   touch-down so the yellow is actually seen before the screen changes. */
+(function () {
+  var root = document.documentElement;
+  var SEL = '.subject-card, .exam-card, #quiz-choices-grid .quiz-choice-btn, .quiz-prev-btn, .quiz-next-btn';
+  var MIN = 180;                       /* min ms the yellow shows on a quick tap */
+  var held = null, sx = 0, sy = 0, t0 = 0, moved = false;
+  var tapCard = null, tapEnd = 0, tapT0 = 0, pass = false, timer = 0;
+  function lit(card) {
+    if (card.matches('.quiz-choice-btn, .quiz-prev-btn, .quiz-next-btn')) return !card.disabled;
+    if (card.classList.contains('subject-card')) return card.classList.contains('active');
+    return !(card.classList.contains('board-past') && !card.classList.contains('board-reviewable'));
+  }
+  function clear() { if (held) { held.classList.remove('touch-held'); held = null; } }
+  document.addEventListener('touchstart', function (e) {
+    if (!root.classList.contains('touch-ui')) return;
+    clearTimeout(timer); clear(); tapCard = null; moved = false;
+    var t = e.target, el = t && t.nodeType === 1 ? t : (t && t.parentElement);
+    var card = el && el.closest ? el.closest(SEL) : null;
+    if (!card || el.closest('.exam-timer-reset') || !lit(card)) return;
+    held = card; t0 = Date.now(); sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+    card.classList.add('touch-held');
+  }, { passive: true, capture: true });
+  document.addEventListener('touchmove', function (e) {
+    if (!held) return;
+    var t = e.touches[0];
+    if (Math.abs(t.clientX - sx) > 10 || Math.abs(t.clientY - sy) > 10) { moved = true; clear(); }
+  }, { passive: true, capture: true });
+  document.addEventListener('touchend', function () {
+    if (!held) return;
+    /* Quiz BACK button: yellow only while the finger is down. Drop it the
+       instant the finger lifts (before the click re-renders the previous
+       question) and don't delay the click, so no yellow carries over. */
+    if (held.classList.contains('quiz-prev-btn')) { clear(); tapCard = null; return; }
+    tapCard = moved ? null : held; tapEnd = Date.now(); tapT0 = t0;
+    /* keep the yellow on; it is removed after the delayed click fires (or
+       after a fallback in case no click follows, e.g. a long press) */
+    var card = held;
+    timer = setTimeout(function () { if (held === card) clear(); }, 700);
+  }, { capture: true });
+  document.addEventListener('touchcancel', function () { clearTimeout(timer); clear(); tapCard = null; }, { capture: true });
+  document.addEventListener('click', function (e) {
+    if (pass || !tapCard || Date.now() - tapEnd > 700) return;
+    var t = e.target, el = t && t.nodeType === 1 ? t : (t && t.parentElement);
+    var card = el && el.closest ? el.closest(SEL) : null;
+    if (!card || card !== tapCard) return;
+    var wait = MIN - (Date.now() - tapT0);
+    tapCard = null;
+    if (wait <= 0) { setTimeout(clear, 120); return; }     /* already shown long enough */
+    e.preventDefault(); e.stopImmediatePropagation();
+    clearTimeout(timer);
+    setTimeout(function () {
+      pass = true;
+      try { card.click(); } finally { pass = false; }
+      setTimeout(clear, 120);
+    }, wait);
+  }, true);
+  document.addEventListener('contextmenu', function (e) {
+    if (!root.classList.contains('touch-ui')) return;
+    var t = e.target, el = t && t.nodeType === 1 ? t : (t && t.parentElement);
+    if (el && el.closest && el.closest(SEL)) e.preventDefault();
+  }, true);
 })();
 </script>
 <script id="touch-no-select-js">
@@ -11138,7 +11207,11 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
          this arrow becomes the first visible item in the bar and was
          sitting flush against the bar's own 8px edge padding, reading as
          glued to the left edge. This pulls it in a bit further. */
-      margin-left: 10px;
+      margin-left: 0.5px;
+      /* Centers the arrow glyph between the logo on its left and the Home icon
+         on its right. Before, it sat ~37px from the logo but only ~18px from
+         Home. Margins still add up to 10px, so nothing else in the row moves. */
+      margin-right: 9.5px;
       background: none;
       border: none;
       color: var(--rivet);
@@ -34093,7 +34166,7 @@ window.modelUrl = function (file) {
       return `<li><a class="exam-card" href="javascript:void(0)" data-duration-sec="${durationSec}"
           onclick="openInAppMockExam('live:${subjectKey}:${id}', this); return false;">
         <div class="exam-row"><span class="exam-idx">${String(index).padStart(2, '0')}</span><span class="exam-name">${escapeHtml(set.title || 'Untitled Set')}${draftTag}</span>
-          <span class="exam-go">TAKE EXAM <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg></span>
+          <span class="exam-go go-start">TAKE EXAM <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg></span>
         </div>
       </a></li>`;
     }
@@ -34317,7 +34390,7 @@ window.modelUrl = function (file) {
       return `<li><a class="exam-card quiz-exam-card" href="javascript:void(0)" onclick="openQuizModeExam('${subjectKey}', '${id}'); return false;">
           <div class="exam-row"><span class="exam-idx">${String(index).padStart(2, '0')}</span>
             <span class="exam-name">${escapeHtml(set.title || 'Untitled Set')}${draftTag}</span>${badgeHtml}
-            <span class="exam-go">QUIZ ME <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg></span>
+            <span class="exam-go go-start">QUIZ ME <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg></span>
           </div>
         </a></li>`;
     }
@@ -38113,7 +38186,7 @@ window.modelUrl = function (file) {
             <div class="exam-row">
               <span class="exam-idx">${s.pct}%</span>
               <span class="exam-name">${nameHtml}</span>
-              <span class="exam-go">${goLabel} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg></span>
+              <span class="exam-go${reviewable ? '' : ' go-start'}">${goLabel} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M7 7h10v10"/></svg></span>
             </div>
           </a></li>
         </ul>`;
@@ -38140,6 +38213,7 @@ window.modelUrl = function (file) {
       if (goEl) {
         const svg = goEl.querySelector('svg');
         goEl.textContent = reviewable ? 'VIEW RESULT ' : 'TAKE EXAM ';
+        goEl.classList.toggle('go-start', !reviewable);
         if (svg) goEl.appendChild(svg);
       }
     }
@@ -47531,13 +47605,11 @@ html.touch-ui {
   --rail-w: calc(var(--tap-sm) + 10px);
 }
 
-/* ---- feel: no double-tap delay, visible press feedback, no stuck text selection ---- */
+/* ---- feel: no double-tap delay; the browser's own tap flash is off because the real hover look is used instead ---- */
+html.touch-ui, html.touch-ui * { -webkit-tap-highlight-color: transparent; }
 html.touch-ui :is(button, [role="button"], summary, select, label, .collapsible-header, .chat-crew-row, .flight-tile, .fs-chip, .flight-chip, .subject-card, .exam-card) {
   touch-action: manipulation;
-  -webkit-tap-highlight-color: rgba(255, 177, 0, 0.22);
 }
-html.touch-ui button { -webkit-touch-callout: none; }
-html.touch-ui :is(button, [role="button"]):not(:disabled):active { opacity: 0.72; }
 
 /* ---- 1) main action buttons and big rows: at least 44px tall ---- */
 html.touch-ui :is(
@@ -47575,7 +47647,7 @@ html.touch-ui :is(
   .pf-trash, .profile-spotify-edit-btn, .profile-card-bio-edit-btn, .rank-badge.rk-click,
   .forgot-flightcode-link, .forgot-resend-link, .ai-note-link, .chat-guidelines-link, .dm-linkbtn,
   .crewmate-decline-link, .profile-card-link-btn, .profile-card-crew-link, .pf-compose select, .bec-format-guide summary,
-  .collapsible-header, .bec-q-head, .pf-dd-btn, .trivia-next-btn, .topbar-logo-btn
+  .collapsible-header, .bec-q-head, .pf-dd-btn, .trivia-next-btn
 ) { min-height: var(--tap-sm) !important; }
 /* inline links stay inline in their sentence but get a taller tap area */
 html.touch-ui :is(.forgot-flightcode-link, .forgot-resend-link, .ai-note-link, .chat-guidelines-link, .dm-linkbtn,
@@ -47589,8 +47661,7 @@ html.touch-ui :is(
   .nick-modal-close, .nick-modal-back, .ai-note-modal-close, .banned-list-close, .form-popup-close, .pfc-close,
   .wings-thankyou-close, .gift-wings-close, .chat-guidelines-close, .chat-panel-close, .chat-reply-preview-close,
   .shop-pay-x, .rk-modal-back, .flight-sub-back, .dm-back-btn, .dm-head-btn,
-  .chat-send-btn, .chat-emoji-btn, .pf-img-remove, .flights-toggle-btn,
-  .topbar-more-btn, .account-badge .signout-icon-btn
+  .chat-send-btn, .chat-emoji-btn, .pf-img-remove, .flights-toggle-btn
 ) { min-width: var(--tap) !important; min-height: var(--tap) !important; }
 html.touch-ui .chat-panel-head .chat-panel-close { height: auto; padding: 0 12px; }
 
@@ -47625,19 +47696,9 @@ html.touch-ui :is(.legal-accept-label input[type="checkbox"], .gform-option inpu
 }
 html.touch-ui .legal-accept-label { display: flex; align-items: center; gap: 12px; }
 
-/* ---- 8) the bar at the bottom of the phone screen (home / review / quiz ...) ---- */
-html.touch-ui :is(.topbar-icon-btn, .topbar-nav-btn.icon-only, .account-wings-badge.icon-only, .account-badge .signout-btn.icon-only) {
-  min-width: calc(var(--tap) * 0.76) !important; min-height: var(--tap) !important;
-}
-html.touch-ui .topbar-icon-btn svg { width: 34px; height: 34px; }
+/* ---- 8) flights rail (left drawer): taller tiles, sidebar slides over to make room.
+        The bottom bar (top-bar) is intentionally left exactly as the site defined it. ---- */
 @media (max-width: 900px) {
-  html.touch-ui .top-bar { min-height: calc(var(--tap) + 14px); gap: 8px; }
-  html.touch-ui .topbar-icon-nav { gap: 2px; }
-  html.touch-ui .wrap { padding-bottom: calc(var(--tap) + 72px); }
-  html.touch-ui .topbar-more-menu { min-width: calc(var(--tap) * 2.2); }
-  html.touch-ui .topbar-more-menu :is(#topbar-flight-store-btn, #topbar-hangar-btn, #topbar-game-btn,
-    #admin-settings-btn, #account-wings-badge, #topbar-depart-btn) { min-height: var(--tap) !important; height: auto; }
-  /* flights rail: taller/wider tiles, sidebar slides over to make room */
   html.touch-ui .flights-rail { width: var(--rail-w); }
   html.touch-ui body:not(.flights-hidden) .reviewees-sidebar { left: calc(16px + var(--rail-w)); }
   html.touch-ui .flights-rail .flight-tile { min-width: var(--tap-sm); min-height: var(--tap-sm); }
@@ -47669,6 +47730,377 @@ html.touch-ui body:has(#view-quiz.visible, #view-mock-exam.visible, #view-board.
 html.touch-ui body:has(#view-quiz.visible, #view-mock-exam.visible, #view-board.visible, #view-game.visible) :is(input, textarea, [contenteditable="true"]) {
   -webkit-user-select: text; user-select: text;
 }
+
+/* ============================================================================
+   TOUCH PRESS = PC HOVER
+   Phones have no hover, so every :hover rule of the site is repeated here as :active.
+   While a finger is down you see exactly what a mouse hover shows on PC (yellow etc).
+   Generated from the site's own :hover rules; if you change a hover style, change it
+   in its original rule and re-copy it here.
+   ============================================================================ */
+html.touch-ui #app-scrollbar-thumb:active{background: var(--rivet); cursor: grab;}
+html.touch-ui #signin-direct-submit:not(:disabled):active{filter: brightness(1.08);}
+html.touch-ui .google-signup-link-btn:active{color: var(--accent);}
+html.touch-ui .google-back-btn:active{color: var(--accent);}
+html.touch-ui #flight-alert-submit:not(:disabled):active{filter: brightness(1.08);}
+html.touch-ui .forgot-flightcode-link:active{color: var(--accent);}
+html.touch-ui .forgot-stage-submit:not(:disabled):active{filter: brightness(1.08);}
+html.touch-ui .forgot-resend-link:not(:disabled):active{color: var(--accent);}
+html.touch-ui .pw-toggle-btn:active{color: var(--paper);}
+html.touch-ui #connection-issue-step .conn-retry-btn:not(:disabled):active{filter: brightness(1.08);}
+html.touch-ui #connection-issue-step .conn-newuser-btn:active{color: var(--accent);}
+html.touch-ui #nickname-step .mainflight-trigger:active{background: var(--accent); border-color: var(--accent); color: #0b1a26; font-weight: 400;}
+html.touch-ui #mainflight-picker-overlay .mf-item:active{background: var(--accent); border-color: var(--accent); color: #0b1a26;}
+html.touch-ui #mainflight-picker-overlay .mf-item:active .mf-icon{background: #123259; color: #fff;}
+html.touch-ui #nickname-step > button:not(:disabled):active{filter: brightness(1.08);}
+html.touch-ui .avatar-option:active{border-color: var(--rivet); transform: translateY(-1px);}
+html.touch-ui #avatar-lock-submit:active{background: rgba(255, 177, 0, 0.14);}
+html.touch-ui .admin-avatar-upload-btn:active{color: var(--accent);}
+html.touch-ui .ai-note-link:active{color: var(--accent);}
+html.touch-ui .ai-note-modal-close:active{color: var(--accent);}
+html.touch-ui .account-badge .signout-btn:active{color: var(--accent);}
+html.touch-ui .account-badge .signout-icon-btn:active::after{background: rgba(255,255,255,0.07);}
+html.touch-ui .account-badge .signout-icon-btn:active{outline: none;}
+html.touch-ui .admin-settings-menu button:active{background: var(--accent);
+    border-color: var(--accent);
+    color: var(--blueprint-dark);}
+html.touch-ui .admin-page-card:active{background: var(--accent);
+    border-color: var(--accent);
+    color: var(--blueprint-dark);}
+html.touch-ui .cc-admin-item:active{border-color: var(--accent); background: var(--accent);}
+html.touch-ui .cc-admin-item:active .cc-admin-item-who,html.touch-ui .cc-admin-item:active .cc-admin-item-who strong,html.touch-ui .cc-admin-item:active .cc-admin-item-ts,html.touch-ui .cc-admin-item:active .cc-admin-item-msg{color: var(--blueprint-dark);}
+html.touch-ui .cc-admin-item-dismiss:active{color: var(--accent);}
+html.touch-ui .cc-admin-item-resolve:active{filter: brightness(1.1);}
+html.touch-ui .cc-admin-item-locate:active,html.touch-ui .cc-admin-item-justify:active{color: var(--accent);}
+html.touch-ui .creator-profile-avatar.clickable-avatar:active{box-shadow: 0 0 0 3px var(--accent);}
+html.touch-ui .creator-profile-edit-link:active{background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark);}
+html.touch-ui .avatar-edit-pencil:active{background: var(--accent);}
+html.touch-ui .avatar-change-save-btn:not(:disabled):active{filter: brightness(1.08);}
+html.touch-ui .back-btn:active{color: var(--accent);}
+html.touch-ui .topbar-logo-btn:active{filter: brightness(1.25);}
+html.touch-ui .nick-modal-close:active{color: var(--accent);}
+html.touch-ui .nick-modal-back:active{color: var(--accent);}
+html.touch-ui .nick-list li:active{background-color: rgba(255,255,255,0.07);}
+html.touch-ui .nick-list li .member-remove-btn:active{background: rgba(255,107,107,0.18); color: #ff6b6b;}
+html.touch-ui .flight-tile.add-tile:active{background: rgba(255,255,255,0.15); color: #fff;}
+html.touch-ui .flight-tile.radar-tile:active{background: rgba(255,255,255,0.15); color: #fff;}
+html.touch-ui .flight-tile.crew-tile:active{background: rgba(255,255,255,0.15); color: #fff;}
+html.touch-ui #flight-radar-thumb:active{background: var(--rivet); cursor: grab;}
+html.touch-ui .radar-act-btn:active{background: var(--accent); border-color: var(--accent); color: #0b1a26;}
+html.touch-ui .radar-act-btn.cooldown:active{background: transparent; border-color: var(--line); color: var(--rivet);}
+html.touch-ui .radar-act-btn.pending:active{background: #a27be0; border-color: #a27be0; color: #1a0b2e;}
+html.touch-ui .flight-tile.private.locked:active{border-radius: 50%; filter: none;}
+html.touch-ui .flight-tile:active{border-radius: 11px; filter: brightness(1.15);}
+html.touch-ui .flight-settings-btn:active{background: rgba(255,255,255,0.10);}
+html.touch-ui .flight-settings-opt:active{background: var(--accent); border-color: var(--accent); color: #1a1200;}
+html.touch-ui .flight-settings-opt:active small{opacity: 0.8;}
+html.touch-ui .flight-settings-opt.danger:active{background: #ff6b6b; border-color: #ff6b6b; color: #3a0000;}
+html.touch-ui #flight-settings-invite-reset:disabled:active{background: rgba(255,255,255,0.05); border-color: var(--line); color: var(--paper);}
+html.touch-ui .flights-toggle-btn:active{background: rgba(255,255,255,0.10);}
+html.touch-ui .reviewees-sidebar-me:active{background-color: rgba(255,255,255,0.07);
+    box-shadow: 0 3px 14px rgba(0,0,0,0.36);}
+html.touch-ui .profile-card-close:active{background: rgba(4, 18, 32, 0.85); color: var(--accent);}
+html.touch-ui .profile-card-back:active{background: rgba(4, 18, 32, 0.85); color: var(--accent);}
+html.touch-ui .profile-card-bg-edit-btn:active{background: rgba(4, 18, 32, 0.85); color: var(--accent);}
+html.touch-ui .profile-card-link-btn:active{color: var(--accent);}
+html.touch-ui .crewmate-btn.state-none:active{background: #a3aeb8;}
+html.touch-ui .crewmate-btn.state-sent:active{background: #ff8f8f; color: #3a0000;}
+html.touch-ui .crewmate-btn.state-incoming:active{background: #6fe6b8;}
+html.touch-ui .crewmate-btn.state-crewmates:active{background: rgba(79, 209, 160, 0.18);}
+html.touch-ui .copilot-btn.state-none:active{background: #a3aeb8;}
+html.touch-ui .copilot-btn.state-sent:active{background: #ff8f8f; color: #3a0000;}
+html.touch-ui .copilot-btn.state-incoming:active{filter: brightness(1.08);}
+html.touch-ui .copilot-btn.state-copilot:active{background: rgba(255, 111, 176, 0.18);}
+html.touch-ui .crewmate-action-menu-item:active{background: rgba(255,255,255,0.08);}
+html.touch-ui .crewmate-action-menu-item.danger:active{background: rgba(255, 107, 107, 0.12);}
+html.touch-ui .crewmate-action-menu-item.disabled:active{background: none;}
+html.touch-ui .confirm-dialog-btn.cancel:active{background: none; color: var(--accent);}
+html.touch-ui .confirm-dialog-btn.confirm:active{background: rgba(255, 107, 107, 0.12);}
+html.touch-ui .confirm-dialog-btn.affirm:active{background: rgba(255, 111, 176, 0.22);}
+html.touch-ui .confirm-dialog-btn.generate:active{background: rgba(79, 209, 160, 0.22);}
+html.touch-ui .confirm-dialog-btn.danger:active{background: rgba(255, 107, 107, 0.22);}
+html.touch-ui .confirm-dialog-btn.yellow:active{filter: brightness(1.08);}
+html.touch-ui .confirm-dialog-btn.neutral:active{background: rgba(255,255,255,0.08);}
+html.touch-ui .qreport-reason-btn:not(.active):active{background: var(--accent); color: var(--blueprint-dark);}
+html.touch-ui .qreport-reason-btn.active:active{filter: brightness(1.08);}
+html.touch-ui .qreport-option-btn:active{background: var(--accent);
+      border-color: var(--accent);
+      color: var(--blueprint-dark);}
+html.touch-ui .qreport-option-btn:active:has(.qreport-option-letter:active){background: none;
+      border-color: var(--line);
+      color: var(--paper);}
+html.touch-ui .qreport-option-letter:not(.locked):active{background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark);}
+html.touch-ui .qreport-btn.cancel:active{color: var(--accent);}
+html.touch-ui .qreport-btn.submit:not(:disabled):active{filter: brightness(1.08);}
+html.touch-ui .crewmate-btn:active::after,html.touch-ui .crewmate-btn:active::before{opacity: 1;
+    visibility: visible;
+    transform: translate(12px, 0);}
+html.touch-ui .copilot-btn:active::after,html.touch-ui .copilot-btn:active::before{opacity: 1;
+    visibility: visible;
+    transform: translate(12px, 0);}
+html.touch-ui [data-tooltip]:not(.crewmate-btn):not(.copilot-btn):active::after,html.touch-ui [data-tooltip]:not(.crewmate-btn):not(.copilot-btn):active::before{opacity: 1;
+    visibility: visible;
+    transform: translate(0, 0);}
+html.touch-ui .profile-card-crew-link:active{color: var(--green);}
+html.touch-ui .profile-card-crew-link-copilot:active{color: #ff6fb0;}
+html.touch-ui .flight-alerts-btn:active{color: var(--accent);}
+html.touch-ui .flight-alerts-btn:active svg{fill: var(--accent);}
+html.touch-ui .flight-alert-btn.confirm:active{background: #6fe6b8;}
+html.touch-ui .flight-alert-btn.yellow:active{filter: brightness(1.08);}
+html.touch-ui .flight-alert-btn.decline:active{background: rgba(255,107,107,0.18); color: #ff6b6b;}
+html.touch-ui .flight-alert-row.wings-alert-row:active{background: rgba(255,255,255,0.04);}
+html.touch-ui .flight-alert-row.wings-alert-row.unread:active{background: rgba(255,255,255,0.04);}
+html.touch-ui .wings-alert-delete-btn:active{color: #ff6b6b;
+    background: rgba(255,107,107,0.12);}
+html.touch-ui .dm-head-btn:active{background: rgba(255,255,255,0.08); opacity: 1;}
+html.touch-ui .crew-key-fab:active{background: var(--accent); border-color: var(--accent); color: transparent; text-shadow: 0 0 0 var(--blueprint-dark);}
+html.touch-ui .dm-msg.mine:active .dm-unsend-btn{opacity: 0.75;}
+html.touch-ui .dm-unsend-btn:active{opacity: 1 !important;}
+html.touch-ui .flight-alert-btn.confirm-delete:active{background: #ff8686;}
+html.touch-ui .hours-chip:active{filter: brightness(1.08);}
+html.touch-ui .profile-card-bio-edit-btn:active{color: var(--accent);}
+html.touch-ui .profile-spotify-link-btn:active,html.touch-ui .spotify-link-invite:active,html.touch-ui #spotify-link-unlink-btn:active{background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark); outline: none;}
+html.touch-ui .profile-aircraft-item:active{background-color: rgba(255,255,255,0.06);}
+html.touch-ui .profile-spotify-edit-btn:active{color: var(--accent);}
+html.touch-ui .profile-bg-swatch:active{transform: translateY(-1px);}
+html.touch-ui .profile-bg-swatch.upload-tile:active{transform: none;}
+html.touch-ui .profile-edit-save-btn:not(:disabled):active{filter: brightness(1.08);}
+html.touch-ui .home-tab-btn:active{border-color: var(--accent);
+    background: rgba(255, 177, 0, 0.08);}
+html.touch-ui .home-tab-btn.tab-review:active{border-color: #ff6b6b; background: rgba(255, 107, 107, 0.1);}
+html.touch-ui .home-tab-btn.tab-mock-exam:active{border-color: #8b5cf6; background: rgba(139, 92, 246, 0.1);}
+html.touch-ui .home-tab-btn.tab-mock-board:active{border-color: #5aa8ff; background: rgba(90, 168, 255, 0.1);}
+html.touch-ui .home-tab-btn.tab-music:active{border-color: #ff8fc0; background: rgba(255, 143, 192, 0.1);}
+html.touch-ui .quiz-settings-btn:active{color: var(--accent);}
+html.touch-ui .qs-timer-arrow:active{color: var(--accent);}
+html.touch-ui .quiz-choice-btn:active:not(:disabled){transform: scale(1.02); background: var(--accent); color: #1a1200;}
+html.touch-ui .quiz-nav-btn.quiz-next-btn:active{filter: brightness(1.08);}
+html.touch-ui .quiz-nav-btn.quiz-prev-btn:active{color: var(--accent);}
+html.touch-ui .quiz-start-btn:not(.quiz-secondary-btn):active{filter: brightness(1.08);}
+html.touch-ui .quiz-start-btn.quiz-secondary-btn:active{color: var(--accent);}
+html.touch-ui .subject-card.active:active{}
+html.touch-ui .subject-card.active:active .subject-status{color: var(--accent);}
+html.touch-ui .subject-card.active:active .subject-status svg{transform: translate(2px, -2px);}
+html.touch-ui .exam-card:active:not(:has(.exam-timer-reset:active)){}
+html.touch-ui .exam-card:active:not(:has(.exam-timer-reset:active)) .exam-go{color: var(--accent);}
+html.touch-ui .exam-card:active:not(:has(.exam-timer-reset:active)) .exam-go svg{transform: translate(2px, -2px);}
+html.touch-ui .exam-timer-reset:active{color: var(--accent);}
+html.touch-ui .trivia-next-btn:active{filter: brightness(1.08);}
+html.touch-ui .board-btn:active{filter: brightness(1.08);}
+html.touch-ui .board-reset-btn:active{background: rgba(255, 107, 107, 0.12);}
+html.touch-ui .board-generate-btn:active{background: rgba(79, 209, 160, 0.12);}
+html.touch-ui .form-popup-close:active{color: var(--accent);}
+html.touch-ui .chat-panel-peek.locked:active{background-image: none;}
+html.touch-ui .chat-panel-peek:active{background-image: linear-gradient(rgba(255,255,255,0.06), rgba(255,255,255,0.06));}
+html.touch-ui .chat-panel-peek:has(.chat-peek-briefing:active){background-image: none;}
+html.touch-ui .flight-chip:not(.active):active{border-color: var(--accent); color: var(--accent);}
+html.touch-ui .flight-chip-x:active{opacity: 1;}
+html.touch-ui .chat-panel-close:active{color: var(--accent);}
+html.touch-ui .chat-mode-tab:not(.active):active{background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark);}
+html.touch-ui .vc-tile-fs:active{background: rgba(18,54,90,0.95);}
+html.touch-ui .vc-btn:active{background: var(--vc-tile-hi);}
+html.touch-ui .vc-btn.leave:active{filter: brightness(1.1); background: var(--vc-red);}
+html.touch-ui .chat-crew-row:active{background: rgba(255,255,255,0.08);}
+html.touch-ui .dm-back-btn:active{background: rgba(255,255,255,0.1); opacity: 1;}
+html.touch-ui .chat-guidelines-link:active{color: var(--accent);}
+html.touch-ui .chat-guidelines-close:active{color: var(--accent);}
+html.touch-ui .banned-list-close:active{color: var(--accent);}
+html.touch-ui .banned-list-item-unban:active{filter: brightness(1.08);}
+html.touch-ui .banned-list-manual button:active{color: var(--accent);}
+html.touch-ui .mockadmin-card::-webkit-scrollbar-thumb:active{background-color: var(--rivet);}
+html.touch-ui #mockadmin-scrollbar-thumb:active{background: var(--rivet); cursor: grab;}
+html.touch-ui .mockadmin-subject-btn:active{background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark);}
+html.touch-ui .mockadmin-subject-btn.active:active{filter: brightness(1.08);}
+html.touch-ui .mockadmin-new-btn:active,html.touch-ui .mockadmin-add-q-btn:active,html.touch-ui .mockadmin-add-opt-btn:active{filter: brightness(1.08);}
+html.touch-ui .mockadmin-set-row-clickable:active:not(:has(button:active,html.touch-ui label:active,html.touch-ui input:active)){background: rgba(255,255,255,0.06); outline: none;}
+html.touch-ui .mockadmin-mini-btn:active{color: var(--accent);}
+html.touch-ui .mockadmin-mini-btn.danger:active{color: #f07a6a;}
+html.touch-ui .mockadmin-back-btn:active{color: var(--accent);}
+html.touch-ui .mockadmin-image-upload-btn:active{color: var(--accent);}
+html.touch-ui .mockadmin-save-btn:active{color: var(--accent);}
+html.touch-ui .mockadmin-publish-btn:active{filter: brightness(1.08);}
+html.touch-ui .gift-wings-mode-btn.active:active{filter: brightness(1.08);}
+html.touch-ui .gift-wings-close:active{color: var(--accent);}
+html.touch-ui .chat-msg:has(.chat-msg-reply:active) .chat-msg-reply-thread path{stroke: var(--accent);}
+html.touch-ui .chat-msg-reply:active{color: var(--paper);}
+html.touch-ui .chat-reply-btn:active{opacity: 1;}
+html.touch-ui .chat-ban-btn:active{opacity: 1;}
+html.touch-ui .chat-delete-btn:active{opacity: 1;}
+html.touch-ui .chat-reply-preview-close:active{color: var(--accent);}
+html.touch-ui .chat-mention-option:active{background: var(--accent);
+    color: var(--blueprint-dark);}
+html.touch-ui .chat-input-row button:not(:disabled):active{filter: brightness(1.08);}
+html.touch-ui .chat-emoji-btn:active{filter: brightness(1.15);}
+html.touch-ui .chat-emoji-tab:active{opacity: 0.85;}
+html.touch-ui .chat-emoji-item:active{background: rgba(255,177,0,0.15);}
+html.touch-ui .board-share-btn:active{transform: translateY(-2px);}
+html.touch-ui .account-wings-badge:active{color: var(--accent);}
+html.touch-ui .topbar-nav-btn:active{color: var(--accent);}
+html.touch-ui .account-wings-badge.icon-only:active,html.touch-ui .topbar-nav-btn.icon-only:active,html.touch-ui .account-badge .signout-btn.icon-only:active{background: rgba(255,255,255,0.07);
+    outline: none;}
+html.touch-ui .topbar-nav-btn.locked:active{background: rgba(255,255,255,0.03);}
+html.touch-ui .topbar-wings-balance-inner:active{color: var(--accent);}
+html.touch-ui .ico-svg.icon-only:active,html.touch-ui .account-badge .signout-btn.ico-svg.icon-only:active{color: var(--rivet);}
+html.touch-ui .topbar-icon-btn:active{background: rgba(255,255,255,0.07); outline: none;}
+html.touch-ui .mock-exam-settings-btn:active{color: var(--accent);}
+html.touch-ui #quiz-music-btn:active{background: rgba(0,0,0,0.55);}
+html.touch-ui .store-subnav-btn:active{background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark);}
+html.touch-ui .store-subnav-btn.active:active{filter: brightness(1.08);}
+html.touch-ui .shop-page-nav:active:not(:disabled){color: var(--accent);}
+html.touch-ui .shop-page-btn:active{border-color: var(--line); color: var(--paper);}
+html.touch-ui .shop-page-btn.active:active{filter: brightness(1.08);}
+html.touch-ui .shop-item-admin-btn:active{background: var(--accent);
+    color: var(--blueprint-dark);
+    border-color: var(--accent);}
+html.touch-ui .shop-item-admin-btn.danger:active{background: #ff2d78;
+    color: #fff;
+    border-color: #ff2d78;}
+html.touch-ui .shop-buy-wings-btn:not(.shop-item-buy-btn):not(:disabled):active{filter: brightness(1.08);}
+html.touch-ui .shop-buy-cash-btn:active{color: var(--accent);}
+html.touch-ui .shop-item-buy-btn:not(:disabled):active{background: var(--accent);
+    border-color: var(--accent);
+    color: var(--blueprint-dark);}
+html.touch-ui .shop-equip-btn:not(.equipped):not(:disabled):active{background: var(--accent);
+    border-color: var(--accent);
+    color: var(--blueprint-dark);}
+html.touch-ui .shop-equip-btn.equipped:not(:disabled):active{filter: brightness(1.08);}
+html.touch-ui .shop-pay-x:active{color: var(--accent);}
+html.touch-ui .wings-thankyou-close:active{filter: brightness(1.08);}
+html.touch-ui .wings-pack-card:active{border-color: var(--accent);
+    background: var(--accent);
+    transform: translateY(-2px);}
+html.touch-ui .wings-pack-card:active .wings-pack-amount,html.touch-ui .wings-pack-card:active .wings-pack-price,html.touch-ui .wings-pack-card:active .wings-pack-save,html.touch-ui .wings-pack-card:active .wings-pack-rate{color: var(--blueprint-dark);}
+html.touch-ui .wings-pack-card:active .wings-pack-badge{background: var(--blueprint-dark);
+    color: var(--accent);}
+html.touch-ui .math-toolbar-btn:active{color: var(--accent);}
+html.touch-ui .math-toolbox-row button:active{color: var(--accent);}
+html.touch-ui .gform-report-btn:not(.hover-suppressed):active{background: rgba(255, 180, 84, 0.16); border-color: rgba(255, 180, 84, 0.6); color: #ffb454;}
+html.touch-ui .gform-report-btn-borderless:not(.hover-suppressed):active{background: var(--accent); border: none;}
+html.touch-ui .gform-pin-btn:not(.hover-suppressed):active{background: var(--accent); border-color: var(--accent); color: var(--blueprint-dark);}
+html.touch-ui .gform-pin-btn.active:not(.hover-suppressed):active{filter: brightness(1.08);}
+html.touch-ui .gform-clear-btn:active{color: var(--accent);}
+html.touch-ui .gform-submit-btn:active{filter: brightness(1.08);}
+html.touch-ui .gform-score-modal .gform-score-retake-btn:active{filter: brightness(1.08);}
+html.touch-ui .gform-score-modal .gform-score-leave-btn:active{color: var(--accent);}
+html.touch-ui .legal-link:active,html.touch-ui .legal-inline-link:active,html.touch-ui .profile-card-legal-link:active{color: var(--accent); text-decoration-color: var(--accent);}
+html.touch-ui .signin-card p.legal-agree-note .legal-inline-link:active{color: var(--accent);}
+html.touch-ui .legal-check-row:active{border-color: var(--rivet);}
+html.touch-ui .legal-accept-label:active{border-color: var(--rivet);}
+html.touch-ui .info-links-item:active{background: rgba(255,255,255,0.05);
+    color: var(--paper);
+    outline: none;}
+@media (max-width: 900px){html.touch-ui .topbar-more-btn:active{color: var(--accent);}}
+html.touch-ui .fs-btn:not(.primary):not(.danger):active{color: var(--accent);}
+html.touch-ui .fs-btn.primary:active{filter: brightness(1.08); background: var(--accent);}
+html.touch-ui .fs-btn.danger:active{background: rgba(255,107,107,0.22);}
+html.touch-ui .fs-day:active{background: rgba(255,255,255,0.07);}
+html.touch-ui .fs-pin-row:active{color: var(--accent);}
+html.touch-ui .fs-item-btn:active{background: rgba(255,255,255,0.08); color: var(--accent);}
+html.touch-ui .fs-types label:active,html.touch-ui .fs-chip:active{color: var(--accent);}
+html.touch-ui .fs-pick:active svg{stroke: var(--accent);}
+html.touch-ui .fs-pop .fs-pop-foot button:active{color: var(--accent);}
+html.touch-ui .fs-pop .fs-cal-d:active,html.touch-ui .fs-pop .fs-tcol button:active,html.touch-ui .fs-pop .fs-pop-nav:active,html.touch-ui .fs-pop .fs-pop-ml:active{background: rgba(255,255,255,0.09);}
+html.touch-ui .fs-pop .fs-cal-d.sel:active,html.touch-ui .fs-pop .fs-tcol button.sel:active{background: var(--accent);}
+html.touch-ui .fs-pop .fs-pop-nav:active{color: var(--accent);}
+html.touch-ui .duel-subj.can:not(.locked):active{border-color: #ff6b6b; background: #ff6b6b; transform: translateY(-1px);}
+html.touch-ui .duel-subj.can:not(.locked):active .nm,html.touch-ui .duel-subj.can:not(.locked):active .pct,html.touch-ui .duel-subj.can:not(.locked):active .tag{color: #fff;}
+html.touch-ui .rk-modal-back:active{color: var(--accent);}
+html.touch-ui .rk-tab:active{color: var(--accent);}
+html.touch-ui .rk-tab:active svg{fill: currentColor;}
+html.touch-ui #duel-again-btn:disabled:active{cursor: not-allowed; filter: none;}
+html.touch-ui #game-mode-btn:active{transform: scale(1.06);}
+html.touch-ui #game-mode-popup-btn.game-mode-disconnect-btn:active{color: var(--accent);}
+html.touch-ui .pf-dd-btn:active{border-color: var(--rivet);}
+html.touch-ui .pf-dd-list button:active{background: var(--accent); color: var(--blueprint-dark);}
+html.touch-ui .pf-dd-list .pf-dd-parent:active > .pf-dd-parent-btn{background: var(--accent); color: var(--blueprint-dark);}
+html.touch-ui .pf-dd-parent:active > .pf-dd-parent-btn .pf-dd-parent-arrow{color: var(--blueprint-dark);}
+html.touch-ui .pf-dd-parent:active > .pf-dd-submenu{display: block;}
+html.touch-ui .pf-dd-list button.selected:active{color: var(--blueprint-dark);}
+html.touch-ui .pf-attach-btn:not(:disabled):active{color: var(--accent); border-color: var(--line);}
+html.touch-ui .pf-trash:active{opacity: 1;}
+html.touch-ui .pf-more:active{color: var(--paper);}
+html.touch-ui .pf-menu button:active{background: rgba(255,138,138,0.12);}
+html.touch-ui .pf-seemore:active{text-decoration: none;}
+html.touch-ui .pf-edit-box textarea::-webkit-scrollbar-thumb:active{background-color: var(--rivet);}
+html.touch-ui .pf-edit-btns button:not(.pf-edit-save):active{color: var(--accent);}
+html.touch-ui .pf-edit-btns button.pf-edit-save:not(:disabled):active{filter: brightness(1.08);}
+html.touch-ui .pf-compose textarea#pf-title::-webkit-scrollbar-thumb:active{background-color: var(--rivet);}
+html.touch-ui .pf-send-btn:not(:disabled):active{filter: brightness(1.08);}
+html.touch-ui .pf-menu button:active{background: none; color: #ff5a5a;}
+html.touch-ui .pf-menu button.pf-rep:active{background: none; color: var(--accent);}
+html.touch-ui .pf-bar-btn:active{color: var(--accent);}
+html.touch-ui .pf-bar-btn.pf-like:active{color: #c9d6e2;}
+html.touch-ui .pf-bar-btn.pf-like:active svg{fill: #ff8fc1;}
+html.touch-ui .pf-bar-btn.pf-like.nohover:active svg{fill: none;}
+html.touch-ui .pfc-close:active{color: var(--accent);}
+html.touch-ui .pfc-body::-webkit-scrollbar-thumb:active{background-color: var(--rivet);}
+html.touch-ui .gs-thumb:active{background: var(--rivet);}
+html.touch-ui .flight-sub-back:active{color: var(--accent);}
+
+/* ---- Touchscreens: no QUIZ ME / TAKE EXAM label; yellow fill while a
+   subject / exam / quiz card is being touched (same look as the controller
+   highlight). VIEW RESULT still shows. ---- */
+html.touch-ui .exam-go.go-start { display: none; }
+html.touch-ui .subject-card.active:is(:active, .touch-held),
+html.touch-ui .exam-card:is(:active, .touch-held):not(:has(.exam-timer-reset:active)):not(.board-past:not(.board-reviewable)) {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+html.touch-ui .subject-card.active:is(:active, .touch-held) :is(.subject-pct, .subject-name, .subject-status),
+html.touch-ui .exam-card:is(:active, .touch-held):not(:has(.exam-timer-reset:active)):not(.board-past:not(.board-reviewable)) :is(.exam-idx, .exam-name, .exam-name .board-mix-suffix, .exam-go) {
+  color: var(--blueprint-dark);
+}
+/* Long-press on these cards (they are links/buttons) made the browser start
+   its link callout / text selection, which cancels :active after ~1s. */
+html.touch-ui :is(.subject-card, .exam-card), html.touch-ui :is(.subject-card, .exam-card) * {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* ---- Phone bottom bar: centre the down arrow between the item on its left
+   and the home icon on its right. Auto side margins share the free space
+   equally; the nav no longer pushes with its own auto margin. No extra
+   nudge: the old translateX(5px) pushed the arrow RIGHT, toward the home
+   icon (measured ~21px from the logo vs ~12px from home). ---- */
+@media (max-width: 900px) {
+  html.touch-ui #topbar-more-btn { margin-left: auto; margin-right: auto; transform: translateX(-5px); }
+  /* Icons sit flush to the right end of the bar (no leftover gap on the
+     edge): the strip is exactly 3 icons wide (3 x 42px + 2 x 20px gaps) and
+     simply shrinks/scrolls on narrower phones. The arrow's auto side margins
+     keep it centred between the logo and the first icon. */
+  html.touch-ui #topbar-icon-nav { margin-left: 0; padding-right: 0; flex: 0 1 166px; }
+}
+
+/* ---- Quiz / exam question header: flag sits ABOVE "Question n of N" so it
+   no longer squeezes the text onto two lines; the text stays on one line. ---- */
+html.touch-ui .quiz-progress-wrap,
+html.touch-ui .gform-qnum-wrap {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+html.touch-ui .quiz-progress-wrap .gform-report-btn-borderless,
+html.touch-ui .gform-qnum-wrap .gform-report-btn-borderless { order: -1; }
+html.touch-ui .quiz-progress,
+html.touch-ui .gform-qnum { white-space: nowrap; }
+html.touch-ui .quiz-play-head { grid-template-columns: auto 1fr auto; column-gap: 8px; }
+/* Quiz header: the flag + "Question n of N" stack is centred in the row, which
+   left the question text ~14px below the Score line. Lift the stack so the
+   text lines up with Score (measured on-device: 14px left it ~5px low). Score itself is
+   untouched (position:relative doesn't change layout, so nothing else moves). */
+html.touch-ui .quiz-progress-wrap { position: relative; top: -19px; }
+
+/* Quiz answer choices and BACK: same held yellow as the cards above (the
+   plain :active look never showed because the tap re-rendered / locked the
+   button before a frame was painted). */
+html.touch-ui #quiz-choices-grid .quiz-choice-btn.touch-held:not(:disabled) { transform: scale(1.02); background: var(--accent); color: #1a1200; }
+html.touch-ui .quiz-nav-btn.quiz-prev-btn.touch-held { color: var(--accent); }
+/* NEXT: the exact same look as the PC hover (brightness 1.08), shown on every
+   touch including a quick tap (the touch-hold script holds the click back
+   ~180ms so it is actually seen). */
+html.touch-ui .quiz-nav-btn.quiz-next-btn.touch-held { filter: brightness(1.08); }
 </style>
 </body>
 </html>
