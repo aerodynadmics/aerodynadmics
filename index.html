@@ -30105,6 +30105,7 @@ window.modelUrl = function (file) {
     // Put the profile link in the address bar while a card is open.
     function setProfileUrl(nickname) {
       try {
+        if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return;
         const want = '#/engineer/' + encodeURIComponent(nickname);
         if (routeHash() === want) return;
         if (profileNickFromHash() !== null) {
@@ -30118,6 +30119,7 @@ window.modelUrl = function (file) {
     // Card closed: put the address back to what it was.
     function clearProfileUrl() {
       try {
+        if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) { profileLinkPushed = false; return; }
         if (profileNickFromHash() === null) { profileLinkPushed = false; return; }
         if (profileLinkPushed) {
           profileLinkPushed = false;
@@ -45393,6 +45395,10 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   var profileLinkPending = false;
   function syncUrl(replace) {
     if (window.__badLink) return;   // an unknown link is on screen: leave the address bar alone
+    // Touch devices (phones/tablets, incl. Home Screen apps): never write to the address bar or
+    // history. Tapping bottom-bar icons used to push history entries, so the system Back
+    // went to pages the person didn't want and the Home Screen app dropped out of full screen.
+    if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return;
     // While a profile card is open it owns the address bar
     // (#/engineer/<callsign>). Opening a card makes the page redraw, which
     // used to make this function put the plain address straight back, so
