@@ -80,6 +80,62 @@
   } catch (e) {}
 })();
 </script>
+<script id="touch-ui-js">
+/* Touch-friendly sizing. On phones this page is laid out at a 720px "virtual"
+   width and then scaled down to fit the screen (see the viewport script near
+   the top), so a 38px button here is only about 20px on a real phone. This
+   works out how many CSS px equal a 44px finger-sized target on THIS device
+   and publishes it as --tap (plus smaller --tap-sm / --tap-badge variants).
+   The sizing rules live in <style id="touch-ui-css"> at the end of the page
+   and only apply under html.touch-ui, so desktop is untouched.
+   Escape hatch for testing: localStorage.setItem('forceDesktopUi','1') */
+(function () {
+  var w = window, root = document.documentElement;
+  function mm(q) { try { return !!(w.matchMedia && w.matchMedia(q).matches); } catch (e) { return false; } }
+  function apply() {
+    try {
+      var ua = navigator.userAgent || '';
+      var iPadAsMac = /Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1;
+      var touch = mm('(pointer: coarse)') || mm('(hover: none)') || iPadAsMac ||
+                  /Android|iPhone|iPad|iPod|Mobile|Tablet/i.test(ua);
+      try { if (localStorage.getItem('forceDesktopUi') === '1') touch = false; } catch (e) {}
+      if (!touch) { root.classList.remove('touch-ui'); return; }
+      var sw = screen.width || 0, sh = screen.height || 0;
+      var deviceW = mm('(orientation: landscape)') ? Math.max(sw, sh) : Math.min(sw, sh);
+      var layoutW = w.innerWidth || root.clientWidth || deviceW;
+      var k = deviceW && layoutW ? deviceW / layoutW : 1;   /* real px per CSS px */
+      if (!(k >= 0.25 && k <= 1.6)) k = 1;
+      var tap = Math.min(96, Math.max(44, Math.round(44 / k)));
+      root.style.setProperty('--tap', tap + 'px');                       /* ~44px on screen */
+      root.style.setProperty('--tap-sm', Math.round(tap * 0.82) + 'px'); /* ~36px on screen */
+      root.style.setProperty('--tap-badge', Math.round(tap * 0.68) + 'px'); /* ~30px on screen */
+      root.classList.add('touch-ui');
+    } catch (e) {}
+  }
+  apply();
+  w.addEventListener('resize', apply);
+  w.addEventListener('orientationchange', function () { setTimeout(apply, 250); });
+})();
+</script>
+<script id="touch-no-select-js">
+/* Quiz and exams on touchscreens: block long-press text selection and the
+   copy / share callout. Typing fields stay selectable. Desktop is untouched. */
+(function () {
+  var NOSEL = '#view-quiz, #view-mock-exam, #view-board, #view-game, #gform-questions, #gform-result, .gform-score-modal, .duel-screen, .qreport-overlay';
+  var root = document.documentElement;
+  function blocked(e) {
+    if (!root.classList.contains('touch-ui')) return false;
+    var t = e.target, el = t && t.nodeType === 1 ? t : (t && t.parentElement);
+    if (!el || !el.closest) return false;
+    if (el.closest('input, textarea, [contenteditable="true"]')) return false;
+    if (el.closest(NOSEL)) return true;
+    /* anywhere else on the page (popups, overlays, headers) while a quiz or exam tab is open */
+    return !!document.querySelector('#view-quiz.visible, #view-mock-exam.visible, #view-board.visible, #view-game.visible');
+  }
+  document.addEventListener('selectstart', function (e) { if (blocked(e)) e.preventDefault(); }, true);
+  document.addEventListener('contextmenu', function (e) { if (blocked(e)) e.preventDefault(); }, true);
+})();
+</script>
 <!-- If this device has a saved login, keep the sign-in screen hidden from the
      very first paint so it never flashes on reload. It is un-hidden as soon as
      the saved session is restored, rejected, or after a short safety timeout. -->
@@ -213,7 +269,7 @@ try {
 })();
 </script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="viewport" content="width=720, user-scalable=no">
 <script>
   /* Phones: the viewport tag above lays the page out at a wider "virtual"
      width (720 CSS px) and the browser scales it down to fit the screen, so
@@ -222,7 +278,7 @@ try {
      number = larger text (change it in the tag above AND PHONE_LAYOUT_WIDTH
      below). Tablets / large screens get the normal responsive viewport back. */
   (function () {
-    var PHONE_LAYOUT_WIDTH = 0; /* 0 = never use the shrunk virtual width; phones use the real width */
+    var PHONE_LAYOUT_WIDTH = 720;
     try {
       var sw = screen.width, sh = screen.height;
       var landscape = window.matchMedia && window.matchMedia('(orientation: landscape)').matches;
@@ -30105,7 +30161,6 @@ window.modelUrl = function (file) {
     // Put the profile link in the address bar while a card is open.
     function setProfileUrl(nickname) {
       try {
-        if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return;
         const want = '#/engineer/' + encodeURIComponent(nickname);
         if (routeHash() === want) return;
         if (profileNickFromHash() !== null) {
@@ -30119,7 +30174,6 @@ window.modelUrl = function (file) {
     // Card closed: put the address back to what it was.
     function clearProfileUrl() {
       try {
-        if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) { profileLinkPushed = false; return; }
         if (profileNickFromHash() === null) { profileLinkPushed = false; return; }
         if (profileLinkPushed) {
           profileLinkPushed = false;
@@ -44928,13 +44982,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     try { return document.execCommand('copy'); } catch (e) { return false; }
   }
 
-  // Touchscreens: no automatic copy (people select text there to read/scroll).
-  function isTouchScreen() {
-    try { return (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || ('ontouchstart' in window) || navigator.maxTouchPoints > 0; } catch (e) { return false; }
-  }
-
   function copySelection() {
-    if (isTouchScreen()) return;
     var sel = window.getSelection();
     if (!sel || sel.isCollapsed) return;
     if (!selectionIsInCopyZone(sel)) return;
@@ -45395,10 +45443,6 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   var profileLinkPending = false;
   function syncUrl(replace) {
     if (window.__badLink) return;   // an unknown link is on screen: leave the address bar alone
-    // Touch devices (phones/tablets, incl. Home Screen apps): never write to the address bar or
-    // history. Tapping bottom-bar icons used to push history entries, so the system Back
-    // went to pages the person didn't want and the Home Screen app dropped out of full screen.
-    if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return;
     // While a profile card is open it owns the address bar
     // (#/engineer/<callsign>). Opening a card makes the page redraw, which
     // used to make this function put the plain address straight back, so
@@ -47471,110 +47515,159 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   },{passive:false});
 })();
 </script>
-<style id="quiz-touch-slide-css">
-  @media (pointer: coarse) {
-    #quiz-choices-grid .quiz-choice-btn { transition: none !important; -webkit-tap-highlight-color: transparent !important; }
-    html.pw-600 #quiz-choices-grid .quiz-choice-btn:active:not(.touch-hover) { transform: none; filter: none; }
-    #quiz-choices-grid .quiz-choice-btn.touch-hover:not(:disabled) { transform: scale(1.02) !important; filter: none !important; opacity: 1 !important; background: var(--accent) !important; color: #1a1200 !important; }
-    .exam-card .exam-name, .exam-card .exam-go, .exam-card .exam-timer,
-    .subject-card.active .subject-name, .subject-card.active .subject-status { touch-action: none; }
-    #quiz-choices-grid .quiz-choice-btn.touch-hover:not(:disabled) { transform: scale(1.02); background: var(--accent); color: #1a1200; }
-    .subject-card.touch-hover, .exam-card.touch-hover {
-      background: var(--accent) !important; border-color: var(--accent) !important; color: var(--blueprint-dark) !important;
-    }
-    .touch-hover .subject-pct, .touch-hover .subject-name, .touch-hover .subject-status, .touch-hover .subject-status svg,
-    .touch-hover .exam-idx, .touch-hover .exam-name, .touch-hover .exam-name .board-mix-suffix,
-    .touch-hover .exam-go, .touch-hover .exam-go svg, .touch-hover .exam-timer-reset { color: var(--blueprint-dark) !important; }
-    .touch-hover .exam-timer.scored, .touch-hover .exam-timer.running { background: var(--blueprint-dark); color: var(--accent); border-color: var(--blueprint-dark); }
-    .touch-hover .exam-timer-reset { border-color: var(--blueprint-dark); }
-  }
-</style>
-<script>
-/* Touch slide = hover (yellow fill), answer/open only when the finger lifts.
-   - Quiz choices: highlight follows the finger immediately.
-   - Subject / exam / quiz cards (scrollable lists): press and HOLD ~0.25s
-     without moving to enter hover mode, then slide to move the highlight;
-     lift to open the one under the finger, or slide off all cards and lift
-     to cancel. A quick swipe still just scrolls the list. */
-(function () {
-  var CHOICE = '#quiz-choices-grid .quiz-choice-btn';
-  var CARD = '.exam-card, .subject-card.active';
-  var cur = null, mode = null, holdTimer = 0, sx = 0, sy = 0;
-  function pick(t, sel) {
-    var el = document.elementFromPoint(t.clientX, t.clientY);
-    var b = el && el.closest && el.closest(sel);
-    return (b && !b.disabled) ? b : null;
-  }
-  function set(b) {
-    if (b === cur) return;
-    if (cur) cur.classList.remove('touch-hover');
-    cur = b;
-    if (cur) cur.classList.add('touch-hover');
-  }
-  function reset() { clearTimeout(holdTimer); mode = null; set(null); }
-  document.addEventListener('touchstart', function (e) {
-    reset();
-    var t = e.touches[0], tg = e.target;
-    if (!tg.closest) return;
-    if (tg.closest('.topbar-icon-nav, #topbar-icon-nav, .topbar-more-menu')) return; // bottom bar keeps its own sideways scrolling
-    var pa = document.getElementById('quiz-play-area');
-    if (pa && pa.getClientRects().length && document.querySelector(CHOICE)) { mode = 'choice'; set(pick(t, CHOICE)); return; }
-    if (tg.closest('button, input, select, textarea') ) return;
-    var card = tg.closest(CARD);
-    if (card && tg.closest('.exam-name, .exam-go, .exam-timer, .subject-name, .subject-status')) {
-      mode = 'card'; set(card);
-    }
-  }, { passive: true });
-  document.addEventListener('touchmove', function (e) {
-    var t = e.touches[0];
-    if (mode === 'choice') set(pick(t, CHOICE));
-    else if (mode === 'card') set(pick(t, CARD));
-    else return;
-    if (e.cancelable) e.preventDefault();
-  }, { passive: false });
-  document.addEventListener('touchend', function (e) {
-    var b = cur, m = mode;
-    reset();
-    if (b && (m === 'choice' || m === 'card') && e.cancelable) { e.preventDefault(); b.click(); }
-  }, { passive: false });
-  document.addEventListener('touchcancel', reset, { passive: true });
-  document.addEventListener('contextmenu', function (e) { if (mode) e.preventDefault(); });
-})();
-</script>
-<style id="topbar-arrow-center">
-@media (max-width: 900px) and (pointer: coarse), (max-width: 900px) and (hover: none) {
-  .account-badge:has(#account-avatar-btn[style*="none"]):has(#account-name[style*="none"]) { justify-content: center; }
-  .account-badge:has(#account-avatar-btn[style*="none"]):has(#account-name[style*="none"]) .topbar-more-btn { margin-left: 0; margin-right: 0; }
+<style id="touch-ui-css">
+/* ============================================================================
+   TOUCH-FRIENDLY BUTTONS (phones and tablets)
+   Everything here is scoped to html.touch-ui, which the script in <head>
+   turns on for touch devices only, so desktop is untouched.
+   --tap       about 44px on the real screen (primary buttons, icon buttons)
+   --tap-sm    about 36px on the real screen (compact / secondary controls)
+   --tap-badge about 30px on the real screen (small badges sitting on avatars)
+   These only ever GROW a control (min-width / min-height), never shrink it.
+   When adding a new button, add its class to the matching group below.
+   ============================================================================ */
+html.touch-ui {
+  --tap: 82px; --tap-sm: 67px; --tap-badge: 56px;   /* fallbacks, script sets real values */
+  --rail-w: calc(var(--tap-sm) + 10px);
 }
-html.pw-600 .account-badge:has(#account-avatar-btn[style*="none"]):has(#account-name[style*="none"]) { justify-content: center; }
-html.pw-600 .account-badge:has(#account-avatar-btn[style*="none"]):has(#account-name[style*="none"]) .topbar-more-btn { margin-left: 0; margin-right: 0; }
-</style>
-<style id="no-tap-box">
-@media (pointer: coarse), (hover: none) {
-  html, body, button, a, [role="button"], input, select, textarea, label, summary, .exam-card, .subject-card {
-    -webkit-tap-highlight-color: transparent !important;
-  }
-  button:focus:not(:focus-visible), a:focus:not(:focus-visible), [role="button"]:focus:not(:focus-visible) { outline: none !important; box-shadow: none; }
-  #quiz-prev-btn, #quiz-next-btn, .back-btn, #quiz-prev-btn:focus, #quiz-next-btn:focus, .back-btn:focus,
-  #quiz-prev-btn:active, #quiz-next-btn:active, .back-btn:active { outline: none !important; -webkit-tap-highlight-color: transparent !important; filter: none !important; }
+
+/* ---- feel: no double-tap delay, visible press feedback, no stuck text selection ---- */
+html.touch-ui :is(button, [role="button"], summary, select, label, .collapsible-header, .chat-crew-row, .flight-tile, .fs-chip, .flight-chip, .subject-card, .exam-card) {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(255, 177, 0, 0.22);
 }
-</style>
-<style id="native-touch-targets">
-@media (pointer: coarse) {
-  button, [role="button"], input[type="button"], input[type="submit"], select, summary { min-height: 44px; min-width: 44px; touch-action: manipulation; }
-  button, [role="button"], input[type="button"], input[type="submit"] { padding-top: 10px; padding-bottom: 10px; }
-  input:not([type="checkbox"]):not([type="radio"]), textarea, select { min-height: 44px; font-size: 16px; }
-  input[type="checkbox"], input[type="radio"] { width: 24px; height: 24px; }
-  .exam-row, .subject-row { min-height: 44px; align-items: center; }
-  .topbar-icon-btn { width: 46px; height: 46px; }
-  .topbar-more-btn { min-width: 44px; height: 46px; }
-  button:active, [role="button"]:active { transform: scale(.97); }
+html.touch-ui button { -webkit-touch-callout: none; }
+html.touch-ui :is(button, [role="button"]):not(:disabled):active { opacity: 0.72; }
+
+/* ---- 1) main action buttons and big rows: at least 44px tall ---- */
+html.touch-ui :is(
+  .mockadmin-save-btn, .mockadmin-publish-btn, .mockadmin-new-btn, .mockadmin-back-btn,
+  .mockadmin-add-q-btn, .mockadmin-add-opt-btn, .mockadmin-image-upload-btn, .mockadmin-publish-toggle,
+  .confirm-dialog-btn, .qreport-btn, .qreport-reason-btn, .flight-alert-btn, .forgot-stage-submit,
+  .conn-retry-btn, .conn-newuser-btn, .google-signup-link-btn, .google-back-btn,
+  #signin-direct-submit, #flight-alert-submit, #avatar-lock-submit, #admin-modal-cancel-btn, #admin-modal-ok-btn,
+  #nickname-step > button, #nickname-step .mainflight-trigger, #game-mode-btn, #quiz-music-btn,
+  .avatar-change-save-btn, .admin-avatar-upload-btn, .profile-edit-save-btn, .creator-profile-edit-link,
+  .quiz-nav-btn, .quiz-start-btn, .quiz-settings-btn, .mock-exam-settings-btn, .board-btn,
+  .board-generate-btn, .board-reset-btn, .fs-btn, .fs-yes, .fs-no,
+  .shop-buy-wings-btn, .shop-buy-cash-btn, .shop-equip-btn, .store-subnav-btn,
+  .gform-submit-btn, .gform-clear-btn, .gform-pin-btn, .gform-score-leave-btn, .gform-score-retake-btn,
+  .gift-wings-mode-btn, .gift-wings-self-btn, .chat-mode-tab, .pf-send-btn, .back-btn,
+  .flight-alerts-btn, .flight-settings-opt, .crewmate-action-menu-item, .info-links-item,
+  .legal-check-row, .legal-accept-label, .admin-page-card, .admin-settings-menu button,
+  .pf-menu button, .pf-dd-list button, .pf-edit-btns button, #mainflight-picker-overlay .mf-item,
+  .nick-list li, .chat-crew-row, .bec-publish-check,
+  .fs-pick, .fs-item-btn, .gform-option, .mockadmin-subject-btn, .home-tab-btn, .duel-subj,
+  .banned-list-manual button
+) { min-height: var(--tap) !important; }
+
+/* short labels (POST, OK, No) get a minimum width so they are not narrow slivers */
+html.touch-ui :is(.trivia-next-btn, .pf-send-btn, .fs-yes, .fs-no, .confirm-dialog-btn, .qreport-btn, .flight-alert-btn) { min-width: calc(var(--tap) * 1.25); }
+html.touch-ui .trivia-next-btn { justify-content: center; }
+
+/* ---- 2) compact / secondary controls: at least 36px tall ---- */
+html.touch-ui :is(
+  .mockadmin-mini-btn, .cc-admin-item-dismiss, .cc-admin-item-resolve, .cc-admin-item-locate, .cc-admin-item-justify,
+  .banned-list-item-unban, .wings-alert-delete-btn, .radar-act-btn, .exam-timer-reset, .math-toolbar-btn,
+  .math-toolbox-row button, .chat-emoji-tab, .shop-page-btn, .shop-page-nav, .shop-item-admin-btn,
+  .gift-wings-mini-btn, .gform-report-btn, .fs-chip, .flight-chip, .hours-chip, .qs-timer-arrow,
+  .chat-reply-btn, .chat-ban-btn, .chat-delete-btn, .dm-unsend-btn, .pf-seemore, .pf-more, .pf-bar-btn,
+  .pf-trash, .profile-spotify-edit-btn, .profile-card-bio-edit-btn, .rank-badge.rk-click,
+  .forgot-flightcode-link, .forgot-resend-link, .ai-note-link, .chat-guidelines-link, .dm-linkbtn,
+  .crewmate-decline-link, .profile-card-link-btn, .profile-card-crew-link, .pf-compose select, .bec-format-guide summary,
+  .collapsible-header, .bec-q-head, .pf-dd-btn, .trivia-next-btn, .topbar-logo-btn
+) { min-height: var(--tap-sm) !important; }
+/* inline links stay inline in their sentence but get a taller tap area */
+html.touch-ui :is(.forgot-flightcode-link, .forgot-resend-link, .ai-note-link, .chat-guidelines-link, .dm-linkbtn,
+  .crewmate-decline-link, .profile-card-link-btn, .profile-card-crew-link, .pf-seemore, .conn-newuser-btn) {
+  display: inline-flex; align-items: center;
 }
-</style>
-<style id="hide-go-labels-touch">
-@media (pointer: coarse), (hover: none) {
-  .exam-go { display: none !important; }
-  .exam-card .exam-timer-reset { margin-left: auto; }
+html.touch-ui .forgot-flightcode-link { display: flex; }
+
+/* ---- 3) icon-only buttons: square, 44px (close, back, send, nav) ---- */
+html.touch-ui :is(
+  .nick-modal-close, .nick-modal-back, .ai-note-modal-close, .banned-list-close, .form-popup-close, .pfc-close,
+  .wings-thankyou-close, .gift-wings-close, .chat-guidelines-close, .chat-panel-close, .chat-reply-preview-close,
+  .shop-pay-x, .rk-modal-back, .flight-sub-back, .dm-back-btn, .dm-head-btn,
+  .chat-send-btn, .chat-emoji-btn, .pf-img-remove, .flights-toggle-btn,
+  .topbar-more-btn, .account-badge .signout-icon-btn
+) { min-width: var(--tap) !important; min-height: var(--tap) !important; }
+html.touch-ui .chat-panel-head .chat-panel-close { height: auto; padding: 0 12px; }
+
+/* ---- 4) smaller round / square icon buttons: 36px ---- */
+html.touch-ui :is(
+  .vc-btn, .member-remove-btn, .rk-tab, .pf-attach-btn, .profile-card-close, .profile-card-back, .profile-card-bg-edit-btn,
+  .exam-card .exam-timer-reset
+) { min-width: var(--tap-sm) !important; min-height: var(--tap-sm) !important; }
+html.touch-ui :is(.profile-card-close, .profile-card-back) { font-size: 26px; }
+html.touch-ui :is(.rk-tab) svg { width: 24px; height: 24px; }
+html.touch-ui .member-remove-btn { font-size: 26px; }
+html.touch-ui .vc-btn svg { width: 30px; height: 30px; }
+
+/* ---- 5) little badges that sit on top of an avatar: 30px ---- */
+html.touch-ui :is(.crewmate-btn, .copilot-btn, .avatar-edit-pencil) {
+  min-width: var(--tap-badge) !important; min-height: var(--tap-badge) !important;
+}
+html.touch-ui :is(.crewmate-btn, .copilot-btn) svg { width: 62%; height: 62%; }
+html.touch-ui .avatar-edit-pencil { font-size: 22px; }
+html.touch-ui .crewmate-btn { right: -8px; bottom: -8px; }
+html.touch-ui .avatar-edit-pencil { right: -10px; bottom: -10px; }
+
+/* ---- 6) show/hide password eye inside the Flight Code field ---- */
+html.touch-ui .pw-toggle-btn { min-width: var(--tap-sm) !important; min-height: var(--tap-sm) !important; }
+html.touch-ui .pw-toggle-btn svg { width: 24px; height: 24px; }
+html.touch-ui .pw-field input { padding-right: calc(var(--tap-sm) + 8px) !important; }
+
+/* ---- 7) checkboxes and radio buttons ---- */
+html.touch-ui :is(.legal-accept-label input[type="checkbox"], .gform-option input, .mockadmin-option-row input[type="radio"],
+  #mockadmin-overlay input[type="radio"], .fs-check) {
+  min-width: calc(var(--tap) * 0.5); min-height: calc(var(--tap) * 0.5); flex: none;
+}
+html.touch-ui .legal-accept-label { display: flex; align-items: center; gap: 12px; }
+
+/* ---- 8) the bar at the bottom of the phone screen (home / review / quiz ...) ---- */
+html.touch-ui :is(.topbar-icon-btn, .topbar-nav-btn.icon-only, .account-wings-badge.icon-only, .account-badge .signout-btn.icon-only) {
+  min-width: calc(var(--tap) * 0.76) !important; min-height: var(--tap) !important;
+}
+html.touch-ui .topbar-icon-btn svg { width: 34px; height: 34px; }
+@media (max-width: 900px) {
+  html.touch-ui .top-bar { min-height: calc(var(--tap) + 14px); gap: 8px; }
+  html.touch-ui .topbar-icon-nav { gap: 2px; }
+  html.touch-ui .wrap { padding-bottom: calc(var(--tap) + 72px); }
+  html.touch-ui .topbar-more-menu { min-width: calc(var(--tap) * 2.2); }
+  html.touch-ui .topbar-more-menu :is(#topbar-flight-store-btn, #topbar-hangar-btn, #topbar-game-btn,
+    #admin-settings-btn, #account-wings-badge, #topbar-depart-btn) { min-height: var(--tap) !important; height: auto; }
+  /* flights rail: taller/wider tiles, sidebar slides over to make room */
+  html.touch-ui .flights-rail { width: var(--rail-w); }
+  html.touch-ui body:not(.flights-hidden) .reviewees-sidebar { left: calc(16px + var(--rail-w)); }
+  html.touch-ui .flights-rail .flight-tile { min-width: var(--tap-sm); min-height: var(--tap-sm); }
+  html.touch-ui .flights-rail .flight-tile svg { width: 34px; height: 34px; }
+}
+
+/* text fields: match the taller buttons so a row of input + button looks balanced */
+html.touch-ui input:is([type="text"], [type="password"], [type="email"], [type="search"], :not([type])) { min-height: var(--tap-sm); }
+
+/* ---- 9) emoji pickers: bigger cells (they sit in grids, so only a little) ---- */
+html.touch-ui .chat-emoji-item { min-height: calc(var(--tap) * 0.8); }
+
+/* ---- 10) answer choices and cards are already large; keep them roomy ---- */
+html.touch-ui .quiz-choice-btn { min-height: max(72px, var(--tap)) !important; }
+
+/* ---- quiz and exams: no text selection / long-press callout on touchscreens ---- */
+html.touch-ui :is(#view-quiz, #view-mock-exam, #view-board, #view-game, #gform-questions, #gform-result, .gform-score-modal, .duel-screen, .qreport-overlay),
+html.touch-ui :is(#view-quiz, #view-mock-exam, #view-board, #view-game, #gform-questions, #gform-result, .gform-score-modal, .duel-screen, .qreport-overlay) * {
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
+html.touch-ui :is(#view-quiz, #view-mock-exam, #view-board, #view-game, #gform-questions, #gform-result, .gform-score-modal, .duel-screen, .qreport-overlay) :is(input, textarea, [contenteditable="true"]) {
+  -webkit-user-select: text; user-select: text;
+}
+/* whole page, while a quiz or exam tab is the open tab */
+html.touch-ui body:has(#view-quiz.visible, #view-mock-exam.visible, #view-board.visible, #view-game.visible),
+html.touch-ui body:has(#view-quiz.visible, #view-mock-exam.visible, #view-board.visible, #view-game.visible) * {
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
+html.touch-ui body:has(#view-quiz.visible, #view-mock-exam.visible, #view-board.visible, #view-game.visible) :is(input, textarea, [contenteditable="true"]) {
+  -webkit-user-select: text; user-select: text;
 }
 </style>
 </body>
