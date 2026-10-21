@@ -36785,30 +36785,6 @@ window.modelUrl = function (file) {
       target.scrollIntoView({ behavior: 'smooth', block: 'center' });
       target.classList.add('jump-flash');
       setTimeout(() => target.classList.remove('jump-flash'), 1600);
-      // Move the controller's yellow choice-box locator onto this
-      // question's first choice too, so jumping to a pinned question (the
-      // X button, or tapping Pins by hand) doesn't just scroll the page
-      // there, the D-pad/stick locator picks up right there, ready to
-      // answer, instead of being left wherever it was before the jump.
-      // Note: this function lives outside the Game Mode IIFE further down
-      // the page, so it can't call that closure's own examChoiceBoxes()/
-      // examChoiceClearFocus() helpers, it redoes the same plain-DOM
-      // lookups here instead. window.__examChoiceFocus is the one piece of
-      // that closure's state that IS exposed on window, so it's safe to
-      // read/write directly.
-      const firstBox = target.querySelector('.gform-option');
-      if (firstBox && window.__examChoiceFocus) {
-        const boxes = Array.from(document.querySelectorAll('#gform-questions .gform-option'));
-        const idx = boxes.indexOf(firstBox);
-        if (idx !== -1) {
-          window.__examChoiceFocus.index = idx;
-          window.__examChoiceFocus.holdDir = 0;
-          window.__examChoiceFocus.holdFrames = 0;
-          document.querySelectorAll('#gform-questions .gform-option.gc-focused')
-            .forEach(el => el.classList.remove('gc-focused'));
-          firstBox.classList.add('gc-focused');
-        }
-      }
     }
 
     // Sizes a question image in the exam: 20% of its own size, but never
