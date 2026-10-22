@@ -444,8 +444,6 @@ try {
     --rivet: #7fa8c9;
     --panel-head-h: 51px; /* sidebar header, Black Box header and in-box chat header all share this height */
     --green: #4fd1a0;
-    --quiz-green: #00e07a; /* same high-contrast green as the Quiz Duel rank (Junior Aero Engr.) */
-    --quiz-red: #ff2d2d;   /* same high-contrast red as the Quiz Duel rank (Chief Aero Engr.) */
   }
 
   * { box-sizing: border-box; }
@@ -3928,8 +3926,8 @@ try {
   }
   /* The current-correct option's letter circle is always filled green. */
   .qreport-option-btn.correct-locked .qreport-option-letter.locked {
-    background: var(--quiz-green);
-    border-color: var(--quiz-green);
+    background: var(--green);
+    border-color: var(--green);
     color: var(--blueprint-dark);
   }
   /* Only the letter fills yellow when its option is selected, the box
@@ -5280,13 +5278,13 @@ try {
   @media (hover: hover) { .quiz-choice-btn:hover:not(:disabled) { transform: scale(1.02); background: var(--accent); color: #1a1200; } }
   .quiz-choice-btn:disabled { cursor: default; }
   .quiz-choice-btn.correct {
-    background: var(--quiz-green) !important;
-    box-shadow: 0 0 0 3px rgba(0, 224, 122, 0.4);
+    background: var(--green) !important;
+    box-shadow: 0 0 0 3px rgba(79, 209, 160, 0.4);
   }
   .quiz-choice-btn.correct .quiz-choice-text::after { content: " ✓"; }
   .quiz-choice-btn.wrong {
-    background: var(--quiz-red) !important;
-    box-shadow: 0 0 0 3px rgba(255, 45, 45, 0.4);
+    background: #ff6b6b !important;
+    box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.4);
   }
   .quiz-choice-btn.wrong .quiz-choice-text::after { content: " ✗"; }
   .quiz-choice-btn.dim { opacity: 0.35; }
@@ -10389,40 +10387,40 @@ html.gc-connected .gform-clear-btn { display: none; }
    (which used to add extra vertical space and shove that choice down). */
 .gform-option-row-actions { display: flex; align-items: center; gap: 14px; margin-left: auto; flex-shrink: 0; }
 .gform-card.correct {
-  border-color: var(--quiz-green);
-  background: rgba(0, 224, 122, 0.1);
+  border-color: var(--green);
+  background: rgba(79, 209, 160, 0.1);
 }
 .gform-card.incorrect {
-  border-color: var(--quiz-red);
-  background: rgba(255, 45, 45, 0.1);
+  border-color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
 }
 .gform-option.gform-option-correct {
-  background: rgba(0, 224, 122, 0.18);
+  background: rgba(79, 209, 160, 0.18);
   border-radius: 6px;
   padding: 8px 10px;
   margin: 2px 0;
 }
-.gform-option.gform-option-correct span { color: var(--quiz-green); font-weight: 600; }
-.gform-option.gform-option-correct input { accent-color: var(--quiz-green); }
+.gform-option.gform-option-correct span { color: var(--green); font-weight: 600; }
+.gform-option.gform-option-correct input { accent-color: var(--green); }
 .gform-option.gform-option-selected-wrong {
-  background: rgba(255, 45, 45, 0.18);
+  background: rgba(255, 107, 107, 0.18);
   border-radius: 6px;
   padding: 8px 10px;
   margin: 2px 0;
 }
-.gform-option.gform-option-selected-wrong span { color: var(--quiz-red); font-weight: 600; }
-.gform-option.gform-option-selected-wrong input { accent-color: var(--quiz-red); }
+.gform-option.gform-option-selected-wrong span { color: #ff6b6b; font-weight: 600; }
+.gform-option.gform-option-selected-wrong input { accent-color: #ff6b6b; }
 .gform-result-badge {
   font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700;
   padding: 2px 8px; border-radius: 999px; flex-shrink: 0;
 }
-.gform-result-badge.correct { color: var(--quiz-green); background: rgba(0, 224, 122, 0.18); border: 1px solid var(--quiz-green); }
-.gform-result-badge.incorrect { color: var(--quiz-red); background: rgba(255, 45, 45, 0.18); border: 1px solid var(--quiz-red); }
+.gform-result-badge.correct { color: var(--green); background: rgba(79, 209, 160, 0.18); border: 1px solid var(--green); }
+.gform-result-badge.incorrect { color: #ff6b6b; background: rgba(255, 107, 107, 0.18); border: 1px solid #ff6b6b; }
 .gform-card.missing-flash { outline: 2px solid #ff6b6b; outline-offset: 2px; }
 .gform-card.jump-flash { outline: 2px dashed var(--paper); outline-offset: 2px; }
 .gform-feedback { margin-top: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
-.gform-feedback.correct-text { color: var(--quiz-green); font-weight: 600; }
-.gform-feedback.incorrect-text { color: var(--quiz-red); font-weight: 600; }
+.gform-feedback.correct-text { color: var(--green); font-weight: 600; }
+.gform-feedback.incorrect-text { color: #ff6b6b; font-weight: 600; }
 .gform-feedback .gform-correct-answer { color: var(--paper); font-weight: 400; margin-top: 4px; }
 .gform-submit-area {
   display: flex; flex-direction: column; align-items: center; gap: 10px;
@@ -45259,7 +45257,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
 <!-- URL hash router: the address bar follows the page you are on, including
      the page inside a page (full names, same words as on screen):
        (homepage: no hash)  #/flight-schedule  #/review  #/mock-exam
-       #/mock-board-exam  #/quiz  #/flappy-plane  #/flight-store  #/hangar
+       #/mock-board-exam  #/quiz  #/quiz-duel  #/flappy-plane  #/flight-store  #/hangar
        #/about  #/admin-settings
        #/mock-exam/aerodynamics  #/review/aircraft-structures-and-design
        #/quiz/aircraft-powerplant   (a subject, by its full name)
@@ -45292,6 +45290,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   try { if ('scrollRestoration' in history) history.scrollRestoration = 'manual'; } catch (e) {}
 
   var VIEW_ROUTE_VALUES = Object.keys(VIEW_ROUTE).map(function (k) { return VIEW_ROUTE[k]; });
+  VIEW_ROUTE_VALUES.push('duel');   // Quiz Duel is a pop-up panel, not a .view, but it has its own link (#/quiz-duel)
 
   // Subjects appear in the link by their full name, for example
   // #/quiz/aerodynamics or #/exam/aircraft-structures-and-design.
@@ -45318,7 +45317,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   // on screen). Inside the page they keep their short names; old short links
   // such as #/store or #/exam still open the right page.
   var ROUTE_SLUG = { schedule: 'flight-schedule', exam: 'mock-exam', board: 'mock-board-exam',
-                     game: 'flappy-plane', store: 'flight-store', admin: 'admin-settings' };
+                     game: 'flappy-plane', store: 'flight-store', admin: 'admin-settings', duel: 'quiz-duel' };
   var TAB_SLUG = {
     store:  { models: 'aircraft-models', borders: 'avatar-decorations', animations: 'callsign-animations' },
     hangar: { models: 'aircraft-collections', borders: 'avatar-decorations', animations: 'callsign-animations' }
@@ -45379,6 +45378,9 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
 
   // Which page (and sub-page) is on screen right now?
   function currentPath() {
+    // The Quiz Duel panel sits on top of whichever page is open, so it wins.
+    var duelOv = document.getElementById('duel-overlay');
+    if (duelOv && duelOv.classList.contains('visible')) return { route: 'duel', sub: null, item: null };
     var views = document.querySelectorAll('.view.visible');
     if (!views.length) return null;
     var id = views[views.length - 1].id;
@@ -45437,6 +45439,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
       else if (route === 'hangar') showHangar();
       else if (route === 'about') showAbout();
       else if (route === 'admin') toggleAdminPage();
+      else if (route === 'duel') openDuel();
     } catch (e) { /* leave the current page as is */ }
     if (typeof refreshTopbarTabIcons === 'function') refreshTopbarTabIcons();
   }
@@ -45494,6 +45497,13 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   // Open a page plus its sub-page (subject / tab).
   function goPath(target) {
     var cur = currentPath();
+    // Leaving the Quiz Duel (Back / another link): close it first. If a match is
+    // running it asks to confirm, and the link stays on the duel until answered.
+    if (cur && cur.route === 'duel' && target.route !== 'duel') {
+      try { if (typeof window.duelRequestClose === 'function') window.duelRequestClose(); } catch (e) {}
+      cur = currentPath();
+      if (cur && cur.route === 'duel') return;
+    }
     if (!cur || cur.route !== target.route) goRoute(target.route);
     cur = currentPath();
     if (!cur || cur.route !== target.route) return;
@@ -45629,6 +45639,9 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     document.querySelectorAll('.view').forEach(function (v) {
       observer.observe(v, { attributes: true, attributeFilter: ['class'] });
     });
+    // Opening / closing the Quiz Duel panel changes the link too.
+    var duelOv = document.getElementById('duel-overlay');
+    if (duelOv) observer.observe(duelOv, { attributes: true, attributeFilter: ['class'] });
     // Tabs and panels that change a page without switching the view.
     ['shop-tab-', 'hangar-tab-'].forEach(function (p) {
       STORE_TABS.forEach(function (t) {
