@@ -444,6 +444,8 @@ try {
     --rivet: #7fa8c9;
     --panel-head-h: 51px; /* sidebar header, Black Box header and in-box chat header all share this height */
     --green: #4fd1a0;
+    --quiz-green: #00e07a; /* same high-contrast green as the Quiz Duel rank (Junior Aero Engr.) */
+    --quiz-red: #ff2d2d;   /* same high-contrast red as the Quiz Duel rank (Chief Aero Engr.) */
   }
 
   * { box-sizing: border-box; }
@@ -3926,8 +3928,8 @@ try {
   }
   /* The current-correct option's letter circle is always filled green. */
   .qreport-option-btn.correct-locked .qreport-option-letter.locked {
-    background: var(--green);
-    border-color: var(--green);
+    background: var(--quiz-green);
+    border-color: var(--quiz-green);
     color: var(--blueprint-dark);
   }
   /* Only the letter fills yellow when its option is selected, the box
@@ -5278,13 +5280,13 @@ try {
   @media (hover: hover) { .quiz-choice-btn:hover:not(:disabled) { transform: scale(1.02); background: var(--accent); color: #1a1200; } }
   .quiz-choice-btn:disabled { cursor: default; }
   .quiz-choice-btn.correct {
-    background: var(--green) !important;
-    box-shadow: 0 0 0 3px rgba(79, 209, 160, 0.4);
+    background: var(--quiz-green) !important;
+    box-shadow: 0 0 0 3px rgba(0, 224, 122, 0.4);
   }
   .quiz-choice-btn.correct .quiz-choice-text::after { content: " ✓"; }
   .quiz-choice-btn.wrong {
-    background: #ff6b6b !important;
-    box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.4);
+    background: var(--quiz-red) !important;
+    box-shadow: 0 0 0 3px rgba(255, 45, 45, 0.4);
   }
   .quiz-choice-btn.wrong .quiz-choice-text::after { content: " ✗"; }
   .quiz-choice-btn.dim { opacity: 0.35; }
@@ -10387,40 +10389,40 @@ html.gc-connected .gform-clear-btn { display: none; }
    (which used to add extra vertical space and shove that choice down). */
 .gform-option-row-actions { display: flex; align-items: center; gap: 14px; margin-left: auto; flex-shrink: 0; }
 .gform-card.correct {
-  border-color: var(--green);
-  background: rgba(79, 209, 160, 0.1);
+  border-color: var(--quiz-green);
+  background: rgba(0, 224, 122, 0.1);
 }
 .gform-card.incorrect {
-  border-color: #ff6b6b;
-  background: rgba(255, 107, 107, 0.1);
+  border-color: var(--quiz-red);
+  background: rgba(255, 45, 45, 0.1);
 }
 .gform-option.gform-option-correct {
-  background: rgba(79, 209, 160, 0.18);
+  background: rgba(0, 224, 122, 0.18);
   border-radius: 6px;
   padding: 8px 10px;
   margin: 2px 0;
 }
-.gform-option.gform-option-correct span { color: var(--green); font-weight: 600; }
-.gform-option.gform-option-correct input { accent-color: var(--green); }
+.gform-option.gform-option-correct span { color: var(--quiz-green); font-weight: 600; }
+.gform-option.gform-option-correct input { accent-color: var(--quiz-green); }
 .gform-option.gform-option-selected-wrong {
-  background: rgba(255, 107, 107, 0.18);
+  background: rgba(255, 45, 45, 0.18);
   border-radius: 6px;
   padding: 8px 10px;
   margin: 2px 0;
 }
-.gform-option.gform-option-selected-wrong span { color: #ff6b6b; font-weight: 600; }
-.gform-option.gform-option-selected-wrong input { accent-color: #ff6b6b; }
+.gform-option.gform-option-selected-wrong span { color: var(--quiz-red); font-weight: 600; }
+.gform-option.gform-option-selected-wrong input { accent-color: var(--quiz-red); }
 .gform-result-badge {
   font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700;
   padding: 2px 8px; border-radius: 999px; flex-shrink: 0;
 }
-.gform-result-badge.correct { color: var(--green); background: rgba(79, 209, 160, 0.18); border: 1px solid var(--green); }
-.gform-result-badge.incorrect { color: #ff6b6b; background: rgba(255, 107, 107, 0.18); border: 1px solid #ff6b6b; }
+.gform-result-badge.correct { color: var(--quiz-green); background: rgba(0, 224, 122, 0.18); border: 1px solid var(--quiz-green); }
+.gform-result-badge.incorrect { color: var(--quiz-red); background: rgba(255, 45, 45, 0.18); border: 1px solid var(--quiz-red); }
 .gform-card.missing-flash { outline: 2px solid #ff6b6b; outline-offset: 2px; }
 .gform-card.jump-flash { outline: 2px dashed var(--paper); outline-offset: 2px; }
 .gform-feedback { margin-top: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
-.gform-feedback.correct-text { color: var(--green); font-weight: 600; }
-.gform-feedback.incorrect-text { color: #ff6b6b; font-weight: 600; }
+.gform-feedback.correct-text { color: var(--quiz-green); font-weight: 600; }
+.gform-feedback.incorrect-text { color: var(--quiz-red); font-weight: 600; }
 .gform-feedback .gform-correct-answer { color: var(--paper); font-weight: 400; margin-top: 4px; }
 .gform-submit-area {
   display: flex; flex-direction: column; align-items: center; gap: 10px;
@@ -46593,7 +46595,13 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
   window.openDuel = function () {
     var ov = $('duel-overlay'); if (!ov) return;
     if (ov.classList.contains('visible')) return; // already open: don't reset a running match
+    // Like the other top-bar icons, the duel REPLACES the page you are on (it no
+    // longer sits on top of it). Remember that page so closing the duel returns to it.
+    prevViews = [];
+    document.querySelectorAll('.view.visible').forEach(function (v) { prevViews.push(v.id); v.classList.remove('visible'); });
+    prevScrollY = window.scrollY || 0;
     ov.classList.add('visible');
+    refreshTabIcons();   // e.g. Quiz's Back icon goes back to the normal icon, like when any other icon is tapped
     var dbody = $('duel-body'); if (dbody) dbody.scrollTop = 0;
     cleanup();
     lobbyMsg('');
@@ -46601,9 +46609,20 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     var u = curUser();
     if (!u || !u.nickname) lobbyMsg('Sign in to play 1v1 duels.');
   };
+  var prevViews = [], prevScrollY = 0;
+  function refreshTabIcons() { try { if (typeof refreshTopbarTabIcons === 'function') refreshTopbarTabIcons(); } catch (e) {} }
   function closeOverlay() {
     cleanup();
     var ov = $('duel-overlay'); if (ov) ov.classList.remove('visible');
+    // Like leaving any other top-bar page, closing the duel does NOT go back to the
+    // page you came from: it lands on Home (unless another page was already opened,
+    // e.g. by tapping another top-bar icon).
+    if (!document.querySelector('.view.visible')) {
+      try { if (typeof showHome === 'function') showHome(); } catch (e) {}
+      if (!document.querySelector('.view.visible')) { var hv = $('view-home'); if (hv) hv.classList.add('visible'); }
+    }
+    prevViews = [];
+    refreshTabIcons();
   }
   window.duelRequestClose = function () {
     if (!S) { closeOverlay(); return; }
