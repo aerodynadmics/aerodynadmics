@@ -444,6 +444,8 @@ try {
     --rivet: #7fa8c9;
     --panel-head-h: 51px; /* sidebar header, Black Box header and in-box chat header all share this height */
     --green: #4fd1a0;
+    --quiz-green: #00e07a; /* same high-contrast green as the Quiz Duel rank (Junior Aero Engr.) */
+    --quiz-red: #ff2d2d;   /* same high-contrast red as the Quiz Duel rank (Chief Aero Engr.) */
   }
 
   * { box-sizing: border-box; }
@@ -3924,6 +3926,12 @@ try {
   .qreport-option-letter.locked {
     cursor: not-allowed;
   }
+  /* The current-correct option's letter circle is always filled green. */
+  .qreport-option-btn.correct-locked .qreport-option-letter.locked {
+    background: var(--quiz-green);
+    border-color: var(--quiz-green);
+    color: var(--blueprint-dark);
+  }
   /* Only the letter fills yellow when its option is selected, the box
      itself no longer highlights on selection. */
   .qreport-option-btn.active .qreport-option-letter {
@@ -5272,13 +5280,13 @@ try {
   @media (hover: hover) { .quiz-choice-btn:hover:not(:disabled) { transform: scale(1.02); background: var(--accent); color: #1a1200; } }
   .quiz-choice-btn:disabled { cursor: default; }
   .quiz-choice-btn.correct {
-    background: var(--green) !important;
-    box-shadow: 0 0 0 3px rgba(79, 209, 160, 0.4);
+    background: var(--quiz-green) !important;
+    box-shadow: 0 0 0 3px rgba(0, 224, 122, 0.4);
   }
   .quiz-choice-btn.correct .quiz-choice-text::after { content: " ✓"; }
   .quiz-choice-btn.wrong {
-    background: #ff6b6b !important;
-    box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.4);
+    background: var(--quiz-red) !important;
+    box-shadow: 0 0 0 3px rgba(255, 45, 45, 0.4);
   }
   .quiz-choice-btn.wrong .quiz-choice-text::after { content: " ✗"; }
   .quiz-choice-btn.dim { opacity: 0.35; }
@@ -10381,40 +10389,40 @@ html.gc-connected .gform-clear-btn { display: none; }
    (which used to add extra vertical space and shove that choice down). */
 .gform-option-row-actions { display: flex; align-items: center; gap: 14px; margin-left: auto; flex-shrink: 0; }
 .gform-card.correct {
-  border-color: var(--green);
-  background: rgba(79, 209, 160, 0.1);
+  border-color: var(--quiz-green);
+  background: rgba(0, 224, 122, 0.1);
 }
 .gform-card.incorrect {
-  border-color: #ff6b6b;
-  background: rgba(255, 107, 107, 0.1);
+  border-color: var(--quiz-red);
+  background: rgba(255, 45, 45, 0.1);
 }
 .gform-option.gform-option-correct {
-  background: rgba(79, 209, 160, 0.18);
+  background: rgba(0, 224, 122, 0.18);
   border-radius: 6px;
   padding: 8px 10px;
   margin: 2px 0;
 }
-.gform-option.gform-option-correct span { color: var(--green); font-weight: 600; }
-.gform-option.gform-option-correct input { accent-color: var(--green); }
+.gform-option.gform-option-correct span { color: var(--quiz-green); font-weight: 600; }
+.gform-option.gform-option-correct input { accent-color: var(--quiz-green); }
 .gform-option.gform-option-selected-wrong {
-  background: rgba(255, 107, 107, 0.18);
+  background: rgba(255, 45, 45, 0.18);
   border-radius: 6px;
   padding: 8px 10px;
   margin: 2px 0;
 }
-.gform-option.gform-option-selected-wrong span { color: #ff6b6b; font-weight: 600; }
-.gform-option.gform-option-selected-wrong input { accent-color: #ff6b6b; }
+.gform-option.gform-option-selected-wrong span { color: var(--quiz-red); font-weight: 600; }
+.gform-option.gform-option-selected-wrong input { accent-color: var(--quiz-red); }
 .gform-result-badge {
   font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700;
   padding: 2px 8px; border-radius: 999px; flex-shrink: 0;
 }
-.gform-result-badge.correct { color: var(--green); background: rgba(79, 209, 160, 0.18); border: 1px solid var(--green); }
-.gform-result-badge.incorrect { color: #ff6b6b; background: rgba(255, 107, 107, 0.18); border: 1px solid #ff6b6b; }
+.gform-result-badge.correct { color: var(--quiz-green); background: rgba(0, 224, 122, 0.18); border: 1px solid var(--quiz-green); }
+.gform-result-badge.incorrect { color: var(--quiz-red); background: rgba(255, 45, 45, 0.18); border: 1px solid var(--quiz-red); }
 .gform-card.missing-flash { outline: 2px solid #ff6b6b; outline-offset: 2px; }
 .gform-card.jump-flash { outline: 2px dashed var(--paper); outline-offset: 2px; }
 .gform-feedback { margin-top: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
-.gform-feedback.correct-text { color: var(--green); font-weight: 600; }
-.gform-feedback.incorrect-text { color: #ff6b6b; font-weight: 600; }
+.gform-feedback.correct-text { color: var(--quiz-green); font-weight: 600; }
+.gform-feedback.incorrect-text { color: var(--quiz-red); font-weight: 600; }
 .gform-feedback .gform-correct-answer { color: var(--paper); font-weight: 400; margin-top: 4px; }
 .gform-submit-area {
   display: flex; flex-direction: column; align-items: center; gap: 10px;
@@ -11543,7 +11551,7 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
   .fs-card h3 { margin: 0 0 10px; font-size: 15px; font-weight: 600; color: var(--paper); }
   .fs-sub { font: 400 12px 'IBM Plex Mono', monospace; color: var(--rivet); margin: -6px 0 10px; }
   .fs-count { display: flex; align-items: baseline; gap: 10px; }
-  .fs-count b { font: 600 34px 'IBM Plex Mono', monospace; color: #ff7eb6; line-height: 1; }
+  .fs-count b { font: 600 34px 'IBM Plex Mono', monospace; color: #ff3fa0; line-height: 1; }
   .fs-count span { font-size: 13px; color: var(--paper); line-height: 1.35; }
   .fs-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
   .fs-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 9px 10px; border-radius: 10px; border: 1px solid rgba(63,109,146,0.55); border-left: 4px solid var(--c); background: rgba(255,255,255,0.03); }
@@ -11734,6 +11742,9 @@ html body .pfc-body { margin-top: 3px; margin-bottom: 4px; }
   color: var(--paper); font-family: 'Space Grotesk', sans-serif;
 }
 #duel-overlay.visible { display: flex; }
+/* While the duel is open, whichever page is underneath (e.g. Flight Schedule, whose
+   header sat in the strip above the panel) is hidden so it can't show through. */
+html:has(#duel-overlay.visible) .view.visible { visibility: hidden; }
 @media (min-width: 901px) { body.flights-hidden #duel-overlay { left: 282px; } }
 @media (max-width: 900px) { #duel-overlay { top: 10px; bottom: 84px; left: 10px; right: 10px; } }
 
@@ -14043,13 +14054,14 @@ If you do not agree with this Privacy Policy, you should discontinue use of the 
     <script>
     (function () {
       var TYPES = [
-        { id: 'study',      label: 'Study',             color: '#5cb8ff' },
-        { id: 'review',     label: 'Review',            color: '#4fd1a0' },
-        { id: 'quiz',       label: 'Quiz',              color: '#c792ff' },
-        { id: 'mock-exam',  label: 'Exam',              color: '#ff4d4d' },
-        { id: 'mock-board', label: 'Mock Board Exam',   color: '#ff8a5c' },
-        { id: 'board',      label: 'Actual Board Exam', color: '#ff7eb6' },
-        { id: 'other',      label: 'Other',             color: '#9fb3c4' }
+        /* colours match the Quiz Duel rank tiers (same hue family) */
+        { id: 'study',      label: 'Study',             color: '#1e7bff' }, /* Aero Engr. Director */
+        { id: 'review',     label: 'Review',            color: '#00e07a' }, /* Junior Aero Engr. */
+        { id: 'quiz',       label: 'Quiz',              color: '#9b4dff' }, /* Senior Aero Engr. */
+        { id: 'mock-exam',  label: 'Exam',              color: '#ff2d2d' }, /* Chief Aero Engr. */
+        { id: 'mock-board', label: 'Mock Board Exam',   color: '#ff7a00' }, /* Lead Aero Engr. */
+        { id: 'board',      label: 'Actual Board Exam', color: '#ff3fa0' }, /* Aero Engr. CEO */
+        { id: 'other',      label: 'Other',             color: '#a9b8c6' }  /* Intern */
       ];
       var TYPE_BY_ID = {};
       TYPES.forEach(function (t) { TYPE_BY_ID[t.id] = t; });
