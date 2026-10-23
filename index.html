@@ -11652,8 +11652,8 @@ html.pw-600 .gform-head-actions { flex-wrap: wrap; justify-content: flex-end; wi
   }
 
   /* ---- Flight Schedule: fit the viewport, no page scrolling (desktop) ---- */
-  html:has(#view-schedule.visible), html:has(#view-schedule.visible) body { overflow: hidden !important; overscroll-behavior: none; height: 100%; }
   @media (min-width: 901px) {
+  html:has(#view-schedule.visible), html:has(#view-schedule.visible) body { overflow: hidden !important; overscroll-behavior: none; height: 100%; }
     body.sidebar-active:has(#view-schedule.visible) .wrap {
       box-sizing: border-box; height: 100vh; height: 100dvh;
       padding-top: 88px; padding-bottom: 16px;
@@ -48148,5 +48148,88 @@ html.touch-ui .quiz-nav-btn.quiz-next-btn.touch-held { filter: brightness(1.08);
 html.touch-ui .quiz-nav-btn.quiz-prev-btn,
 html.touch-ui .quiz-nav-btn.quiz-next-btn { min-height: 0 !important; min-width: 0 !important; border-radius: 999px; }
 </style>
+<style id="mobile-bottombar-autohide-css">
+  @media (max-width: 900px) {
+    .top-bar {
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      will-change: transform;
+    }
+    html.tb-autohide .top-bar {
+      transform: translateY(calc(100% + 40px + env(safe-area-inset-bottom, 0px)));
+      opacity: 0;
+      pointer-events: none;
+    }
+  }
+</style>
+<script id="mobile-bottombar-autohide-js">
+/* Mobile bottom bar (like the Facebook app): slides down out of view 3 s
+   after the last click/tap, and slides back in as soon as the page is
+   scrolled up (or the finger drags downward, which also covers the case
+   where the page is already at the very top). */
+(function () {
+  var HIDE_DELAY = 3000;      // ms after the last click/tap
+  var SCROLL_DOWN_PX = 6;     // downward scroll needed to hide the bar at once
+  var SCROLL_UP_PX = 4;       // upward scroll needed to bring the bar back
+  var DRAG_DOWN_PX = 12;      // downward finger drag needed to bring it back
+  var root = document.documentElement;
+  var mq = window.matchMedia ? window.matchMedia('(max-width: 900px)') : null;
+  var timer = null, lastY = window.pageYOffset || 0, touchY = null;
+
+  function isMobile() { return !mq || mq.matches; }
+  function hide() {
+    if (!isMobile()) return;
+    // don't hide while the user is typing in a field
+    var a = document.activeElement;
+    if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) { schedule(); return; }
+    root.classList.add('tb-autohide');
+  }
+  function schedule() {
+    clearTimeout(timer);
+    timer = setTimeout(hide, HIDE_DELAY);
+  }
+  function show() {
+    root.classList.remove('tb-autohide');
+    schedule();
+  }
+
+  // every click / tap restarts the 3 s countdown
+  document.addEventListener('click', schedule, true);
+  document.addEventListener('touchend', function () { if (!root.classList.contains('tb-autohide')) schedule(); }, true);
+
+  // scrolling up shows the bar again
+  window.addEventListener('scroll', function () {
+    var y = window.pageYOffset || 0;
+    if (y < lastY - SCROLL_UP_PX) { show(); lastY = y; }
+    else if (y > lastY + SCROLL_DOWN_PX && y > 10) {
+      // scrolling down hides the bar right away (like the Facebook app)
+      lastY = y;
+      clearTimeout(timer);
+      hide();
+    }
+    else if (y > lastY) {
+      lastY = y;
+    }
+  }, { passive: true });
+
+  // dragging a finger downward (= scrolling up), even when already at the top
+  document.addEventListener('touchstart', function (e) {
+    touchY = e.touches && e.touches.length ? e.touches[0].clientY : null;
+  }, { passive: true, capture: true });
+  document.addEventListener('touchmove', function (e) {
+    if (touchY == null || !e.touches || !e.touches.length) return;
+    if (e.touches[0].clientY - touchY > DRAG_DOWN_PX) {
+      if (root.classList.contains('tb-autohide')) show(); else schedule();
+      touchY = e.touches[0].clientY;
+    }
+  }, { passive: true, capture: true });
+
+  // desktop widths: make sure the bar is never left hidden
+  if (mq && mq.addEventListener) mq.addEventListener('change', function () {
+    if (!mq.matches) root.classList.remove('tb-autohide'); else schedule();
+  });
+
+  schedule(); // start the countdown on page load
+})();
+</script>
 </body>
 </html>
