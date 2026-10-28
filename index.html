@@ -40177,9 +40177,8 @@ window.modelUrl = function (file) {
         });
       });
 
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'F11') e.preventDefault();
-    });
+    // F11 is NOT blocked: on a PC the browser's own F11 full screen works for the whole site.
+    // (The block above only stops the page from calling the Fullscreen API by itself.)
 
     document.addEventListener('click', function(e) {
       const link = e.target.closest('a[href]');
