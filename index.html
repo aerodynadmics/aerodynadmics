@@ -3833,7 +3833,7 @@ try {
   }
   .qreport-modal::-webkit-scrollbar { display: none; width: 0; height: 0; }
   .qreport-title { margin: 0 0 16px; font-size: 17px; font-weight: 700; font-family: 'Space Grotesk', sans-serif; color: var(--paper); }
-  .qreport-qtext { margin: 0 0 16px; font-size: 12px; line-height: 1.5; color: var(--paper); opacity: 0.75; height: 90px; flex-shrink: 0; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: rgba(255,255,255,0.03); }
+  .qreport-qtext { margin: 0 0 16px; font-size: 12px; line-height: 1.5; color: var(--paper); opacity: 0.75; height: 90px; flex-shrink: 0; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; background: rgba(255,255,255,0.03); white-space: pre-wrap; }
   .qreport-qtext::-webkit-scrollbar { display: none; width: 0; height: 0; }
   .qreport-reasons {
     display: grid;
@@ -5172,6 +5172,9 @@ try {
     font-weight: 600;
     line-height: 1.5;
     margin: 0 0 16px;
+    /* Keep line breaks and blank lines exactly as typed in the editor. */
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
   .quiz-choices-grid {
     display: grid;
@@ -46518,7 +46521,7 @@ window.AERO_LEGAL = window.AERO_LEGAL || {
     if (subj) {
       subj.innerHTML = subjectList().map(function (s) {
         var r = (lobbyStats && lobbyStats[s.key]) || null, g = r ? (r.w || 0) + (r.l || 0) + (r.d || 0) : 0;
-        var wr = g ? Math.round(((r.w || 0) / g) * 100) + '%' : '\u2014';
+        var wr = g ? Math.round(((r.w || 0) / g) * 100) + '%' : '-';
         var rec = g ? (r.w || 0) + 'W \u00b7 ' + (r.l || 0) + 'L' + (r.d ? ' \u00b7 ' + r.d + 'D' : '') : 'No duels yet';
         return '<div class="lobby-subj"><span class="s-nm">' + esc(s.name) + '<small>' + esc(rec) + '</small></span><span class="s-pct">' + wr + '</span></div>';
       }).join('');
